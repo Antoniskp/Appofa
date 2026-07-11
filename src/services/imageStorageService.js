@@ -2,6 +2,8 @@
 
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+const { getStorageAdapter } = require('./storage');
 
 // Use __dirname so the path is always relative to this file's location on disk,
 // regardless of which directory the process was started from.
@@ -33,6 +35,35 @@ function saveImage(buffer, subDir, filename) {
   return `/uploads/${subDir}/${filename}`;
 }
 
+function buildMediaStorageKey(userId, entityType, variantName, extension = 'webp') {
+  const safeUserId = String(userId || '').replace(/[^0-9a-z_-]/gi, '');
+  if (!safeUserId) {
+    throw new Error('Invalid user id for storage key.');
+  }
+  const safeEntityType = String(entityType || 'shared').replace(/[^a-z0-9_-]/gi, '').toLowerCase() || 'shared';
+  const safeVariant = String(variantName || 'original').replace(/[^a-z0-9_-]/gi, '').toLowerCase() || 'original';
+
+  if (safeEntityType === 'avatar' && safeVariant === 'avatar') {
+    return path.posix.join('profiles', `${safeUserId}.${extension}`);
+  }
+
+  const now = new Date();
+  const year = String(now.getUTCFullYear());
+  const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+  return path.posix.join('media', year, month, `${safeEntityType}`, `${safeUserId}-${crypto.randomUUID()}-${safeVariant}.${extension}`);
+}
+
+async function saveMediaVariant({ buffer, userId, entityType, variantName, extension = 'webp' }) {
+  const adapter = getStorageAdapter();
+  const storageKey = buildMediaStorageKey(userId, entityType, variantName, extension);
+  return adapter.saveFile({ buffer, storageKey });
+}
+
+async function deleteMediaByStorageKey(storageKey) {
+  const adapter = getStorageAdapter();
+  await adapter.deleteFile(storageKey);
+}
+
 /**
  * Save a user avatar WebP buffer.
  * @param {Buffer} buffer
@@ -53,4 +84,10 @@ function saveLocationImage(buffer, locationId) {
   return saveImage(buffer, 'locations', `${locationId}.webp`);
 }
 
-module.exports = { saveAvatar, saveLocationImage };
+module.exports = {
+  saveAvatar,
+  saveLocationImage,
+  saveMediaVariant,
+  deleteMediaByStorageKey,
+  buildMediaStorageKey,
+};

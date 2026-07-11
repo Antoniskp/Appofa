@@ -24,7 +24,8 @@
     "migrate:up": "node src/scripts/run-migrations.js up",
     "migrate:down": "node src/scripts/run-migrations.js down",
     "migrate:status": "node src/scripts/run-migrations.js status",
-    "migrate:article-types": "node src/scripts/update-article-types.js"
+    "migrate:article-types": "node src/scripts/update-article-types.js",
+    "media:cleanup": "node src/scripts/media-orphan-cleanup.js"
   },
   "keywords": [],
   "author": "",

@@ -156,7 +156,7 @@ export default function SecurityPage() {
               <ul className="space-y-1.5">
                 <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">✓</span>Server-side validation σε όλα τα endpoints</li>
                 <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">✓</span>Έλεγχος μορφής email, μήκους πεδίων, τύπων δεδομένων</li>
-                <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">✓</span>Μέγιστο μέγεθος αρχείων στα uploads (10 MB)</li>
+                <li className="flex items-start gap-2"><span className="text-green-500 mt-0.5">✓</span>Μέγιστο μέγεθος αρχείων uploads μέσω `MEDIA_MAX_FILE_BYTES` (προεπιλογή 8 MB) + συνολικό quota χρήστη (`MEDIA_USER_QUOTA_BYTES`)</li>
               </ul>
             </div>
             <div>

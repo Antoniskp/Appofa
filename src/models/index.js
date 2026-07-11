@@ -60,6 +60,7 @@ const WorkerToken = require('./WorkerToken');
 const MunicipalityDistrictMap = require('./MunicipalityDistrictMap');
 const CandidateRegistration = require('./CandidateRegistration');
 const OnboardingEvent = require('./OnboardingEvent');
+const MediaAsset = require('./MediaAsset');
 
 // Define associations
 User.hasMany(Article, {
@@ -529,6 +530,13 @@ Location.belongsToMany(Location, {
 Location.hasMany(MunicipalityDistrictMap, { foreignKey: 'municipalityId', as: 'districtMappings' });
 Location.hasMany(MunicipalityDistrictMap, { foreignKey: 'electoralDistrictId', as: 'municipalityMappings' });
 
+
+// MediaAsset associations
+MediaAsset.belongsTo(User, { foreignKey: 'uploadedByUserId', as: 'uploadedBy' });
+User.hasMany(MediaAsset, { foreignKey: 'uploadedByUserId', as: 'uploadedMediaAssets' });
+Article.belongsTo(MediaAsset, { foreignKey: 'coverImageId', as: 'coverImage' });
+MediaAsset.hasMany(Article, { foreignKey: 'coverImageId', as: 'coverArticles' });
+
 // Candidate registration associations
 CandidateRegistration.belongsTo(User, { foreignKey: 'userId', as: 'candidate' });
 CandidateRegistration.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
@@ -603,4 +611,5 @@ module.exports = {
   MunicipalityDistrictMap,
   CandidateRegistration,
   OnboardingEvent,
+  MediaAsset,
 };

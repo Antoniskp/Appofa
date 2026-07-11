@@ -30,6 +30,15 @@ const Article = sequelize.define('Article', {
     allowNull: true,
     defaultValue: '/images/branding/news default.png'
   },
+  coverImageId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'MediaAssets',
+      key: 'id'
+    },
+    onDelete: 'SET NULL'
+  },
   authorId: {
     type: DataTypes.INTEGER,
     allowNull: false,
