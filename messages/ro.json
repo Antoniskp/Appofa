@@ -47,7 +47,19 @@
     "start_here": "Începe aici",
     "more": "Mai multe",
     "all_pages": "Toate paginile",
-    "change_country": "Schimbă țara"
+    "change_country": "Schimbă țara",
+    "bottom_home": "Acasă",
+    "bottom_explore": "Explorare",
+    "bottom_participate": "Participare",
+    "bottom_my_area": "Zona mea",
+    "bottom_you": "Tu",
+    "bottom_nav_aria": "Navigare principală",
+    "bottom_participate_sheet_title": "Participare",
+    "bottom_participate_vote": "Votează în sondaje",
+    "bottom_participate_civic": "Răspunde la întrebări civice",
+    "bottom_participate_ideas": "Vezi idei și probleme",
+    "bottom_participate_suggest": "Trimite o idee",
+    "bottom_participate_close": "Închide"
   },
   "independents": {
     "hero": {

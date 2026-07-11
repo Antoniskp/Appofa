@@ -47,7 +47,19 @@
     "start_here": "Start here",
     "more": "More",
     "all_pages": "All Pages",
-    "change_country": "Change country"
+    "change_country": "Change country",
+    "bottom_home": "Home",
+    "bottom_explore": "Explore",
+    "bottom_participate": "Participate",
+    "bottom_my_area": "My area",
+    "bottom_you": "You",
+    "bottom_nav_aria": "Main navigation",
+    "bottom_participate_sheet_title": "Participate",
+    "bottom_participate_vote": "Vote in polls",
+    "bottom_participate_civic": "Answer civic questions",
+    "bottom_participate_ideas": "View ideas & problems",
+    "bottom_participate_suggest": "Submit an idea",
+    "bottom_participate_close": "Close"
   },
   "independents": {
     "hero": {

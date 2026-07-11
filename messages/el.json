@@ -47,7 +47,19 @@
     "start_here": "Ξεκίνα εδώ",
     "more": "Περισσότερα",
     "all_pages": "Όλες οι Σελίδες",
-    "change_country": "Αλλαγή χώρας"
+    "change_country": "Αλλαγή χώρας",
+    "bottom_home": "Αρχική",
+    "bottom_explore": "Εξερεύνηση",
+    "bottom_participate": "Συμμετοχή",
+    "bottom_my_area": "Η περιοχή μου",
+    "bottom_you": "Εγώ",
+    "bottom_nav_aria": "Κύρια πλοήγηση",
+    "bottom_participate_sheet_title": "Συμμετοχή",
+    "bottom_participate_vote": "Ψήφισε σε δημοσκοπήσεις",
+    "bottom_participate_civic": "Απάντησε σε πολιτικές ερωτήσεις",
+    "bottom_participate_ideas": "Δες ιδέες & προβλήματα",
+    "bottom_participate_suggest": "Κάνε πρόταση",
+    "bottom_participate_close": "Κλείσιμο"
   },
   "independents": {
     "hero": {
