@@ -83,7 +83,7 @@ const secondaryLinks = [
 const civicPathActions = (user) => [
   {
     href: user ? '/profile' : '/register',
-    title: user ? 'Συμπλήρωσε προφίλ' : 'Δημιούργησε προφίλ',
+    title: user ? 'Ολοκλήρωσε το προφίλ σου' : 'Δημιούργησε προφίλ',
     description: user
       ? 'Κράτησε ενημερωμένη την περιοχή και τη δημόσια παρουσία σου.'
       : 'Σύνδεσε την περιοχή σου και ξεκίνα με πιο σχετικό περιεχόμενο.',
@@ -97,31 +97,31 @@ const civicPathActions = (user) => [
   },
   {
     href: '/independents',
-    title: 'Δες ανεξάρτητους',
+    title: 'Ανακάλυψε ανεξάρτητους υποψηφίους',
     description: 'Βρες ανεξάρτητους υποψηφίους και δημόσια πρόσωπα στην πλατφόρμα.',
     icon: UserGroupIcon,
   },
   {
     href: '/organizations',
-    title: 'Κόμμα ή οργάνωση; Έλα μαζί μας',
-    description: 'Δημιούργησε προφίλ οργανισμού, δημοσίευσε θέσεις και συμμετείχε στον δημόσιο διάλογο.',
+    title: 'Εκπροσωπείς κόμμα ή οργάνωση;',
+    description: 'Δημιούργησε επίσημη παρουσία, δημοσίευσε θέσεις και συμμετείχε ανοιχτά στον δημόσιο διάλογο.',
     icon: BuildingOffice2Icon,
   },
   {
     href: '/manifest-supporters',
-    title: 'Στήριξε δεσμεύσεις',
+    title: 'Δες δημόσιες δεσμεύσεις',
     description: 'Δες ποιοι αποδέχονται δημόσιες αρχές συμμετοχής και λογοδοσίας.',
     icon: HandRaisedIcon,
   },
   {
     href: '/candidates',
-    title: 'Ανάδειξε πρόσωπα',
+    title: 'Πρότεινε έναν υποψήφιο',
     description: 'Μοιράσου και πρότεινε υποψηφίους που εμπιστεύεσαι.',
     icon: MegaphoneIcon,
   },
   {
     href: '/become-moderator',
-    title: 'Βοήθησε στη διαχείριση',
+    title: 'Γίνε συντονιστής της κοινότητας',
     description: 'Κράτησε τις συζητήσεις χρήσιμες, καθαρές και κοντά στα πραγματικά θέματα.',
     icon: ShieldCheckIcon,
   },
@@ -133,7 +133,7 @@ const civicPathActions = (user) => [
   },
   {
     href: '/suggestions',
-    title: 'Ανάδειξε προβλήματα',
+    title: 'Κατάγραψε ένα δημόσιο πρόβλημα',
     description: 'Δώσε ορατότητα σε δημόσια θέματα και ψήφισε προτεραιότητες.',
     icon: FlagIcon,
   },
@@ -147,9 +147,9 @@ const toneClasses = {
 };
 
 const guestRegistrationBenefits = [
-  'Αποθήκευση περιοχής και πιο σχετικές ενημερώσεις',
-  'Παρακολούθηση ψηφοφοριών, προτάσεων και απαντήσεων',
-  'Δημόσια παρουσία με σήματα συμμετοχής και αξιοπιστίας',
+  'Ακολούθησε την περιοχή και τα θέματα που σε ενδιαφέρουν',
+  'Κράτησε τις ψήφους και τις προτάσεις σου συγκεντρωμένες',
+  'Δημιούργησε δημόσια παρουσία, μόνο αν το επιλέξεις',
 ];
 
 function ActionCard({ action }) {
@@ -182,10 +182,10 @@ function GuestRegistrationBridge() {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-            Επόμενο βήμα
+            Κράτησε τη συμμετοχή σου
           </p>
           <h3 className="mt-1 text-lg font-bold leading-7">
-            Δημιούργησε προφίλ όταν βρεις κάτι που σε αφορά.
+            Δημιούργησε προφίλ και συνέχισε από εκεί που σταμάτησες.
           </h3>
           <div className="mt-4 grid gap-3 text-sm text-gray-700 md:grid-cols-3">
             {guestRegistrationBenefits.map((benefit) => (
@@ -202,7 +202,7 @@ function GuestRegistrationBridge() {
             onClick={handleAuthClick}
             className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
           >
-            Δημιουργία προφίλ
+            Δημιούργησε δωρεάν προφίλ
             <ArrowRightIcon className="h-4 w-4" />
           </Link>
           <Link
@@ -228,15 +228,13 @@ export default function HomeActionLanes({ user }) {
           <div className="grid gap-7 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)] lg:items-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-                Τρόποι συμμετοχής
+                Διάλεξε πώς θέλεις να συμμετέχεις
               </p>
               <h2 className="mt-2 text-2xl font-bold leading-tight md:text-3xl">
-                Βοήθησε να γίνει η κοινότητα πιο χρήσιμη.
+                Μια μικρή συμμετοχή μπορεί να ξεκινήσει κάτι σημαντικό.
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-700">
-                Ψήφισε σε ανοιχτές ψηφοφορίες, άνοιξε νέες ερωτήσεις, πρότεινε
-                λύσεις, ανάδειξε ανθρώπους και βοήθησε στη διαχείριση ώστε οι
-                δημόσιες συζητήσεις να μένουν καθαρές και πρακτικές.
+                Ψήφισε σε ένα ανοιχτό θέμα, πρότεινε μια λύση, ανέδειξε ένα πρόβλημα ή βοήθησε την κοινότητα της περιοχής σου.
               </p>
             </div>
 
