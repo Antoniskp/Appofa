@@ -10,6 +10,9 @@
 const { Op, fn, literal } = require('sequelize');
 const { OnboardingEvent, sequelize } = require('../models');
 
+// ISO date-only pattern used to detect calendar-day inputs (no time component)
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 // Abandonment window: users who started but have not completed within this many days
 const ABANDONMENT_DAYS = 14;
 
@@ -117,6 +120,11 @@ exports.getAdminFunnel = async (req, res) => {
       if (isNaN(to.getTime())) {
         return res.status(400).json({ success: false, message: 'Invalid "to" date.' });
       }
+      // A date-only input (YYYY-MM-DD) should include the entire calendar day,
+      // not stop at midnight UTC. Advance to 23:59:59.999 UTC of that day.
+      if (DATE_ONLY_RE.test(req.query.to)) {
+        to.setUTCHours(23, 59, 59, 999);
+      }
     }
     if (from > to) {
       return res.status(400).json({ success: false, message: '"from" must be before "to".' });
@@ -131,7 +139,9 @@ exports.getAdminFunnel = async (req, res) => {
     };
     if (goalFilter) where.goal = goalFilter;
 
-    // Count distinct users per event type
+    // Count distinct users per event type.
+    // Use dialect-aware Sequelize expression so column names are always properly
+    // quoted; the raw SQL path is avoided entirely.
     const dialect = sequelize.getDialect();
     const countDistinct = dialect === 'postgres'
       ? fn('COUNT', literal('DISTINCT "userId"'))
@@ -156,8 +166,11 @@ exports.getAdminFunnel = async (req, res) => {
       byType[eventType][goal || '_all'] = Number(userCount);
     }
 
-    // Compute abandonment: users who viewed but did not complete within ABANDONMENT_DAYS
+    // Compute abandonment: users who viewed but did not complete within ABANDONMENT_DAYS.
+    // Use Sequelize ORM queries only — no raw SQL — so identifiers are always quoted
+    // correctly for both PostgreSQL (mixed-case names) and SQLite.
     const abandonmentCutoff = new Date(now.getTime() - ABANDONMENT_DAYS * 24 * 60 * 60 * 1000);
+
     const viewedBeforeCutoff = await OnboardingEvent.count({
       where: {
         eventType: 'onboarding_viewed',
@@ -167,21 +180,28 @@ exports.getAdminFunnel = async (req, res) => {
       col: 'userId',
     });
 
-    // Users who viewed before cutoff AND have completed
-    const [completedViewers] = await sequelize.query(
-      `SELECT COUNT(DISTINCT e.userId) as cnt
-       FROM OnboardingEvents e
-       INNER JOIN OnboardingEvents c
-         ON c.userId = e.userId AND c.eventType = 'onboarding_completed'
-       WHERE e.eventType = 'onboarding_viewed'
-         AND e.createdAt <= :cutoff`,
-      {
-        replacements: { cutoff: abandonmentCutoff },
-        type: sequelize.QueryTypes.SELECT,
-      }
-    );
+    // Distinct user IDs who have ever completed onboarding (no date restriction).
+    const completedUserRows = await OnboardingEvent.findAll({
+      where: { eventType: 'onboarding_completed' },
+      attributes: ['userId'],
+      group: ['userId'],
+      raw: true,
+    });
+    const completedUserIds = completedUserRows.map((r) => r.userId);
 
-    const completedViewerCount = Number(completedViewers?.cnt || 0);
+    // Among those viewed-before-cutoff users, how many also completed?
+    let completedViewerCount = 0;
+    if (completedUserIds.length > 0) {
+      completedViewerCount = await OnboardingEvent.count({
+        where: {
+          eventType: 'onboarding_viewed',
+          createdAt: { [Op.lte]: abandonmentCutoff },
+          userId: { [Op.in]: completedUserIds },
+        },
+        distinct: true,
+        col: 'userId',
+      });
+    }
     const abandonedCount = Math.max(0, viewedBeforeCutoff - completedViewerCount);
 
     return res.json({
@@ -203,7 +223,7 @@ exports.getAdminFunnel = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('Onboarding funnel error:', err);
+    console.error('[onboarding funnel] Error building funnel response:', err.message);
     return res.status(500).json({ success: false, message: 'Failed to fetch funnel data.' });
   }
 };

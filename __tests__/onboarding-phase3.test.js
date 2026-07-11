@@ -248,6 +248,98 @@ describe('Phase 3 onboarding backend', () => {
         .set('Cookie', [`auth_token=${token}`]);
       expect(res.status).toBe(400);
     });
+
+    // ── Regression: abandonment query must not use raw SQL (PostgreSQL casing) ─
+
+    it('returns 200 with empty data when no events exist (guards against raw SQL casing bug)', async () => {
+      // This test verifies the abandonment calculation path returns a valid
+      // response even when the OnboardingEvents table is empty, which is the
+      // first failure mode of the raw SQL that used unquoted mixed-case
+      // identifiers (OnboardingEvents, userId, eventType, createdAt).
+      const { token } = await createAndLoginUser('admin_reg1', 'admin_reg1@test.com', 'admin');
+      const res = await request(app)
+        .get('/api/admin/onboarding/funnel')
+        .set('Cookie', [`auth_token=${token}`]);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.abandonment.viewedBeforeCutoff).toBe(0);
+      expect(res.body.data.abandonment.completedViewers).toBe(0);
+      expect(res.body.data.abandonment.abandonedCount).toBe(0);
+    });
+
+    it('computes abandonment with correct distinct-user semantics', async () => {
+      const { user: viewer1 } = await createAndLoginUser('abn_v1', 'abn_v1@test.com');
+      const { user: viewer2 } = await createAndLoginUser('abn_v2', 'abn_v2@test.com');
+      const { user: completer } = await createAndLoginUser('abn_c1', 'abn_c1@test.com');
+      const { token } = await createAndLoginUser('abn_admin', 'abn_admin@test.com', 'admin');
+
+      // All three users viewed onboarding well before the 14-day cutoff
+      const oldDate = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000); // 20 days ago
+      await OnboardingEvent.bulkCreate([
+        { userId: viewer1.id, eventType: 'onboarding_viewed', createdAt: oldDate },
+        { userId: viewer2.id, eventType: 'onboarding_viewed', createdAt: oldDate },
+        { userId: completer.id, eventType: 'onboarding_viewed', createdAt: oldDate },
+        // Only completer finished
+        { userId: completer.id, eventType: 'onboarding_completed', createdAt: new Date() },
+      ]);
+
+      const res = await request(app)
+        .get('/api/admin/onboarding/funnel')
+        .set('Cookie', [`auth_token=${token}`]);
+      expect(res.status).toBe(200);
+      const { abandonment } = res.body.data;
+      expect(abandonment.viewedBeforeCutoff).toBe(3);
+      expect(abandonment.completedViewers).toBe(1);
+      expect(abandonment.abandonedCount).toBe(2);
+      expect(abandonment.abandonmentRate).toBe(67); // Math.round(2/3 * 100)
+    });
+
+    it('date-only to= includes the full calendar day (inclusive end)', async () => {
+      const { user } = await createAndLoginUser('date_u1', 'date_u1@test.com');
+      const { token } = await createAndLoginUser('date_admin', 'date_admin@test.com', 'admin');
+
+      // Create an event at 23:30 UTC on a specific date
+      const targetDate = '2025-03-15';
+      const lateInDay = new Date('2025-03-15T23:30:00.000Z');
+      await OnboardingEvent.create({
+        userId: user.id,
+        eventType: 'onboarding_viewed',
+        createdAt: lateInDay,
+      });
+
+      // Querying with to=2025-03-15 should include the event (end of day, not midnight)
+      const res = await request(app)
+        .get(`/api/admin/onboarding/funnel?from=2025-03-01&to=${targetDate}`)
+        .set('Cookie', [`auth_token=${token}`]);
+      expect(res.status).toBe(200);
+      const viewed = res.body.data.byEventType.onboarding_viewed || {};
+      const total = Object.values(viewed).reduce((s, v) => s + v, 0);
+      expect(total).toBe(1);
+    });
+
+    it('date-only to= stopping at midnight would miss late-day events', async () => {
+      // This test documents the intended "inclusive end" behaviour.
+      // An event at 23:30 UTC on targetDate MUST be included when to=targetDate.
+      const { user } = await createAndLoginUser('date_u2', 'date_u2@test.com');
+      const { token } = await createAndLoginUser('date_admin2', 'date_admin2@test.com', 'admin');
+
+      const lateInDay = new Date('2025-04-10T23:59:00.000Z');
+      await OnboardingEvent.create({
+        userId: user.id,
+        eventType: 'goal_selected',
+        goal: 'creator',
+        createdAt: lateInDay,
+      });
+
+      const res = await request(app)
+        .get('/api/admin/onboarding/funnel?from=2025-04-01&to=2025-04-10')
+        .set('Cookie', [`auth_token=${token}`]);
+      expect(res.status).toBe(200);
+      const goalSelected = res.body.data.byEventType.goal_selected || {};
+      const total = Object.values(goalSelected).reduce((s, v) => s + v, 0);
+      // Would be 0 if `to` stopped at midnight; must be 1 with inclusive end
+      expect(total).toBe(1);
+    });
   });
 
   // ── My contributions endpoint ──────────────────────────────────────────────
