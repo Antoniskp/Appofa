@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const mediaController = require('../controllers/mediaController');
 const authMiddleware = require('../middleware/auth');
+const checkRole = require('../middleware/checkRole');
 const csrfProtection = require('../middleware/csrfProtection');
 const { apiLimiter, uploadLimiter } = require('../middleware/rateLimiter');
 const { MAX_IMAGE_BYTES } = require('../services/mediaService');
@@ -40,6 +41,8 @@ const handleUpload = (req, res, next) => {
   });
 };
 
+router.get('/admin/stats', apiLimiter, authMiddleware, checkRole('admin'), mediaController.getAdminStats);
+router.get('/admin/cleanup-report', apiLimiter, authMiddleware, checkRole('admin'), mediaController.getAdminCleanupReport);
 router.get('/', apiLimiter, authMiddleware, mediaController.listMedia);
 router.get('/:id', apiLimiter, authMiddleware, mediaController.getMediaById);
 router.post('/upload', uploadLimiter, authMiddleware, csrfProtection, handleUpload, mediaController.uploadMedia);

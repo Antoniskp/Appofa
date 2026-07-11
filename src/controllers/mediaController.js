@@ -82,13 +82,45 @@ const mediaController = {
     try {
       const result = await mediaService.deleteMediaAsset(req.params.id, req.user, { force: req.query.force === 'true' });
       if (!result.success) {
-        return res.status(result.status).json({ success: false, message: result.message, references: result.references });
+        return res.status(result.status).json({
+          success: false,
+          message: result.message,
+          references: result.references,
+          referenceSummary: result.referenceSummary,
+          blockers: result.blockers,
+        });
       }
 
       return res.status(200).json({ success: true, id: result.id });
     } catch (error) {
       console.error('mediaController.deleteMedia error:', error.message);
       return res.status(500).json({ success: false, message: 'Failed to delete media.' });
+    }
+  },
+
+  getAdminStats: async (req, res) => {
+    try {
+      const result = await mediaService.getAdminMediaStats(req.user);
+      if (!result.success) {
+        return res.status(result.status).json({ success: false, message: result.message });
+      }
+      return res.status(200).json({ success: true, stats: result.stats });
+    } catch (error) {
+      console.error('mediaController.getAdminStats error:', error.message);
+      return res.status(500).json({ success: false, message: 'Failed to fetch media statistics.' });
+    }
+  },
+
+  getAdminCleanupReport: async (req, res) => {
+    try {
+      const result = await mediaService.getAdminCleanupReport(req.user, req.query || {});
+      if (!result.success) {
+        return res.status(result.status).json({ success: false, message: result.message });
+      }
+      return res.status(200).json({ success: true, report: result.report });
+    } catch (error) {
+      console.error('mediaController.getAdminCleanupReport error:', error.message);
+      return res.status(500).json({ success: false, message: 'Failed to generate cleanup report.' });
     }
   },
 };

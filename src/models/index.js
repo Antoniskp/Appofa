@@ -536,6 +536,8 @@ MediaAsset.belongsTo(User, { foreignKey: 'uploadedByUserId', as: 'uploadedBy' })
 User.hasMany(MediaAsset, { foreignKey: 'uploadedByUserId', as: 'uploadedMediaAssets' });
 Article.belongsTo(MediaAsset, { foreignKey: 'coverImageId', as: 'coverImage' });
 MediaAsset.hasMany(Article, { foreignKey: 'coverImageId', as: 'coverArticles' });
+PollOption.belongsTo(MediaAsset, { foreignKey: 'mediaAssetId', as: 'mediaAsset' });
+MediaAsset.hasMany(PollOption, { foreignKey: 'mediaAssetId', as: 'pollOptions' });
 
 // Candidate registration associations
 CandidateRegistration.belongsTo(User, { foreignKey: 'userId', as: 'candidate' });

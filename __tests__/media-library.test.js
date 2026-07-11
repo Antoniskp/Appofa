@@ -2,13 +2,14 @@ const request = require('supertest');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const { sequelize, User, MediaAsset, Article } = require('../src/models');
+const { sequelize, User, MediaAsset, Article, Poll, PollOption } = require('../src/models');
 const { helmetConfig, corsOptions } = require('../src/config/securityHeaders');
 const { storeCsrfToken } = require('../src/utils/csrf');
 
 const authRoutes = require('../src/routes/authRoutes');
 const articleRoutes = require('../src/routes/articleRoutes');
 const mediaRoutes = require('../src/routes/mediaRoutes');
+const pollRoutes = require('../src/routes/pollRoutes');
 
 const app = express();
 app.use(helmet(helmetConfig));
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/articles', articleRoutes);
 app.use('/api/media', mediaRoutes);
+app.use('/api/polls', pollRoutes);
 
 const TEST_PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO8B2V0AAAAASUVORK5CYII=',
@@ -27,6 +29,8 @@ describe('Media library integration', () => {
   let editorToken;
   let editorId;
   let uploadedMediaId;
+  let adminToken;
+  let adminId;
 
   const csrfHeaderFor = (token) => ({
     Cookie: [`csrf_token=${token}`],
@@ -49,12 +53,29 @@ describe('Media library integration', () => {
     const editor = await User.findOne({ where: { email: 'mediaeditor@test.com' } });
     editorId = editor.id;
 
+    await User.create({
+      username: 'mediaadmin',
+      email: 'mediaadmin@test.com',
+      password: 'admin123',
+      role: 'admin',
+      firstNameNative: 'Media',
+      lastNameNative: 'Admin',
+    });
+    const admin = await User.findOne({ where: { email: 'mediaadmin@test.com' } });
+    adminId = admin.id;
+
     const loginResponse = await request(app)
       .post('/api/auth/login')
       .send({ email: 'mediaeditor@test.com', password: 'editor123' });
 
     const authCookie = loginResponse.headers['set-cookie'].find((cookie) => cookie.startsWith('auth_token='));
     editorToken = authCookie.split(';')[0].replace('auth_token=', '');
+
+    const adminLoginResponse = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'mediaadmin@test.com', password: 'admin123' });
+    const adminCookie = adminLoginResponse.headers['set-cookie'].find((cookie) => cookie.startsWith('auth_token='));
+    adminToken = adminCookie.split(';')[0].replace('auth_token=', '');
   });
 
   afterAll(async () => {
@@ -137,6 +158,44 @@ describe('Media library integration', () => {
     expect(response.body.success).toBe(false);
   });
 
+  test('prevents deleting media asset that is referenced by poll option mediaAssetId', async () => {
+    const csrfToken = 'csrf-poll-option-media';
+    storeCsrfToken(csrfToken, editorId);
+
+    const poll = await Poll.create({
+      title: 'Media Poll',
+      description: 'Poll with media option',
+      type: 'complex',
+      allowUserContributions: false,
+      voteRestriction: 'authenticated',
+      visibility: 'public',
+      resultsVisibility: 'always',
+      creatorId: editorId,
+      status: 'active',
+    });
+    await PollOption.create({
+      pollId: poll.id,
+      text: 'Option with media',
+      mediaAssetId: uploadedMediaId,
+      photoUrl: '/uploads/media/example.webp',
+      order: 0,
+    });
+    await PollOption.create({
+      pollId: poll.id,
+      text: 'Second option',
+      order: 1,
+    });
+
+    const response = await request(app)
+      .delete(`/api/media/${uploadedMediaId}`)
+      .set('Authorization', 'Bearer ' + editorToken)
+      .set(csrfHeaderFor(csrfToken));
+
+    expect(response.status).toBe(409);
+    expect(response.body.references).toBeGreaterThan(0);
+    expect(response.body.referenceSummary.poll_option).toBeGreaterThan(0);
+  });
+
   test('avatar upload uses shared media pipeline', async () => {
     const csrfToken = 'csrf-avatar-upload';
     storeCsrfToken(csrfToken, editorId);
@@ -163,6 +222,25 @@ describe('Media library integration', () => {
     const cleanupResult = await mediaService.cleanupOrphanMediaAssets({ dryRun: true, olderThanDays: 1 });
     expect(cleanupResult.dryRun).toBe(true);
     expect(Array.isArray(cleanupResult.candidates)).toBe(true);
+  });
+
+  test('admin endpoints expose media stats and cleanup report', async () => {
+    const statsResponse = await request(app)
+      .get('/api/media/admin/stats')
+      .set('Authorization', 'Bearer ' + adminToken);
+
+    expect(statsResponse.status).toBe(200);
+    expect(statsResponse.body.success).toBe(true);
+    expect(statsResponse.body.stats).toHaveProperty('totalAssetCount');
+    expect(statsResponse.body.stats).toHaveProperty('quotaConfig');
+
+    const cleanupResponse = await request(app)
+      .get('/api/media/admin/cleanup-report?olderThanDays=1')
+      .set('Authorization', 'Bearer ' + adminToken);
+
+    expect(cleanupResponse.status).toBe(200);
+    expect(cleanupResponse.body.success).toBe(true);
+    expect(cleanupResponse.body.report).toHaveProperty('cleanup');
   });
 
   test('article relation to media remains queryable', async () => {

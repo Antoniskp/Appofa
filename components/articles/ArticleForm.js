@@ -529,6 +529,7 @@ export default function ArticleForm({
             captionLabel: tArticles('media_caption_label'),
             creditLabel: tArticles('media_credit_label'),
             emptyLibrary: tArticles('media_empty_library'),
+            quotaStatus: tArticles('media_quota_status'),
           }}
         />
       )}
