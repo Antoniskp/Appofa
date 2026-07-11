@@ -171,8 +171,8 @@ function AdminOnboardingContent() {
   const { data, loading, error, refetch } = useAsyncData(
     async () => {
       const res = await adminAPI.getOnboardingFunnel(appliedParams);
-      if (res.success) return res.data;
-      return null;
+      if (!res.success) throw new Error(res.message || 'Failed to fetch funnel data.');
+      return res.data;
     },
     [appliedParams],
     { initialData: null }
@@ -241,7 +241,17 @@ function AdminOnboardingContent() {
           </form>
 
           {loading && <SkeletonLoader />}
-          {error && <AlertMessage type="error" message="Failed to load funnel data." />}
+          {error && (
+            <div className="mb-6">
+              <AlertMessage type="error" message={error} />
+              <button
+                onClick={refetch}
+                className="mt-2 rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Retry
+              </button>
+            </div>
+          )}
 
           {data && !loading && (
             <>
