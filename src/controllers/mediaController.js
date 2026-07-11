@@ -6,7 +6,7 @@ function handleMulterError(error, res) {
   if (!error) return false;
 
   if (error.code === 'LIMIT_FILE_SIZE') {
-    res.status(400).json({ success: false, message: 'Image must be 8MB or smaller.' });
+    res.status(413).json({ success: false, message: 'Image exceeds the per-file upload limit.' });
     return true;
   }
 
@@ -26,26 +26,69 @@ const mediaController = {
         success: true,
         media: result.media,
         pagination: result.pagination,
+        quota: result.quota,
       });
     } catch (error) {
-      console.error('mediaController.listMedia error:', error);
+      console.error('mediaController.listMedia error:', error.message);
       return res.status(500).json({ success: false, message: 'Failed to fetch media.' });
     }
   },
 
-  uploadArticleImage: async (req, res) => {
+  uploadMedia: async (req, res) => {
     try {
       if (handleMulterError(req.fileValidationError, res)) return;
 
-      const result = await mediaService.uploadArticleImage(req.file, req.user, req.body || {});
+      const result = await mediaService.uploadMediaAsset(req.file, req.user, req.body || {});
+      if (!result.success) {
+        return res.status(result.status).json({ success: false, message: result.message, quota: result.quota });
+      }
+
+      return res.status(201).json({ success: true, media: result.media, quota: result.quota });
+    } catch (error) {
+      console.error('mediaController.uploadMedia error:', error.message);
+      return res.status(500).json({ success: false, message: 'Failed to upload image.' });
+    }
+  },
+
+  getMediaById: async (req, res) => {
+    try {
+      const result = await mediaService.getMediaAssetById(req.params.id, req.user);
       if (!result.success) {
         return res.status(result.status).json({ success: false, message: result.message });
       }
 
-      return res.status(201).json({ success: true, media: result.media });
+      return res.status(200).json({ success: true, media: result.media });
     } catch (error) {
-      console.error('mediaController.uploadArticleImage error:', error);
-      return res.status(500).json({ success: false, message: 'Failed to upload image.' });
+      console.error('mediaController.getMediaById error:', error.message);
+      return res.status(500).json({ success: false, message: 'Failed to fetch media details.' });
+    }
+  },
+
+  updateMedia: async (req, res) => {
+    try {
+      const result = await mediaService.updateMediaAssetMetadata(req.params.id, req.user, req.body || {});
+      if (!result.success) {
+        return res.status(result.status).json({ success: false, message: result.message });
+      }
+
+      return res.status(200).json({ success: true, media: result.media });
+    } catch (error) {
+      console.error('mediaController.updateMedia error:', error.message);
+      return res.status(500).json({ success: false, message: 'Failed to update media.' });
+    }
+  },
+
+  deleteMedia: async (req, res) => {
+    try {
+      const result = await mediaService.deleteMediaAsset(req.params.id, req.user, { force: req.query.force === 'true' });
+      if (!result.success) {
+        return res.status(result.status).json({ success: false, message: result.message, references: result.references });
+      }
+
+      return res.status(200).json({ success: true, id: result.id });
+    } catch (error) {
+      console.error('mediaController.deleteMedia error:', error.message);
+      return res.status(500).json({ success: false, message: 'Failed to delete media.' });
     }
   },
 };

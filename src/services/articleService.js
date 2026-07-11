@@ -1,6 +1,6 @@
 'use strict';
 
-const { Article, User, LocationLink, TaggableItem, Tag, UserLocationRole, sequelize } = require('../models');
+const { Article, User, LocationLink, TaggableItem, Tag, UserLocationRole, MediaAsset, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { ARTICLE_TYPES } = require('../constants/articleTypes');
 const { getDescendantLocationIds, getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
@@ -40,19 +40,103 @@ const shouldHideAuthor = (article, user) => {
 
 const sanitizeArticle = (article, user) => {
   const data = article?.toJSON ? article.toJSON() : article;
+  const enriched = {
+    ...data,
+    bannerImageAltText: data?.coverImage?.altText || null,
+    bannerImageCaption: data?.coverImage?.caption || null,
+    bannerImageCredit: data?.coverImage?.credit || null,
+  };
   if (shouldHideAuthor(data, user)) {
     return {
-      ...data,
+      ...enriched,
       author: null
     };
   }
-  return data;
+  return enriched;
 };
 
 const normalizeStatus = (status) => normalizeEnum(status, ARTICLE_STATUSES, 'Status');
 const normalizeType = (type) => normalizeEnum(type, ARTICLE_TYPES, 'Article type');
 const normalizeTags = (tags) => normalizeStringArray(tags, 'Tags');
 const normalizeBannerImageUrl = (value) => normalizePublicHttpUrl(value, 'Banner image URL', true);
+
+
+const ARTICLE_MEDIA_INCLUDE = {
+  model: MediaAsset,
+  as: 'coverImage',
+  attributes: ['id', 'url', 'variants', 'altText', 'caption', 'credit', 'uploadedByUserId'],
+  required: false,
+};
+
+const normalizeOptionalPositiveInt = (value) => {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) return { error: 'Invalid cover image ID.' };
+  return { value: parsed };
+};
+
+const resolveArticleCoverImage = async (coverImageId, userId, userRole) => {
+  const normalized = normalizeOptionalPositiveInt(coverImageId);
+  if (normalized && normalized.error) return { error: normalized.error };
+  if (!normalized || normalized.value === null) return { value: null };
+
+  const coverImage = await MediaAsset.findByPk(normalized.value);
+  if (!coverImage || coverImage.deletedAt || coverImage.status !== 'active') {
+    return { error: 'Selected cover image was not found.' };
+  }
+
+  const canUseAny = ['admin', 'moderator'].includes(userRole);
+  if (!canUseAny && coverImage.uploadedByUserId !== userId) {
+    return { error: 'You do not have permission to use this cover image.' };
+  }
+
+  const preferredUrl = coverImage.variants?.articleCover?.url || coverImage.url;
+  return { value: { asset: coverImage, bannerUrl: preferredUrl } };
+};
+
+const normalizeCoverMetaField = (value, fieldLabel, maxLength) => {
+  if (value === undefined) return { value: undefined };
+  if (value === null) return { value: null };
+  if (typeof value !== 'string') return { error: `${fieldLabel} must be a string.` };
+  const trimmed = value.trim();
+  if (!trimmed) return { value: null };
+  if (trimmed.length > maxLength) return { error: `${fieldLabel} must be ${maxLength} characters or fewer.` };
+  return { value: trimmed };
+};
+
+const updateCoverMetadata = async (coverImage, metadata = {}) => {
+  if (!coverImage) return { success: true };
+  const { bannerImageAltText, bannerImageCaption, bannerImageCredit } = metadata;
+  let didChange = false;
+
+  const altResult = normalizeCoverMetaField(bannerImageAltText, 'Cover image alt text', 255);
+  if (altResult.error) return { success: false, error: altResult.error };
+  if (altResult.value !== undefined) {
+    coverImage.altText = altResult.value;
+    didChange = true;
+  }
+
+  const captionResult = normalizeCoverMetaField(bannerImageCaption, 'Cover image caption', 500);
+  if (captionResult.error) return { success: false, error: captionResult.error };
+  if (captionResult.value !== undefined) {
+    coverImage.caption = captionResult.value;
+    didChange = true;
+  }
+
+  const creditResult = normalizeCoverMetaField(bannerImageCredit, 'Cover image credit', 255);
+  if (creditResult.error) return { success: false, error: creditResult.error };
+  if (creditResult.value !== undefined) {
+    coverImage.credit = creditResult.value;
+    didChange = true;
+  }
+
+  if (didChange) {
+    await coverImage.save();
+  }
+
+  return { success: true };
+};
+
 
 /**
  * Check if a moderator can manage (update/delete) a given article.
@@ -94,7 +178,7 @@ const canModeratorManageArticle = async (articleId, moderatorUserId) => {
  */
 const createArticle = async (userId, userRole, articleData) => {
   try {
-    const { title, content, summary, category, status, type, tags, bannerImageUrl, hideAuthor, newsApproved,
+    const { title, content, summary, category, status, type, tags, bannerImageUrl, coverImageId, bannerImageAltText, bannerImageCaption, bannerImageCredit, hideAuthor, newsApproved,
       sourceUrl, sourceProvider, sourceMeta, embedUrl, embedHtml } = articleData;
 
     // Validate sourceUrl if provided
@@ -180,7 +264,21 @@ const createArticle = async (userId, userRole, articleData) => {
 
     const articleType = typeResult.value || 'personal';
 
-    const resolvedBannerImageUrl = bannerImageResult.value ?? DEFAULT_BANNER_IMAGE_URL;
+    let resolvedBannerImageUrl = bannerImageResult.value ?? DEFAULT_BANNER_IMAGE_URL;
+    let resolvedCoverImageId = null;
+    const coverImageResult = await resolveArticleCoverImage(coverImageId, userId, userRole);
+    if (coverImageResult.error) {
+      return { success: false, status: 400, message: coverImageResult.error };
+    }
+    if (coverImageResult.value?.asset) {
+      resolvedCoverImageId = coverImageResult.value.asset.id;
+      resolvedBannerImageUrl = coverImageResult.value.bannerUrl || resolvedBannerImageUrl;
+      const coverMetaUpdate = await updateCoverMetadata(coverImageResult.value.asset, { bannerImageAltText, bannerImageCaption, bannerImageCredit });
+      if (!coverMetaUpdate.success) {
+        return { success: false, status: 400, message: coverMetaUpdate.error };
+      }
+    }
+
     const resolvedStatus = statusResult.value || 'draft';
 
     const canApprove = ['admin', 'moderator'].includes(userRole);
@@ -197,6 +295,7 @@ const createArticle = async (userId, userRole, articleData) => {
       publishedAt: resolvedStatus === 'published' ? new Date() : null,
       type: articleType,
       bannerImageUrl: resolvedBannerImageUrl,
+      coverImageId: resolvedCoverImageId,
       hideAuthor: hideAuthorResult.value !== undefined ? hideAuthorResult.value : false,
       newsApprovedAt: isPreApproved ? new Date() : null,
       newsApprovedBy: isPreApproved ? userId : null,
@@ -215,7 +314,7 @@ const createArticle = async (userId, userRole, articleData) => {
         model: User,
         as: 'author',
         attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'isVerified']
-      }]
+      }, ARTICLE_MEDIA_INCLUDE]
     });
 
     const articleWithTags = await attachTags('article', articleWithAuthor.toJSON());
@@ -385,7 +484,7 @@ const getAllArticles = async (queryParams, user) => {
         model: User,
         as: 'author',
         attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'isVerified']
-      }],
+      }, ARTICLE_MEDIA_INCLUDE],
       order: [[sortField, sortDirection]],
       limit: parsedLimit,
       offset: parseInt(offset)
@@ -425,7 +524,7 @@ const getArticleById = async (articleId, user) => {
         model: User,
         as: 'author',
         attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'isVerified']
-      }]
+      }, ARTICLE_MEDIA_INCLUDE]
     });
 
     if (!article) {
@@ -461,7 +560,7 @@ const getArticleById = async (articleId, user) => {
  */
 const updateArticle = async (articleId, user, updateData) => {
   try {
-    const { title, content, summary, category, status, type, tags, bannerImageUrl, hideAuthor, newsApproved,
+    const { title, content, summary, category, status, type, tags, bannerImageUrl, coverImageId, bannerImageAltText, bannerImageCaption, bannerImageCredit, hideAuthor, newsApproved,
       sourceUrl, sourceProvider, sourceMeta, embedUrl, embedHtml } = updateData;
 
     const article = await Article.findByPk(articleId);
@@ -539,6 +638,31 @@ const updateArticle = async (articleId, user, updateData) => {
       article.bannerImageUrl = bannerImageResult.value ?? DEFAULT_BANNER_IMAGE_URL;
     }
 
+    if (coverImageId !== undefined) {
+      const coverImageResult = await resolveArticleCoverImage(coverImageId, user.id, user.role);
+      if (coverImageResult.error) {
+        return { success: false, status: 400, message: coverImageResult.error };
+      }
+      if (coverImageResult.value?.asset) {
+        article.coverImageId = coverImageResult.value.asset.id;
+        article.bannerImageUrl = coverImageResult.value.bannerUrl || article.bannerImageUrl;
+        const coverMetaUpdate = await updateCoverMetadata(coverImageResult.value.asset, { bannerImageAltText, bannerImageCaption, bannerImageCredit });
+      if (!coverMetaUpdate.success) {
+        return { success: false, status: 400, message: coverMetaUpdate.error };
+      }
+      } else {
+        article.coverImageId = null;
+      }
+    } else if (article.coverImageId && (bannerImageAltText !== undefined || bannerImageCaption !== undefined || bannerImageCredit !== undefined)) {
+      const existingAsset = await MediaAsset.findByPk(article.coverImageId);
+      if (existingAsset) {
+        const coverMetaUpdate = await updateCoverMetadata(existingAsset, { bannerImageAltText, bannerImageCaption, bannerImageCredit });
+        if (!coverMetaUpdate.success) {
+          return { success: false, status: 400, message: coverMetaUpdate.error };
+        }
+      }
+    }
+
     if (hideAuthor !== undefined) {
       const hideAuthorResult = normalizeBoolean(hideAuthor, 'hideAuthor');
       if (hideAuthorResult.error) {
@@ -614,7 +738,7 @@ const updateArticle = async (articleId, user, updateData) => {
         model: User,
         as: 'author',
         attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'isVerified']
-      }]
+      }, ARTICLE_MEDIA_INCLUDE]
     });
 
     const updatedArticleData = await attachTags('article', updatedArticle.toJSON());

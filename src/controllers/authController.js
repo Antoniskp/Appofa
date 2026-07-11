@@ -657,23 +657,14 @@ const authController = {
       if (!req.file) {
         return res.status(400).json({ success: false, message: 'No file uploaded.' });
       }
-      const { processAvatar } = require('../services/imageProcessingService');
-      const { saveAvatar } = require('../services/imageStorageService');
-      let optimizedBuffer;
-      try {
-        optimizedBuffer = await processAvatar(req.file.buffer);
-      } catch (err) {
-        console.error('Avatar processing failed:', err);
-        const isHeic = /^image\/hei[cf](-sequence)?$/.test(req.file.mimetype || '');
-        if (isHeic) {
-          return res.status(422).json({
-            success: false,
-            message: 'HEIC/HEIF images could not be processed on this server. Please convert to JPEG, PNG, or WebP and try again.',
-          });
-        }
-        return res.status(422).json({ success: false, message: 'Invalid or corrupt image.' });
+
+      const mediaService = require('../services/mediaService');
+      const result = await mediaService.uploadAvatarImage(req.file, req.user, { altText: 'Profile avatar' });
+      if (!result.success) {
+        return res.status(result.status).json({ success: false, message: result.message, quota: result.quota });
       }
-      const avatarUrl = saveAvatar(optimizedBuffer, req.user.id);
+
+      const avatarUrl = result.avatarUrl;
       const user = await User.findByPk(req.user.id);
       if (!user) {
         return res.status(404).json({ success: false, message: 'User not found.' });
@@ -686,10 +677,10 @@ const authController = {
       return res.status(200).json({
         success: true,
         message: 'Avatar uploaded successfully.',
-        data: { avatarUrl, avatarUpdatedAt: user.avatarUpdatedAt }
+        data: { avatarUrl, avatarUpdatedAt: user.avatarUpdatedAt, media: result.media, quota: result.quota }
       });
     } catch (error) {
-      console.error('Upload avatar error:', error);
+      console.error('Upload avatar error:', error.message);
       return res.status(500).json({ success: false, message: 'Error uploading avatar.' });
     }
   },

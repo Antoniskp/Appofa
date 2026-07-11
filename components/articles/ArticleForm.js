@@ -40,6 +40,10 @@ export default function ArticleForm({
     content: '',
     summary: '',
     bannerImageUrl: '',
+    coverImageId: '',
+    bannerImageAltText: '',
+    bannerImageCaption: '',
+    bannerImageCredit: '',
     type: 'personal',
     category: '',
     tags: [],
@@ -73,6 +77,10 @@ export default function ArticleForm({
         content: article.content || '',
         summary: article.summary || '',
         bannerImageUrl: article.bannerImageUrl || '',
+        coverImageId: article.coverImageId ? String(article.coverImageId) : '',
+        bannerImageAltText: article.coverImage?.altText || '',
+        bannerImageCaption: article.coverImage?.caption || '',
+        bannerImageCredit: article.coverImage?.credit || '',
         type: article.type || 'personal',
         category: article.category || '',
         tags: Array.isArray(article.tags) ? article.tags : [],
@@ -259,8 +267,12 @@ export default function ArticleForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { approved, ...rest } = formData;
-    onSubmit({ ...rest, newsApproved: approved });
+    const { approved, coverImageId, ...rest } = formData;
+    onSubmit({
+      ...rest,
+      coverImageId: coverImageId ? Number(coverImageId) : null,
+      newsApproved: approved,
+    });
   };
 
   const updateContent = (nextContent) => {
@@ -499,10 +511,25 @@ export default function ArticleForm({
       {!formData.sourceUrl && (
         <ArticleBannerImageField
           value={formData.bannerImageUrl}
+          coverImageId={formData.coverImageId}
+          altText={formData.bannerImageAltText}
+          caption={formData.bannerImageCaption}
+          credit={formData.bannerImageCredit}
           onChange={handleInputChange}
           canManageMedia={canManageArticleMedia}
           label={tArticles('form_banner_url_label')}
           placeholder={tArticles('form_banner_url_placeholder')}
+          uiText={{
+            upload: tArticles('media_upload_button'),
+            uploading: tArticles('media_uploading_button'),
+            refresh: tArticles('media_refresh_button'),
+            loading: tArticles('media_loading_button'),
+            searchPlaceholder: tArticles('media_search_placeholder'),
+            altLabel: tArticles('media_alt_label'),
+            captionLabel: tArticles('media_caption_label'),
+            creditLabel: tArticles('media_credit_label'),
+            emptyLibrary: tArticles('media_empty_library'),
+          }}
         />
       )}
 

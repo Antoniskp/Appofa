@@ -14,6 +14,7 @@ const {
   passwordResetAttemptLimiter,
 } = require('../middleware/rateLimiter');
 const { avatarUpload } = require('../middleware/upload');
+const { MAX_IMAGE_BYTES } = require('../services/mediaService');
 
 // CSRF token refresh - allows authenticated users to get a fresh CSRF token
 router.get('/csrf', optionalAuthMiddleware, apiLimiter, authMiddleware, authController.refreshCsrf);
@@ -67,7 +68,8 @@ router.post('/me/avatar', uploadLimiter, authMiddleware, csrfProtection, (req, r
   avatarUpload.single('avatar')(req, res, (err) => {
     if (!err) return next();
     const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : (err.status || 400);
-    const message = err.code === 'LIMIT_FILE_SIZE' ? 'File too large. Maximum size is 10 MB.' : err.message;
+    const maxMb = Math.max(1, Math.floor(MAX_IMAGE_BYTES / (1024 * 1024)));
+    const message = err.code === 'LIMIT_FILE_SIZE' ? `File too large. Maximum size is ${maxMb} MB.` : err.message;
     return res.status(status).json({ success: false, message });
   });
 }, authController.uploadAvatar);

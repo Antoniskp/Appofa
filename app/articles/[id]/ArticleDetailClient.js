@@ -181,12 +181,13 @@ export default function ArticleDetailPage() {
   }
 
   const defaultBannerImageUrl = '/images/branding/news default.png';
-  const bannerImageUrl = article.bannerImageUrl || defaultBannerImageUrl;
+  const bannerImageUrl = article.coverImage?.variants?.articleCover?.url || article.bannerImageUrl || defaultBannerImageUrl;
   const handleBannerError = (event) => {
     event.currentTarget.onerror = null;
     event.currentTarget.src = defaultBannerImageUrl;
   };
   const authorLabel = article.hideAuthor ? tCommon('anonymous') : (article.author?.username || tCommon('unknown'));
+  const bannerAltText = article.bannerImageAltText || `${article.title} banner`;
 
   return (
     <>
@@ -213,10 +214,16 @@ export default function ArticleDetailPage() {
           ) : (
             <img
               src={bannerImageUrl}
-                alt={tArticles('article_banner_alt', { title: article.title })}
+                alt={bannerAltText}
               className="w-full h-64 object-cover"
               onError={handleBannerError}
             />
+          )}
+          {(article.bannerImageCaption || article.bannerImageCredit) && (
+            <div className="border-b border-gray-100 bg-gray-50 px-8 py-3 text-sm text-gray-600">
+              {article.bannerImageCaption && <span>{article.bannerImageCaption}</span>}
+              {article.bannerImageCredit && <span className="ml-2 text-gray-500">© {article.bannerImageCredit}</span>}
+            </div>
           )}
           <div className="p-8">
             {/* Article Header */}

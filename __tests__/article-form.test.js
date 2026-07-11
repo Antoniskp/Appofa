@@ -407,10 +407,10 @@ describe('ArticleForm Component', () => {
       submitError: ''
     });
 
-    expect(container.textContent).toContain('Upload photo');
-    expect(container.textContent).toContain('Refresh library');
+    expect(container.textContent).toContain('Ανέβασμα φωτογραφίας');
+    expect(container.textContent).toContain('Ανανέωση βιβλιοθήκης');
     expect(container.querySelector('input[type="file"]')).toBeTruthy();
-    expect(mockMediaAPI.list).toHaveBeenCalledWith({ usageType: 'article_banner', limit: 12 });
+    expect(mockMediaAPI.list).toHaveBeenCalledWith({ usageType: 'article_cover', shared: 'true', limit: 12, search: '' });
 
     await act(async () => { root.unmount(); });
   });

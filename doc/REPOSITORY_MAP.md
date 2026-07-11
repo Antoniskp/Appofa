@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-07-01
+> **Last updated**: 2026-07-11
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
@@ -21,6 +21,8 @@ This instruction is permanent and must never be removed.
 > Country-entry UX note: `/` is the universal entry point (no automatic IP-based redirect). `proxy.js` now keeps country detection as metadata/cookies only, while guest non-GR hints are handled client-side by `components/geo/CountryEntryPopup.js` on `app/page.js` with persisted decisions in `localStorage` (`appofa_country_entry_decision_v1`). `app/country/[code]/page.js` persists explicit country selection and renders the main homepage structure.
 >
 > Backend startup convention: `require('dotenv').config()` is the very first statement in `src/index.js` so that all subsequent module-level `process.env` reads (e.g. `FRONTEND_URL` in `src/config/securityHeaders.js`) get the correct production values.
+>
+> Media library update (2026-07-11): `MediaAsset` is now the unified upload model with variant metadata (`articleCover`/`thumbnail`/`avatar`), quota-aware uploads, and orphan-tracking fields. Articles now support `coverImageId` relation (while preserving `bannerImageUrl` fallback). Media routes include `POST /api/media/upload`, `GET /api/media/:id`, `PATCH /api/media/:id`, and `DELETE /api/media/:id` (legacy `POST /api/media/articles/images` remains). Avatar upload (`POST /api/auth/me/avatar`) now reuses the same shared media pipeline. Dry-run orphan cleanup script: `npm run media:cleanup` (`src/scripts/media-orphan-cleanup.js`).
 
 ---
 

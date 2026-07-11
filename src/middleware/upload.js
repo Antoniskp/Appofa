@@ -12,8 +12,8 @@ const ALLOWED_MIMES = new Set([
   'image/heif-sequence',
 ]);
 
-/** 10 MB in bytes */
-const AVATAR_MAX_SIZE = 10 * 1024 * 1024;
+/** Shared media max-size (defaults to 8 MB) */
+const AVATAR_MAX_SIZE = Math.max(1, Number(process.env.MEDIA_MAX_FILE_BYTES || (8 * 1024 * 1024)));
 /** 10 MB in bytes */
 const LOCATION_MAX_SIZE = 10 * 1024 * 1024;
 

@@ -154,12 +154,13 @@ export default function NewsDetailPage() {
   }
 
   const defaultBannerImageUrl = '/images/branding/news default.png';
-  const bannerImageUrl = article.bannerImageUrl || defaultBannerImageUrl;
+  const bannerImageUrl = article.coverImage?.variants?.articleCover?.url || article.bannerImageUrl || defaultBannerImageUrl;
   const handleBannerError = (event) => {
     event.currentTarget.onerror = null;
     event.currentTarget.src = defaultBannerImageUrl;
   };
   const authorLabel = article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown');
+  const bannerAltText = article.bannerImageAltText || `${article.title} banner`;
 
   // For video articles the embed becomes the hero element at the top of the
   // card; the static banner image is hidden so the user lands directly on the
@@ -193,10 +194,16 @@ export default function NewsDetailPage() {
           ) : (
             <img
               src={bannerImageUrl}
-              alt={`${article.title} banner`}
+              alt={bannerAltText}
               className="w-full h-64 object-cover"
               onError={handleBannerError}
             />
+          )}
+          {(article.bannerImageCaption || article.bannerImageCredit) && (
+            <div className="border-b border-gray-100 bg-gray-50 px-8 py-3 text-sm text-gray-600">
+              {article.bannerImageCaption && <span>{article.bannerImageCaption}</span>}
+              {article.bannerImageCredit && <span className="ml-2 text-gray-500">© {article.bannerImageCredit}</span>}
+            </div>
           )}
           <div className="p-8">
             {/* Article Header */}

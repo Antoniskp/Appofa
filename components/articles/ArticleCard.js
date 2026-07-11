@@ -68,7 +68,8 @@ export default function ArticleCard({ article, variant = 'grid' }) {
   const tArticles = useTranslations('articles');
   const tCommon = useTranslations('common');
   const defaultBannerImageUrl = '/images/branding/news default.png';
-  const bannerImageUrl = article.bannerImageUrl || defaultBannerImageUrl;
+  const bannerImageUrl = article.coverImage?.variants?.thumbnail?.url || article.bannerImageUrl || defaultBannerImageUrl;
+  const bannerAltText = article.bannerImageAltText || (article.title ? `${article.title} banner` : 'Article banner');
   const createdAt = new Date(article.createdAt);
   const formattedDate = createdAt.toLocaleDateString('el-GR');
   const formattedTime = createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -104,7 +105,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
     return (
       <ImageTopCard
         image={thumbnailUrl}
-        imageAlt={`${article.title} video thumbnail`}
+        imageAlt={bannerAltText}
         imageFallback={defaultBannerImageUrl}
         imageClassName="h-32"
         href={articleHref}
@@ -158,7 +159,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
     return (
       <ImageCard
         image={bannerImageUrl}
-        imageAlt={`${article.title} banner`}
+        imageAlt={bannerAltText}
         imageFallback={defaultBannerImageUrl}
         href={articleHref}
         hoverable
@@ -216,7 +217,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
   return (
     <ImageTopCard
       image={bannerImageUrl}
-      imageAlt={`${article.title} banner`}
+      imageAlt={bannerAltText}
       imageFallback={defaultBannerImageUrl}
       imageClassName="h-32"
       href={articleHref}
