@@ -36,12 +36,12 @@ describe('HomeActionLanes registration prompts', () => {
   test('shows a registration bridge for guests after low-friction actions', async () => {
     const { container, root } = await renderActionLanes();
 
-    expect(container.textContent).toContain('Επόμενο βήμα');
-    expect(container.textContent).toContain('Δημιούργησε προφίλ όταν βρεις κάτι που σε αφορά.');
-    expect(container.textContent).toContain('Αποθήκευση περιοχής');
+    expect(container.textContent).toContain('Κράτησε τη συμμετοχή σου');
+    expect(container.textContent).toContain('Δημιούργησε προφίλ και συνέχισε από εκεί που σταμάτησες.');
+    expect(container.textContent).toContain('Ακολούθησε την περιοχή');
     expect(container.querySelector('a[href="/register"]')).toBeTruthy();
     expect(container.querySelector('a[href="/newsletter"]')).toBeTruthy();
-    expect(container.textContent).toContain('Κόμμα ή οργάνωση; Έλα μαζί μας');
+    expect(container.textContent).toContain('Εκπροσωπείς κόμμα ή οργάνωση;');
 
     await act(async () => {
       root.unmount();
@@ -54,8 +54,8 @@ describe('HomeActionLanes registration prompts', () => {
       homeLocation: { slug: 'athens' },
     });
 
-    expect(container.textContent).not.toContain('Επόμενο βήμα');
-    expect(container.textContent).not.toContain('Δημιούργησε προφίλ όταν βρεις κάτι που σε αφορά.');
+    expect(container.textContent).not.toContain('Κράτησε τη συμμετοχή σου');
+    expect(container.textContent).not.toContain('Δημιούργησε προφίλ και συνέχισε από εκεί που σταμάτησες.');
     expect(container.querySelector('a[href="/newsletter"]')).toBeFalsy();
     expect(container.querySelector('a[href="/locations/athens"]')).toBeTruthy();
 

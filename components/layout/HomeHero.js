@@ -15,8 +15,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 const DEFAULT_BG_COLOR = '#1a2a3a';
-const DEFAULT_TITLE = 'Η φωνή των ανεξάρτητων, οι αποφάσεις της κοινότητας.';
-const DEFAULT_SUBTITLE = 'Δίνουμε ορατότητα σε ανεξάρτητους υποψηφίους και ενεργούς πολίτες με εργαλεία για κοινές αποφάσεις, ενώ κόμματα και οργανώσεις συμμετέχουν ισότιμα στον δημόσιο διάλογο.';
+const DEFAULT_TITLE = 'Δες τι συμβαίνει. Πάρε θέση. Πρότεινε λύσεις.';
+const DEFAULT_SUBTITLE = 'Ανακάλυψε τι αφορά την περιοχή σου, συμμετείχε σε ανοιχτές ψηφοφορίες και δώσε ορατότητα σε ιδέες, προβλήματα και ανθρώπους.';
 const SLIDE_INTERVAL_MS = 5000;
 
 function StatSkeleton() {
@@ -169,7 +169,7 @@ export default function HomeHero() {
               )}
 
               <p className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-50 backdrop-blur">
-                Χώρος ανεξάρτητων φωνών · Εργαλείο αποφάσεων
+                Ενημέρωση · Συμμετοχή · Αποφάσεις
               </p>
 
               <div
@@ -260,7 +260,7 @@ export default function HomeHero() {
                 <div className="rounded-lg border border-white/20 bg-white/[0.12] p-4 shadow-2xl shadow-black/10 backdrop-blur-md animate-fade-in">
                   <div className="mb-4 border-b border-white/15 pb-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.12em] text-cyan-100">Η κοινότητα σε αριθμούς</p>
-                    <p className="mt-1 text-sm text-white/75">Ψηφοφορίες, προτάσεις και συμμετοχή που μεγαλώνουν καθημερινά.</p>
+                    <p className="mt-1 text-sm text-white/75">Ψηφοφορίες, προτάσεις και ενεργοί πολίτες.</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                   {statsLoading ? (

@@ -649,6 +649,23 @@
       "guest_cta": "Get higher limits by creating an account:",
       "sign_up": "Create account",
       "sign_in": "Sign in"
+    },
+    "yes": "Yes",
+    "no": "No",
+    "users_label": "Users",
+    "moderator_label": "Moderator",
+    "capital_label": "Capital",
+    "explore_locations": "Explore locations",
+    "location_selector": {
+      "select_country": "Select a country",
+      "select_prefecture": "Select a prefecture",
+      "select_city": "Select a city/municipality",
+      "label_country": "Country",
+      "label_prefecture": "Prefecture",
+      "label_city": "City/Municipality",
+      "no_prefectures": "No prefectures available",
+      "no_municipalities": "No municipalities available",
+      "selected_label": "Selected"
     }
   },
   "footer": {
@@ -1059,7 +1076,8 @@
     "role_assign_must_be_user": "Please select a registered platform user for this role.",
     "role_assign_must_be_person": "Please select a person profile (unclaimed) for this role.",
     "unassign": "Remove assignment",
-    "role_title_placeholder": "e.g. President, Director, Professor"
+    "role_title_placeholder": "e.g. President, Director, Professor",
+    "is_required": "is required"
   },
   "static_pages": {
     "instructions_title": "Instructions",

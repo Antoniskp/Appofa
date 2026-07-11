@@ -649,6 +649,23 @@
       "guest_cta": "Obține limite mai mari creând un cont:",
       "sign_up": "Creează cont",
       "sign_in": "Conectare"
+    },
+    "yes": "Da",
+    "no": "Nu",
+    "users_label": "Utilizatori",
+    "moderator_label": "Moderator",
+    "capital_label": "Capitală",
+    "explore_locations": "Explorați locațiile",
+    "location_selector": {
+      "select_country": "Selectați o țară",
+      "select_prefecture": "Selectați un județ",
+      "select_city": "Selectați un municipiu/oraș",
+      "label_country": "Țară",
+      "label_prefecture": "Județ/Regiune",
+      "label_city": "Municipiu/Oraș",
+      "no_prefectures": "Niciun județ disponibil",
+      "no_municipalities": "Niciun municipiu disponibil",
+      "selected_label": "Selectat"
     }
   },
   "footer": {
@@ -1059,7 +1076,8 @@
     "role_assign_must_be_user": "Vă rugăm să selectați un utilizator înregistrat pe platformă pentru acest rol.",
     "role_assign_must_be_person": "Vă rugăm să selectați un profil de persoană (nerevendicat) pentru acest rol.",
     "unassign": "Elimină atribuirea",
-    "role_title_placeholder": "ex. Președinte, Director, Profesor"
+    "role_title_placeholder": "ex. Președinte, Director, Profesor",
+    "is_required": "este obligatoriu"
   },
   "static_pages": {
     "instructions_title": "Instructions",

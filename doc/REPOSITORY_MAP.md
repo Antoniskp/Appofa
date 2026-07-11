@@ -54,7 +54,7 @@ Appofa/
 ├── proxy.js                 # Next.js edge proxy (country metadata/cookies, blocked-country rules, no home auto-redirect)
 ├── i18n.js                  # next-intl request config (cookie-based locale/messages)
 ├── config/map-data/         # Political mapping datasets (region/district metadata + GeoJSON geometry)
-├── messages/                # next-intl locale messages (el.json, en.json, ro.json; namespaces: common/nav/footer/home/auth/articles/news/profile/admin/editor/polls/organizations/static_pages/candidates/onboarding/moderator/creator)
+├── messages/                # next-intl locale messages (el.json, en.json, ro.json; 1968 leaf keys each, all in parity; namespaces: common/nav/footer/home/auth/articles/news/profile/admin/editor/polls/organizations/static_pages/candidates/onboarding/moderator/creator/cameras/users/country_page/independents/discover_people/funding/gdpr/governmentSnapshot/civicQuestions; `common.location_selector.*` holds CascadingLocationSelector UI labels; parity enforced by `__tests__/i18n-romanian-support.test.js`)
 ├── src/                    # Backend (Express + Sequelize)
 │   ├── controllers/        # Request handlers (23 files)
 │   ├── services/           # Business logic (15 files)
@@ -507,7 +507,7 @@ Appofa/
 
 ## Frontend Pages (142)
 
-> i18n note: core public pages (`/`, `/login`, `/articles`, `/news`, `/profile`, `/admin`, `/editor`, `/polls`, `/instructions`, `/rules`, `/mission`, `/contribute`, `/contact`, `/candidates`) and shared nav/footer/article cards now use `useTranslations(...)`.
+> i18n note: core public pages (`/`, `/login`, `/articles`, `/news`, `/profile`, `/admin`, `/editor`, `/polls`, `/instructions`, `/rules`, `/mission`, `/contribute`, `/contact`, `/candidates`) and shared nav/footer/article cards now use `useTranslations(...)`; `CascadingLocationSelector` and `GreeceBoundaryMap` RegionInfoCard are also fully wired to next-intl (`common.location_selector.*` + `common.users_label/moderator_label/capital_label/yes/no/explore_locations`).
 
 ### Main Pages
 | Route | Description |
