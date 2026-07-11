@@ -33,6 +33,7 @@
 import { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false });
 
@@ -257,6 +258,7 @@ function Skeleton() {
  * It sits in the React layer (outside Leaflet) so it can use Tailwind and Next.js <Link>.
  */
 function RegionInfoCard({ region, onClose }) {
+  const t = useTranslations('common');
   if (!region) return null;
   const href = region.slug
     ? `/locations/${region.slug}`
@@ -279,26 +281,26 @@ function RegionInfoCard({ region, onClose }) {
         </button>
       </div>
       {region.capital && (
-        <p className="text-xs text-gray-500 mb-2">Πρωτεύουσα: {region.capital}</p>
+        <p className="text-xs text-gray-500 mb-2">{t('capital_label')}: {region.capital}</p>
       )}
       <div className="mb-2 grid grid-cols-2 gap-2 text-xs">
         <div className="rounded-md bg-blue-50 px-2 py-1 text-blue-800">
           <span className="block font-semibold">{region.userCount ?? 0}</span>
-          <span>Users</span>
+          <span>{t('users_label')}</span>
         </div>
         <div className="rounded-md bg-emerald-50 px-2 py-1 text-emerald-800">
-          <span className="block font-semibold">{moderatorName ? 'Yes' : 'No'}</span>
-          <span>Moderator</span>
+          <span className="block font-semibold">{moderatorName ? t('yes') : t('no')}</span>
+          <span>{t('moderator_label')}</span>
         </div>
       </div>
       {moderatorName && (
-        <p className="mb-2 truncate text-xs text-gray-500">Moderator: {moderatorName}</p>
+        <p className="mb-2 truncate text-xs text-gray-500">{t('moderator_label')}: {moderatorName}</p>
       )}
       <Link
         href={href}
         className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors"
       >
-        Εξερεύνησε περιοχές
+        {t('explore_locations')}
         <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
           <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
         </svg>
