@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
 import { articleAPI } from '@/lib/api';
@@ -28,12 +29,14 @@ function VideoGridSkeleton() {
   );
 }
 
-export default function VideosPage() {
+function VideosContent() {
   const tCommon = useTranslations('common');
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get('search') || '';
 
   // Filter state
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialSearch);
   const [category, setCategory] = useState('');
   const [locationId, setLocationId] = useState(null);
   const [categoryCounts, setCategoryCounts] = useState({});
@@ -249,5 +252,19 @@ export default function VideosPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function VideosPage() {
+  const tCommon = useTranslations('common');
+
+  return (
+    <Suspense fallback={
+      <div className="bg-gray-50 min-h-screen py-8 flex items-center justify-center">
+        <p className="text-gray-600">{tCommon('loading')}</p>
+      </div>
+    }>
+      <VideosContent />
+    </Suspense>
   );
 }
