@@ -909,10 +909,18 @@
     "media_cleanup_report_button": "Raport cleanup dry-run",
     "media_cleanup_report_title": "Raport cleanup dry-run",
     "media_cleanup_report_summary": "Au fost găsite {total} active candidate orfane.",
+    "media_cleanup_result_title": "Rezultat cleanup",
     "media_load_asset_error": "Încărcarea activului media a eșuat.",
     "media_save_asset_error": "Salvarea metadatelor a eșuat.",
     "media_delete_asset_error": "Ștergerea activului media a eșuat.",
-    "media_cleanup_report_error": "Generarea raportului cleanup a eșuat."
+    "media_cleanup_report_error": "Generarea raportului cleanup a eșuat.",
+    "media_cleanup_run_button": "Șterge activele orfane",
+    "media_cleanup_running_button": "Se șterge...",
+    "media_cleanup_deleted_summary": "{total} active orfane au fost șterse.",
+    "media_cleanup_confirm_title": "Șterge media orfane",
+    "media_cleanup_confirm_message": "Ștergi definitiv {total} active media orfane din stocare și le arhivezi înregistrările?",
+    "media_cleanup_confirm_button": "Șterge orfanele",
+    "media_cleanup_run_error": "Rularea cleanup-ului media a eșuat."
   },
   "editor": {
     "title": "Editor",

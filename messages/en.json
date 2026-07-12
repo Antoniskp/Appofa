@@ -909,10 +909,18 @@
     "media_cleanup_report_button": "Dry-run cleanup report",
     "media_cleanup_report_title": "Cleanup dry-run report",
     "media_cleanup_report_summary": "{total} orphan candidate assets found.",
+    "media_cleanup_result_title": "Cleanup result",
     "media_load_asset_error": "Failed to load media asset.",
     "media_save_asset_error": "Failed to save metadata.",
     "media_delete_asset_error": "Failed to delete media asset.",
-    "media_cleanup_report_error": "Failed to generate cleanup report."
+    "media_cleanup_report_error": "Failed to generate cleanup report.",
+    "media_cleanup_run_button": "Delete orphaned assets",
+    "media_cleanup_running_button": "Deleting...",
+    "media_cleanup_deleted_summary": "{total} orphan assets deleted.",
+    "media_cleanup_confirm_title": "Delete orphaned media",
+    "media_cleanup_confirm_message": "Permanently delete {total} orphan media assets from storage and archive their records?",
+    "media_cleanup_confirm_button": "Delete orphaned assets",
+    "media_cleanup_run_error": "Failed to run media cleanup."
   },
   "editor": {
     "title": "Editor",
