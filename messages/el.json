@@ -909,10 +909,18 @@
     "media_cleanup_report_button": "Αναφορά dry-run cleanup",
     "media_cleanup_report_title": "Αναφορά dry-run cleanup",
     "media_cleanup_report_summary": "Βρέθηκαν {total} υποψήφια ορφανά αρχεία.",
+    "media_cleanup_result_title": "Αποτέλεσμα cleanup",
     "media_load_asset_error": "Αποτυχία φόρτωσης αρχείου.",
     "media_save_asset_error": "Αποτυχία αποθήκευσης μεταδεδομένων.",
     "media_delete_asset_error": "Αποτυχία διαγραφής αρχείου.",
-    "media_cleanup_report_error": "Αποτυχία δημιουργίας αναφοράς cleanup."
+    "media_cleanup_report_error": "Αποτυχία δημιουργίας αναφοράς cleanup.",
+    "media_cleanup_run_button": "Διαγραφή ορφανών αρχείων",
+    "media_cleanup_running_button": "Διαγραφή...",
+    "media_cleanup_deleted_summary": "Διαγράφηκαν {total} ορφανά αρχεία.",
+    "media_cleanup_confirm_title": "Διαγραφή ορφανών media",
+    "media_cleanup_confirm_message": "Να διαγραφούν οριστικά {total} ορφανά media από τον χώρο αποθήκευσης και να αρχειοθετηθούν οι εγγραφές τους;",
+    "media_cleanup_confirm_button": "Διαγραφή ορφανών",
+    "media_cleanup_run_error": "Αποτυχία εκτέλεσης cleanup media."
   },
   "editor": {
     "title": "Σύνταξη",

@@ -43,6 +43,7 @@ const handleUpload = (req, res, next) => {
 
 router.get('/admin/stats', apiLimiter, authMiddleware, checkRole('admin'), mediaController.getAdminStats);
 router.get('/admin/cleanup-report', apiLimiter, authMiddleware, checkRole('admin'), mediaController.getAdminCleanupReport);
+router.post('/admin/cleanup', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, mediaController.runAdminCleanup);
 router.get('/', apiLimiter, authMiddleware, mediaController.listMedia);
 router.get('/:id', apiLimiter, authMiddleware, mediaController.getMediaById);
 router.post('/upload', uploadLimiter, authMiddleware, csrfProtection, handleUpload, mediaController.uploadMedia);

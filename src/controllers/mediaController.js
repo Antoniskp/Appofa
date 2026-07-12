@@ -123,6 +123,19 @@ const mediaController = {
       return res.status(500).json({ success: false, message: 'Failed to generate cleanup report.' });
     }
   },
+
+  runAdminCleanup: async (req, res) => {
+    try {
+      const result = await mediaService.runAdminMediaCleanup(req.user, req.body || {});
+      if (!result.success) {
+        return res.status(result.status).json({ success: false, message: result.message });
+      }
+      return res.status(200).json({ success: true, report: result.report });
+    } catch (error) {
+      console.error('mediaController.runAdminCleanup error:', error.message);
+      return res.status(500).json({ success: false, message: 'Failed to run media cleanup.' });
+    }
+  },
 };
 
 module.exports = mediaController;

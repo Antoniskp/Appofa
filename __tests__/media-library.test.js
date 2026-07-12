@@ -30,6 +30,7 @@ describe('Media library integration', () => {
   let editorId;
   let uploadedMediaId;
   let adminToken;
+  let adminId;
   let regularToken;
   let regularId;
   let uploadedSharedMediaId;
@@ -63,6 +64,9 @@ describe('Media library integration', () => {
       firstNameNative: 'Media',
       lastNameNative: 'Admin',
     });
+    const admin = await User.findOne({ where: { email: 'mediaadmin@test.com' } });
+    adminId = admin.id;
+
     await User.create({
       username: 'mediauser',
       email: 'mediauser@test.com',
@@ -257,6 +261,65 @@ describe('Media library integration', () => {
     expect(cleanupResponse.status).toBe(200);
     expect(cleanupResponse.body.success).toBe(true);
     expect(cleanupResponse.body.report).toHaveProperty('cleanup');
+  });
+
+  test('admin cleanup endpoint requires confirmation and archives eligible orphan assets', async () => {
+    const orphan = await MediaAsset.create({
+      storageProvider: 'local',
+      storageKey: 'media/test-old-orphan.webp',
+      url: '/uploads/media/test-old-orphan.webp',
+      variants: {
+        thumbnail: {
+          url: '/uploads/media/test-old-orphan.webp',
+          storageKey: 'media/test-old-orphan.webp',
+          width: 64,
+          height: 64,
+          size: 128,
+          mimeType: 'image/webp',
+        },
+      },
+      originalName: 'test-old-orphan.webp',
+      mimeType: 'image/webp',
+      detectedMimeType: 'image/webp',
+      size: 128,
+      width: 64,
+      height: 64,
+      usageType: 'shared',
+      entityType: 'shared',
+      status: 'active',
+      isOrphaned: true,
+      orphanedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      uploadedByUserId: adminId,
+    });
+
+    const rejectedCsrfToken = 'csrf-admin-cleanup-rejected';
+    storeCsrfToken(rejectedCsrfToken, adminId);
+    const rejectedResponse = await request(app)
+      .post('/api/media/admin/cleanup')
+      .set('Authorization', 'Bearer ' + adminToken)
+      .set(csrfHeaderFor(rejectedCsrfToken))
+      .send({ olderThanDays: 1 });
+
+    expect(rejectedResponse.status).toBe(400);
+    expect(rejectedResponse.body.success).toBe(false);
+
+    const confirmedCsrfToken = 'csrf-admin-cleanup-confirmed';
+    storeCsrfToken(confirmedCsrfToken, adminId);
+    const cleanupResponse = await request(app)
+      .post('/api/media/admin/cleanup')
+      .set('Authorization', 'Bearer ' + adminToken)
+      .set(csrfHeaderFor(confirmedCsrfToken))
+      .send({ olderThanDays: 1, confirm: 'delete-orphaned-media' });
+
+    expect(cleanupResponse.status).toBe(200);
+    expect(cleanupResponse.body.success).toBe(true);
+    expect(cleanupResponse.body.report.cleanup.dryRun).toBe(false);
+    expect(cleanupResponse.body.report.cleanup.deleted).toBeGreaterThanOrEqual(1);
+    expect(cleanupResponse.body.report.cleanup.candidates.some((candidate) => candidate.id === orphan.id)).toBe(true);
+
+    const archived = await MediaAsset.findByPk(orphan.id);
+    expect(archived.status).toBe('archived');
+    expect(archived.deletedAt).toBeTruthy();
   });
 
   test('regular users can upload shared poll-option media but not article covers', async () => {

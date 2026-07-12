@@ -36,6 +36,8 @@ function AdminMediaPageContent() {
   const [metadataForm, setMetadataForm] = useState({ altText: '', caption: '', credit: '', tags: '' });
   const [actionError, setActionError] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [cleanupOpen, setCleanupOpen] = useState(false);
+  const [cleanupRunning, setCleanupRunning] = useState(false);
   const [cleanupReport, setCleanupReport] = useState(null);
 
   const { data: statsData, loading: statsLoading, refetch: refetchStats } = useAsyncData(
@@ -127,11 +129,34 @@ function AdminMediaPageContent() {
     }
   };
 
+  const runCleanup = async () => {
+    setActionError('');
+    setCleanupRunning(true);
+    try {
+      const response = await mediaAPI.runAdminCleanup({
+        olderThanDays: 14,
+        confirm: 'delete-orphaned-media',
+      });
+      setCleanupReport(response.report || null);
+      setCleanupOpen(false);
+      setSelectedAssetId(null);
+      await refetch();
+      await refetchStats();
+    } catch (error) {
+      setActionError(error.message || t('media_cleanup_run_error'));
+      setCleanupOpen(false);
+    } finally {
+      setCleanupRunning(false);
+    }
+  };
+
   const stats = statsData || {};
   const quotaConfig = stats.quotaConfig || {};
   const uploaders = stats.largestUploaders || [];
   const mediaItems = listData?.media || [];
   const pagination = listData?.pagination || { page: 1, totalPages: 1, total: 0 };
+  const cleanupCandidates = cleanupReport?.cleanup?.candidates || [];
+  const cleanupDeleted = cleanupReport?.cleanup?.deleted || 0;
 
   return (
     <AdminLayout>
@@ -290,9 +315,44 @@ function AdminMediaPageContent() {
           )}
 
           {cleanupReport ? (
-            <div className="rounded-lg border bg-white p-4">
-              <h4 className="font-semibold mb-2">{t('media_cleanup_report_title')}</h4>
-              <p className="text-sm text-gray-600">{t('media_cleanup_report_summary', { total: cleanupReport.cleanup?.candidates?.length || 0 })}</p>
+            <div className="rounded-lg border bg-white p-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h4 className="font-semibold mb-1">
+                    {cleanupDeleted > 0 ? t('media_cleanup_result_title') : t('media_cleanup_report_title')}
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    {cleanupDeleted > 0
+                      ? t('media_cleanup_deleted_summary', { total: cleanupDeleted })
+                      : t('media_cleanup_report_summary', { total: cleanupCandidates.length })}
+                  </p>
+                </div>
+                {cleanupCandidates.length > 0 && cleanupDeleted === 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setCleanupOpen(true)}
+                    disabled={cleanupRunning}
+                    className="rounded bg-red-600 px-3 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {cleanupRunning ? t('media_cleanup_running_button') : t('media_cleanup_run_button')}
+                  </button>
+                ) : null}
+              </div>
+              {cleanupCandidates.length > 0 ? (
+                <div className="max-h-48 overflow-y-auto rounded border border-gray-100">
+                  <table className="min-w-full text-xs">
+                    <tbody>
+                      {cleanupCandidates.slice(0, 20).map((candidate) => (
+                        <tr key={candidate.id} className="border-t first:border-t-0">
+                          <td className="px-2 py-1 font-medium">#{candidate.id}</td>
+                          <td className="px-2 py-1 text-gray-500">{candidate.orphanedAt ? new Date(candidate.orphanedAt).toLocaleString() : '-'}</td>
+                          <td className="px-2 py-1 text-gray-500">{candidate.fileStatus?.length || 0} files</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -306,6 +366,18 @@ function AdminMediaPageContent() {
         message={t('media_delete_confirm_message')}
         confirmText={t('media_delete_confirm_button')}
         cancelText={t('media_delete_cancel_button')}
+      />
+
+      <ConfirmDialog
+        isOpen={cleanupOpen}
+        onCancel={() => setCleanupOpen(false)}
+        onConfirm={runCleanup}
+        title={t('media_cleanup_confirm_title')}
+        message={t('media_cleanup_confirm_message', { total: cleanupCandidates.length })}
+        confirmText={t('media_cleanup_confirm_button')}
+        cancelText={t('media_delete_cancel_button')}
+        loading={cleanupRunning}
+        destructive
       />
     </AdminLayout>
   );

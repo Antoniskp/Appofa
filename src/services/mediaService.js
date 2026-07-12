@@ -743,6 +743,23 @@ async function getAdminCleanupReport(user, query = {}) {
   return { success: true, report: { marked: markResult, cleanup: cleanupResult } };
 }
 
+async function runAdminMediaCleanup(user, payload = {}) {
+  if (!user) return { success: false, status: 401, message: 'Authentication required.' };
+  if (user.role !== 'admin') return { success: false, status: 403, message: 'Admin access required.' };
+  if (payload.confirm !== 'delete-orphaned-media') {
+    return {
+      success: false,
+      status: 400,
+      message: 'Cleanup confirmation is required.',
+    };
+  }
+
+  const olderThanDays = Math.max(1, parseInt(payload.olderThanDays, 10) || 14);
+  const markResult = await markOrphanMediaAssets();
+  const cleanupResult = await cleanupOrphanMediaAssets({ dryRun: false, olderThanDays });
+  return { success: true, report: { marked: markResult, cleanup: cleanupResult } };
+}
+
 module.exports = {
   MAX_IMAGE_BYTES,
   USER_QUOTA_BYTES,
@@ -758,6 +775,7 @@ module.exports = {
   getReferenceSummaryForAssets,
   getAdminMediaStats,
   getAdminCleanupReport,
+  runAdminMediaCleanup,
   markOrphanMediaAssets,
   cleanupOrphanMediaAssets,
 };
