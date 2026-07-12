@@ -3,45 +3,25 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { idSlug } from '@/lib/utils/slugify';
 import { useTranslations } from 'next-intl';
+import { idSlug } from '@/lib/utils/slugify';
+import TikTokEmbedPlayer from '@/components/articles/TikTokEmbedPlayer';
 
 /**
- * VideoFeedCard
+ * Full-width video card for the /videos feed.
  *
- * Full-width video card for the /videos feed. Features:
- * - Lazy-loaded video embed (iframe rendered only when near viewport)
- * - IntersectionObserver-based autoplay for YouTube (muted); TikTok stays click-to-play
- * - Rich metadata: title, provider badge, author, category, tags, relative timestamp, summary
- * - "Watch on YouTube/TikTok" external link
- *
- * Props:
- *   article  {object}  video article object from the API
- *   onPlay   {function} optional callback so the parent can pause other videos
- *             receives a ref to the iframe postMessage pause function
+ * YouTube iframes lazy-load near the viewport and use muted autoplay. TikTok
+ * stays click-to-play through the shared TikTok player to avoid eager third-
+ * party script initialization.
  */
 
-function extractTikTokVideoId(embedUrl, sourceUrl) {
-  if (embedUrl) {
-    const m = embedUrl.match(/\/embed\/v2\/([a-zA-Z0-9_-]+)/);
-    if (m) return m[1];
-  }
-  if (sourceUrl) {
-    const m = sourceUrl.match(/\/(?:video|photo)\/([a-zA-Z0-9_-]+)/);
-    if (m) return m[1];
-  }
-  return null;
-}
-
-/** Build a YouTube embed URL with the given extra params appended. */
 function buildYouTubeSrc(baseEmbedUrl, extraParams = {}) {
   if (!baseEmbedUrl) return '';
   const url = new URL(baseEmbedUrl, 'https://www.youtube-nocookie.com');
-  Object.entries(extraParams).forEach(([k, v]) => url.searchParams.set(k, v));
+  Object.entries(extraParams).forEach(([key, value]) => url.searchParams.set(key, value));
   return url.toString();
 }
 
-/** Send a command to a YouTube iframe via postMessage. */
 function sendYouTubeCommand(iframe, func) {
   if (!iframe) return;
   try {
@@ -50,35 +30,26 @@ function sendYouTubeCommand(iframe, func) {
       '*'
     );
   } catch {
-    // cross-origin restrictions – silently ignore
+    // Ignore cross-origin postMessage failures.
   }
 }
 
-// ---------------------------------------------------------------------------
-// YouTube player
-// ---------------------------------------------------------------------------
-function YouTubePlayer({ embedUrl, title, sourceUrl, onPlay, onPauseRef }) {
+function YouTubePlayer({ embedUrl, title, onPlay, onPauseRef }) {
   const iframeRef = useRef(null);
   const containerRef = useRef(null);
-  // Once true, stays true — prevents destroying the iframe on scroll-away
   const [hasBeenNear, setHasBeenNear] = useState(false);
-  // Tracks whether the YouTube iframe API has fired onReady
   const [playerReady, setPlayerReady] = useState(false);
-  // True when the play observer wants the video to be playing
   const shouldPlayRef = useRef(false);
 
-  // Register the pause callback so the parent can pause this video
   useEffect(() => {
     if (onPauseRef) {
       onPauseRef.current = () => sendYouTubeCommand(iframeRef.current, 'pauseVideo');
     }
   }, [onPauseRef]);
 
-  // Lazy-load: render the iframe once the card is near the viewport;
-  // once set to true it never goes back to false so the iframe is never destroyed.
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
+    const element = containerRef.current;
+    if (!element) return undefined;
 
     const nearObserver = new IntersectionObserver(
       ([entry]) => {
@@ -86,18 +57,16 @@ function YouTubePlayer({ embedUrl, title, sourceUrl, onPlay, onPauseRef }) {
       },
       { rootMargin: '200px 0px', threshold: 0 }
     );
-    nearObserver.observe(el);
+
+    nearObserver.observe(element);
     return () => nearObserver.disconnect();
   }, []);
 
-  // Listen for the YouTube iframe API onReady / onStateChange messages
   useEffect(() => {
-    if (!hasBeenNear) return;
+    if (!hasBeenNear) return undefined;
 
     function handleMessage(event) {
-      if (!iframeRef.current) return;
-      // Only handle messages from our iframe's contentWindow
-      if (event.source !== iframeRef.current.contentWindow) return;
+      if (!iframeRef.current || event.source !== iframeRef.current.contentWindow) return;
 
       let data;
       try {
@@ -108,7 +77,6 @@ function YouTubePlayer({ embedUrl, title, sourceUrl, onPlay, onPauseRef }) {
 
       if (data?.event === 'onReady') {
         setPlayerReady(true);
-        // If the play observer already fired, start playback now
         if (shouldPlayRef.current) {
           sendYouTubeCommand(iframeRef.current, 'playVideo');
         }
@@ -119,10 +87,9 @@ function YouTubePlayer({ embedUrl, title, sourceUrl, onPlay, onPauseRef }) {
     return () => window.removeEventListener('message', handleMessage);
   }, [hasBeenNear]);
 
-  // Autoplay / pause when the video scrolls in/out of the viewport
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el || !hasBeenNear) return;
+    const element = containerRef.current;
+    if (!element || !hasBeenNear) return undefined;
 
     const playObserver = new IntersectionObserver(
       ([entry]) => {
@@ -139,11 +106,11 @@ function YouTubePlayer({ embedUrl, title, sourceUrl, onPlay, onPauseRef }) {
       },
       { threshold: 0.5 }
     );
-    playObserver.observe(el);
+
+    playObserver.observe(element);
     return () => playObserver.disconnect();
   }, [hasBeenNear, playerReady, onPlay]);
 
-  // Build src with all params needed for JS API + muted autoplay
   const iframeSrc = hasBeenNear
     ? buildYouTubeSrc(embedUrl, {
         enablejsapi: 1,
@@ -170,101 +137,6 @@ function YouTubePlayer({ embedUrl, title, sourceUrl, onPlay, onPauseRef }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// TikTok player (click-to-play thumbnail)
-// ---------------------------------------------------------------------------
-function TikTokPlayer({ embedUrl, sourceUrl, sourceMeta, title, tArticles }) {
-  const videoId = extractTikTokVideoId(embedUrl, sourceUrl);
-  const [playing, setPlaying] = useState(false);
-  const thumbnail = sourceMeta?.thumbnailUrl;
-  const author = sourceMeta?.authorName;
-
-  if (!videoId) {
-    return (
-      <div className="aspect-video bg-gray-900 flex items-center justify-center">
-        <a
-          href={sourceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-white underline text-sm"
-        >
-          {tArticles('watch_on_tiktok')}
-        </a>
-      </div>
-    );
-  }
-
-  if (!playing) {
-    return (
-      <div
-        className="relative bg-black flex justify-center cursor-pointer"
-        style={{ minHeight: '360px' }}
-        role="button"
-        tabIndex={0}
-        aria-label={tArticles('play_tiktok_video')}
-        onClick={() => setPlaying(true)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setPlaying(true);
-          }
-        }}
-      >
-        {thumbnail ? (
-          <img
-            src={thumbnail}
-            alt={title || 'TikTok video thumbnail'}
-            className="object-cover h-full"
-            style={{ maxHeight: '600px', aspectRatio: '9/16' }}
-            loading="lazy"
-          />
-        ) : (
-          <div
-            className="w-full flex items-center justify-center bg-gray-900"
-            style={{ aspectRatio: '9/16', maxHeight: '600px' }}
-          >
-            <span className="text-white text-5xl">♪</span>
-          </div>
-        )}
-        {/* Play overlay */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30">
-          <div className="w-16 h-16 rounded-full bg-black/60 flex items-center justify-center">
-            <span className="text-white text-2xl ml-1">▶</span>
-          </div>
-          {(title || author) && (
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-              {title && (
-                <p className="text-white text-sm font-semibold line-clamp-2">{title}</p>
-              )}
-              {author && (
-                <p className="text-gray-300 text-xs mt-1">@{author}</p>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex justify-center bg-black py-4">
-      <div style={{ maxWidth: '605px', minWidth: '325px', width: '100%' }}>
-        <iframe
-          src={`https://www.tiktok.com/embed/v2/${videoId}`}
-          title={title}
-          style={{ width: '100%', height: '740px', border: 'none' }}
-          allow="autoplay; encrypted-media"
-          allowFullScreen
-          loading="lazy"
-        />
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Provider badge
-// ---------------------------------------------------------------------------
 function ProviderBadge({ provider }) {
   if (provider === 'youtube') {
     return (
@@ -276,6 +148,7 @@ function ProviderBadge({ provider }) {
       </span>
     );
   }
+
   if (provider === 'tiktok') {
     return (
       <span className="inline-flex items-center gap-1 bg-gray-900 text-white text-xs font-bold px-2 py-0.5 rounded">
@@ -286,19 +159,16 @@ function ProviderBadge({ provider }) {
       </span>
     );
   }
+
   return null;
 }
 
-// ---------------------------------------------------------------------------
-// Main VideoFeedCard component
-// ---------------------------------------------------------------------------
 export default function VideoFeedCard({ article, onPlay }) {
   const tArticles = useTranslations('articles');
   const pauseRef = useRef(null);
   const isYouTube = article?.sourceProvider === 'youtube';
   const isTikTok = article?.sourceProvider === 'tiktok';
 
-  // Expose pause function to parent via onPlay callback pattern
   const handlePlay = useCallback(() => {
     onPlay?.(() => {
       pauseRef.current?.();
@@ -325,33 +195,34 @@ export default function VideoFeedCard({ article, onPlay }) {
   const authorName = sourceMeta?.authorName;
   const postingUser = author?.username;
   const articleHref = `/articles/${idSlug(id, title)}`;
-
   const relativeTime = createdAt
     ? formatDistanceToNow(new Date(createdAt), { addSuffix: true })
     : null;
-
   const watchLabel = isYouTube ? tArticles('watch_on_youtube') : tArticles('watch_on_tiktok');
 
   return (
     <article className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-shadow duration-200 hover:shadow-md">
-      {/* Video player */}
       <div className="bg-black">
         {isYouTube && (
           <YouTubePlayer
             embedUrl={embedUrl}
             title={videoTitle}
-            sourceUrl={sourceUrl}
             onPlay={handlePlay}
             onPauseRef={pauseRef}
           />
         )}
         {isTikTok && (
-          <TikTokPlayer
+          <TikTokEmbedPlayer
             embedUrl={embedUrl}
             sourceUrl={sourceUrl}
-            sourceMeta={sourceMeta}
             title={videoTitle}
-            tArticles={tArticles}
+            authorName={authorName ? `@${authorName}` : null}
+            thumbnailUrl={sourceMeta?.thumbnailUrl}
+            rounded={false}
+            fallbackVariant="dark"
+            maxHeight={600}
+            placeholderMinHeight={360}
+            className=""
           />
         )}
         {!isYouTube && !isTikTok && (
@@ -362,15 +233,13 @@ export default function VideoFeedCard({ article, onPlay }) {
               rel="noopener noreferrer"
               className="text-white underline text-sm"
             >
-              {tArticles('watch_video')} ↗
+              {tArticles('watch_video')}
             </a>
           </div>
         )}
       </div>
 
-      {/* Metadata */}
       <div className="p-4 sm:p-5">
-        {/* Provider badge + category + timestamp row */}
         <div className="flex flex-wrap items-center gap-2 mb-3">
           <ProviderBadge provider={sourceProvider} />
           {category && (
@@ -383,19 +252,17 @@ export default function VideoFeedCard({ article, onPlay }) {
           )}
         </div>
 
-        {/* Title */}
         <h2 className="text-lg font-bold text-gray-900 leading-snug mb-2 hover:text-blue-700 transition-colors">
           <Link href={articleHref}>{videoTitle}</Link>
         </h2>
 
-        {/* Creator row */}
         {(authorName || postingUser) && (
           <div className="flex items-center gap-2 mb-3 text-sm text-gray-500">
             {authorName && (
               <span className="font-medium text-gray-700">@{authorName}</span>
             )}
             {authorName && postingUser && (
-              <span className="text-gray-300">·</span>
+              <span className="text-gray-300">/</span>
             )}
             {postingUser && (
               <span>
@@ -411,14 +278,12 @@ export default function VideoFeedCard({ article, onPlay }) {
           </div>
         )}
 
-        {/* Summary */}
         {summary && (
           <p className="text-sm text-gray-600 leading-relaxed mb-3 line-clamp-3">
             {summary}
           </p>
         )}
 
-        {/* Tags */}
         {Array.isArray(tags) && tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {tags.map((tag) => (
@@ -432,7 +297,6 @@ export default function VideoFeedCard({ article, onPlay }) {
           </div>
         )}
 
-        {/* External link */}
         {sourceUrl && (
           <a
             href={sourceUrl}
