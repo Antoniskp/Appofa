@@ -62,7 +62,12 @@ export default function ArticleBannerImageField({
     setError('');
 
     try {
-      const response = await mediaAPI.list({ usageType: 'article_cover', shared: 'true', limit: 12, search });
+      const response = await mediaAPI.list({
+        usageType: 'article_cover',
+        shared: 'true',
+        limit: 12,
+        search: search.trim() || undefined,
+      });
       setMedia(response.media || []);
       setQuota(response.quota || null);
     } catch (err) {

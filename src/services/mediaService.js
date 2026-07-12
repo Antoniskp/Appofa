@@ -13,6 +13,29 @@ const MAX_METADATA_TAGS = 20;
 
 const MEDIA_USAGE_TYPES = MediaAsset.MEDIA_USAGE_TYPES || ['shared', 'article_cover', 'article_body', 'avatar'];
 const MEDIA_ENTITY_TYPES = MediaAsset.MEDIA_ENTITY_TYPES || ['shared', 'article', 'avatar'];
+const LEGACY_MEDIA_ATTRIBUTES = [
+  'id',
+  'storageProvider',
+  'storageKey',
+  'url',
+  'originalName',
+  'mimeType',
+  'size',
+  'width',
+  'height',
+  'usageType',
+  'status',
+  'altText',
+  'credit',
+  'uploadedByUserId',
+  'createdAt',
+  'updatedAt',
+];
+const LEGACY_USAGE_TYPE_BY_CURRENT = {
+  shared: 'shared',
+  article_cover: 'article_banner',
+  article_body: 'article_body',
+};
 
 function canUploadMedia(user) {
   return !!user && UPLOAD_ROLES.has(user.role);
@@ -56,6 +79,12 @@ function normalizeUsageType(value, fallback = 'shared') {
 function normalizeEntityType(value, fallback = 'shared') {
   if (!value) return fallback;
   return MEDIA_ENTITY_TYPES.includes(value) ? value : fallback;
+}
+
+function normalizeSearchTerm(value) {
+  if (value === undefined || value === null) return null;
+  const trimmed = String(value).trim();
+  return trimmed || null;
 }
 
 async function getUserStorageUsage(userId) {
@@ -395,6 +424,148 @@ function buildListWhere(query = {}, user = null) {
   return whereClause;
 }
 
+function getErrorMessages(error) {
+  return [
+    error?.message,
+    error?.parent?.message,
+    error?.original?.message,
+    error?.sql,
+  ].filter(Boolean).map((message) => String(message));
+}
+
+function isLegacyMediaSchemaError(error) {
+  const codes = new Set([error?.parent?.code, error?.original?.code, error?.code].filter(Boolean));
+  if (codes.has('42703') || codes.has('22P02') || codes.has('SQLITE_ERROR') || codes.has('ER_BAD_FIELD_ERROR')) {
+    return true;
+  }
+
+  return getErrorMessages(error).some((message) => (
+    /no such column/i.test(message)
+    || /column .* does not exist/i.test(message)
+    || /invalid input value for enum/i.test(message)
+    || /enum_MediaAssets_usageType/i.test(message)
+  ));
+}
+
+function buildLegacyListWhere(query = {}, user = null) {
+  const whereClause = { status: 'active' };
+  const canUpload = canUploadMedia(user);
+  const wantsSharedLibrary = query.shared === 'true';
+
+  if (!canManageAnyMedia(user)) {
+    if (!(canUpload && wantsSharedLibrary)) {
+      whereClause.uploadedByUserId = user?.id;
+    }
+  } else if (query.mine === 'true') {
+    whereClause.uploadedByUserId = user.id;
+  }
+
+  if (query.usageType) {
+    const legacyUsageType = LEGACY_USAGE_TYPE_BY_CURRENT[String(query.usageType)];
+    if (!legacyUsageType) return null;
+    whereClause.usageType = legacyUsageType;
+  }
+
+  if (query.tag || query.tags || query.entityType || query.referenced === 'true' || query.orphaned === 'true') {
+    return null;
+  }
+
+  const fromDate = query.dateFrom ? new Date(query.dateFrom) : null;
+  const toDate = query.dateTo ? new Date(query.dateTo) : null;
+  if (fromDate && !Number.isNaN(fromDate.getTime())) {
+    whereClause.createdAt = { ...(whereClause.createdAt || {}), [Op.gte]: fromDate };
+  }
+  if (toDate && !Number.isNaN(toDate.getTime())) {
+    toDate.setUTCHours(23, 59, 59, 999);
+    whereClause.createdAt = { ...(whereClause.createdAt || {}), [Op.lte]: toDate };
+  }
+
+  const searchTerm = normalizeSearchTerm(query.search);
+  if (searchTerm) {
+    const needle = `%${searchTerm.toLowerCase()}%`;
+    whereClause[Op.and] = [
+      {
+        [Op.or]: [
+          where(fn('lower', col('MediaAsset.originalName')), { [Op.like]: needle }),
+          where(fn('lower', col('MediaAsset.altText')), { [Op.like]: needle }),
+          where(fn('lower', col('MediaAsset.credit')), { [Op.like]: needle }),
+        ],
+      },
+    ];
+  }
+
+  return whereClause;
+}
+
+async function getLegacyUserQuotaSnapshot(userId) {
+  const total = await MediaAsset.sum('size', {
+    where: {
+      uploadedByUserId: userId,
+      status: 'active',
+    },
+  }).catch(() => 0);
+  return buildQuotaSnapshot(Number(total) || 0);
+}
+
+function legacyEmptyMediaResult(page, limit, quota) {
+  return {
+    success: true,
+    media: [],
+    pagination: {
+      total: 0,
+      page,
+      limit,
+      totalPages: 0,
+    },
+    quota,
+  };
+}
+
+async function listLegacyMediaAssets(query, user, page, limit, sortBy, sortDir, originalError) {
+  console.warn('mediaService.listMediaAssets falling back to legacy MediaAssets schema:', originalError.message);
+
+  const quota = await getLegacyUserQuotaSnapshot(user.id);
+  const whereClause = buildLegacyListWhere(query, user);
+  if (!whereClause) {
+    return legacyEmptyMediaResult(page, limit, quota);
+  }
+
+  const { count, rows } = await MediaAsset.findAndCountAll({
+    attributes: LEGACY_MEDIA_ATTRIBUTES,
+    where: whereClause,
+    include: [{
+      model: User,
+      as: 'uploadedBy',
+      attributes: ['id', 'username', 'avatar', 'avatarColor'],
+      required: false,
+    }],
+    order: [[sortBy, sortDir], ['id', 'DESC']],
+    limit,
+    offset: (page - 1) * limit,
+  });
+
+  const serialized = rows.map((asset) => {
+    const item = serializeMediaAsset(asset);
+    if (item.usageType === 'article_banner') item.usageType = 'article_cover';
+    item.entityType = item.entityType || (item.usageType === 'shared' ? 'shared' : 'article');
+    item.referenceCount = 0;
+    item.referenceSummary = {};
+    return item;
+  });
+
+  return {
+    success: true,
+    media: serialized,
+    pagination: {
+      total: count,
+      page,
+      limit,
+      totalPages: Math.ceil(count / limit),
+    },
+    quota,
+  };
+}
+
 async function listMediaAssets(query = {}, user = null) {
   if (!user) {
     return { success: false, status: 401, message: 'Authentication required.' };
@@ -432,8 +603,9 @@ async function listMediaAssets(query = {}, user = null) {
     whereClause.createdAt = { ...(whereClause.createdAt || {}), [Op.lte]: toDate };
   }
 
-  if (query.search) {
-    const needle = `%${String(query.search).trim().toLowerCase()}%`;
+  const searchTerm = normalizeSearchTerm(query.search);
+  if (searchTerm) {
+    const needle = `%${searchTerm.toLowerCase()}%`;
     whereClause[Op.and] = [
       {
         [Op.or]: [
@@ -450,40 +622,45 @@ async function listMediaAssets(query = {}, user = null) {
   const sortBy = ['createdAt', 'size', 'updatedAt'].includes(query.sortBy) ? query.sortBy : 'createdAt';
   const sortDir = String(query.sortDir || 'desc').toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
-  const { count, rows } = await MediaAsset.findAndCountAll({
-    where: whereClause,
-    include: [{
-      model: User,
-      as: 'uploadedBy',
-      attributes: ['id', 'username', 'avatar', 'avatarColor'],
-      required: false,
-    }],
-    order: [[sortBy, sortDir], ['id', 'DESC']],
-    limit,
-    offset: (page - 1) * limit,
-  });
-
-  const referenceSummaryById = await getReferenceSummaryForAssets(rows);
-  const serialized = rows.map((asset) => {
-    const summary = referenceSummaryById[asset.id] || { total: 0, byType: {}, items: [] };
-    const item = serializeMediaAsset(asset);
-    item.referenceCount = summary.total;
-    item.referenceSummary = summary.byType;
-    return item;
-  });
-  const quota = await getUserQuotaSnapshot(user.id);
-
-  return {
-    success: true,
-    media: serialized,
-    pagination: {
-      total: count,
-      page,
+  try {
+    const { count, rows } = await MediaAsset.findAndCountAll({
+      where: whereClause,
+      include: [{
+        model: User,
+        as: 'uploadedBy',
+        attributes: ['id', 'username', 'avatar', 'avatarColor'],
+        required: false,
+      }],
+      order: [[sortBy, sortDir], ['id', 'DESC']],
       limit,
-      totalPages: Math.ceil(count / limit),
-    },
-    quota,
-  };
+      offset: (page - 1) * limit,
+    });
+
+    const referenceSummaryById = await getReferenceSummaryForAssets(rows);
+    const serialized = rows.map((asset) => {
+      const summary = referenceSummaryById[asset.id] || { total: 0, byType: {}, items: [] };
+      const item = serializeMediaAsset(asset);
+      item.referenceCount = summary.total;
+      item.referenceSummary = summary.byType;
+      return item;
+    });
+    const quota = await getUserQuotaSnapshot(user.id);
+
+    return {
+      success: true,
+      media: serialized,
+      pagination: {
+        total: count,
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit),
+      },
+      quota,
+    };
+  } catch (error) {
+    if (!isLegacyMediaSchemaError(error)) throw error;
+    return listLegacyMediaAssets(query, user, page, limit, sortBy, sortDir, error);
+  }
 }
 
 async function canAccessAsset(asset, user) {

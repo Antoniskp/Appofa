@@ -135,6 +135,17 @@ describe('Media library integration', () => {
     expect(response.body.media.some((item) => item.id === uploadedMediaId)).toBe(true);
   });
 
+  test('lists shared article-cover media when the editor sends a blank search parameter', async () => {
+    const response = await request(app)
+      .get('/api/media?usageType=article_cover&shared=true&limit=12&search=')
+      .set('Authorization', 'Bearer ' + editorToken);
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(Array.isArray(response.body.media)).toBe(true);
+    expect(response.body.quota).toHaveProperty('usedBytes');
+  });
+
   test('creates article with coverImageId and uses optimized cover url', async () => {
     const csrfToken = 'csrf-article-create-media';
     storeCsrfToken(csrfToken, editorId);

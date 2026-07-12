@@ -89,25 +89,25 @@ module.exports = {
     }
 
     if (dialect === 'postgres') {
-      await queryInterface.sequelize.query(`
-        UPDATE "MediaAssets"
-        SET "usageType" = 'article_cover'
-        WHERE "usageType" = 'article_banner'
-      `).catch((error) => {
-        console.warn('media migration: failed to backfill postgres usageType values', error.message);
+      await queryInterface.sequelize.transaction(async (transaction) => {
+        await queryInterface.sequelize.query('ALTER TABLE "MediaAssets" ALTER COLUMN "usageType" DROP DEFAULT;', { transaction });
+        await queryInterface.sequelize.query('ALTER TABLE "MediaAssets" ALTER COLUMN "usageType" TYPE TEXT USING "usageType"::text;', { transaction });
+        await queryInterface.sequelize.query(`
+          UPDATE "MediaAssets"
+          SET "usageType" = 'article_cover'
+          WHERE "usageType" = 'article_banner'
+        `, { transaction });
+        await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_MediaAssets_usageType";', { transaction });
+        await queryInterface.sequelize.query(`CREATE TYPE "enum_MediaAssets_usageType" AS ENUM (${MEDIA_USAGE_TYPES.map((v) => `'${v}'`).join(', ')});`, { transaction });
+        await queryInterface.sequelize.query('ALTER TABLE "MediaAssets" ALTER COLUMN "usageType" TYPE "enum_MediaAssets_usageType" USING "usageType"::"enum_MediaAssets_usageType";', { transaction });
+        await queryInterface.sequelize.query('ALTER TABLE "MediaAssets" ALTER COLUMN "usageType" SET DEFAULT \'shared\';', { transaction });
+      }).catch((error) => {
+        console.warn('media migration: failed to rebuild postgres usageType enum', error.message);
       });
     } else {
       await queryInterface.sequelize.query("UPDATE MediaAssets SET usageType = 'article_cover' WHERE usageType = 'article_banner'").catch((error) => {
         console.warn('media migration: failed to backfill sqlite usageType values', error.message);
       });
-    }
-
-    if (dialect === 'postgres') {
-      await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_MediaAssets_usageType_old";').catch(() => {});
-      await queryInterface.sequelize.query('ALTER TYPE "enum_MediaAssets_usageType" RENAME TO "enum_MediaAssets_usageType_old";').catch(() => {});
-      await queryInterface.sequelize.query(`CREATE TYPE "enum_MediaAssets_usageType" AS ENUM (${MEDIA_USAGE_TYPES.map((v) => `'${v}'`).join(', ')});`).catch(() => {});
-      await queryInterface.sequelize.query('ALTER TABLE "MediaAssets" ALTER COLUMN "usageType" TYPE "enum_MediaAssets_usageType" USING "usageType"::text::"enum_MediaAssets_usageType";').catch(() => {});
-      await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_MediaAssets_usageType_old";').catch(() => {});
     }
 
     const articleInfo = await queryInterface.describeTable('Articles').catch(() => null);
