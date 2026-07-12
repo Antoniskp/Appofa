@@ -937,6 +937,68 @@ async function runAdminMediaCleanup(user, payload = {}) {
   return { success: true, report: { marked: markResult, cleanup: cleanupResult } };
 }
 
+async function getAdminMediaSchemaHealth(user) {
+  if (!user) return { success: false, status: 401, message: 'Authentication required.' };
+  if (user.role !== 'admin') return { success: false, status: 403, message: 'Admin access required.' };
+
+  const queryInterface = MediaAsset.sequelize.getQueryInterface();
+  const dialect = MediaAsset.sequelize.getDialect();
+  const requiredMediaColumns = [
+    'variants',
+    'detectedMimeType',
+    'entityType',
+    'caption',
+    'tags',
+    'metadata',
+    'checksumSha256',
+    'deletedAt',
+    'isOrphaned',
+    'orphanedAt',
+    'lastReferencedAt',
+  ];
+  const requiredArticleColumns = ['coverImageId'];
+
+  const mediaTable = await queryInterface.describeTable('MediaAssets').catch(() => null);
+  const articleTable = await queryInterface.describeTable('Articles').catch(() => null);
+  const missingMediaColumns = requiredMediaColumns.filter((column) => !mediaTable?.[column]);
+  const missingArticleColumns = requiredArticleColumns.filter((column) => !articleTable?.[column]);
+  let usageTypeValues = [];
+
+  if (dialect === 'postgres') {
+    const rows = await MediaAsset.sequelize.query(`
+      SELECT enumlabel AS value
+      FROM pg_enum
+      WHERE enumtypid = 'enum_MediaAssets_usageType'::regtype
+      ORDER BY enumsortorder
+    `, { type: Sequelize.QueryTypes.SELECT }).catch(() => []);
+    usageTypeValues = rows.map((row) => row.value);
+  } else {
+    usageTypeValues = MEDIA_USAGE_TYPES;
+  }
+
+  const missingUsageTypes = MEDIA_USAGE_TYPES.filter((value) => !usageTypeValues.includes(value));
+  const ok = !!mediaTable
+    && !!articleTable
+    && missingMediaColumns.length === 0
+    && missingArticleColumns.length === 0
+    && missingUsageTypes.length === 0;
+
+  return {
+    success: true,
+    health: {
+      ok,
+      dialect,
+      checkedAt: new Date().toISOString(),
+      mediaTablePresent: !!mediaTable,
+      articleTablePresent: !!articleTable,
+      missingMediaColumns,
+      missingArticleColumns,
+      usageTypeValues,
+      missingUsageTypes,
+    },
+  };
+}
+
 module.exports = {
   MAX_IMAGE_BYTES,
   USER_QUOTA_BYTES,
@@ -953,6 +1015,7 @@ module.exports = {
   getAdminMediaStats,
   getAdminCleanupReport,
   runAdminMediaCleanup,
+  getAdminMediaSchemaHealth,
   markOrphanMediaAssets,
   cleanupOrphanMediaAssets,
 };

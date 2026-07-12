@@ -83,6 +83,18 @@ describe('Admin media page', () => {
           refetch: jest.fn(),
         };
       }
+      if (call === 2) {
+        return {
+          data: {
+            ok: true,
+            missingMediaColumns: [],
+            missingArticleColumns: [],
+            missingUsageTypes: [],
+          },
+          loading: false,
+          refetch: jest.fn(),
+        };
+      }
       return {
         data: {
           media: [
@@ -118,6 +130,7 @@ describe('Admin media page', () => {
     });
 
     expect(container.textContent).toContain('media_title');
+    expect(container.textContent).toContain('media_schema_health_title');
     expect(container.textContent).toContain('#15');
     expect(container.textContent).toContain('media_col_references');
   });

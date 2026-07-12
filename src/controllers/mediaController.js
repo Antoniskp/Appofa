@@ -111,6 +111,19 @@ const mediaController = {
     }
   },
 
+  getAdminSchemaHealth: async (req, res) => {
+    try {
+      const result = await mediaService.getAdminMediaSchemaHealth(req.user);
+      if (!result.success) {
+        return res.status(result.status).json({ success: false, message: result.message });
+      }
+      return res.status(200).json({ success: true, health: result.health });
+    } catch (error) {
+      console.error('mediaController.getAdminSchemaHealth error:', error.message);
+      return res.status(500).json({ success: false, message: 'Failed to inspect media schema.' });
+    }
+  },
+
   getAdminCleanupReport: async (req, res) => {
     try {
       const result = await mediaService.getAdminCleanupReport(req.user, req.query || {});

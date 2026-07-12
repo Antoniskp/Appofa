@@ -274,6 +274,18 @@ describe('Media library integration', () => {
     expect(cleanupResponse.body.report).toHaveProperty('cleanup');
   });
 
+  test('admin schema health reports migrated media columns', async () => {
+    const response = await request(app)
+      .get('/api/media/admin/schema-health')
+      .set('Authorization', 'Bearer ' + adminToken);
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.health.ok).toBe(true);
+    expect(response.body.health.missingMediaColumns).toEqual([]);
+    expect(response.body.health.missingUsageTypes).toEqual([]);
+  });
+
   test('admin cleanup endpoint requires confirmation and archives eligible orphan assets', async () => {
     const orphan = await MediaAsset.create({
       storageProvider: 'local',

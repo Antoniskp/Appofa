@@ -49,6 +49,15 @@ function AdminMediaPageContent() {
     { initialData: null }
   );
 
+  const { data: schemaHealth, loading: schemaLoading, refetch: refetchSchemaHealth } = useAsyncData(
+    async () => {
+      const response = await mediaAPI.getAdminSchemaHealth();
+      return response.health || null;
+    },
+    [],
+    { initialData: null }
+  );
+
   const { data: listData, loading, refetch } = useAsyncData(
     async () => {
       const response = await mediaAPI.list({
@@ -151,6 +160,11 @@ function AdminMediaPageContent() {
   };
 
   const stats = statsData || {};
+  const schemaIssues = [
+    ...(schemaHealth?.missingMediaColumns || []),
+    ...(schemaHealth?.missingArticleColumns || []),
+    ...(schemaHealth?.missingUsageTypes || []),
+  ];
   const quotaConfig = stats.quotaConfig || {};
   const uploaders = stats.largestUploaders || [];
   const mediaItems = listData?.media || [];
@@ -180,6 +194,31 @@ function AdminMediaPageContent() {
             <div className="rounded-lg border bg-white p-3">
               <p className="text-xs text-gray-500">{t('media_stats_orphan_storage')}</p>
               <p className="text-lg font-semibold">{formatBytes(stats.orphanedStoredBytes)}</p>
+            </div>
+          </div>
+
+          <div className={`rounded-lg border p-4 ${schemaHealth?.ok ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'}`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">{t('media_schema_health_title')}</p>
+                <p className="text-sm text-gray-700">
+                  {schemaLoading
+                    ? t('media_schema_health_checking')
+                    : schemaHealth?.ok
+                      ? t('media_schema_health_ok')
+                      : t('media_schema_health_warning', { count: schemaIssues.length })}
+                </p>
+                {!schemaHealth?.ok && schemaIssues.length > 0 ? (
+                  <p className="mt-1 text-xs text-gray-600">{schemaIssues.slice(0, 8).join(', ')}</p>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={refetchSchemaHealth}
+                className="rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+              >
+                {t('media_schema_health_refresh')}
+              </button>
             </div>
           </div>
 

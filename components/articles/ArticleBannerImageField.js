@@ -1,9 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
 import FormInput from '@/components/ui/FormInput';
-import AlertMessage from '@/components/ui/AlertMessage';
-import { mediaAPI } from '@/lib/api';
+import MediaAssetPicker from '@/components/media/MediaAssetPicker';
 
 export default function ArticleBannerImageField({
   value,
@@ -17,14 +15,6 @@ export default function ArticleBannerImageField({
   placeholder,
   uiText = {},
 }) {
-  const fileInputRef = useRef(null);
-  const [media, setMedia] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState('');
-  const [quota, setQuota] = useState(null);
-  const [search, setSearch] = useState('');
-
   const t = {
     upload: uiText.upload || 'Upload photo',
     uploading: uiText.uploading || 'Uploading...',
@@ -41,74 +31,19 @@ export default function ArticleBannerImageField({
     creditLabel: uiText.creditLabel || 'Credit',
     emptyLibrary: uiText.emptyLibrary || 'No media found for this search.',
     quotaStatus: uiText.quotaStatus || 'Storage usage',
+    dropHint: uiText.dropHint || 'Drop or paste an image to upload',
   };
 
   const emitFieldChange = (name, nextValue, type = 'text') => {
     onChange({ target: { name, value: nextValue, type } });
   };
 
-  const applyMediaAsset = (asset) => {
-    const articleCoverUrl = asset?.variants?.articleCover?.url || asset?.url || '';
-    emitFieldChange('bannerImageUrl', articleCoverUrl);
+  const applyMediaAsset = (asset, articleCoverUrl) => {
+    emitFieldChange('bannerImageUrl', articleCoverUrl || asset?.variants?.articleCover?.url || asset?.url || '');
     emitFieldChange('coverImageId', asset?.id ? String(asset.id) : '');
     emitFieldChange('bannerImageAltText', asset?.altText || '');
     emitFieldChange('bannerImageCaption', asset?.caption || '');
     emitFieldChange('bannerImageCredit', asset?.credit || '');
-  };
-
-  const loadMedia = useCallback(async () => {
-    if (!canManageMedia) return;
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const response = await mediaAPI.list({
-        usageType: 'article_cover',
-        shared: 'true',
-        limit: 12,
-        search: search.trim() || undefined,
-      });
-      setMedia(response.media || []);
-      setQuota(response.quota || null);
-    } catch (err) {
-      setError(err.message || t.libraryError);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [canManageMedia, search, t.libraryError]);
-
-  useEffect(() => {
-    loadMedia();
-  }, [loadMedia]);
-
-  const handleFileChange = async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    setError('');
-
-    try {
-      const response = await mediaAPI.uploadArticleImage(file, {
-        usageType: 'article_cover',
-        entityType: 'article',
-        altText,
-        caption,
-        credit,
-      });
-      if (response.media) {
-        applyMediaAsset(response.media);
-        setQuota(response.quota || null);
-        setMedia((current) => [response.media, ...current.filter((item) => item.id !== response.media.id)].slice(0, 12));
-      }
-    } catch (err) {
-      setError(err.message || t.uploadError);
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
   };
 
   return (
@@ -135,12 +70,6 @@ export default function ArticleBannerImageField({
           />
         </div>
       )}
-      {quota && (
-        <p className="text-xs text-gray-500">
-          {t.quotaStatus}: {(Number(quota.usedBytes || 0) / (1024 * 1024)).toFixed(1)}MB / {(Number(quota.totalBytes || 0) / (1024 * 1024)).toFixed(1)}MB
-        </p>
-      )}
-
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <FormInput
           name="bannerImageAltText"
@@ -162,78 +91,21 @@ export default function ArticleBannerImageField({
         />
       </div>
 
-      {canManageMedia && (
-        <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
-          <div className="mb-3">
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={t.searchPlaceholder}
-              className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm"
-              aria-label={t.searchPlaceholder}
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-            >
-              {isUploading ? t.uploading : t.upload}
-            </button>
-            <button
-              type="button"
-              onClick={loadMedia}
-              disabled={isLoading}
-              className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-            >
-              {isLoading ? t.loading : t.refresh}
-            </button>
-          </div>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-
-          {error && <AlertMessage className="mt-3" message={error} />}
-
-
-          {!isLoading && !error && media.length === 0 && (
-            <p className="mt-3 text-sm text-gray-500">{t.emptyLibrary}</p>
-          )}
-
-          {media.length > 0 && (
-            <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
-              {media.map((item) => {
-                const thumbUrl = item.variants?.thumbnail?.url || item.url;
-                const coverUrl = item.variants?.articleCover?.url || item.url;
-                const selected = String(coverImageId || '') === String(item.id || '');
-                return (
-                  <button
-                    key={item.id || item.url}
-                    type="button"
-                    onClick={() => applyMediaAsset(item)}
-                    className={`overflow-hidden rounded border bg-white ${selected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-300'}`}
-                    title={item.altText || item.originalName || t.useImageTitle}
-                  >
-                    <img
-                      src={thumbUrl || coverUrl}
-                      alt={item.altText || item.originalName || t.mediaImageAlt}
-                      className="h-16 w-full object-cover"
-                    />
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+      <MediaAssetPicker
+        canManageMedia={canManageMedia}
+        selectedAssetId={coverImageId}
+        onSelect={applyMediaAsset}
+        selectVariant="articleCover"
+        listParams={{ usageType: 'article_cover', shared: 'true' }}
+        uploadFields={{
+          usageType: 'article_cover',
+          entityType: 'article',
+          altText,
+          caption,
+          credit,
+        }}
+        uiText={t}
+      />
     </div>
   );
 }

@@ -410,7 +410,7 @@ describe('ArticleForm Component', () => {
     expect(container.textContent).toContain('Ανέβασμα φωτογραφίας');
     expect(container.textContent).toContain('Ανανέωση βιβλιοθήκης');
     expect(container.querySelector('input[type="file"]')).toBeTruthy();
-    expect(mockMediaAPI.list).toHaveBeenCalledWith({ usageType: 'article_cover', shared: 'true', limit: 12, search: '' });
+    expect(mockMediaAPI.list).toHaveBeenCalledWith({ usageType: 'article_cover', shared: 'true', limit: 12, search: undefined });
 
     await act(async () => { root.unmount(); });
   });
