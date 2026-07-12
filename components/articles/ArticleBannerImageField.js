@@ -32,6 +32,8 @@ export default function ArticleBannerImageField({
     emptyLibrary: uiText.emptyLibrary || 'No media found for this search.',
     quotaStatus: uiText.quotaStatus || 'Storage usage',
     dropHint: uiText.dropHint || 'Drop or paste an image to upload',
+    selectedLabel: uiText.selectedLabel || 'Selected cover image',
+    clearSelection: uiText.clearSelection || 'Clear cover image',
   };
 
   const emitFieldChange = (name, nextValue, type = 'text') => {
@@ -44,6 +46,11 @@ export default function ArticleBannerImageField({
     emitFieldChange('bannerImageAltText', asset?.altText || '');
     emitFieldChange('bannerImageCaption', asset?.caption || '');
     emitFieldChange('bannerImageCredit', asset?.credit || '');
+  };
+
+  const clearMediaAsset = () => {
+    emitFieldChange('bannerImageUrl', '');
+    emitFieldChange('coverImageId', '');
   };
 
   return (
@@ -95,6 +102,7 @@ export default function ArticleBannerImageField({
         canManageMedia={canManageMedia}
         selectedAssetId={coverImageId}
         onSelect={applyMediaAsset}
+        onClear={clearMediaAsset}
         selectVariant="articleCover"
         listParams={{ usageType: 'article_cover', shared: 'true' }}
         uploadFields={{

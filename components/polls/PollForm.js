@@ -259,6 +259,20 @@ export default function PollForm({
     clearImageError(index);
   };
 
+  const clearOptionMediaAsset = (index) => {
+    setOptions((prev) => {
+      const next = [...prev];
+      if (!next[index]) return prev;
+      next[index] = {
+        ...next[index],
+        mediaAssetId: null,
+        photoUrl: '',
+      };
+      return next;
+    });
+    clearImageError(index);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -721,10 +735,12 @@ export default function PollForm({
             canManageMedia={!!user}
             selectedAssetId={options[mediaTargetIndex]?.mediaAssetId}
             onSelect={(asset) => applyOptionMediaAsset(Math.max(0, Math.min(mediaTargetIndex, options.length - 1)), asset)}
+            onClear={() => clearOptionMediaAsset(Math.max(0, Math.min(mediaTargetIndex, options.length - 1)))}
             selectVariant="thumbnail"
             listParams={{ usageType: 'shared', entityType: 'shared', shared: 'true' }}
             uploadFields={{ usageType: 'shared', entityType: 'shared' }}
             limit={18}
+            compact
             uiText={{
               upload: 'Ανέβασμα εικόνας',
               uploading: 'Ανέβασμα...',

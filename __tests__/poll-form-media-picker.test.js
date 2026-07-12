@@ -124,4 +124,47 @@ describe('PollForm media picker', () => {
       ]),
     }));
   });
+
+  test('clears the selected shared media asset before submit', async () => {
+    const PollForm = require('../components/polls/PollForm').default;
+    const onSubmit = jest.fn();
+
+    await act(async () => {
+      root.render(React.createElement(PollForm, {
+        poll: {
+          title: 'Complex poll',
+          type: 'complex',
+          options: [
+            { text: 'First option', answerType: 'custom' },
+            { text: 'Second option', answerType: 'custom' },
+          ],
+        },
+        onSubmit,
+        onCancel: jest.fn(),
+      }));
+      await flushPromises();
+    });
+
+    await act(async () => {
+      container.querySelector('button[title="Reusable poll asset"]').click();
+    });
+
+    const clearButton = Array.from(container.querySelectorAll('button'))
+      .find((button) => button.textContent.includes('Clear selected media'));
+
+    await act(async () => {
+      clearButton.click();
+    });
+
+    await act(async () => {
+      container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    });
+
+    const payload = onSubmit.mock.calls[0][0];
+    expect(payload.options[0]).toEqual(expect.objectContaining({
+      text: 'First option',
+      mediaAssetId: null,
+      photoUrl: '',
+    }));
+  });
 });

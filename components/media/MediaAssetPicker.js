@@ -9,6 +9,13 @@ function formatMegabytes(bytes) {
   return (Number(bytes || 0) / (1024 * 1024)).toFixed(1);
 }
 
+function formatFileSize(bytes) {
+  const size = Number(bytes || 0);
+  if (!size) return '';
+  if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))}KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)}MB`;
+}
+
 function getAssetUrl(asset, variantName) {
   return asset?.variants?.[variantName]?.url || asset?.url || '';
 }
@@ -21,6 +28,9 @@ export default function MediaAssetPicker({
   listParams = {},
   selectVariant = 'articleCover',
   limit = 12,
+  compact = false,
+  selectedAsset = null,
+  onClear,
   uiText = {},
 }) {
   const fileInputRef = useRef(null);
@@ -44,9 +54,17 @@ export default function MediaAssetPicker({
     searchPlaceholder: uiText.searchPlaceholder || 'Search by name, alt, caption, credit, or tag',
     emptyLibrary: uiText.emptyLibrary || 'No media found for this search.',
     quotaStatus: uiText.quotaStatus || 'Storage usage',
+    selectedLabel: uiText.selectedLabel || 'Selected media',
+    clearSelection: uiText.clearSelection || 'Clear selected media',
+    uploadedBy: uiText.uploadedBy || 'Uploaded by',
+    fileSize: uiText.fileSize || 'File size',
+    uploadBusy: uiText.uploadBusy || 'Upload in progress',
   };
   const listParamsKey = JSON.stringify(listParams || {});
   const stableListParams = useMemo(() => JSON.parse(listParamsKey), [listParamsKey]);
+  const selectedAssetDetails = useMemo(() => (
+    media.find((item) => String(item.id || '') === String(selectedAssetId || '')) || selectedAsset || null
+  ), [media, selectedAsset, selectedAssetId]);
 
   const loadMedia = useCallback(async () => {
     if (!canManageMedia) return;
@@ -80,7 +98,7 @@ export default function MediaAssetPicker({
   };
 
   const uploadFile = async (file) => {
-    if (!file) return;
+    if (!file || isUploading) return;
     setIsUploading(true);
     setError('');
 
@@ -103,7 +121,10 @@ export default function MediaAssetPicker({
 
   const handlePaste = (event) => {
     const file = Array.from(event.clipboardData?.files || []).find((item) => item.type?.startsWith('image/'));
-    if (file) uploadFile(file);
+    if (file) {
+      event.preventDefault();
+      uploadFile(file);
+    }
   };
 
   const handleDrop = (event) => {
@@ -117,7 +138,7 @@ export default function MediaAssetPicker({
 
   return (
     <div
-      className={`rounded-md border p-3 ${isDragging ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}
+      className={`rounded-md border ${compact ? 'p-2' : 'p-3'} ${isDragging ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}
       onPaste={handlePaste}
       onDragOver={(event) => {
         event.preventDefault();
@@ -126,8 +147,10 @@ export default function MediaAssetPicker({
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
       title={uiText.dropHint || 'Drop or paste an image to upload'}
+      aria-busy={isLoading || isUploading}
+      data-testid="media-asset-picker"
     >
-      <div className="mb-3">
+      <div className={compact ? 'mb-2' : 'mb-3'}>
         <input
           type="search"
           value={search}
@@ -150,11 +173,16 @@ export default function MediaAssetPicker({
         <button
           type="button"
           onClick={loadMedia}
-          disabled={isLoading}
+          disabled={isLoading || isUploading}
           className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
         >
           {isLoading ? t.loading : t.refresh}
         </button>
+        {isUploading && (
+          <span className="text-xs font-medium text-blue-700" role="status">
+            {t.uploadBusy}
+          </span>
+        )}
       </div>
 
       <input
@@ -163,6 +191,7 @@ export default function MediaAssetPicker({
         accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
         className="hidden"
         onChange={handleFileChange}
+        data-testid="media-picker-file-input"
       />
 
       {quota && (
@@ -173,12 +202,55 @@ export default function MediaAssetPicker({
 
       {error && <AlertMessage className="mt-3" message={error} />}
 
+      {selectedAssetDetails && (
+        <div className="mt-3 flex gap-3 rounded border border-blue-100 bg-white p-2">
+          <Image
+            src={getAssetUrl(selectedAssetDetails, 'thumbnail') || getAssetUrl(selectedAssetDetails, selectVariant)}
+            alt={selectedAssetDetails.altText || selectedAssetDetails.originalName || t.mediaImageAlt}
+            width={64}
+            height={64}
+            unoptimized
+            className="h-16 w-16 flex-shrink-0 rounded object-cover"
+          />
+          <div className="min-w-0 flex-1 text-xs text-gray-600">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-semibold text-gray-900">{t.selectedLabel}</p>
+                <p className="truncate">{selectedAssetDetails.originalName || `#${selectedAssetDetails.id}`}</p>
+              </div>
+              {onClear && (
+                <button
+                  type="button"
+                  onClick={onClear}
+                  className="rounded border border-gray-300 px-2 py-1 font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  {t.clearSelection}
+                </button>
+              )}
+            </div>
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+              {formatFileSize(selectedAssetDetails.size) && (
+                <span>{t.fileSize}: {formatFileSize(selectedAssetDetails.size)}</span>
+              )}
+              {selectedAssetDetails.uploadedBy?.username && (
+                <span>{t.uploadedBy}: @{selectedAssetDetails.uploadedBy.username}</span>
+              )}
+            </div>
+            {[selectedAssetDetails.altText, selectedAssetDetails.caption, selectedAssetDetails.credit].filter(Boolean).length > 0 && (
+              <p className="mt-1 truncate">
+                {[selectedAssetDetails.altText, selectedAssetDetails.caption, selectedAssetDetails.credit].filter(Boolean).join(' / ')}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       {!isLoading && !error && media.length === 0 && (
         <p className="mt-3 text-sm text-gray-500">{t.emptyLibrary}</p>
       )}
 
       {media.length > 0 && (
-        <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
+        <div className={`mt-3 grid gap-2 ${compact ? 'grid-cols-4 sm:grid-cols-6 md:grid-cols-9' : 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6'}`}>
           {media.map((item) => {
             const thumbUrl = getAssetUrl(item, 'thumbnail') || getAssetUrl(item, selectVariant);
             const selected = String(selectedAssetId || '') === String(item.id || '');
@@ -187,6 +259,7 @@ export default function MediaAssetPicker({
                 key={item.id || item.url}
                 type="button"
                 onClick={() => onSelect?.(item, getAssetUrl(item, selectVariant))}
+                disabled={isUploading}
                 className={`overflow-hidden rounded border bg-white ${selected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-300'}`}
                 title={item.altText || item.originalName || t.useImageTitle}
               >
