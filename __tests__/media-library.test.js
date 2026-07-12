@@ -30,7 +30,9 @@ describe('Media library integration', () => {
   let editorId;
   let uploadedMediaId;
   let adminToken;
-  let adminId;
+  let regularToken;
+  let regularId;
+  let uploadedSharedMediaId;
 
   const csrfHeaderFor = (token) => ({
     Cookie: [`csrf_token=${token}`],
@@ -61,8 +63,16 @@ describe('Media library integration', () => {
       firstNameNative: 'Media',
       lastNameNative: 'Admin',
     });
-    const admin = await User.findOne({ where: { email: 'mediaadmin@test.com' } });
-    adminId = admin.id;
+    await User.create({
+      username: 'mediauser',
+      email: 'mediauser@test.com',
+      password: 'user123',
+      role: 'user',
+      firstNameNative: 'Media',
+      lastNameNative: 'User',
+    });
+    const regular = await User.findOne({ where: { email: 'mediauser@test.com' } });
+    regularId = regular.id;
 
     const loginResponse = await request(app)
       .post('/api/auth/login')
@@ -76,6 +86,12 @@ describe('Media library integration', () => {
       .send({ email: 'mediaadmin@test.com', password: 'admin123' });
     const adminCookie = adminLoginResponse.headers['set-cookie'].find((cookie) => cookie.startsWith('auth_token='));
     adminToken = adminCookie.split(';')[0].replace('auth_token=', '');
+
+    const regularLoginResponse = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'mediauser@test.com', password: 'user123' });
+    const regularCookie = regularLoginResponse.headers['set-cookie'].find((cookie) => cookie.startsWith('auth_token='));
+    regularToken = regularCookie.split(';')[0].replace('auth_token=', '');
   });
 
   afterAll(async () => {
@@ -241,6 +257,77 @@ describe('Media library integration', () => {
     expect(cleanupResponse.status).toBe(200);
     expect(cleanupResponse.body.success).toBe(true);
     expect(cleanupResponse.body.report).toHaveProperty('cleanup');
+  });
+
+  test('regular users can upload shared poll-option media but not article covers', async () => {
+    const sharedCsrfToken = 'csrf-regular-shared-upload';
+    storeCsrfToken(sharedCsrfToken, regularId);
+
+    const sharedResponse = await request(app)
+      .post('/api/media/upload')
+      .set('Authorization', 'Bearer ' + regularToken)
+      .set(csrfHeaderFor(sharedCsrfToken))
+      .field('usageType', 'shared')
+      .field('entityType', 'shared')
+      .field('altText', 'Regular user shared option')
+      .attach('image', TEST_PNG, { filename: 'option.png', contentType: 'image/png' });
+
+    expect(sharedResponse.status).toBe(201);
+    expect(sharedResponse.body.success).toBe(true);
+    expect(sharedResponse.body.media.uploadedByUserId).toBe(regularId);
+    expect(sharedResponse.body.media.usageType).toBe('shared');
+    expect(sharedResponse.body.media.entityType).toBe('shared');
+    expect(sharedResponse.body.quota).toHaveProperty('remainingBytes');
+    uploadedSharedMediaId = sharedResponse.body.media.id;
+
+    const articleCsrfToken = 'csrf-regular-article-upload';
+    storeCsrfToken(articleCsrfToken, regularId);
+
+    const articleResponse = await request(app)
+      .post('/api/media/upload')
+      .set('Authorization', 'Bearer ' + regularToken)
+      .set(csrfHeaderFor(articleCsrfToken))
+      .field('usageType', 'article_cover')
+      .field('entityType', 'article')
+      .attach('image', TEST_PNG, { filename: 'cover.png', contentType: 'image/png' });
+
+    expect(articleResponse.status).toBe(403);
+    expect(articleResponse.body.success).toBe(false);
+  });
+
+  test('regular users can create complex polls with their own shared media asset', async () => {
+    const csrfToken = 'csrf-regular-poll-shared-media';
+    storeCsrfToken(csrfToken, regularId);
+
+    const response = await request(app)
+      .post('/api/polls')
+      .set('Authorization', 'Bearer ' + regularToken)
+      .set(csrfHeaderFor(csrfToken))
+      .send({
+        title: 'Regular user shared-media poll',
+        description: 'Uses a self-service shared media asset for one option.',
+        type: 'complex',
+        allowUserContributions: false,
+        voteRestriction: 'authenticated',
+        visibility: 'public',
+        resultsVisibility: 'after_vote',
+        options: [
+          {
+            text: 'Media-backed option',
+            mediaAssetId: uploadedSharedMediaId,
+            answerType: 'custom',
+          },
+          {
+            text: 'Plain option',
+            answerType: 'custom',
+          },
+        ],
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.options[0].mediaAssetId).toBe(uploadedSharedMediaId);
+    expect(response.body.data.options[0].photoUrl).toContain('/uploads/media/');
   });
 
   test('article relation to media remains queryable', async () => {

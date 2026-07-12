@@ -71,6 +71,10 @@ async function getUserStorageUsage(userId) {
 
 async function getUserQuotaSnapshot(userId) {
   const usedBytes = await getUserStorageUsage(userId);
+  return buildQuotaSnapshot(usedBytes);
+}
+
+function buildQuotaSnapshot(usedBytes) {
   return {
     usedBytes,
     totalBytes: USER_QUOTA_BYTES,
@@ -278,7 +282,11 @@ async function uploadMediaAsset(file, user, metadata = {}, options = {}) {
     return { success: false, status: 401, message: 'Authentication required.' };
   }
 
-  if (!options.allowAnyAuthenticated && !canUploadMedia(user)) {
+  const usageType = normalizeUsageType(metadata.usageType, 'shared');
+  const entityType = normalizeEntityType(metadata.entityType, usageType === 'avatar' ? 'avatar' : (usageType.startsWith('article') ? 'article' : 'shared'));
+  const isSelfServeSharedUpload = usageType === 'shared' && entityType === 'shared';
+
+  if (!options.allowAnyAuthenticated && !isSelfServeSharedUpload && !canUploadMedia(user)) {
     return { success: false, status: 403, message: 'You do not have permission to upload media.' };
   }
 
@@ -308,8 +316,6 @@ async function uploadMediaAsset(file, user, metadata = {}, options = {}) {
     };
   }
 
-  const usageType = normalizeUsageType(metadata.usageType, 'shared');
-  const entityType = normalizeEntityType(metadata.entityType, usageType === 'avatar' ? 'avatar' : (usageType.startsWith('article') ? 'article' : 'shared'));
   const normalizedTags = parseTagsWithLimit(metadata.tags);
   if (normalizedTags.exceedsLimit) {
     return {
@@ -325,7 +331,7 @@ async function uploadMediaAsset(file, user, metadata = {}, options = {}) {
       success: false,
       status: 413,
       message: 'Storage quota exceeded. Please delete unused media before uploading new files.',
-      quota: { usedBytes: currentUsage, totalBytes: USER_QUOTA_BYTES },
+      quota: buildQuotaSnapshot(currentUsage),
     };
   }
 
@@ -359,10 +365,7 @@ async function uploadMediaAsset(file, user, metadata = {}, options = {}) {
   return {
     success: true,
     media: serializeMediaAsset(asset),
-    quota: {
-      usedBytes: currentUsage + asset.size,
-      totalBytes: USER_QUOTA_BYTES,
-    },
+    quota: buildQuotaSnapshot(currentUsage + asset.size),
   };
 }
 
@@ -548,11 +551,6 @@ async function updateMediaAssetMetadata(id, user, payload = {}) {
   return { success: true, media: serializeMediaAsset(asset) };
 }
 
-async function getAssetReferenceCount(asset) {
-  const summaryById = await getReferenceSummaryForAssets([asset]);
-  return summaryById[asset.id]?.total || 0;
-}
-
 async function softDeleteMediaAsset(asset) {
   const variantEntries = Object.values(asset.variants || {});
   for (const variant of variantEntries) {
@@ -570,7 +568,7 @@ async function softDeleteMediaAsset(asset) {
   await asset.save();
 }
 
-async function deleteMediaAsset(id, user, options = {}) {
+async function deleteMediaAsset(id, user) {
   const asset = await MediaAsset.findByPk(id);
   if (!asset || asset.deletedAt) {
     return { success: false, status: 404, message: 'Media not found.' };
