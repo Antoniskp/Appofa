@@ -145,6 +145,7 @@ const {
   resolveLocationFromFeatureProps,
   getLocationFeatureKey,
   buildLocationHoverPopup,
+  RegionInfoCard,
 } = require('../components/map/GreeceBoundaryMap');
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -519,6 +520,43 @@ describe('buildLocationHoverPopup', () => {
     expect(html).toContain('&lt;Attica&gt;');
     expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
     expect(html).not.toContain('<script>');
+  });
+});
+
+describe('RegionInfoCard', () => {
+  test('renders candidate avatars and actionable links in the top-right popup card', async () => {
+    const region = {
+      name: 'Attica',
+      slug: 'attiki',
+      userCount: 12,
+      candidateCount: 1,
+      candidatePreview: [
+        {
+          id: 44,
+          positionType: 'parliamentary',
+          partyName: 'Demo Party',
+          candidate: {
+            id: 9,
+            displayName: 'Maria Demo',
+            username: 'maria_demo',
+            avatarUrl: '/uploads/maria.jpg',
+          },
+        },
+      ],
+    };
+
+    const { container, root } = await renderComponent(
+      React.createElement(RegionInfoCard, { region, onClose: jest.fn() })
+    );
+
+    const avatar = container.querySelector('img[alt="Maria Demo"]');
+    expect(avatar).toBeTruthy();
+    expect(avatar.getAttribute('src')).toBe('/uploads/maria.jpg');
+    expect(container.querySelector('a[href="/users/maria_demo"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/candidate-registrations/44"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/locations/attiki?tab=candidates#location-content"]')).toBeTruthy();
+
+    await cleanup(root, container);
   });
 });
 

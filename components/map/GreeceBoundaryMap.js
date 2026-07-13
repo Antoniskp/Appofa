@@ -222,6 +222,17 @@ function getPositionLabel(candidateRegistration) {
     || String(candidateRegistration.positionType || 'candidate').replace(/_/g, ' ');
 }
 
+function getCandidateAvatar(candidate) {
+  return candidate?.avatarUrl || candidate?.avatar || candidate?.photo || null;
+}
+
+function getCandidateHref(candidate) {
+  if (!candidate) return '#';
+  if (candidate.slug) return `/persons/${candidate.slug}`;
+  if (candidate.username) return `/users/${candidate.username}`;
+  return `/users/${candidate.id}`;
+}
+
 function buildCandidatePreview(candidatePreview = [], candidateCount = 0) {
   const registrations = Array.isArray(candidatePreview) ? candidatePreview : [];
   if (candidateCount <= 0 && registrations.length === 0) return '';
@@ -279,6 +290,19 @@ function buildLocationHoverPopup(props = {}) {
   lines.push(buildCandidatePreview(props.candidatePreview, Number(props.candidateCount || 0)));
   lines.push('</div>');
   return lines.join('');
+}
+
+function buildRegionCardData(props = {}, linkedLocation = null) {
+  return {
+    name: props.name || props.name_en || linkedLocation?.name_local || linkedLocation?.name || '',
+    capital: props.capital || '',
+    code: props.code || linkedLocation?.code || '',
+    slug: linkedLocation?.slug || props.slug || null,
+    userCount: linkedLocation?.userCount ?? props.userCount ?? 0,
+    moderatorPreview: linkedLocation?.moderatorPreview || props.moderatorPreview || null,
+    candidateCount: linkedLocation?.candidateCount ?? props.candidateCount ?? 0,
+    candidatePreview: linkedLocation?.candidatePreview || props.candidatePreview || [],
+  };
 }
 
 const GREECE_CENTER = [38.5, 23.8];
@@ -360,8 +384,10 @@ function RegionInfoCard({ region, onClose }) {
     ? [region.moderatorPreview.firstNameNative, region.moderatorPreview.lastNameNative].filter(Boolean).join(' ') || region.moderatorPreview.username
     : '';
   const candidateCount = Number(region.candidateCount || 0);
+  const candidates = Array.isArray(region.candidatePreview) ? region.candidatePreview.slice(0, 3) : [];
+  const extraCandidateCount = Math.max(0, candidateCount - candidates.length);
   return (
-    <div className="absolute top-14 right-3 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100 p-3 min-w-[180px] max-w-[220px] pointer-events-auto">
+    <div className="absolute top-14 right-3 z-[1000] w-[min(320px,calc(100%-1.5rem))] rounded-xl border border-gray-100 bg-white/95 p-3 shadow-lg backdrop-blur-sm pointer-events-auto">
       <div className="flex items-start justify-between gap-2 mb-1">
         <p className="font-semibold text-gray-900 text-sm leading-tight">{region.name}</p>
         <button
@@ -388,8 +414,52 @@ function RegionInfoCard({ region, onClose }) {
         </div>
       </div>
       {candidateCount > 0 && (
-        <div className="mb-2 rounded-md bg-sky-50 px-2 py-1 text-xs text-sky-800">
-          <span className="font-semibold">{candidateCount}</span> candidates registered
+        <div className="mb-2 rounded-md bg-sky-50 px-2 py-1 text-xs text-sky-800 flex items-center justify-between gap-2">
+          <span><span className="font-semibold">{candidateCount}</span> candidates registered</span>
+          <Link href={`${href}?tab=candidates#location-content`} className="font-semibold hover:text-sky-950">
+            View
+          </Link>
+        </div>
+      )}
+      {candidates.length > 0 && (
+        <div className="mb-2 space-y-2">
+          {candidates.map((registration) => {
+            const candidate = registration.candidate || {};
+            const candidateName = getCandidateDisplayName(candidate);
+            const avatar = getCandidateAvatar(candidate);
+            const profileHref = getCandidateHref(candidate);
+            const registrationHref = registration.id ? `/candidate-registrations/${registration.id}` : `${href}?tab=candidates#location-content`;
+            const party = registration.isIndependent ? 'Independent' : registration.partyName;
+            const meta = [getPositionLabel(registration), party].filter(Boolean).join(' - ');
+
+            return (
+              <div key={registration.id || candidate.id || candidateName} className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50/80 p-2">
+                <Link href={profileHref} className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-blue-600 text-white">
+                  {avatar ? (
+                    <img src={avatar} alt={candidateName} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-xs font-bold">
+                      {getCandidateInitials(candidateName)}
+                    </span>
+                  )}
+                </Link>
+                <div className="min-w-0 flex-1">
+                  <Link href={profileHref} className="block truncate text-xs font-semibold text-gray-900 hover:text-blue-700">
+                    {candidateName}
+                  </Link>
+                  <p className="truncate text-[11px] text-gray-500">{meta}</p>
+                </div>
+                <Link href={registrationHref} className="shrink-0 rounded-md border border-blue-200 bg-white px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-50">
+                  Campaign
+                </Link>
+              </div>
+            );
+          })}
+          {extraCandidateCount > 0 && (
+            <Link href={`${href}?tab=candidates#location-content`} className="block text-xs font-semibold text-blue-700 hover:text-blue-900">
+              +{extraCandidateCount} more candidate{extraCandidateCount === 1 ? '' : 's'}
+            </Link>
+          )}
         </div>
       )}
       {moderatorName && (
@@ -463,27 +533,29 @@ export default memo(function GreeceBoundaryMap({
     if (linkedLocation?.id != null && onLocationSelect) {
       onLocationSelect(linkedLocation.id);
     }
-    setSelectedRegion({
-      name: p.name || p.name_en || '',
-      capital: p.capital || '',
-      code: p.code || '',
-      slug: p.slug || null,
-      userCount: linkedLocation?.userCount || p.userCount || 0,
-      moderatorPreview: linkedLocation?.moderatorPreview || p.moderatorPreview || null,
-      candidateCount: linkedLocation?.candidateCount || p.candidateCount || 0,
-      candidatePreview: linkedLocation?.candidatePreview || p.candidatePreview || [],
-    });
+    setSelectedRegion(buildRegionCardData(p, linkedLocation));
   }, [locationLookup, onLocationSelect]);
 
   const handleFeatureHover = useCallback((featureOrNull) => {
-    if (!onLocationHover) return;
     if (!featureOrNull) {
-      onLocationHover(null);
+      if (onLocationHover) onLocationHover(null);
       return;
     }
-    const linkedLocation = resolveLocationFromFeatureProps(featureOrNull.properties || {}, locationLookup);
-    onLocationHover(linkedLocation?.id ?? null);
+    const props = featureOrNull.properties || {};
+    const linkedLocation = resolveLocationFromFeatureProps(props, locationLookup);
+    if (onLocationHover) onLocationHover(linkedLocation?.id ?? null);
+    setSelectedRegion(buildRegionCardData(props, linkedLocation));
   }, [locationLookup, onLocationHover]);
+
+  const showLocationCard = useCallback((locationId) => {
+    const linkedLocation = prefectures.find((prefecture) => String(prefecture.id) === String(locationId));
+    if (!linkedLocation) return;
+    setSelectedRegion(buildRegionCardData({
+      name: linkedLocation.name_local || linkedLocation.name,
+      code: linkedLocation.code || '',
+      slug: linkedLocation.slug || null,
+    }, linkedLocation));
+  }, [prefectures]);
 
   const markers = useMemo(
     () => prefectures
@@ -495,20 +567,6 @@ export default memo(function GreeceBoundaryMap({
         label: p.name_local || p.name,
         meta: `${Number(p.userCount || 0)} users${p.moderatorPreview ? ' - moderator assigned' : ''}`,
         href: p.slug ? `/locations/${p.slug}` : null,
-        tooltip: buildLocationHoverPopup({
-          name: p.name_local || p.name,
-          userCount: typeof p.userCount === 'number' ? p.userCount : null,
-          moderatorPreview: p.moderatorPreview || null,
-          candidateCount: typeof p.candidateCount === 'number' ? p.candidateCount : 0,
-          candidatePreview: Array.isArray(p.candidatePreview) ? p.candidatePreview : [],
-        }),
-        popup: buildLocationHoverPopup({
-          name: p.name_local || p.name,
-          userCount: typeof p.userCount === 'number' ? p.userCount : null,
-          moderatorPreview: p.moderatorPreview || null,
-          candidateCount: typeof p.candidateCount === 'number' ? p.candidateCount : 0,
-          candidatePreview: Array.isArray(p.candidatePreview) ? p.candidatePreview : [],
-        }),
         variant: Number(selectedLocationId) === Number(p.id) ? 'selected' : 'explorer',
       })),
     [prefectures, selectedLocationId]
@@ -540,16 +598,6 @@ export default memo(function GreeceBoundaryMap({
         fitBoundsOnClick: true,
         onFeatureClick: handleFeatureClick,
         onFeatureHover: handleFeatureHover,
-        getTooltip: (props) => {
-          const linkedLocation = resolveLocationFromFeatureProps(props || {}, locationLookup);
-          return buildLocationHoverPopup({
-            ...(props || {}),
-            userCount: linkedLocation?.userCount ?? props?.userCount,
-            moderatorPreview: linkedLocation?.moderatorPreview || props?.moderatorPreview || null,
-            candidateCount: linkedLocation?.candidateCount ?? props?.candidateCount ?? 0,
-            candidatePreview: linkedLocation?.candidatePreview || props?.candidatePreview || [],
-          });
-        },
         getFeatureId: (feature) => getLocationFeatureKey(feature.properties || {}),
         onLayerInit,
       },
@@ -605,7 +653,11 @@ export default memo(function GreeceBoundaryMap({
         interactive={true}
         tileMode={layerMode === 'satellite' ? 'satellite' : layerMode === 'political' ? 'political' : 'light'}
         showFullscreenControl
-        onMarkerHover={onMarkerHover}
+        onMarkerHover={(idOrNull) => {
+          if (idOrNull != null) showLocationCard(idOrNull);
+          if (onMarkerHover) onMarkerHover(idOrNull);
+        }}
+        onMarkerClick={(id) => showLocationCard(id)}
         onMarkersReady={onMarkersReady}
       />
       {/* React info card overlay — positioned inside the relative container, above Leaflet */}
@@ -632,4 +684,5 @@ export {
   resolveLocationFromFeatureProps,
   getLocationFeatureKey,
   buildLocationHoverPopup,
+  RegionInfoCard,
 };
