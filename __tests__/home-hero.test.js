@@ -20,12 +20,12 @@ jest.mock('@/lib/auth-context', () => ({
 }));
 
 jest.mock('@/lib/api', () => ({
-  statsAPI: {
-    getCommunityStats: jest.fn(),
-  },
   heroSettingsAPI: {
     get: jest.fn(),
     getSlides: jest.fn(),
+  },
+  pollAPI: {
+    vote: jest.fn(),
   },
 }));
 
@@ -35,14 +35,8 @@ jest.mock('@/hooks/useAsyncData', () => ({
 
 const { useAsyncData } = require('@/hooks/useAsyncData');
 const { useAuth } = require('@/lib/auth-context');
+const { pollAPI } = require('@/lib/api');
 const HomeHero = require('../components/layout/HomeHero').default;
-
-const baseStats = {
-  totalUsers: 1,
-  totalSuggestions: 5,
-  totalPolls: 2,
-  activeUsers: 3,
-};
 
 const buildSlide = (linkUrl, linkText = 'Δες τώρα') => ({
   id: 1,
@@ -52,12 +46,11 @@ const buildSlide = (linkUrl, linkText = 'Δες τώρα') => ({
   linkText,
 });
 
-const renderHero = async (slide) => {
+const renderHero = async (slide, props = {}) => {
   let callCount = 0;
   useAsyncData.mockImplementation((_, __, options = {}) => {
     callCount += 1;
-    if (callCount === 1) return { data: baseStats, loading: false };
-    if (callCount === 2) {
+    if (callCount === 1) {
       if (typeof options.onSuccess === 'function') {
         options.onSuccess({ success: false });
       }
@@ -72,7 +65,7 @@ const renderHero = async (slide) => {
   const root = createRoot(container);
 
   await act(async () => {
-    root.render(React.createElement(HomeHero));
+    root.render(React.createElement(HomeHero, props));
   });
 
   return { container, root };
@@ -82,6 +75,7 @@ describe('HomeHero CTA link behavior', () => {
   afterEach(async () => {
     useAsyncData.mockReset();
     useAuth.mockReset();
+    pollAPI.vote.mockReset();
     useAuth.mockReturnValue({ user: null, loading: false });
     document.body.innerHTML = '';
   });
@@ -221,15 +215,50 @@ describe('HomeHero CTA link behavior', () => {
     });
   });
 
-  test('renders updated community metric labels and values', async () => {
+  test('does not render the old static live panel', async () => {
     const { container, root } = await renderHero(buildSlide('/polls'));
 
-    expect(container.textContent).toContain('Χρήστες');
-    expect(container.textContent).toContain('Προτάσεις');
-    expect(container.textContent).toContain('Ψηφοφορίες');
-    expect(container.textContent).toContain('Ενεργοί');
-    expect(container.textContent).toContain('5');
-    expect(container.textContent).toContain('3');
+    expect(container.textContent).not.toContain('Ζωντανή εικόνα');
+    expect(container.textContent).not.toContain('Η συμμετοχή γίνεται πράξη');
+    expect(container.textContent).not.toContain('Τοπική δράση');
+    expect(container.textContent).not.toContain('Λύσεις πολιτών');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('lets users vote in the featured poll without navigating away', async () => {
+    const featuredPoll = {
+      id: 42,
+      title: 'Ποιο μοντέλο συμμετοχής σε εκφράζει περισσότερο;',
+      description: 'Διάλεξε τι σε εκφράζει.',
+      status: 'active',
+      voteRestriction: 'anyone',
+      options: [
+        { id: 1, text: 'Περισσότερη άμεση δημοκρατία', voteCount: 2 },
+        { id: 2, text: 'Το υπάρχον κομματικό σύστημα', voteCount: 1 },
+      ],
+    };
+    pollAPI.vote.mockResolvedValue({
+      success: true,
+      data: { voteCounts: { 1: 3, 2: 1 } },
+    });
+
+    const { container, root } = await renderHero(buildSlide('/polls'), { featuredPoll });
+    const voteButton = [...container.querySelectorAll('button')]
+      .find((button) => button.textContent.includes('Περισσότερη άμεση δημοκρατία'));
+
+    expect(voteButton).toBeTruthy();
+    expect(container.querySelector('a[href^="/polls/42"]')).toBeFalsy();
+
+    await act(async () => {
+      voteButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(pollAPI.vote).toHaveBeenCalledWith(42, 1);
+    expect(container.textContent).toContain('75%');
+    expect(container.textContent).toContain('4 ψήφοι');
 
     await act(async () => {
       root.unmount();
