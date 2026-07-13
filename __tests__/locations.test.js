@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('../src/index');
-const { sequelize, User, Location, LocationLink, Article, UserLocationRole, LocationRole } = require('../src/models');
+const { sequelize, User, Location, LocationLink, Article, UserLocationRole, LocationRole, CandidateRegistration } = require('../src/models');
 const { storeCsrfToken } = require('../src/utils/csrf');
 
 describe('Location API Tests', () => {
@@ -279,6 +279,84 @@ describe('Location API Tests', () => {
         'B Homepage Prefecture'
       ]);
       expect(response.body.locations.map((location) => location.userCount)).toEqual([1, 2]);
+    });
+
+    it('should include approved public candidate previews for homepage prefectures', async () => {
+      const country = await Location.create({ name: 'Candidate Preview Country', slug: 'candidate-preview-country', type: 'country' });
+      const prefecture = await Location.create({ name: 'Candidate Preview Prefecture', slug: 'candidate-preview-prefecture', type: 'prefecture', parent_id: country.id });
+      const municipality = await Location.create({ name: 'Candidate Preview Municipality', slug: 'candidate-preview-municipality', type: 'municipality', parent_id: prefecture.id });
+
+      const [visibleCandidate, hiddenCandidate, pendingCandidate] = await Promise.all([
+        User.create({
+          username: 'homepage_visible_candidate',
+          email: 'homepage_visible_candidate@test.com',
+          password: 'password123',
+          role: 'candidate',
+          firstNameEn: 'Visible',
+          lastNameEn: 'Candidate',
+          profileVisibility: 'public',
+        }),
+        User.create({
+          username: 'homepage_hidden_candidate',
+          email: 'homepage_hidden_candidate@test.com',
+          password: 'password123',
+          role: 'candidate',
+          firstNameEn: 'Hidden',
+          lastNameEn: 'Candidate',
+          profileVisibility: 'hidden',
+        }),
+        User.create({
+          username: 'homepage_pending_candidate',
+          email: 'homepage_pending_candidate@test.com',
+          password: 'password123',
+          role: 'candidate',
+          firstNameEn: 'Pending',
+          lastNameEn: 'Candidate',
+          profileVisibility: 'public',
+        }),
+      ]);
+
+      await Promise.all([
+        CandidateRegistration.create({
+          userId: visibleCandidate.id,
+          locationId: municipality.id,
+          positionType: 'parliamentary',
+          electionCycle: 'current',
+          partyName: 'Preview Party',
+          status: 'approved',
+        }),
+        CandidateRegistration.create({
+          userId: hiddenCandidate.id,
+          locationId: prefecture.id,
+          positionType: 'parliamentary',
+          electionCycle: 'current',
+          status: 'approved',
+        }),
+        CandidateRegistration.create({
+          userId: pendingCandidate.id,
+          locationId: prefecture.id,
+          positionType: 'parliamentary',
+          electionCycle: 'current',
+          status: 'submitted',
+        }),
+      ]);
+
+      const response = await request(app)
+        .get('/api/locations')
+        .query({
+          type: 'prefecture',
+          parent_id: country.id,
+          includeCandidatePreview: true,
+          limit: 10,
+        })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.locations).toHaveLength(1);
+      expect(response.body.locations[0].candidateCount).toBe(1);
+      expect(response.body.locations[0].candidatePreview).toHaveLength(1);
+      expect(response.body.locations[0].candidatePreview[0].candidate.displayName).toBe('Visible Candidate');
+      expect(response.body.locations[0].candidatePreview[0].partyName).toBe('Preview Party');
     });
   });
 

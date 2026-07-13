@@ -144,6 +144,7 @@ const {
   buildLocationLookupByFeatureProps,
   resolveLocationFromFeatureProps,
   getLocationFeatureKey,
+  buildLocationHoverPopup,
 } = require('../components/map/GreeceBoundaryMap');
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -413,6 +414,24 @@ describe('locationToFeatures', () => {
     expect(features[0].properties.boundary_color).toBe('#12abef');
   });
 
+  test('copies candidate preview metadata into feature properties', () => {
+    const candidatePreview = [
+      {
+        id: 9,
+        positionType: 'parliamentary',
+        isIndependent: true,
+        candidate: { id: 99, displayName: 'Demo Candidate', username: 'demo_candidate' },
+      },
+    ];
+    const features = locationToFeatures({
+      ...SAMPLE_PREFECTURE,
+      candidateCount: 1,
+      candidatePreview,
+    });
+    expect(features[0].properties.candidateCount).toBe(1);
+    expect(features[0].properties.candidatePreview).toBe(candidatePreview);
+  });
+
   test('returns empty array when boundary_geojson is null', () => {
     expect(locationToFeatures(SAMPLE_PREFECTURE_NO_BOUNDARY)).toHaveLength(0);
   });
@@ -447,6 +466,59 @@ describe('locationToFeatures', () => {
     const features = locationToFeatures(loc);
     expect(features[0].properties.name).toBe('Attica');
     expect(features[0].properties.name_en).toBe('Attica');
+  });
+});
+
+describe('buildLocationHoverPopup', () => {
+  test('renders candidate preview rows for prefecture hover content', () => {
+    const html = buildLocationHoverPopup({
+      name: 'Attica',
+      userCount: 12,
+      candidateCount: 2,
+      candidatePreview: [
+        {
+          positionType: 'parliamentary',
+          partyName: 'Demo Party',
+          candidate: {
+            displayName: 'Maria Demo',
+            username: 'maria_demo',
+            avatarColor: '#123456',
+          },
+        },
+        {
+          positionTitle: 'Regional council',
+          isIndependent: true,
+          candidate: {
+            firstNameEn: 'Nikos',
+            lastNameEn: 'Example',
+            username: 'nikos_example',
+          },
+        },
+      ],
+    });
+
+    expect(html).toContain('2 candidates');
+    expect(html).toContain('Maria Demo');
+    expect(html).toContain('Demo Party');
+    expect(html).toContain('Nikos Example');
+    expect(html).toContain('Independent');
+  });
+
+  test('escapes candidate names in hover HTML', () => {
+    const html = buildLocationHoverPopup({
+      name: '<Attica>',
+      candidateCount: 1,
+      candidatePreview: [
+        {
+          positionType: 'other',
+          candidate: { displayName: '<script>alert(1)</script>' },
+        },
+      ],
+    });
+
+    expect(html).toContain('&lt;Attica&gt;');
+    expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(html).not.toContain('<script>');
   });
 });
 
@@ -661,7 +733,7 @@ describe('ExploreLocationsMap — prefecture pills', () => {
 //
 // The fix uses a 2-step API pattern:
 //   1. `locationAPI.getAll({ type: 'country', code: 'GR', limit: 1 })` → resolve Greece ID
-//   2. `locationAPI.getAll({ type: 'prefecture', parent_id: greeceId, includeUserCounts: true, limit: 50 })` → Greek prefectures only with aggregate user counts
+//   2. `locationAPI.getAll({ type: 'prefecture', parent_id: greeceId, includeUserCounts: true, includeCandidatePreview: true, limit: 50 })` → Greek prefectures only with aggregate user counts and candidate previews
 //
 // These tests verify the contract for that pattern.
 
@@ -674,7 +746,7 @@ describe('homepage Greek prefecture scoping — regression for Cyprus pills bug'
         ? greeceRes.locations[0].id
         : null;
     if (!greeceId) return [];
-    const response = await mockGetAll({ type: 'prefecture', parent_id: greeceId, includeUserCounts: true, limit: 50 });
+    const response = await mockGetAll({ type: 'prefecture', parent_id: greeceId, includeUserCounts: true, includeCandidatePreview: true, limit: 50 });
     return response.success ? (response.locations || []) : [];
   }
 
@@ -701,7 +773,7 @@ describe('homepage Greek prefecture scoping — regression for Cyprus pills bug'
     // First call: country code lookup
     expect(mockGetAll).toHaveBeenNthCalledWith(1, { type: 'country', code: 'GR', limit: 1 });
     // Second call: prefectures scoped to Greece's ID
-    expect(mockGetAll).toHaveBeenNthCalledWith(2, { type: 'prefecture', parent_id: 7, includeUserCounts: true, limit: 50 });
+    expect(mockGetAll).toHaveBeenNthCalledWith(2, { type: 'prefecture', parent_id: 7, includeUserCounts: true, includeCandidatePreview: true, limit: 50 });
 
     expect(prefectures).toHaveLength(2);
     const names = prefectures.map((p) => p.name);

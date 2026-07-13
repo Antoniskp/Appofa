@@ -162,6 +162,7 @@ export default function HomePage() {
           type: 'prefecture',
           parent_id: greeceId,
           includeUserCounts: true,
+          includeCandidatePreview: true,
           limit: 50,
         });
         if (response.success) {
@@ -340,10 +341,12 @@ export default function HomePage() {
           bgColor="bg-white"
           renderItem={() => null}
           mapSlot={
-            <ExploreLocationsMap
-              prefectures={prefectures}
-              loading={prefecturesLoading}
-            />
+            <div className="-mt-2 md:-mt-3">
+              <ExploreLocationsMap
+                prefectures={prefectures}
+                loading={prefecturesLoading}
+              />
+            </div>
           }
         />
       )}

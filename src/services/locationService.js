@@ -1,6 +1,6 @@
 'use strict';
 
-const { sequelize, Location, LocationLink, Article, User, UserLocationRole, Poll, LocationRequest, MunicipalityDistrictMap } = require('../models');
+const { sequelize, Location, LocationLink, Article, User, UserLocationRole, Poll, LocationRequest, MunicipalityDistrictMap, CandidateRegistration } = require('../models');
 const { Op, fn, col, where, QueryTypes } = require('sequelize');
 const { fetchWikipediaData } = require('../utils/wikipediaFetcher');
 const { getDescendantLocationIds, getAncestorLocationIds, getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
@@ -91,6 +91,43 @@ const normalizeBoundaryGeoJson = (input) => {
     message: 'Invalid boundary GeoJSON: root must be FeatureCollection, Feature, Polygon, or MultiPolygon.'
   };
 };
+
+function serializeCandidatePreviewRegistration(registration) {
+  const data = registration.toJSON ? registration.toJSON() : registration;
+  const candidate = data.candidate || null;
+  const displayName = candidate
+    ? [candidate.firstNameNative, candidate.lastNameNative].filter(Boolean).join(' ').trim()
+      || [candidate.firstNameEn, candidate.lastNameEn].filter(Boolean).join(' ').trim()
+      || candidate.nickname
+      || candidate.username
+      || 'Candidate'
+    : 'Candidate';
+
+  return {
+    id: data.id,
+    positionType: data.positionType,
+    positionTitle: data.positionTitle,
+    electionCycle: data.electionCycle,
+    partyName: data.partyName,
+    isIndependent: Boolean(data.isIndependent),
+    candidate: candidate ? {
+      id: candidate.id,
+      username: candidate.username,
+      firstNameNative: candidate.firstNameNative,
+      lastNameNative: candidate.lastNameNative,
+      firstNameEn: candidate.firstNameEn,
+      lastNameEn: candidate.lastNameEn,
+      nickname: candidate.nickname,
+      avatar: candidate.avatar,
+      avatarUrl: candidate.avatarUrl,
+      avatarColor: candidate.avatarColor,
+      photo: candidate.photo,
+      isVerified: candidate.isVerified,
+      slug: candidate.slug,
+      displayName,
+    } : null,
+  };
+}
 
 const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 
@@ -291,9 +328,10 @@ const createLocation = async (locationData) => {
  */
 const getLocations = async (queryParams) => {
   try {
-    const { type, parent_id, search, code, limit = 100, offset = 0, sort, includeUserCounts } = queryParams;
+    const { type, parent_id, search, code, limit = 100, offset = 0, sort, includeUserCounts, includeCandidatePreview } = queryParams;
     const escapedSearch = search ? search.replace(/[\\%_]/g, '\\$&') : null;
     const shouldIncludeUserCounts = sort === 'mostUsers' || includeUserCounts === true || includeUserCounts === 'true' || includeUserCounts === '1';
+    const shouldIncludeCandidatePreview = includeCandidatePreview === true || includeCandidatePreview === 'true' || includeCandidatePreview === '1';
 
     const whereClause = {};
 
@@ -428,6 +466,7 @@ const getLocations = async (queryParams) => {
     const locationIds = locations.map((location) => location.id);
     const moderatorLocationIds = new Set();
     const moderatorPreviewByLocationId = new Map();
+    const candidateSummaryByLocationId = new Map();
 
     if (locationIds.length > 0) {
       // Use UserLocationRole join table: find moderator assignments for these exact locations
@@ -464,6 +503,59 @@ const getLocations = async (queryParams) => {
           }
         }
       });
+
+      if (shouldIncludeCandidatePreview) {
+        const descendantPairs = await Promise.all(
+          locationIds.map(async (locationId) => ({
+            locationId: Number(locationId),
+            descendantIds: await getDescendantLocationIds(locationId, true),
+          }))
+        );
+        const descendantIdsByLocationId = new Map(
+          descendantPairs.map(({ locationId, descendantIds }) => [
+            locationId,
+            descendantIds.map(Number).filter((id) => Number.isInteger(id)),
+          ])
+        );
+        const allCandidateLocationIds = Array.from(new Set(
+          descendantPairs.flatMap(({ descendantIds }) => descendantIds.map(Number))
+        )).filter((id) => Number.isInteger(id));
+
+        if (allCandidateLocationIds.length > 0) {
+          const registrations = await CandidateRegistration.findAll({
+            where: {
+              status: 'approved',
+              locationId: { [Op.in]: allCandidateLocationIds },
+            },
+            include: [
+              {
+                model: User,
+                as: 'candidate',
+                required: true,
+                where: {
+                  profileVisibility: { [Op.in]: getDiscoverableVisibilities(false) },
+                  claimStatus: null,
+                },
+                attributes: [
+                  'id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn',
+                  'nickname', 'avatar', 'avatarUrl', 'avatarColor', 'photo', 'isVerified', 'slug',
+                ],
+              },
+            ],
+            order: [['createdAt', 'DESC'], ['id', 'DESC']],
+          });
+
+          locationIds.forEach((locationId) => {
+            const normalizedLocationId = Number(locationId);
+            const descendantSet = new Set(descendantIdsByLocationId.get(normalizedLocationId) || [normalizedLocationId]);
+            const scopedRegistrations = registrations.filter((registration) => descendantSet.has(Number(registration.locationId)));
+            candidateSummaryByLocationId.set(normalizedLocationId, {
+              candidateCount: scopedRegistrations.length,
+              candidatePreview: scopedRegistrations.slice(0, 3).map(serializeCandidatePreviewRegistration),
+            });
+          });
+        }
+      }
     }
 
     const locationsWithModeratorStatus = locations.map((location) => {
@@ -474,7 +566,8 @@ const getLocations = async (queryParams) => {
         ...serializedLocation,
         ...(hasUserCount ? { userCount: Number.parseInt(serializedLocation.userCount, 10) || 0 } : {}),
         hasModerator: moderatorLocationIds.has(locationId),
-        moderatorPreview: moderatorPreviewByLocationId.get(locationId) || null
+        moderatorPreview: moderatorPreviewByLocationId.get(locationId) || null,
+        ...(shouldIncludeCandidatePreview ? (candidateSummaryByLocationId.get(locationId) || { candidateCount: 0, candidatePreview: [] }) : {})
       };
     });
 

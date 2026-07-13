@@ -145,6 +145,8 @@ function locationToFeatures(loc) {
     boundary_color: loc.boundary_color || null,
     userCount: typeof loc.userCount === 'number' ? loc.userCount : null,
     moderatorPreview: loc.moderatorPreview || null,
+    candidateCount: typeof loc.candidateCount === 'number' ? loc.candidateCount : 0,
+    candidatePreview: Array.isArray(loc.candidatePreview) ? loc.candidatePreview : [],
   };
 
   if (normalized.type === 'FeatureCollection') {
@@ -185,6 +187,97 @@ function buildTooltip(props) {
       lines.push(`<div style="font-size:11px;color:#6b7280;margin-top:2px">🏛 ${modName}</div>`);
     }
   }
+  return lines.join('');
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getCandidateDisplayName(candidate) {
+  if (!candidate) return 'Candidate';
+  return candidate.displayName
+    || [candidate.firstNameNative, candidate.lastNameNative].filter(Boolean).join(' ').trim()
+    || [candidate.firstNameEn, candidate.lastNameEn].filter(Boolean).join(' ').trim()
+    || candidate.nickname
+    || candidate.username
+    || 'Candidate';
+}
+
+function getCandidateInitials(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  const initials = parts.length > 1
+    ? `${parts[0][0] || ''}${parts[parts.length - 1][0] || ''}`
+    : (parts[0] || '?').slice(0, 2);
+  return initials.toUpperCase();
+}
+
+function getPositionLabel(candidateRegistration) {
+  return candidateRegistration.positionTitle
+    || String(candidateRegistration.positionType || 'candidate').replace(/_/g, ' ');
+}
+
+function buildCandidatePreview(candidatePreview = [], candidateCount = 0) {
+  const registrations = Array.isArray(candidatePreview) ? candidatePreview : [];
+  if (candidateCount <= 0 && registrations.length === 0) return '';
+
+  const visible = registrations.slice(0, 3);
+  const rows = visible.map((registration) => {
+    const candidate = registration.candidate || {};
+    const name = getCandidateDisplayName(candidate);
+    const party = registration.isIndependent ? 'Independent' : registration.partyName;
+    const meta = [getPositionLabel(registration), party].filter(Boolean).join(' - ');
+    const avatarColor = candidate.avatarColor && /^#[0-9A-Fa-f]{6}$/.test(candidate.avatarColor)
+      ? candidate.avatarColor
+      : '#2563eb';
+    return `
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+        <div style="width:26px;height:26px;border-radius:999px;background:${avatarColor};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex:0 0 auto">${escapeHtml(getCandidateInitials(name))}</div>
+        <div style="min-width:0">
+          <div style="font-size:12px;font-weight:700;color:#111827;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px">${escapeHtml(name)}</div>
+          <div style="font-size:10px;color:#6b7280;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px">${escapeHtml(meta)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const moreCount = Math.max(0, candidateCount - visible.length);
+  const countLine = moreCount > 0
+    ? `<div style="font-size:10px;color:#2563eb;margin-top:6px;font-weight:700">+${moreCount} more candidate${moreCount === 1 ? '' : 's'}</div>`
+    : '';
+
+  return `
+    <div style="margin-top:8px;border-top:1px solid #e5e7eb;padding-top:8px">
+      <div style="font-size:11px;font-weight:800;color:#1f2937;text-transform:uppercase;letter-spacing:.04em">${candidateCount} candidate${candidateCount === 1 ? '' : 's'}</div>
+      ${rows || '<div style="font-size:11px;color:#6b7280;margin-top:4px">No public candidate profiles yet.</div>'}
+      ${countLine}
+    </div>
+  `;
+}
+
+function buildLocationHoverPopup(props = {}) {
+  if (props?.useLegacyTooltip) return buildTooltip(props);
+  const name = props.name || '';
+  const lines = [
+    `<div style="min-width:190px;max-width:240px"><div style="font-weight:800;font-size:13px;line-height:1.3;color:#111827">${escapeHtml(name)}</div>`,
+  ];
+  if (typeof props.userCount === 'number' && props.userCount > 0) {
+    lines.push(`<div style="font-size:11px;color:#6b7280;margin-top:3px">${props.userCount} user${props.userCount === 1 ? '' : 's'}</div>`);
+  }
+  const mod = props.moderatorPreview;
+  if (mod) {
+    const modName = [mod.firstNameNative, mod.lastNameNative].filter(Boolean).join(' ') || mod.username || '';
+    if (modName) {
+      lines.push(`<div style="font-size:11px;color:#6b7280;margin-top:2px">Moderator: ${escapeHtml(modName)}</div>`);
+    }
+  }
+  lines.push(buildCandidatePreview(props.candidatePreview, Number(props.candidateCount || 0)));
+  lines.push('</div>');
   return lines.join('');
 }
 
@@ -266,6 +359,7 @@ function RegionInfoCard({ region, onClose }) {
   const moderatorName = region.moderatorPreview
     ? [region.moderatorPreview.firstNameNative, region.moderatorPreview.lastNameNative].filter(Boolean).join(' ') || region.moderatorPreview.username
     : '';
+  const candidateCount = Number(region.candidateCount || 0);
   return (
     <div className="absolute top-14 right-3 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100 p-3 min-w-[180px] max-w-[220px] pointer-events-auto">
       <div className="flex items-start justify-between gap-2 mb-1">
@@ -293,6 +387,11 @@ function RegionInfoCard({ region, onClose }) {
           <span>{t('moderator_label')}</span>
         </div>
       </div>
+      {candidateCount > 0 && (
+        <div className="mb-2 rounded-md bg-sky-50 px-2 py-1 text-xs text-sky-800">
+          <span className="font-semibold">{candidateCount}</span> candidates registered
+        </div>
+      )}
       {moderatorName && (
         <p className="mb-2 truncate text-xs text-gray-500">{t('moderator_label')}: {moderatorName}</p>
       )}
@@ -371,6 +470,8 @@ export default memo(function GreeceBoundaryMap({
       slug: p.slug || null,
       userCount: linkedLocation?.userCount || p.userCount || 0,
       moderatorPreview: linkedLocation?.moderatorPreview || p.moderatorPreview || null,
+      candidateCount: linkedLocation?.candidateCount || p.candidateCount || 0,
+      candidatePreview: linkedLocation?.candidatePreview || p.candidatePreview || [],
     });
   }, [locationLookup, onLocationSelect]);
 
@@ -394,15 +495,19 @@ export default memo(function GreeceBoundaryMap({
         label: p.name_local || p.name,
         meta: `${Number(p.userCount || 0)} users${p.moderatorPreview ? ' - moderator assigned' : ''}`,
         href: p.slug ? `/locations/${p.slug}` : null,
-        tooltip: buildTooltip({
+        tooltip: buildLocationHoverPopup({
           name: p.name_local || p.name,
           userCount: typeof p.userCount === 'number' ? p.userCount : null,
           moderatorPreview: p.moderatorPreview || null,
+          candidateCount: typeof p.candidateCount === 'number' ? p.candidateCount : 0,
+          candidatePreview: Array.isArray(p.candidatePreview) ? p.candidatePreview : [],
         }),
-        popup: buildTooltip({
+        popup: buildLocationHoverPopup({
           name: p.name_local || p.name,
           userCount: typeof p.userCount === 'number' ? p.userCount : null,
           moderatorPreview: p.moderatorPreview || null,
+          candidateCount: typeof p.candidateCount === 'number' ? p.candidateCount : 0,
+          candidatePreview: Array.isArray(p.candidatePreview) ? p.candidatePreview : [],
         }),
         variant: Number(selectedLocationId) === Number(p.id) ? 'selected' : 'explorer',
       })),
@@ -435,7 +540,16 @@ export default memo(function GreeceBoundaryMap({
         fitBoundsOnClick: true,
         onFeatureClick: handleFeatureClick,
         onFeatureHover: handleFeatureHover,
-        getTooltip: buildTooltip,
+        getTooltip: (props) => {
+          const linkedLocation = resolveLocationFromFeatureProps(props || {}, locationLookup);
+          return buildLocationHoverPopup({
+            ...(props || {}),
+            userCount: linkedLocation?.userCount ?? props?.userCount,
+            moderatorPreview: linkedLocation?.moderatorPreview || props?.moderatorPreview || null,
+            candidateCount: linkedLocation?.candidateCount ?? props?.candidateCount ?? 0,
+            candidatePreview: linkedLocation?.candidatePreview || props?.candidatePreview || [],
+          });
+        },
         getFeatureId: (feature) => getLocationFeatureKey(feature.properties || {}),
         onLayerInit,
       },
@@ -517,4 +631,5 @@ export {
   buildLocationLookupByFeatureProps,
   resolveLocationFromFeatureProps,
   getLocationFeatureKey,
+  buildLocationHoverPopup,
 };
