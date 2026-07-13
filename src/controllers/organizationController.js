@@ -170,18 +170,98 @@ function mapOfficialPostItem(item, contentType, viewer = null) {
 const organizationController = {
   getOrganizations: async (req, res) => {
     try {
-      const { type, search } = req.query;
+      const {
+        type,
+        search,
+        locationId,
+        parentId,
+      } = req.query;
       const { page, limit, offset } = parsePagination(req.query);
 
       const where = {
         ...organizationService.buildSearchWhere(search),
       };
+      const andConditions = [];
 
       if (type) {
         if (!organizationService.ORGANIZATION_TYPES.includes(type)) {
           return res.status(400).json({ success: false, message: 'Invalid organization type.' });
         }
         where.type = type;
+      }
+
+      const verifiedFilter = parseOptionalBoolean(req.query.isVerified ?? req.query.verified);
+      if (verifiedFilter === null) {
+        return res.status(400).json({ success: false, message: 'isVerified must be a boolean.' });
+      }
+      if (verifiedFilter !== undefined) {
+        where.isVerified = verifiedFilter;
+      }
+
+      const hasLocationFilter = parseOptionalBoolean(req.query.hasLocation);
+      if (hasLocationFilter === null) {
+        return res.status(400).json({ success: false, message: 'hasLocation must be a boolean.' });
+      }
+      if (hasLocationFilter === true) {
+        where.locationId = { [Op.ne]: null };
+      } else if (hasLocationFilter === false) {
+        where.locationId = null;
+      }
+
+      if (locationId !== undefined) {
+        const parsedLocationId = parsePositiveInt(locationId);
+        if (!parsedLocationId) {
+          return res.status(400).json({ success: false, message: 'locationId must be a positive integer.' });
+        }
+        where.locationId = parsedLocationId;
+      }
+
+      if (parentId !== undefined) {
+        if (parentId === 'null' || parentId === '') {
+          where.parentId = null;
+        } else {
+          const parsedParentId = parsePositiveInt(parentId);
+          if (!parsedParentId) {
+            return res.status(400).json({ success: false, message: 'parentId must be a positive integer or null.' });
+          }
+          where.parentId = parsedParentId;
+        }
+      }
+
+      const hasOfficialPostsFilter = parseOptionalBoolean(req.query.hasOfficialPosts);
+      if (hasOfficialPostsFilter === null) {
+        return res.status(400).json({ success: false, message: 'hasOfficialPosts must be a boolean.' });
+      }
+      if (hasOfficialPostsFilter !== undefined) {
+        const officialPostsExists = `(
+          EXISTS (
+            SELECT 1 FROM "Polls"
+            WHERE "Polls"."organizationId" = "Organization"."id"
+            AND "Polls"."isOfficialPost" = true
+          )
+          OR EXISTS (
+            SELECT 1 FROM "Suggestions"
+            WHERE "Suggestions"."organizationId" = "Organization"."id"
+            AND "Suggestions"."isOfficialPost" = true
+          )
+        )`;
+        andConditions.push(sequelize.literal(hasOfficialPostsFilter ? officialPostsExists : `NOT ${officialPostsExists}`));
+      }
+
+      const hasChildrenFilter = parseOptionalBoolean(req.query.hasChildren);
+      if (hasChildrenFilter === null) {
+        return res.status(400).json({ success: false, message: 'hasChildren must be a boolean.' });
+      }
+      if (hasChildrenFilter !== undefined) {
+        const childrenExists = `EXISTS (
+          SELECT 1 FROM "Organizations" AS "ChildOrganizations"
+          WHERE "ChildOrganizations"."parentId" = "Organization"."id"
+        )`;
+        andConditions.push(sequelize.literal(hasChildrenFilter ? childrenExists : `NOT ${childrenExists}`));
+      }
+
+      if (andConditions.length > 0) {
+        where[Op.and] = [...(where[Op.and] || []), ...andConditions];
       }
 
       const { count, rows } = await Organization.findAndCountAll({

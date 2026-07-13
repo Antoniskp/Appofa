@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState, use } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
-  BuildingOffice2Icon, GlobeAltIcon, EnvelopeIcon, MapPinIcon,
+  AcademicCapIcon, BuildingLibraryIcon, BuildingOffice2Icon, BriefcaseIcon, FlagIcon,
+  GlobeAltIcon, EnvelopeIcon, MapPinIcon, MegaphoneIcon,
   PencilSquareIcon, UserCircleIcon, PlusIcon, ChevronUpIcon, TrashIcon,
 } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
@@ -25,6 +26,52 @@ const OFFICIAL_POST_ORG_TYPES = ['party', 'institution'];
 const MANAGEABLE_ROLES = ['admin', 'moderator', 'member'];
 const ORG_VISIBILITY_OPTIONS = organizationContentConfig.visibilities;
 const ORG_SUGGESTION_TYPES = organizationContentConfig.suggestionTypes;
+const TYPE_PROFILE_DETAILS = {
+  company: { icon: BriefcaseIcon, panel: 'border-slate-200 bg-slate-50 text-slate-700', iconBox: 'bg-white text-slate-500' },
+  organization: { icon: BuildingOffice2Icon, panel: 'border-blue-200 bg-blue-50 text-blue-700', iconBox: 'bg-white text-blue-500' },
+  institution: { icon: BuildingLibraryIcon, panel: 'border-emerald-200 bg-emerald-50 text-emerald-700', iconBox: 'bg-white text-emerald-500' },
+  school: { icon: AcademicCapIcon, panel: 'border-amber-200 bg-amber-50 text-amber-800', iconBox: 'bg-white text-amber-600' },
+  university: { icon: AcademicCapIcon, panel: 'border-indigo-200 bg-indigo-50 text-indigo-700', iconBox: 'bg-white text-indigo-500' },
+  party: { icon: FlagIcon, panel: 'border-rose-200 bg-rose-50 text-rose-700', iconBox: 'bg-white text-rose-500' },
+};
+const ROLE_TEMPLATES = {
+  party: [
+    ['role_template_president', 'role_category_leadership'],
+    ['role_template_secretary', 'role_category_governance'],
+    ['role_template_spokesperson', 'role_category_public_relations'],
+    ['role_template_local_branch_lead', 'role_category_community'],
+    ['role_template_youth_lead', 'role_category_community'],
+  ],
+  school: [
+    ['role_template_principal', 'role_category_leadership'],
+    ['role_template_parent_association', 'role_category_community'],
+    ['role_template_student_council', 'role_category_community'],
+    ['role_template_municipal_liaison', 'role_category_public_relations'],
+  ],
+  institution: [
+    ['role_template_director', 'role_category_leadership'],
+    ['role_template_press_office', 'role_category_public_relations'],
+    ['role_template_public_liaison', 'role_category_public_relations'],
+    ['role_template_service_manager', 'role_category_operations'],
+  ],
+  university: [
+    ['role_template_rector', 'role_category_leadership'],
+    ['role_template_dean', 'role_category_leadership'],
+    ['role_template_student_union', 'role_category_community'],
+    ['role_template_research_lead', 'role_category_programs'],
+  ],
+  company: [
+    ['role_template_public_affairs', 'role_category_public_relations'],
+    ['role_template_sustainability_lead', 'role_category_programs'],
+    ['role_template_local_impact_lead', 'role_category_community'],
+  ],
+  organization: [
+    ['role_template_coordinator', 'role_category_operations'],
+    ['role_template_community_manager', 'role_category_community'],
+    ['role_template_treasurer', 'role_category_governance'],
+    ['role_template_volunteer_lead', 'role_category_community'],
+  ],
+};
 
 export default function OrganizationProfilePage({ params }) {
   const t = useTranslations('organizations');
@@ -253,6 +300,19 @@ export default function OrganizationProfilePage({ params }) {
   const statusLabel = (status) => t(`status_${status}`);
   const canEdit = user && ['admin', 'moderator'].includes(user.role);
   const canLeave = myMembership?.status === 'active' && myMembership?.role !== 'owner';
+  const profileDetail = TYPE_PROFILE_DETAILS[organization?.type] || TYPE_PROFILE_DETAILS.organization;
+  const ProfileTypeIcon = profileDetail.icon;
+  const activeMemberCount = members.filter((member) => member.status === 'active').length;
+  const currentRoleCount = orgRoles.filter((role) => role.isCurrent !== false).length;
+  const roleTemplates = ROLE_TEMPLATES[organization?.type] || ROLE_TEMPLATES.organization;
+
+  const applyRoleTemplate = (titleKey, categoryKey) => {
+    setRoleForm((current) => ({
+      ...current,
+      title: t(titleKey),
+      category: t(categoryKey),
+    }));
+  };
 
   const runMemberAction = async (action, successMessage) => {
     setActionLoading(true);
@@ -592,6 +652,36 @@ export default function OrganizationProfilePage({ params }) {
                     </Link>
                   )}
                 </div>
+
+                <div className={`mt-5 rounded-lg border p-4 ${profileDetail.panel}`}>
+                  <div className="flex items-start gap-3">
+                    <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${profileDetail.iconBox}`}>
+                      <ProfileTypeIcon className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold">{t(`type_focus_title_${organization.type}`)}</p>
+                      <p className="mt-1 text-sm leading-5">{t(`type_focus_body_${organization.type}`)}</p>
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                        <div className="rounded bg-white/70 px-2 py-1.5">
+                          <span className="block font-semibold text-gray-900">{activeMemberCount}</span>
+                          <span className="text-gray-600">{t('summary_active_members')}</span>
+                        </div>
+                        <div className="rounded bg-white/70 px-2 py-1.5">
+                          <span className="block font-semibold text-gray-900">{currentRoleCount}</span>
+                          <span className="text-gray-600">{t('summary_roles')}</span>
+                        </div>
+                        <div className="rounded bg-white/70 px-2 py-1.5">
+                          <span className="block font-semibold text-gray-900">{polls.length + suggestions.length}</span>
+                          <span className="text-gray-600">{t('summary_civic_items')}</span>
+                        </div>
+                        <div className="rounded bg-white/70 px-2 py-1.5">
+                          <span className="block font-semibold text-gray-900">{children.length}</span>
+                          <span className="text-gray-600">{t('summary_branches')}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -700,6 +790,25 @@ export default function OrganizationProfilePage({ params }) {
                         required
                       />
                     </div>
+
+                    {!editingRole && roleTemplates.length > 0 && (
+                      <div className="rounded-lg border border-blue-200 bg-white p-3">
+                        <p className="text-xs font-semibold text-gray-700">{t('role_templates_label')}</p>
+                        <p className="mt-1 text-xs text-gray-500">{t(`role_templates_help_${organization.type}`)}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {roleTemplates.map(([titleKey, categoryKey]) => (
+                            <button
+                              key={`${titleKey}-${categoryKey}`}
+                              type="button"
+                              onClick={() => applyRoleTemplate(titleKey, categoryKey)}
+                              className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                            >
+                              {t(titleKey)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>

@@ -1,4 +1,5 @@
 /** @jest-environment <rootDir>/jest-jsdom-env.js */
+/* global document, window, MouseEvent */
 
 const React = require('react');
 const { act } = require('react');
@@ -184,6 +185,36 @@ describe('HomeHero CTA link behavior', () => {
     expect(container.textContent).toContain('Second hero title');
     expect(container.textContent).toContain('Second hero subtitle');
     expect(container.textContent).not.toContain('First hero title');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('keeps a fixed slide text frame so hero height does not jump between slides', async () => {
+    const { container, root } = await renderHero([
+      {
+        ...buildSlide('/polls'),
+        id: 1,
+        title: 'Short title',
+        subtitle: 'Short subtitle',
+      },
+      {
+        ...buildSlide('/news'),
+        id: 2,
+        title: 'A much longer hero title that should be clamped instead of pushing the page down',
+        subtitle: 'A longer subtitle that simulates an admin-managed hero slide with more text than the default slide.',
+      },
+    ]);
+
+    const slideFrame = container.querySelector('[aria-live="polite"]');
+    const headline = slideFrame.querySelector('h1');
+
+    expect(slideFrame.className).toContain('h-[15rem]');
+    expect(slideFrame.className).toContain('md:h-[16rem]');
+    expect(slideFrame.className).toContain('lg:h-[17rem]');
+    expect(slideFrame.className).not.toContain('min-h');
+    expect(headline.className).toContain('line-clamp-2');
 
     await act(async () => {
       root.unmount();

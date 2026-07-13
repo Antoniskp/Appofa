@@ -128,6 +128,47 @@ describe('Organizations API', () => {
     expect(singleRes.body.data.organization.createdBy).toBeDefined();
   });
 
+  it('filters organization discovery by verification, local link, and official posts', async () => {
+    const createParty = await request(app)
+      .post('/api/organizations')
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-filtered-party'))
+      .send({
+        name: 'Filtered Discovery Party',
+        type: 'party',
+        locationId: testLocation.id,
+        isVerified: true,
+      });
+
+    expect(createParty.status).toBe(201);
+    const partyId = createParty.body.data.organization.id;
+
+    const officialPost = await request(app)
+      .post(`/api/organizations/${partyId}/official-posts`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-filtered-party-post'))
+      .send({
+        contentType: 'suggestion',
+        title: 'Filtered official proposal',
+        body: 'This official proposal makes the party discoverable through the official-post filter.',
+        officialPostScope: 'platform',
+        visibility: 'public',
+      });
+
+    expect(officialPost.status).toBe(201);
+
+    const filteredList = await request(app)
+      .get('/api/organizations')
+      .query({
+        type: 'party',
+        isVerified: 'true',
+        hasLocation: 'true',
+        hasOfficialPosts: 'true',
+      });
+
+    expect(filteredList.status).toBe(200);
+    const ids = filteredList.body.data.organizations.map((organization) => organization.id);
+    expect(ids).toContain(partyId);
+  });
+
   it('enforces private members endpoint visibility', async () => {
     const privateCreate = await request(app)
       .post('/api/organizations')

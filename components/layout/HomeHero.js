@@ -188,7 +188,7 @@ export default function HomeHero() {
         <div className="absolute inset-0 bg-gradient-to-br from-slate-950/65 via-slate-900/35 to-emerald-950/50 pointer-events-none" />
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none" />
 
-        <div className="relative app-container py-12 md:py-16 lg:py-18">
+        <div className="relative app-container py-12 md:py-16 lg:py-20">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-center animate-fade-in">
 
             {/* Left – text & actions */}
@@ -217,11 +217,11 @@ export default function HomeHero() {
 
               <div
                 key={currentSlide?.id || 'default-slide'}
-                className="mt-4 min-h-[10rem] overflow-hidden animate-fade-in md:min-h-[12.25rem]"
+                className="mt-4 h-[15rem] overflow-hidden animate-fade-in md:h-[16rem] lg:h-[17rem]"
                 aria-live="polite"
                 aria-atomic="true"
               >
-                <h1 className="mb-4 line-clamp-3 text-4xl font-extrabold leading-tight tracking-tight md:text-5xl lg:text-6xl">
+                <h1 className="mb-4 line-clamp-2 text-4xl font-extrabold leading-tight tracking-tight md:text-5xl lg:text-6xl">
                   {slideTitle}
                 </h1>
                 <p className="mb-3 max-w-2xl line-clamp-3 text-base leading-7 text-white/85 md:text-lg">
