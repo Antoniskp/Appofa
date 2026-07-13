@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, use } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   AcademicCapIcon, BuildingLibraryIcon, BuildingOffice2Icon, BriefcaseIcon, FlagIcon,
@@ -77,6 +78,7 @@ export default function OrganizationProfilePage({ params }) {
   const t = useTranslations('organizations');
   const { slug } = use(params);
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('tab_info');
   const [actionLoading, setActionLoading] = useState(false);
   const [memberActionError, setMemberActionError] = useState('');
@@ -300,6 +302,8 @@ export default function OrganizationProfilePage({ params }) {
   const statusLabel = (status) => t(`status_${status}`);
   const canEdit = user && ['admin', 'moderator'].includes(user.role);
   const canLeave = myMembership?.status === 'active' && myMembership?.role !== 'owner';
+  const canClaimOrganization = Boolean(user) && !canManageMembers;
+  const claimSubmitted = searchParams.get('claim') === 'submitted';
   const profileDetail = TYPE_PROFILE_DETAILS[organization?.type] || TYPE_PROFILE_DETAILS.organization;
   const ProfileTypeIcon = profileDetail.icon;
   const activeMemberCount = members.filter((member) => member.status === 'active').length;
@@ -628,9 +632,24 @@ export default function OrganizationProfilePage({ params }) {
                       {t('edit')}
                     </Link>
                   )}
+                  {canClaimOrganization && (
+                    <Link
+                      href={`/organizations/${organization.slug}/claim`}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-50 transition-colors"
+                    >
+                      <CheckBadgeIcon className="h-4 w-4" />
+                      {t('claim_organization')}
+                    </Link>
+                  )}
                 </div>
 
                 {organization.description && <p className="mt-2 text-gray-700 whitespace-pre-line">{organization.description}</p>}
+
+                {claimSubmitted && (
+                  <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+                    {t('claim_submitted_notice')}
+                  </div>
+                )}
 
                 <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-600">
                   {organization.website && (

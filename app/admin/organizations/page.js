@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { ArrowTopRightOnSquareIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { ArrowTopRightOnSquareIcon, CheckIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { organizationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -41,6 +41,7 @@ export default function AdminOrganizationsPage() {
   const [parentDrafts, setParentDrafts] = useState({});
   const [parentSavingId, setParentSavingId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [claimProcessingId, setClaimProcessingId] = useState(null);
   const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
@@ -55,6 +56,21 @@ export default function AdminOrganizationsPage() {
       return res?.data?.organizations || [];
     },
     [],
+    { initialData: [] }
+  );
+
+  const {
+    data: pendingClaims,
+    loading: claimsLoading,
+    error: claimsError,
+    refetch: refetchClaims,
+  } = useAsyncData(
+    async () => {
+      if (!user || !['admin', 'moderator'].includes(user.role)) return [];
+      const res = await organizationAPI.getPendingClaims({ page: 1, limit: 20 });
+      return res?.data?.claims || [];
+    },
+    [user?.role],
     { initialData: [] }
   );
 
@@ -217,6 +233,33 @@ export default function AdminOrganizationsPage() {
     }
   };
 
+  const handleApproveClaim = async (claim) => {
+    setClaimProcessingId(claim.id);
+    try {
+      await organizationAPI.approveClaim(claim.id);
+      setFeedback({ tone: 'success', message: t('claim_approved_success') });
+      await Promise.all([refetch(), refetchClaims()]);
+    } catch (claimError) {
+      setFeedback({ tone: 'error', message: claimError?.message || t('claim_approve_failed') });
+    } finally {
+      setClaimProcessingId(null);
+    }
+  };
+
+  const handleRejectClaim = async (claim) => {
+    const reviewNotes = window.prompt(t('claim_reject_prompt')) || '';
+    setClaimProcessingId(claim.id);
+    try {
+      await organizationAPI.rejectClaim(claim.id, { reviewNotes });
+      setFeedback({ tone: 'success', message: t('claim_rejected_success') });
+      await refetchClaims();
+    } catch (claimError) {
+      setFeedback({ tone: 'error', message: claimError?.message || t('claim_reject_failed') });
+    } finally {
+      setClaimProcessingId(null);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="app-container py-10">
@@ -238,6 +281,71 @@ export default function AdminOrganizationsPage() {
 
         {error && <AlertMessage message={t('error_loading')} className="mb-4" />}
         {feedback && <AlertMessage tone={feedback.tone} message={feedback.message} className="mb-4" />}
+
+        <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-gray-900">{t('pending_claims')}</h2>
+            <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">{pendingClaims.length}</span>
+          </div>
+
+          {claimsLoading && <SkeletonLoader type="list" count={2} />}
+          {!claimsLoading && claimsError && <AlertMessage message={t('claims_error_loading')} />}
+          {!claimsLoading && !claimsError && pendingClaims.length === 0 && (
+            <p className="text-sm text-gray-500">{t('claims_empty')}</p>
+          )}
+          {!claimsLoading && !claimsError && pendingClaims.length > 0 && (
+            <div className="space-y-3">
+              {pendingClaims.map((claim) => (
+                <div key={claim.id} className="rounded-lg border border-gray-200 p-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <Link
+                        href={`/organizations/${claim.organization?.slug}`}
+                        className="font-medium text-blue-600 hover:underline"
+                      >
+                        {claim.organization?.name || t('type_organization')}
+                      </Link>
+                      <p className="mt-1 text-sm text-gray-600">
+                        {t('claimed_by')}: <Link href={`/users/${claim.user?.username}`} className="text-blue-600 hover:underline">@{claim.user?.username}</Link>
+                        {claim.roleTitle && <span> · {claim.roleTitle}</span>}
+                      </p>
+                      <p className="mt-2 line-clamp-2 text-sm text-gray-700">{claim.supportingStatement}</p>
+                      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
+                        {claim.contactEmail && <span>{claim.contactEmail}</span>}
+                        {claim.website && (
+                          <a href={claim.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                            {claim.website}
+                          </a>
+                        )}
+                        {claim.createdAt && <span>{new Date(claim.createdAt).toLocaleDateString(locale || 'el')}</span>}
+                      </div>
+                    </div>
+                    <div className="flex flex-shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleApproveClaim(claim)}
+                        disabled={claimProcessingId === claim.id}
+                        className="inline-flex items-center gap-1 rounded border border-green-200 px-3 py-1.5 text-xs text-green-700 hover:bg-green-50 disabled:opacity-50"
+                      >
+                        <CheckIcon className="h-4 w-4" />
+                        {t('approve')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRejectClaim(claim)}
+                        disabled={claimProcessingId === claim.id}
+                        className="inline-flex items-center gap-1 rounded border border-red-200 px-3 py-1.5 text-xs text-red-700 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        <XMarkIcon className="h-4 w-4" />
+                        {t('reject')}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">{editingOrganization ? t('edit') : t('create')}</h2>

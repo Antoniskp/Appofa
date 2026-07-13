@@ -9,6 +9,9 @@ const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
 
 router.get('/', optionalAuthMiddleware, apiLimiter, organizationController.getOrganizations);
 // Specific routes must be defined before parameterized routes to prevent path matching conflicts.
+router.get('/claims', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), organizationController.getPendingClaims);
+router.post('/claims/:claimId/approve', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, organizationController.approveClaim);
+router.post('/claims/:claimId/reject', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, organizationController.rejectClaim);
 router.get('/:id/members/pending', apiLimiter, authMiddleware, organizationController.getPendingMembers);
 router.get('/:id/members', optionalAuthMiddleware, apiLimiter, organizationController.getMembers);
 router.get('/:id/polls', optionalAuthMiddleware, apiLimiter, organizationController.getOrgPolls);
@@ -29,6 +32,7 @@ router.delete('/:id/roles/:roleId', apiLimiter, authMiddleware, csrfProtection, 
 router.get('/:slug', optionalAuthMiddleware, apiLimiter, organizationController.getOrganizationBySlug);
 
 router.post('/', apiLimiter, createLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, organizationController.createOrganization);
+router.post('/:id/claim', apiLimiter, authMiddleware, csrfProtection, organizationController.submitClaim);
 router.post('/:id/join', apiLimiter, authMiddleware, csrfProtection, organizationController.joinOrganization);
 router.delete('/:id/leave', apiLimiter, authMiddleware, csrfProtection, organizationController.leaveOrganization);
 router.post('/:id/members/invite', apiLimiter, authMiddleware, csrfProtection, organizationController.inviteMember);

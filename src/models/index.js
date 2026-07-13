@@ -50,6 +50,7 @@ const GeoAccessSetting = require('./GeoAccessSetting');
 const Organization = require('./Organization');
 const OrganizationMember = require('./OrganizationMember');
 const OrganizationRole = require('./OrganizationRole');
+const OrganizationClaimRequest = require('./OrganizationClaimRequest');
 const OrganizationAnalytics = require('./OrganizationAnalytics');
 const UserPoliticalAffiliation = require('./UserPoliticalAffiliation');
 const NewsletterSubscriber = require('./NewsletterSubscriber');
@@ -468,6 +469,7 @@ Location.hasMany(Organization, { foreignKey: 'locationId', as: 'organizations' }
 
 Organization.hasMany(OrganizationMember, { foreignKey: 'organizationId', as: 'members' });
 Organization.hasMany(OrganizationRole, { foreignKey: 'organizationId', as: 'orgRoles' });
+Organization.hasMany(OrganizationClaimRequest, { foreignKey: 'organizationId', as: 'claimRequests' });
 Organization.hasMany(Poll, { foreignKey: 'organizationId', as: 'polls' });
 Organization.hasMany(Suggestion, { foreignKey: 'organizationId', as: 'suggestions' });
 Organization.belongsTo(Organization, { foreignKey: 'parentId', as: 'parent' });
@@ -484,6 +486,13 @@ OrganizationAnalytics.belongsTo(Organization, { foreignKey: 'organizationId', as
 OrganizationRole.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
 OrganizationRole.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 OrganizationRole.belongsTo(User, { foreignKey: 'personId', as: 'personProfile' });
+
+// Organization claim request associations
+OrganizationClaimRequest.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+OrganizationClaimRequest.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+OrganizationClaimRequest.belongsTo(User, { foreignKey: 'reviewedByUserId', as: 'reviewedBy' });
+User.hasMany(OrganizationClaimRequest, { foreignKey: 'userId', as: 'organizationClaimRequests' });
+User.hasMany(OrganizationClaimRequest, { foreignKey: 'reviewedByUserId', as: 'reviewedOrganizationClaims' });
 
 // UserPoliticalAffiliation associations
 User.hasMany(UserPoliticalAffiliation, { foreignKey: 'userId', as: 'politicalAffiliations' });
@@ -603,6 +612,7 @@ module.exports = {
   Organization,
   OrganizationMember,
   OrganizationRole,
+  OrganizationClaimRequest,
   OrganizationAnalytics,
   UserPoliticalAffiliation,
   NewsletterSubscriber,

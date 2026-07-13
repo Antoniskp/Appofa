@@ -1,6 +1,17 @@
 const request = require('supertest');
 const app = require('../src/index');
-const { sequelize, User, Location, OrganizationMember, OrganizationAnalytics, OrganizationRole, PollOption, Notification } = require('../src/models');
+const {
+  sequelize,
+  User,
+  Location,
+  Organization,
+  OrganizationMember,
+  OrganizationClaimRequest,
+  OrganizationAnalytics,
+  OrganizationRole,
+  PollOption,
+  Notification,
+} = require('../src/models');
 const { storeCsrfToken } = require('../src/utils/csrf');
 
 describe('Organizations API', () => {
@@ -167,6 +178,89 @@ describe('Organizations API', () => {
     expect(filteredList.status).toBe(200);
     const ids = filteredList.body.data.organizations.map((organization) => organization.id);
     expect(ids).toContain(partyId);
+  });
+
+  it('supports organization claim submission, approval, and rejection', async () => {
+    const createSchool = await request(app)
+      .post('/api/organizations')
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-claim-school'))
+      .send({
+        name: 'Claimable Test School',
+        type: 'school',
+        isVerified: false,
+      });
+
+    expect(createSchool.status).toBe(201);
+    const schoolId = createSchool.body.data.organization.id;
+
+    const submitClaim = await request(app)
+      .post(`/api/organizations/${schoolId}/claim`)
+      .set(withCsrf(viewerUser.id, viewerToken, 'csrf-org-submit-claim-school'))
+      .send({
+        roleTitle: 'Principal',
+        contactEmail: 'principal@example.edu',
+        website: 'https://example.edu/claim',
+        supportingStatement: 'I am the principal and can verify this request through the official school website.',
+      });
+
+    expect(submitClaim.status).toBe(201);
+    expect(submitClaim.body.data.claim.status).toBe('pending');
+
+    const duplicateClaim = await request(app)
+      .post(`/api/organizations/${schoolId}/claim`)
+      .set(withCsrf(viewerUser.id, viewerToken, 'csrf-org-submit-claim-school-duplicate'))
+      .send({
+        supportingStatement: 'Submitting the same organization claim again should be blocked.',
+      });
+    expect(duplicateClaim.status).toBe(409);
+
+    const pendingClaims = await request(app)
+      .get('/api/organizations/claims')
+      .set('Cookie', `auth_token=${adminToken}`);
+    expect(pendingClaims.status).toBe(200);
+    expect(pendingClaims.body.data.claims.some((claim) => claim.id === submitClaim.body.data.claim.id)).toBe(true);
+
+    const approveClaim = await request(app)
+      .post(`/api/organizations/claims/${submitClaim.body.data.claim.id}/approve`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-approve-claim-school'));
+    expect(approveClaim.status).toBe(200);
+    expect(approveClaim.body.data.claim.status).toBe('approved');
+
+    const verifiedSchool = await Organization.findByPk(schoolId);
+    expect(verifiedSchool.isVerified).toBe(true);
+
+    const membership = await OrganizationMember.findOne({
+      where: { organizationId: schoolId, userId: viewerUser.id },
+    });
+    expect(membership.status).toBe('active');
+    expect(membership.role).toBe('admin');
+
+    const createInstitution = await request(app)
+      .post('/api/organizations')
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-claim-institution'))
+      .send({
+        name: 'Rejectable Test Institution',
+        type: 'institution',
+      });
+
+    const institutionId = createInstitution.body.data.organization.id;
+    const rejectedClaim = await request(app)
+      .post(`/api/organizations/${institutionId}/claim`)
+      .set(withCsrf(secondViewerUser.id, secondViewerToken, 'csrf-org-submit-claim-rejectable'))
+      .send({
+        supportingStatement: 'I represent this institution, but this test claim will be rejected by an admin.',
+      });
+    expect(rejectedClaim.status).toBe(201);
+
+    const rejectClaim = await request(app)
+      .post(`/api/organizations/claims/${rejectedClaim.body.data.claim.id}/reject`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-reject-claim-institution'))
+      .send({ reviewNotes: 'Insufficient proof.' });
+    expect(rejectClaim.status).toBe(200);
+    expect(rejectClaim.body.data.claim.status).toBe('rejected');
+
+    const storedRejectedClaim = await OrganizationClaimRequest.findByPk(rejectedClaim.body.data.claim.id);
+    expect(storedRejectedClaim.reviewNotes).toBe('Insufficient proof.');
   });
 
   it('enforces private members endpoint visibility', async () => {

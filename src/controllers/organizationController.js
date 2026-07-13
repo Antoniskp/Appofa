@@ -4,6 +4,7 @@ const { Op } = require('sequelize');
 const {
   Organization,
   OrganizationMember,
+  OrganizationClaimRequest,
   OrganizationAnalytics,
   OrganizationRole,
   User,
@@ -27,6 +28,7 @@ const MEMBER_STATUSES = ['active', 'invited', 'pending'];
 const ASSIGNABLE_MEMBER_ROLES = ['admin', 'moderator', 'member'];
 const OFFICIAL_POST_SCOPES = ['platform', 'organization'];
 const OFFICIAL_POST_ORG_TYPES = ['party', 'institution'];
+const CLAIM_STATUSES = ['pending', 'approved', 'rejected'];
 const ORG_CONTENT_VISIBILITIES = organizationContentConfig.visibilities;
 const ORG_SUGGESTION_TYPES = organizationContentConfig.suggestionTypes;
 
@@ -69,6 +71,15 @@ function parseOptionalBoolean(value) {
 function parsePositiveInt(value) {
   const parsed = parseInt(value, 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function paginationPayload(count, page, limit) {
+  return {
+    currentPage: page,
+    totalPages: Math.max(1, Math.ceil(count / limit)),
+    totalItems: count,
+    itemsPerPage: limit,
+  };
 }
 
 async function requireOrganizationById(organizationId, attributes = ['id', 'isPublic']) {
@@ -539,6 +550,251 @@ const organizationController = {
     } catch (error) {
       console.error('organizationController.deleteOrganization error:', error);
       return res.status(500).json({ success: false, message: 'Failed to delete organization.' });
+    }
+  },
+
+  submitClaim: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id', 'name', 'slug', 'isVerified']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const claimant = await User.findOne({
+        where: { id: req.user.id, claimStatus: null },
+        attributes: ['id'],
+      });
+      if (!claimant) {
+        return res.status(403).json({ success: false, message: 'Only registered user accounts can claim organizations.' });
+      }
+
+      const existingMembership = await OrganizationMember.findOne({
+        where: {
+          organizationId,
+          userId: req.user.id,
+          status: 'active',
+          role: { [Op.in]: ['owner', 'admin'] },
+        },
+      });
+      if (existingMembership) {
+        return res.status(409).json({ success: false, message: 'You already manage this organization.' });
+      }
+
+      const pendingClaim = await OrganizationClaimRequest.findOne({
+        where: {
+          organizationId,
+          userId: req.user.id,
+          status: 'pending',
+        },
+      });
+      if (pendingClaim) {
+        return res.status(409).json({ success: false, message: 'You already have a pending claim for this organization.' });
+      }
+
+      const supportingStatementResult = normalizeRequiredText(req.body?.supportingStatement, 'Supporting statement', 20, 10000);
+      if (supportingStatementResult.error) {
+        return res.status(400).json({ success: false, message: supportingStatementResult.error });
+      }
+
+      const roleTitleResult = normalizeOptionalText(req.body?.roleTitle, 'Role title', undefined, 120);
+      if (roleTitleResult.error) {
+        return res.status(400).json({ success: false, message: roleTitleResult.error });
+      }
+
+      const contactEmailResult = normalizeOptionalText(req.body?.contactEmail, 'Contact email', undefined, 255);
+      if (contactEmailResult.error) {
+        return res.status(400).json({ success: false, message: contactEmailResult.error });
+      }
+
+      const websiteResult = normalizeOptionalText(req.body?.website, 'Website', undefined, 500);
+      if (websiteResult.error) {
+        return res.status(400).json({ success: false, message: websiteResult.error });
+      }
+
+      const claim = await OrganizationClaimRequest.create({
+        organizationId,
+        userId: req.user.id,
+        roleTitle: roleTitleResult.value ?? null,
+        contactEmail: contactEmailResult.value ?? null,
+        website: websiteResult.value ?? null,
+        supportingStatement: supportingStatementResult.value,
+      });
+
+      return res.status(201).json({ success: true, data: { claim } });
+    } catch (error) {
+      console.error('organizationController.submitClaim error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to submit organization claim.' });
+    }
+  },
+
+  getPendingClaims: async (req, res) => {
+    try {
+      const { page, limit, offset } = parsePagination(req.query);
+      const status = req.query.status || 'pending';
+      if (!CLAIM_STATUSES.includes(status)) {
+        return res.status(400).json({ success: false, message: 'Invalid claim status.' });
+      }
+
+      const { count, rows } = await OrganizationClaimRequest.findAndCountAll({
+        where: { status },
+        include: [
+          {
+            model: Organization,
+            as: 'organization',
+            attributes: ['id', 'name', 'slug', 'type', 'logo', 'isVerified'],
+          },
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'username', 'email', 'avatar', 'avatarColor'],
+          },
+          {
+            model: User,
+            as: 'reviewedBy',
+            attributes: ['id', 'username'],
+          },
+        ],
+        order: [['createdAt', 'DESC']],
+        limit,
+        offset,
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          claims: rows,
+          pagination: paginationPayload(count, page, limit),
+        },
+      });
+    } catch (error) {
+      console.error('organizationController.getPendingClaims error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to fetch organization claims.' });
+    }
+  },
+
+  approveClaim: async (req, res) => {
+    const transaction = await sequelize.transaction();
+
+    try {
+      const claimId = parsePositiveInt(req.params.claimId);
+      if (!claimId) {
+        await transaction.rollback();
+        return res.status(400).json({ success: false, message: 'Invalid claim id.' });
+      }
+
+      const claim = await OrganizationClaimRequest.findByPk(claimId, { transaction });
+      if (!claim) {
+        await transaction.rollback();
+        return res.status(404).json({ success: false, message: 'Organization claim not found.' });
+      }
+      if (claim.status !== 'pending') {
+        await transaction.rollback();
+        return res.status(400).json({ success: false, message: 'Only pending claims can be approved.' });
+      }
+
+      const organization = await Organization.findByPk(claim.organizationId, { transaction });
+      const claimant = await User.findOne({
+        where: { id: claim.userId, claimStatus: null },
+        attributes: ['id'],
+        transaction,
+      });
+      if (!organization || !claimant) {
+        await transaction.rollback();
+        return res.status(404).json({ success: false, message: 'Claim organization or user not found.' });
+      }
+
+      await organization.update({ isVerified: true }, { transaction });
+
+      const [membership] = await OrganizationMember.findOrCreate({
+        where: {
+          organizationId: claim.organizationId,
+          userId: claim.userId,
+        },
+        defaults: {
+          organizationId: claim.organizationId,
+          userId: claim.userId,
+          role: 'admin',
+          status: 'active',
+          invitedByUserId: req.user.id,
+        },
+        transaction,
+      });
+
+      if (membership.role !== 'owner' || membership.status !== 'active') {
+        await membership.update({
+          role: membership.role === 'owner' ? 'owner' : 'admin',
+          status: 'active',
+          invitedByUserId: membership.invitedByUserId || req.user.id,
+        }, { transaction });
+      }
+
+      await claim.update({
+        status: 'approved',
+        reviewedByUserId: req.user.id,
+        reviewedAt: new Date(),
+        reviewNotes: req.body?.reviewNotes || null,
+      }, { transaction });
+
+      await transaction.commit();
+
+      const updatedClaim = await OrganizationClaimRequest.findByPk(claim.id, {
+        include: [
+          { model: Organization, as: 'organization', attributes: ['id', 'name', 'slug', 'type', 'isVerified'] },
+          { model: User, as: 'user', attributes: ['id', 'username', 'email'] },
+        ],
+      });
+
+      return res.status(200).json({ success: true, data: { claim: updatedClaim } });
+    } catch (error) {
+      await transaction.rollback();
+      console.error('organizationController.approveClaim error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to approve organization claim.' });
+    }
+  },
+
+  rejectClaim: async (req, res) => {
+    try {
+      const claimId = parsePositiveInt(req.params.claimId);
+      if (!claimId) {
+        return res.status(400).json({ success: false, message: 'Invalid claim id.' });
+      }
+
+      const claim = await OrganizationClaimRequest.findByPk(claimId);
+      if (!claim) {
+        return res.status(404).json({ success: false, message: 'Organization claim not found.' });
+      }
+      if (claim.status !== 'pending') {
+        return res.status(400).json({ success: false, message: 'Only pending claims can be rejected.' });
+      }
+
+      const reviewNotesResult = normalizeOptionalText(req.body?.reviewNotes || req.body?.reason, 'Review notes', undefined, 10000);
+      if (reviewNotesResult.error) {
+        return res.status(400).json({ success: false, message: reviewNotesResult.error });
+      }
+
+      await claim.update({
+        status: 'rejected',
+        reviewedByUserId: req.user.id,
+        reviewedAt: new Date(),
+        reviewNotes: reviewNotesResult.value ?? null,
+      });
+
+      const updatedClaim = await OrganizationClaimRequest.findByPk(claim.id, {
+        include: [
+          { model: Organization, as: 'organization', attributes: ['id', 'name', 'slug', 'type', 'isVerified'] },
+          { model: User, as: 'user', attributes: ['id', 'username', 'email'] },
+        ],
+      });
+
+      return res.status(200).json({ success: true, data: { claim: updatedClaim } });
+    } catch (error) {
+      console.error('organizationController.rejectClaim error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to reject organization claim.' });
     }
   },
 
