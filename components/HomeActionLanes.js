@@ -220,12 +220,14 @@ function GuestRegistrationBridge() {
 export default function HomeActionLanes({ user }) {
   const actions = user ? signedInActions(user) : guestActions;
   const pathActions = civicPathActions(user);
+  const featuredPathActions = pathActions.slice(0, 4);
+  const compactPathActions = pathActions.slice(4);
 
   return (
     <section className="border-t border-gray-200 bg-white">
       <div className="app-container py-12">
-        <div className="mb-12 rounded-lg border border-blue-100 bg-blue-50 px-5 py-6 text-gray-900 shadow-sm sm:px-7 lg:px-8">
-          <div className="grid gap-7 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)] lg:items-center">
+        <div className="mb-12 border-y border-blue-100 bg-gradient-to-r from-blue-50 via-white to-emerald-50 py-8 text-gray-900">
+          <div className="grid gap-7 px-1 sm:px-2 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.45fr)] lg:items-start">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
                 Διάλεξε πώς θέλεις να συμμετέχεις
@@ -238,23 +240,37 @@ export default function HomeActionLanes({ user }) {
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {pathActions.map(({ href, title, description, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="group overflow-hidden rounded-lg border border-blue-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <ArrowRightIcon className="h-4 w-4 shrink-0 text-blue-600 transition-transform group-hover:translate-x-0.5" />
-                  </div>
-                  <h3 className="mt-3 text-sm font-semibold leading-5 text-gray-900">{title}</h3>
-                  <p className="mt-3 text-xs leading-5 text-gray-600">{description}</p>
-                </Link>
-              ))}
+            <div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {featuredPathActions.map(({ href, title, description, icon: Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="group overflow-hidden rounded-lg border border-blue-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <ArrowRightIcon className="h-4 w-4 shrink-0 text-blue-600 transition-transform group-hover:translate-x-0.5" />
+                    </div>
+                    <h3 className="mt-3 text-sm font-semibold leading-5 text-gray-900">{title}</h3>
+                    <p className="mt-2 text-xs leading-5 text-gray-600">{description}</p>
+                  </Link>
+                ))}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {compactPathActions.map(({ href, title, icon: Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-blue-300 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <Icon className="h-4 w-4 text-gray-500" />
+                    {title}
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>
