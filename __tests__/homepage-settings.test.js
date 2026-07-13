@@ -67,6 +67,7 @@ describe('Homepage Settings API', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.manifestSection).toEqual({ enabled: true, audience: 'all' });
+    expect(res.body.data.featuredPoll).toEqual({ enabled: false, audience: 'all', pollId: null });
     expect(res.body.data.infoSection).toBeUndefined();
   });
 
@@ -86,9 +87,10 @@ describe('Homepage Settings API', () => {
     expect(res.status).toBe(403);
   });
 
-  it('PUT should update manifest section for admin', async () => {
+  it('PUT should update manifest section and featured poll for admin', async () => {
     const payload = {
       manifestSection: { enabled: false, audience: 'registered' },
+      featuredPoll: { enabled: true, audience: 'guest', pollId: 12 },
     };
 
     const res = await request(app)
@@ -99,6 +101,7 @@ describe('Homepage Settings API', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.manifestSection).toEqual(payload.manifestSection);
+    expect(res.body.data.featuredPoll).toEqual(payload.featuredPoll);
     expect(res.body.data.infoSection).toBeUndefined();
   });
 
@@ -108,6 +111,15 @@ describe('Homepage Settings API', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .set(csrfHeadersFor('csrf-homepage-admin-2', adminId))
       .send({ manifestSection: [] });
+    expect(res.status).toBe(400);
+  });
+
+  it('PUT should validate featured poll IDs', async () => {
+    const res = await request(app)
+      .put('/api/homepage-settings')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .set(csrfHeadersFor('csrf-homepage-admin-3', adminId))
+      .send({ featuredPoll: { enabled: true, audience: 'all', pollId: 'nope' } });
     expect(res.status).toBe(400);
   });
 });

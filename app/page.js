@@ -34,6 +34,8 @@ export default function HomePage() {
   const [polls, setPolls] = useState([]);
   const [pollsLoading, setPollsLoading] = useState(true);
   const [pollsError, setPollsError] = useState(null);
+  const [featuredPoll, setFeaturedPoll] = useState(null);
+  const [featuredPollLoading, setFeaturedPollLoading] = useState(false);
 
   const [latestNews, setLatestNews] = useState([]);
   const [newsLoading, setNewsLoading] = useState(true);
@@ -191,11 +193,30 @@ export default function HomePage() {
       try {
         const res = await homepageSettingsAPI.get();
         if (res?.success) {
-          setHomepageSettings(res.data);
+          const settings = res.data;
+          setHomepageSettings(settings);
+
+          const featuredConfig = settings?.featuredPoll;
+          if (featuredConfig?.enabled && featuredConfig.pollId) {
+            setFeaturedPollLoading(true);
+            try {
+              const pollRes = await pollAPI.getById(featuredConfig.pollId);
+              setFeaturedPoll(pollRes?.success ? pollRes.data : null);
+            } catch {
+              setFeaturedPoll(null);
+            } finally {
+              setFeaturedPollLoading(false);
+            }
+          } else {
+            setFeaturedPoll(null);
+            setFeaturedPollLoading(false);
+          }
         }
       } catch (err) {
         // Non-critical but log for debugging
         console.warn('[HomepageSettings] Failed to load:', err?.message || err);
+        setFeaturedPoll(null);
+        setFeaturedPollLoading(false);
       }
     };
 
@@ -253,11 +274,19 @@ export default function HomePage() {
   const pollsSubtitle = !user
     ? `${tHome('top_polls_subtitle')} — ${tHome('top_polls_guest_note')}`
     : tHome('top_polls_subtitle');
+  const featuredPollConfig = homepageSettings?.featuredPoll;
+  const shouldShowFeaturedPoll =
+    Boolean(featuredPollConfig?.enabled) &&
+    isVisibleForAudience(featuredPollConfig?.audience || 'all') &&
+    (featuredPollLoading || Boolean(featuredPoll));
 
   return (
     <div className="bg-gray-50">
       <CountryEntryPopup isAuthenticated={Boolean(user)} />
-      <HomeHero />
+      <HomeHero
+        featuredPoll={shouldShowFeaturedPoll ? featuredPoll : null}
+        featuredPollLoading={shouldShowFeaturedPoll && featuredPollLoading}
+      />
       <HomeActionLanes user={user} />
 
       {user && (

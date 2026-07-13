@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { statsAPI, heroSettingsAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import { idSlug } from '@/lib/utils/slugify';
 import { 
   ChartBarIcon,
   ArrowRightIcon,
@@ -30,16 +31,19 @@ const journeyLinks = [
 
 const activityRows = [
   {
+    key: 'localAction',
     label: 'Τοπική δράση',
     title: 'Δες τι αλλάζει στην περιοχή σου',
     icon: MapPinIcon,
   },
   {
+    key: 'publicOpinion',
     label: 'Δημόσια γνώμη',
     title: 'Πάρε θέση σε ανοιχτές ψηφοφορίες',
     icon: ClipboardDocumentListIcon,
   },
   {
+    key: 'citizenSolutions',
     label: 'Λύσεις πολιτών',
     title: 'Ανάδειξε ιδέες και προτεραιότητες',
     icon: LightBulbIcon,
@@ -59,7 +63,77 @@ function StatSkeleton() {
   );
 }
 
-export default function HomeHero() {
+function FeaturedLivePoll({ poll, loading }) {
+  if (loading) {
+    return (
+      <div className="my-4 rounded-lg border border-white/15 bg-white/10 p-4">
+        <div className="h-3 w-32 animate-pulse rounded bg-white/20" />
+        <div className="mt-3 h-5 w-full animate-pulse rounded bg-white/20" />
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="h-8 animate-pulse rounded bg-white/15" />
+          <div className="h-8 animate-pulse rounded bg-white/15" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!poll) return null;
+
+  const pollHref = `/polls/${idSlug(poll.id, poll.title)}`;
+  const options = Array.isArray(poll.options) ? poll.options.slice(0, 3) : [];
+  const extraOptionsCount = Math.max((poll.options?.length || 0) - options.length, 0);
+  const isPollActive = poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date());
+
+  return (
+    <div className="my-4 rounded-lg border border-emerald-200/25 bg-white/[0.16] p-4 shadow-lg shadow-black/10">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-100">
+        Δημόσια γνώμη
+      </p>
+      <Link
+        href={pollHref}
+        className="mt-2 block text-base font-bold leading-6 text-white transition hover:text-cyan-100"
+      >
+        {poll.title}
+      </Link>
+      {poll.description && (
+        <p className="mt-1 line-clamp-2 text-xs leading-5 text-white/70">
+          {poll.description}
+        </p>
+      )}
+      {options.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {options.map((option) => (
+            <span
+              key={option.id}
+              className="max-w-full truncate rounded-lg border border-white/20 bg-white/10 px-2.5 py-1 text-xs font-semibold text-white/90"
+            >
+              {option.text || option.displayText}
+            </span>
+          ))}
+          {extraOptionsCount > 0 && (
+            <span className="rounded-lg border border-white/20 bg-white/10 px-2.5 py-1 text-xs font-semibold text-white/75">
+              +{extraOptionsCount}
+            </span>
+          )}
+        </div>
+      )}
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <span className="text-xs font-medium text-white/70">
+          {(poll.totalVotes || 0).toLocaleString('el-GR')} ψήφοι
+        </span>
+        <Link
+          href={pollHref}
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-blue-900 shadow-sm transition hover:bg-cyan-50"
+        >
+          {isPollActive ? 'Ψήφισε τώρα' : 'Δες αποτελέσματα'}
+          <ArrowRightIcon className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+export default function HomeHero({ featuredPoll = null, featuredPollLoading = false }) {
   const { user, loading: authLoading } = useAuth();
   const [heroBg, setHeroBg] = useState({ type: 'color', value: DEFAULT_BG_COLOR });
   const [counterEnabled, setCounterEnabled] = useState(true);
@@ -142,6 +216,9 @@ export default function HomeHero() {
     { label: 'Ψηφοφορίες',    value: stats.totalPolls,       icon: ChartBarIcon },
     { label: 'Ενεργοί',       value: stats.activeUsers,      icon: CheckBadgeIcon },
   ] : null;
+  const visibleActivityRows = (featuredPoll || featuredPollLoading)
+    ? activityRows.filter((row) => row.key !== 'publicOpinion')
+    : activityRows;
 
   const heroStyle =
     heroBg.type === 'image'
@@ -307,6 +384,12 @@ export default function HomeHero() {
                 ))}
               </div>
 
+              {(featuredPoll || featuredPollLoading) && (
+                <div className="lg:hidden">
+                  <FeaturedLivePoll poll={featuredPoll} loading={featuredPollLoading} />
+                </div>
+              )}
+
             </div>
 
             <div className="relative hidden lg:block">
@@ -321,8 +404,10 @@ export default function HomeHero() {
                   </span>
                 </div>
 
+                <FeaturedLivePoll poll={featuredPoll} loading={featuredPollLoading} />
+
                 <div className="py-2">
-                  {activityRows.map(({ label, title, icon: Icon }) => (
+                  {visibleActivityRows.map(({ label, title, icon: Icon }) => (
                     <div key={label} className="flex items-start gap-3 border-b border-white/10 py-4 last:border-b-0">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/15 text-cyan-100">
                         <Icon className="h-5 w-5" />
