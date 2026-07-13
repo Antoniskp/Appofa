@@ -27,6 +27,9 @@ const CIVIC_QUESTION_SORT_OPTIONS = ['newest', 'closing_soon', 'most_voted'];
 
 const CHOICE_ORDER = ['agree', 'disagree', 'present'];
 
+const requiresLocation = (visibility, voteRestriction) =>
+  visibility === 'locals_only' || voteRestriction === 'locals_only';
+
 const parsePositiveInteger = (value) => {
   const parsed = parseInt(value, 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
@@ -50,7 +53,7 @@ const getUserRecord = async (user) => {
 };
 
 const hasLocalAccess = async (user, locationId) => {
-  if (!locationId) return true;
+  if (!locationId) return false;
   if (!user) return false;
   if (user.role === 'admin') return true;
 
@@ -241,8 +244,8 @@ const validateCreatePayload = async (payload) => {
   const commentsLockedResult = normalizeBoolean(payload.commentsLocked, 'commentsLocked');
   if (commentsLockedResult.error) return commentsLockedResult;
 
-  if (voteRestrictionResult.value === 'locals_only' && !locationResult.value) {
-    return { error: 'Location is required when vote restriction is locals_only.' };
+  if (requiresLocation(visibilityResult.value, voteRestrictionResult.value) && !locationResult.value) {
+    return { error: 'Location is required for local-only civic questions.' };
   }
 
   return {
@@ -619,12 +622,15 @@ const updateCivicQuestion = async (id, userId, userRole, payload) => {
       return { success: false, status: 400, message: validated.error };
     }
 
+    const nextVisibility = validated.value.visibility !== undefined
+      ? validated.value.visibility
+      : question.visibility;
     const nextVoteRestriction = validated.value.voteRestriction !== undefined
       ? validated.value.voteRestriction
       : question.voteRestriction;
     const nextLocationId = validated.value.locationId !== undefined ? validated.value.locationId : question.locationId;
-    if (nextVoteRestriction === 'locals_only' && !nextLocationId) {
-      return { success: false, status: 400, message: 'Location is required when vote restriction is locals_only.' };
+    if (requiresLocation(nextVisibility, nextVoteRestriction) && !nextLocationId) {
+      return { success: false, status: 400, message: 'Location is required for local-only civic questions.' };
     }
 
     await question.update(validated.value);

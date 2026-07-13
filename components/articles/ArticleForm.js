@@ -182,6 +182,7 @@ export default function ArticleForm({
         ...prev,
         [name]: value,
         category: '', // Reset category when type changes
+        status: value === 'news' && !isAdminOrModerator ? 'draft' : prev.status,
       }));
     } else {
       setFormData((prev) => ({
@@ -446,6 +447,18 @@ export default function ArticleForm({
   };
 
   const mediaPreviews = extractMediaUrls();
+  const isNewsType = formData.type === 'news';
+  const canKeepPublishedNews = isNewsType && article?.status === 'published' && article?.newsApprovedAt;
+  const statusOptions = isNewsType && !isAdminOrModerator && !canKeepPublishedNews
+    ? [
+        { value: 'draft', label: tArticles('status_draft') },
+        { value: 'archived', label: tArticles('status_archived') }
+      ]
+    : [
+        { value: 'draft', label: tArticles('status_draft') },
+        { value: 'published', label: tArticles('status_published') },
+        { value: 'archived', label: tArticles('status_archived') }
+      ];
 
   const handleInsertLink = () => {
     const textarea = contentInputRef.current;
@@ -753,11 +766,8 @@ export default function ArticleForm({
           value={formData.status}
           onChange={handleInputChange}
           showPlaceholder={false}
-          options={[
-            { value: 'draft', label: tArticles('status_draft') },
-            { value: 'published', label: tArticles('status_published') },
-            { value: 'archived', label: tArticles('status_archived') }
-          ]}
+          options={statusOptions}
+          helpText={isNewsType && !isAdminOrModerator && !canKeepPublishedNews ? tArticles('news_requires_approval_help') : undefined}
         />
       </div>
 

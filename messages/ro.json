@@ -364,6 +364,7 @@
     "status_published": "Publicat",
     "status_draft": "Ciornă",
     "status_archived": "Arhivat",
+    "news_requires_approval_help": "News items stay as drafts until a moderator or admin approves them.",
     "no_results": "Nu au fost găsite articole.",
     "read_more": "Citește mai mult",
     "by": "De",
@@ -1912,6 +1913,7 @@
       "comments_enabled": "Comments enabled",
       "comments_locked": "Comments locked",
       "date_validation_error": "Deadline must be after Date Asked.",
+      "local_location_required": "Choose a location for local-only visibility or voting.",
       "saving": "Saving...",
       "create": "Create Civic Question",
       "update": "Update Civic Question",
@@ -1923,7 +1925,7 @@
     },
     "visibility": {
       "public": "Public",
-      "private": "Private",
+      "private": "Authenticated users",
       "locals_only": "Locals only"
     },
     "vote_restrictions": {

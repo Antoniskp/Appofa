@@ -279,11 +279,11 @@ const createArticle = async (userId, userRole, articleData) => {
       }
     }
 
-    const resolvedStatus = statusResult.value || 'draft';
-
     const canApprove = ['admin', 'moderator'].includes(userRole);
     const newsApprovedResult = normalizeBoolean(newsApproved, 'newsApproved');
     const isPreApproved = canApprove && newsApprovedResult.value === true;
+    const requestedStatus = statusResult.value || 'draft';
+    const resolvedStatus = articleType === 'news' && !isPreApproved ? 'draft' : requestedStatus;
 
     const article = await Article.create({
       title: titleResult.value,
@@ -395,6 +395,17 @@ const getAllArticles = async (queryParams, user) => {
           { type: { [Op.ne]: 'personal' } },
           { status: 'published' },
           { authorId: user.id }
+        ]
+      }]);
+    }
+
+    const canReviewNews = user && ['admin', 'moderator'].includes(user.role);
+    if (!canReviewNews) {
+      where[Op.and] = (where[Op.and] || []).concat([{
+        [Op.or]: [
+          { type: { [Op.ne]: 'news' } },
+          { newsApprovedAt: { [Op.ne]: null } },
+          ...(user ? [{ authorId: user.id }] : [])
         ]
       }]);
     }
@@ -529,6 +540,14 @@ const getArticleById = async (articleId, user) => {
 
     if (!article) {
       return { success: false, status: 404, message: 'Article not found.' };
+    }
+
+    if (article.type === 'news' && !article.newsApprovedAt) {
+      const isCreator = user && user.id === article.authorId;
+      const canReviewNews = user && ['admin', 'moderator'].includes(user.role);
+      if (!isCreator && !canReviewNews) {
+        return { success: false, status: 403, message: 'Access denied.' };
+      }
     }
 
     if (article.status !== 'published') {
@@ -724,6 +743,11 @@ const updateArticle = async (articleId, user, updateData) => {
           article.title = String(article.sourceMeta.title).slice(0, TITLE_MAX_LENGTH);
         }
       }
+    }
+
+    if (article.type === 'news' && !article.newsApprovedAt && article.status === 'published') {
+      article.status = 'draft';
+      article.publishedAt = null;
     }
 
     await article.save();

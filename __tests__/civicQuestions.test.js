@@ -118,6 +118,45 @@ describe('Civic Questions API', () => {
     testQuestionId = response.body.data.id;
   });
 
+  test('requires a location for locals_only visibility', async () => {
+    const headers = csrfHeadersFor('csrf-civic-local-visibility-create', creator.id);
+
+    const response = await request(app)
+      .post('/api/civic-questions')
+      .set('Authorization', `Bearer ${creator.token}`)
+      .set('Cookie', [`auth_token=${creator.token}`, ...headers.Cookie])
+      .set('x-csrf-token', 'csrf-civic-local-visibility-create')
+      .send({
+        title: 'Should local-only questions require a location?',
+        sourceType: 'municipal_council',
+        visibility: 'locals_only',
+        voteRestriction: 'authenticated',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toMatch(/Location is required/);
+  });
+
+  test('rejects update that makes local visibility locationless', async () => {
+    const headers = csrfHeadersFor('csrf-civic-local-visibility-update', creator.id);
+
+    const response = await request(app)
+      .put(`/api/civic-questions/${testQuestionId}`)
+      .set('Authorization', `Bearer ${creator.token}`)
+      .set('Cookie', [`auth_token=${creator.token}`, ...headers.Cookie])
+      .set('x-csrf-token', 'csrf-civic-local-visibility-update')
+      .send({
+        visibility: 'locals_only',
+        voteRestriction: 'authenticated',
+        locationId: null,
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toMatch(/Location is required/);
+  });
+
   test('lists civic questions publicly', async () => {
     const response = await request(app).get('/api/civic-questions');
     expect(response.status).toBe(200);

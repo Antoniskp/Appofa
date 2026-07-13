@@ -63,6 +63,7 @@ export default function PollForm({
     commentsLocked: false,
     useCustomColors: false,
     binaryColors: ['#16a34a', '#dc2626'],
+    status: 'active',
   });
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -98,6 +99,7 @@ export default function PollForm({
         commentsEnabled: poll.commentsEnabled !== false,
         commentsLocked: Boolean(poll.commentsLocked),
         useCustomColors: Boolean(poll.useCustomColors),
+        status: poll.status || 'active',
         binaryColors: poll.useCustomColors && poll.options && poll.options.length >= 2
           ? [poll.options[0].color || '#16a34a', poll.options[1].color || '#dc2626']
           : ['#16a34a', '#dc2626'],
@@ -438,6 +440,21 @@ export default function PollForm({
             onChange={handleInputChange}
             helpText="Η δημοσκόπηση θα κλείσει αυτόματα σε αυτή την ημερομηνία"
           />
+
+          {mode === 'edit' && (
+            <FormSelect
+              name="status"
+              label="Κατάσταση"
+              value={formData.status}
+              onChange={handleInputChange}
+              required
+              options={[
+                { value: 'active', label: 'Ενεργή' },
+                { value: 'closed', label: 'Κλειστή' },
+                { value: 'archived', label: 'Αρχειοθετημένη' },
+              ]}
+            />
+          )}
         </div>
 
         <div className="mt-4 space-y-3">
@@ -619,7 +636,7 @@ export default function PollForm({
                 label="Κείμενο"
                 value={option.text}
                 onChange={(e) => handleOptionChange(index, 'text', e.target.value)}
-                required
+                required={!formData.allowUserContributions}
                 placeholder="Εισαγάγετε το κείμενο της επιλογής"
               />
 

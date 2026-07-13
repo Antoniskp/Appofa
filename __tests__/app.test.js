@@ -1127,8 +1127,10 @@ describe('News Application Integration Tests', () => {
           summary: 'Unapproved news summary',
           status: 'published',
           type: 'news'
-        });
+      });
 
+      expect(createResponse.status).toBe(201);
+      expect(createResponse.body.data.article.status).toBe('draft');
       const unapprovedNewsId = createResponse.body.data.article.id;
 
       const response = await request(app)
@@ -1141,6 +1143,10 @@ describe('News Application Integration Tests', () => {
       expect(newsIds).toContain(newsArticleId);
       expect(newsIds).not.toContain(unapprovedNewsId);
       expect(newsArticles.every(article => article.newsApprovedAt)).toBe(true);
+
+      const directResponse = await request(app)
+        .get(`/api/articles/${unapprovedNewsId}`);
+      expect(directResponse.status).toBe(403);
     });
 
     test('should support homepage latest approved news query params', async () => {

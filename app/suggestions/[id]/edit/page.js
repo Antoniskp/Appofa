@@ -154,7 +154,6 @@ export default function EditSuggestionPage() {
     setForm((prev) => ({
       ...prev,
       locationId: locationId || null,
-      voteRestriction: locationId ? 'locals_only' : 'authenticated',
     }));
     if (errors.locationId) {
       setErrors((prev) => ({ ...prev, locationId: '' }));

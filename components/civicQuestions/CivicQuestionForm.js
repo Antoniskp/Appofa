@@ -97,6 +97,11 @@ export default function CivicQuestionForm({
       }
     }
 
+    if ((formData.visibility === 'locals_only' || formData.voteRestriction === 'locals_only') && !formData.locationId) {
+      setValidationError(t('form.local_location_required'));
+      return;
+    }
+
     onSubmit({
       ...formData,
       dateAsked: formData.dateAsked || null,
@@ -178,11 +183,16 @@ export default function CivicQuestionForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.location')}</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t('form.location')}
+            {(formData.visibility === 'locals_only' || formData.voteRestriction === 'locals_only') && (
+              <span className="text-red-500"> *</span>
+            )}
+          </label>
           <CascadingLocationSelector
             value={formData.locationId}
             onChange={(locationId) => setFormData((prev) => ({ ...prev, locationId }))}
-            required={false}
+            required={formData.visibility === 'locals_only' || formData.voteRestriction === 'locals_only'}
           />
         </div>
 
