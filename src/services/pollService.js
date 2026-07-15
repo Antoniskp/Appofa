@@ -25,6 +25,7 @@ const VOTE_RESTRICTIONS = ['anyone', 'authenticated', 'locals_only'];
 const RESULTS_VISIBILITIES = ['always', 'after_vote', 'after_deadline'];
 const POLL_STATUSES = ['active', 'closed', 'archived'];
 const ANSWER_TYPES = ['person', 'article', 'custom'];
+const VOTE_IDENTITY_VISIBILITIES = ['anonymous', 'public'];
 
 const TITLE_MIN_LENGTH = 5;
 const TITLE_MAX_LENGTH = 200;
@@ -103,6 +104,15 @@ const getBinaryOptionsForStyle = (style) => (
     ? [{ text: 'Συμφωνώ', order: 0 }, { text: 'Διαφωνώ', order: 1 }]
     : [{ text: 'Ναι', order: 0 }, { text: 'Όχι', order: 1 }]
 );
+
+const serializePublicVoter = (user) => ({
+  id: user.id,
+  username: user.username,
+  firstNameNative: user.firstNameNative,
+  lastNameNative: user.lastNameNative,
+  avatar: user.avatar,
+  avatarColor: user.avatarColor
+});
 
 const inferBinaryStyleFromOptions = (options = []) => {
   const firstText = String(options[0]?.text || '').trim().toLowerCase();
@@ -783,11 +793,11 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
       if (pollIds.length > 0) {
         const userVotes = await PollVote.findAll({
           where: { pollId: { [Op.in]: pollIds }, userId: user.id },
-          attributes: ['pollId', 'optionId', 'createdAt']
+          attributes: ['pollId', 'optionId', 'createdAt', 'identityVisibility']
         });
         const voteMap = {};
         for (const v of userVotes) {
-          voteMap[v.pollId] = { optionId: v.optionId, createdAt: v.createdAt };
+          voteMap[v.pollId] = { optionId: v.optionId, createdAt: v.createdAt, identityVisibility: v.identityVisibility };
         }
         for (const p of pollsWithCounts) {
           if (voteMap[p.id]) {
@@ -800,11 +810,11 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
       if (pollIds.length > 0) {
         const anonVotes = await PollVote.findAll({
           where: { pollId: { [Op.in]: pollIds }, userId: null, ipAddress: clientIp, userAgent },
-          attributes: ['pollId', 'optionId', 'createdAt']
+          attributes: ['pollId', 'optionId', 'createdAt', 'identityVisibility']
         });
         const voteMap = {};
         for (const v of anonVotes) {
-          voteMap[v.pollId] = { optionId: v.optionId, createdAt: v.createdAt };
+          voteMap[v.pollId] = { optionId: v.optionId, createdAt: v.createdAt, identityVisibility: v.identityVisibility };
         }
         for (const p of pollsWithCounts) {
           if (voteMap[p.id]) {
@@ -868,7 +878,15 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
             {
               model: PollVote,
               as: 'votes',
-              attributes: ['id', 'isAuthenticated']
+              attributes: ['id', 'isAuthenticated', 'identityVisibility'],
+              include: [
+                {
+                  model: User,
+                  as: 'user',
+                  attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor'],
+                  required: false
+                }
+              ]
             }
           ]
         }
@@ -926,12 +944,19 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
 
     // Add vote statistics
     const pollData = poll.toJSON();
-    pollData.options = pollData.options.map(option => ({
-      ...option,
-      voteCount: option.votes ? option.votes.length : 0,
-      authenticatedVotes: option.votes ? option.votes.filter(v => v.isAuthenticated).length : 0,
-      votes: undefined
-    }));
+    pollData.options = pollData.options.map(option => {
+      const publicVoters = (option.votes || [])
+        .filter(v => v.identityVisibility === 'public' && v.user)
+        .map(v => serializePublicVoter(v.user));
+      return {
+        ...option,
+        voteCount: option.votes ? option.votes.length : 0,
+        authenticatedVotes: option.votes ? option.votes.filter(v => v.isAuthenticated).length : 0,
+        publicVoterCount: publicVoters.length,
+        publicVoters,
+        votes: undefined
+      };
+    });
     pollData.totalVotes = pollData.options.reduce((sum, opt) => sum + opt.voteCount, 0);
     pollData.totalAuthenticatedVotes = pollData.options.reduce(
       (sum, opt) => sum + opt.authenticatedVotes,
@@ -948,7 +973,8 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
       if (userVote) {
         responsePoll.userVote = {
           optionId: userVote.optionId,
-          createdAt: userVote.createdAt
+          createdAt: userVote.createdAt,
+          identityVisibility: userVote.identityVisibility
         };
       }
     } else if (clientIp && userAgent) {
@@ -958,7 +984,8 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
       if (anonVote) {
         responsePoll.userVote = {
           optionId: anonVote.optionId,
-          createdAt: anonVote.createdAt
+          createdAt: anonVote.createdAt,
+          identityVisibility: anonVote.identityVisibility
         };
       }
     }
@@ -1525,15 +1552,21 @@ const deletePoll = async (pollId, userId, userRole) => {
  * @param {string|null} userRole
  * @param {string} clientIp
  * @param {string} userAgent
+ * @param {string} identityVisibility
  * @returns {Promise<{success: boolean, status?: number, message?: string, data?: object, error?: string}>}
  */
-const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent) => {
+const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent, identityVisibility = 'anonymous') => {
   let transaction = null;
   try {
     // Validate optionId
     const optionIdResult = normalizeInteger(optionId, 'Option ID', 1);
     if (optionIdResult.error) {
       return { success: false, status: 400, message: optionIdResult.error };
+    }
+
+    const identityVisibilityResult = normalizeEnum(identityVisibility || 'anonymous', VOTE_IDENTITY_VISIBILITIES, 'Vote identity visibility');
+    if (identityVisibilityResult.error) {
+      return { success: false, status: 400, message: identityVisibilityResult.error };
     }
 
     const poll = await Poll.findByPk(pollId, {
@@ -1625,6 +1658,7 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent)
     transaction = await sequelize.transaction();
     let vote;
     const isAuthenticated = !!userId;
+    const voteIdentityVisibility = isAuthenticated ? identityVisibilityResult.value : 'anonymous';
 
     if (isAuthenticated) {
       // Check if user already voted
@@ -1635,7 +1669,7 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent)
 
       if (existingVote) {
         // Update existing vote
-        await existingVote.update({ optionId: optionIdResult.value }, { transaction });
+        await existingVote.update({ optionId: optionIdResult.value, identityVisibility: voteIdentityVisibility }, { transaction });
         vote = existingVote;
       } else {
         // Create new vote
@@ -1646,7 +1680,8 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent)
             userId,
             isAuthenticated: true,
             sessionId: null,
-            ipAddress: clientIp
+            ipAddress: clientIp,
+            identityVisibility: voteIdentityVisibility
           },
           { transaction }
         );
@@ -1665,7 +1700,7 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent)
 
       if (existingVote) {
         // Update existing vote from this device
-        await existingVote.update({ optionId: optionIdResult.value }, { transaction });
+        await existingVote.update({ optionId: optionIdResult.value, identityVisibility: 'anonymous' }, { transaction });
         vote = existingVote;
       } else {
         // Create new vote
@@ -1677,7 +1712,8 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent)
             isAuthenticated: false,
             sessionId: null,
             ipAddress: clientIp,
-            userAgent
+            userAgent,
+            identityVisibility: 'anonymous'
           },
           { transaction }
         );
@@ -1703,6 +1739,7 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent)
       data: {
         voteId: vote.id,
         optionId: vote.optionId,
+        identityVisibility: vote.identityVisibility,
         voteCounts
       }
     };
@@ -1842,7 +1879,15 @@ const getResults = async (pollId, user, clientIp, userAgent) => {
             {
               model: PollVote,
               as: 'votes',
-              attributes: ['id', 'isAuthenticated', 'createdAt']
+              attributes: ['id', 'isAuthenticated', 'createdAt', 'identityVisibility'],
+              include: [
+                {
+                  model: User,
+                  as: 'user',
+                  attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor'],
+                  required: false
+                }
+              ]
             }
           ]
         }
@@ -1947,6 +1992,9 @@ const getResults = async (pollId, user, clientIp, userAgent) => {
         : 0;
       const unauthenticatedVotes = voteCount - authenticatedVotes;
       const percentage = totalVotes > 0 ? ((voteCount / totalVotes) * 100).toFixed(2) : 0;
+      const publicVoters = (option.votes || [])
+        .filter(v => v.identityVisibility === 'public' && v.user)
+        .map(v => serializePublicVoter(v.user));
 
       return {
         id: option.id,
@@ -1961,6 +2009,8 @@ const getResults = async (pollId, user, clientIp, userAgent) => {
         voteCount,
         authenticatedVotes,
         unauthenticatedVotes,
+        publicVoterCount: publicVoters.length,
+        publicVoters,
         percentage: parseFloat(percentage)
       };
     });
@@ -2134,7 +2184,7 @@ const exportPoll = async (pollId, userId, userRole) => {
             {
               model: PollVote,
               as: 'votes',
-              attributes: ['id', 'userId', 'isAuthenticated', 'createdAt', 'updatedAt']
+              attributes: ['id', 'userId', 'isAuthenticated', 'identityVisibility', 'createdAt', 'updatedAt']
             }
           ]
         }
@@ -2162,6 +2212,7 @@ const exportPoll = async (pollId, userId, userRole) => {
         vote_id: vote.id,
         voter_ref: vote.userId ? computeVoterRef(poll.id, vote.userId) : null,
         is_authenticated: vote.isAuthenticated,
+        identity_visibility: vote.identityVisibility,
         voted_at: vote.updatedAt || vote.createdAt
       }));
 

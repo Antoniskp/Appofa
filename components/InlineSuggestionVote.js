@@ -6,6 +6,7 @@ import { HandThumbUpIcon as HandThumbUpSolid, HandThumbDownIcon as HandThumbDown
 import { suggestionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import RateLimitBanner from '@/components/ui/RateLimitBanner';
+import VoteIdentitySelector from '@/components/VoteIdentitySelector';
 
 const VOTE_LABELS = {
   idea:                { up: 'Συμφωνώ',         down: 'Διαφωνώ'             },
@@ -29,11 +30,13 @@ export default function InlineSuggestionVote({
   initialUpvotes = 0,
   initialDownvotes = 0,
   initialMyVote = null,
+  initialMyVoteIdentityVisibility = 'anonymous',
 }) {
   const { user } = useAuth();
   const [upvotes, setUpvotes]     = useState(initialUpvotes);
   const [downvotes, setDownvotes] = useState(initialDownvotes);
   const [myVote, setMyVote]       = useState(initialMyVote);
+  const [identityVisibility, setIdentityVisibility] = useState(initialMyVoteIdentityVisibility || 'anonymous');
   const [isVoting, setIsVoting]   = useState(false);
   const [rateLimit, setRateLimit] = useState(null); // { retryAfter, resetTime }
   const [justVoted, setJustVoted] = useState(null); // 1 or -1 — triggers pop animation
@@ -71,11 +74,12 @@ export default function InlineSuggestionVote({
     setTimeout(() => setJustVoted(null), 280);
 
     try {
-      const res = await suggestionAPI.voteSuggestion(suggestionId, value);
+      const res = await suggestionAPI.voteSuggestion(suggestionId, value, identityVisibility);
       if (res.success) {
         setUpvotes(res.data.upvotes);
         setDownvotes(res.data.downvotes);
         setMyVote(res.data.myVote ?? null);
+        setIdentityVisibility(res.data.myVoteIdentityVisibility || identityVisibility);
       } else {
         // Rollback on failure
         setMyVote(prevMyVote);
@@ -107,6 +111,14 @@ export default function InlineSuggestionVote({
         </div>
       )}
       <div className="flex items-center gap-2">
+      {user && (
+        <VoteIdentitySelector
+          value={identityVisibility}
+          onChange={setIdentityVisibility}
+          disabled={isVoting || !!rateLimit}
+          compact
+        />
+      )}
       {/* Upvote */}
       <button
         type="button"

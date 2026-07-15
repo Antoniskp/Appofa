@@ -14,6 +14,7 @@ import {
 } from 'chart.js';
 import { ArrowDownTrayIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { pollAPI } from '@/lib/api';
+import UserAvatar from '@/components/user/UserAvatar';
 
 // Register ChartJS components
 ChartJS.register(
@@ -34,6 +35,25 @@ function hexToRgba(hex, alpha = 1) {
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function PublicVoters({ voters = [] }) {
+  if (!voters.length) return null;
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+      <span className="text-xs font-semibold text-gray-500">Public voters</span>
+      {voters.slice(0, 10).map((voter) => (
+        <span key={voter.id} className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 text-xs text-gray-700">
+          <UserAvatar user={voter} size="h-5 w-5" textSize="text-[10px]" showBadges={false} />
+          {voter.username}
+        </span>
+      ))}
+      {voters.length > 10 && (
+        <span className="text-xs text-gray-500">+{voters.length - 10}</span>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -404,6 +424,7 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
                     <div className="text-sm text-gray-500">{option.percentage}%</div>
                   </div>
                 </div>
+                <PublicVoters voters={option.publicVoters || []} />
               </div>
             );
           })}
@@ -517,6 +538,19 @@ function BinarySplitBar({ options, totalVotes, useCustomColors }) {
           {pct2}%
         </span>
       </div>
+
+      {(opt1.publicVoters?.length > 0 || opt2.publicVoters?.length > 0) && (
+        <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
+          <div>
+            <div className="text-xs font-semibold text-gray-500 mb-1">{opt1.text}</div>
+            <PublicVoters voters={opt1.publicVoters || []} />
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-gray-500 mb-1">{opt2.text}</div>
+            <PublicVoters voters={opt2.publicVoters || []} />
+          </div>
+        </div>
+      )}
 
       {/* Total votes */}
       <div className="text-center text-sm text-gray-500 mt-3">

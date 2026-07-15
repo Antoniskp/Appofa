@@ -127,7 +127,8 @@ const pollController = {
       userId,
       userRole,
       getClientIp(req),
-      getUserAgent(req)
+      getUserAgent(req),
+      req.body.identityVisibility
     );
     if (!result.success) {
       return res.status(result.status).json({

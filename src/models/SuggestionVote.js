@@ -30,6 +30,11 @@ const SuggestionVote = sequelize.define('SuggestionVote', {
     validate: {
       isIn: [[-1, 1]]
     }
+  },
+  identityVisibility: {
+    type: DataTypes.ENUM('anonymous', 'public'),
+    allowNull: false,
+    defaultValue: 'anonymous'
   }
 }, {
   timestamps: true,

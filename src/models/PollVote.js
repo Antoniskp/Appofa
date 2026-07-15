@@ -49,6 +49,11 @@ const PollVote = sequelize.define('PollVote', {
   userAgent: {
     type: DataTypes.STRING(500),
     allowNull: true
+  },
+  identityVisibility: {
+    type: DataTypes.ENUM('anonymous', 'public'),
+    allowNull: false,
+    defaultValue: 'anonymous'
   }
 }, {
   timestamps: true,

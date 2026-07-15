@@ -31,6 +31,7 @@ import { TooltipIconButton } from '@/components/ui/Tooltip';
 import ShareModal from '@/components/ui/ShareModal';
 import LoginLink from '@/components/ui/LoginLink';
 import UserAvatar from '@/components/user/UserAvatar';
+import VoteIdentitySelector from '@/components/VoteIdentitySelector';
 import { getEmbedPath } from '@/lib/utils/embed';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -184,6 +185,33 @@ function SolutionCard({ solution, user, onVote, votingId }) {
   );
 }
 
+function PublicVoterList({ publicVoters }) {
+  const up = publicVoters?.up || [];
+  const down = publicVoters?.down || [];
+  if (up.length === 0 && down.length === 0) return null;
+
+  const renderGroup = (label, voters, toneClass) => (
+    voters.length > 0 && (
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`text-xs font-semibold ${toneClass}`}>{label}</span>
+        {voters.slice(0, 8).map((voter) => (
+          <span key={voter.id} className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 text-xs text-gray-700">
+            <UserAvatar user={voter} size="h-5 w-5" textSize="text-[10px]" showBadges={false} />
+            {voter.username}
+          </span>
+        ))}
+      </div>
+    )
+  );
+
+  return (
+    <div className="mt-3 space-y-2 border-t border-gray-100 pt-3">
+      {renderGroup('Public support', up, 'text-green-700')}
+      {renderGroup('Public opposition', down, 'text-red-600')}
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function SuggestionDetailPage() {
@@ -200,6 +228,7 @@ export default function SuggestionDetailPage() {
   const [solutionBody, setSolutionBody] = useState('');
   const [submittingSolution, setSubmittingSolution] = useState(false);
   const [solutionError, setSolutionError] = useState('');
+  const [suggestionVoteIdentityVisibility, setSuggestionVoteIdentityVisibility] = useState('anonymous');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -211,7 +240,10 @@ export default function SuggestionDetailPage() {
   }, [suggestionId]);
 
   const { loading, error } = useAsyncData(fetchSuggestion, [suggestionId], {
-    onSuccess: (data) => setSuggestion(data),
+    onSuccess: (data) => {
+      setSuggestion(data);
+      setSuggestionVoteIdentityVisibility(data.myVoteIdentityVisibility || 'anonymous');
+    },
   });
 
   // ── Vote on suggestion ─────────────────────────────────────────────────────
@@ -222,7 +254,7 @@ export default function SuggestionDetailPage() {
     }
     setVotingId('suggestion');
     try {
-      const res = await suggestionAPI.voteSuggestion(suggestionId, value);
+      const res = await suggestionAPI.voteSuggestion(suggestionId, value, suggestionVoteIdentityVisibility);
       if (res.success) {
         setSuggestion((prev) => ({
           ...prev,
@@ -230,7 +262,10 @@ export default function SuggestionDetailPage() {
           downvotes: res.data.downvotes,
           score: res.data.score,
           myVote: res.data.myVote,
+          myVoteIdentityVisibility: res.data.myVoteIdentityVisibility,
+          publicVoters: res.data.publicVoters,
         }));
+        setSuggestionVoteIdentityVisibility(res.data.myVoteIdentityVisibility || suggestionVoteIdentityVisibility);
       } else {
         addToast(res.message || 'Σφάλμα ψηφοφορίας.', { type: 'error' });
       }
@@ -430,6 +465,15 @@ export default function SuggestionDetailPage() {
               />
             </div>
 
+            {user && (
+              <VoteIdentitySelector
+                value={suggestionVoteIdentityVisibility}
+                onChange={setSuggestionVoteIdentityVisibility}
+                disabled={votingId === 'suggestion'}
+                compact
+              />
+            )}
+
             <VoteButtons
               upvotes={suggestion.upvotes ?? 0}
               downvotes={suggestion.downvotes ?? 0}
@@ -448,6 +492,8 @@ export default function SuggestionDetailPage() {
               για να ψηφίσετε.
             </p>
           )}
+
+          <PublicVoterList publicVoters={suggestion.publicVoters} />
 
           {(() => {
             const effectivePopulation = suggestion.location?.population_override ?? suggestion.location?.population;

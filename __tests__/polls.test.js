@@ -990,6 +990,30 @@ describe('Poll API Tests', () => {
       expect(response.body.data).toHaveProperty('voteCounts');
     });
 
+    test('should let authenticated voter make their poll vote public', async () => {
+      const csrfToken = 'test-csrf-token-public-vote';
+      const headers = csrfHeaderFor(csrfToken, regularUserId);
+
+      const response = await request(app)
+        .post(`/api/polls/${testPollId}/vote`)
+        .set('Cookie', [`auth_token=${userToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          optionId: testPollOptionId,
+          identityVisibility: 'public'
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.identityVisibility).toBe('public');
+
+      const detail = await request(app)
+        .get(`/api/polls/${testPollId}`)
+        .set('Cookie', [`auth_token=${userToken}`]);
+
+      const votedOption = detail.body.data.options.find((option) => option.id === testPollOptionId);
+      expect(votedOption.publicVoters.some((voter) => voter.id === regularUserId)).toBe(true);
+    });
+
     test('should allow unauthenticated vote if poll allows it', async () => {
       const csrfToken = 'test-csrf-token-unauth-vote';
       const headers = {

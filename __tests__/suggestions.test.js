@@ -414,6 +414,19 @@ describe('Suggestions & Solutions API Tests', () => {
       expect(res.body.data.myVote).toBe(1);
     });
 
+    it('should let a suggestion voter show their name publicly', async () => {
+      const res = await request(app)
+        .post(`/api/suggestions/${testSuggestionId}/vote`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set(csrfHeadersFor(csrf1, user1Id))
+        .send({ value: 1, identityVisibility: 'public' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.myVote).toBe(1);
+      expect(res.body.data.myVoteIdentityVisibility).toBe('public');
+      expect(res.body.data.publicVoters.up.some((voter) => voter.id === user1Id)).toBe(true);
+    });
+
     it('should change upvote to downvote (score becomes -1)', async () => {
       const res = await request(app)
         .post(`/api/suggestions/${testSuggestionId}/vote`)

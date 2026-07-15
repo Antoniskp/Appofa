@@ -10,6 +10,7 @@ const SUGGESTION_TYPES = ['idea', 'problem', 'problem_request', 'location_sugges
 const SUGGESTION_STATUSES = ['open', 'under_review', 'implemented', 'rejected'];
 const SUGGESTION_VISIBILITIES = ['public', 'private', 'locals_only'];
 const SUGGESTION_VOTE_RESTRICTIONS = ['authenticated', 'locals_only'];
+const VOTE_IDENTITY_VISIBILITIES = ['anonymous', 'public'];
 const VOTE_VALUES = [-1, 1];
 
 const requiresLocation = (visibility, voteRestriction) =>
@@ -33,18 +34,55 @@ async function getMyVote(userId, targetType, targetId) {
   if (!userId) return null;
   const vote = await SuggestionVote.findOne({
     where: { userId, targetType, targetId },
-    attributes: ['value']
+    attributes: ['value', 'identityVisibility']
   });
-  return vote ? vote.value : null;
+  return vote ? { value: vote.value, identityVisibility: vote.identityVisibility } : null;
+}
+
+const serializePublicVoter = (user) => ({
+  id: user.id,
+  username: user.username,
+  avatar: user.avatar,
+  avatarColor: user.avatarColor
+});
+
+async function getPublicVoters(targetType, targetId) {
+  const votes = await SuggestionVote.findAll({
+    where: { targetType, targetId, identityVisibility: 'public' },
+    attributes: ['value'],
+    include: [
+      { model: User, as: 'voter', attributes: ['id', 'username', 'avatar', 'avatarColor'], required: true }
+    ],
+    order: [['updatedAt', 'DESC']],
+    limit: 24
+  });
+
+  return {
+    up: votes.filter((vote) => vote.value === 1).map((vote) => serializePublicVoter(vote.voter)),
+    down: votes.filter((vote) => vote.value === -1).map((vote) => serializePublicVoter(vote.voter))
+  };
+}
+
+async function buildVoteSummary(targetType, targetId, myVote = null) {
+  const { upvotes, downvotes } = await computeCounts(targetType, targetId);
+  const publicVoters = await getPublicVoters(targetType, targetId);
+  return {
+    upvotes,
+    downvotes,
+    score: upvotes - downvotes,
+    myVote: myVote?.value ?? null,
+    myVoteIdentityVisibility: myVote?.identityVisibility ?? null,
+    publicVoters
+  };
 }
 
 /**
  * Attach upvotes, downvotes, score, and myVote to a plain suggestion/solution object.
  */
 async function attachVoteInfo(obj, targetType, userId) {
-  const { upvotes, downvotes } = await computeCounts(targetType, obj.id);
   const myVote = await getMyVote(userId, targetType, obj.id);
-  return { ...obj, upvotes, downvotes, score: upvotes - downvotes, myVote };
+  const summary = await buildVoteSummary(targetType, obj.id, myVote);
+  return { ...obj, ...summary };
 }
 
 function sanitizeSuggestionAuthor(suggestion, user) {
@@ -669,7 +707,13 @@ async function handleVote(req, res, targetType, targetId) {
     return res.status(400).json({ success: false, message: 'Vote value must be 1 or -1.' });
   }
 
+  const identityVisibilityResult = normalizeEnum(req.body.identityVisibility || 'anonymous', VOTE_IDENTITY_VISIBILITIES, 'Vote identity visibility');
+  if (identityVisibilityResult.error) {
+    return res.status(400).json({ success: false, message: identityVisibilityResult.error });
+  }
+
   const userId = req.user.id;
+  const identityVisibility = identityVisibilityResult.value;
 
   const existing = await SuggestionVote.findOne({
     where: { userId, targetType, targetId }
@@ -678,21 +722,26 @@ async function handleVote(req, res, targetType, targetId) {
   if (existing) {
     if (existing.value === value) {
       // Same vote → remove (toggle off)
+      if (existing.identityVisibility !== identityVisibility) {
+        await existing.update({ identityVisibility });
+        const data = await buildVoteSummary(targetType, targetId, { value, identityVisibility });
+        return res.json({ success: true, data, message: 'Vote visibility updated.' });
+      }
       await existing.destroy();
-      const { upvotes, downvotes } = await computeCounts(targetType, targetId);
-      return res.json({ success: true, data: { upvotes, downvotes, score: upvotes - downvotes, myVote: null }, message: 'Vote removed.' });
+      const data = await buildVoteSummary(targetType, targetId, null);
+      return res.json({ success: true, data, message: 'Vote removed.' });
     } else {
       // Different vote → update
-      await existing.update({ value });
-      const { upvotes, downvotes } = await computeCounts(targetType, targetId);
-      return res.json({ success: true, data: { upvotes, downvotes, score: upvotes - downvotes, myVote: value }, message: 'Vote updated.' });
+      await existing.update({ value, identityVisibility });
+      const data = await buildVoteSummary(targetType, targetId, { value, identityVisibility });
+      return res.json({ success: true, data, message: 'Vote updated.' });
     }
   } else {
     // No existing vote → create
-    await SuggestionVote.create({ userId, targetType, targetId, value });
-    const { upvotes, downvotes } = await computeCounts(targetType, targetId);
+    await SuggestionVote.create({ userId, targetType, targetId, value, identityVisibility });
+    const data = await buildVoteSummary(targetType, targetId, { value, identityVisibility });
     badgeService.evaluate(userId).catch(err => console.error('Badge evaluation error:', err));
-    return res.json({ success: true, data: { upvotes, downvotes, score: upvotes - downvotes, myVote: value }, message: 'Vote recorded.' });
+    return res.json({ success: true, data, message: 'Vote recorded.' });
   }
 }
 

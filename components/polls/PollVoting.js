@@ -7,6 +7,7 @@ import { pollAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/ui/AlertMessage';
 import RateLimitBanner from '@/components/ui/RateLimitBanner';
+import VoteIdentitySelector from '@/components/VoteIdentitySelector';
 
 /**
  * Poll voting interface component
@@ -21,6 +22,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   const [success, setSuccess] = useState('');
   const [hasVoted, setHasVoted] = useState(false);
   const [userVote, setUserVote] = useState(null);
+  const [identityVisibility, setIdentityVisibility] = useState('anonymous');
   const [showRegisterCta, setShowRegisterCta] = useState(false);
   const [rateLimit, setRateLimit] = useState(null); // { retryAfter, resetTime }
   
@@ -39,6 +41,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
       setHasVoted(true);
       setUserVote(poll.userVote);
       setSelectedOptionId(poll.userVote.optionId);
+      setIdentityVisibility(poll.userVote.identityVisibility || 'anonymous');
     }
   }, [poll]);
   
@@ -104,11 +107,11 @@ export default function PollVoting({ poll, onVoteSuccess }) {
     setSuccess('');
     
     try {
-      const response = await pollAPI.vote(poll.id, selectedOptionId);
+      const response = await pollAPI.vote(poll.id, selectedOptionId, user ? identityVisibility : 'anonymous');
       if (response.success) {
         setSuccess(hasVoted ? 'Η ψήφος σας ενημερώθηκε επιτυχώς!' : 'Η ψήφος σας καταχωρήθηκε επιτυχώς!');
         setHasVoted(true);
-        setUserVote({ optionId: selectedOptionId });
+        setUserVote({ optionId: selectedOptionId, identityVisibility: response.data?.identityVisibility || identityVisibility });
         if (!user) {
           setShowRegisterCta(true);
         }
@@ -192,6 +195,14 @@ export default function PollVoting({ poll, onVoteSuccess }) {
       {/* Show options and voting button only if there are options */}
       {poll.options.length > 0 && (
         <>
+          {user && (
+            <VoteIdentitySelector
+              value={identityVisibility}
+              onChange={setIdentityVisibility}
+              disabled={isSubmitting}
+            />
+          )}
+
           {poll.type === 'binary' ? (
             // Binary poll — two prominent buttons, submit on click
             <BinaryPollOptions
@@ -206,11 +217,11 @@ export default function PollVoting({ poll, onVoteSuccess }) {
                 setError('');
                 setSuccess('');
                 try {
-                  const response = await pollAPI.vote(poll.id, optionId);
+                  const response = await pollAPI.vote(poll.id, optionId, user ? identityVisibility : 'anonymous');
                   if (response.success) {
                     setSuccess(hasVoted ? 'Η ψήφος σας ενημερώθηκε επιτυχώς!' : 'Η ψήφος σας καταχωρήθηκε επιτυχώς!');
                     setHasVoted(true);
-                    setUserVote({ optionId });
+                    setUserVote({ optionId, identityVisibility: response.data?.identityVisibility || identityVisibility });
                     if (!user) setShowRegisterCta(true);
                     if (onVoteSuccess) {
                       setTimeout(() => onVoteSuccess(), 1000);
