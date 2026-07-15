@@ -165,8 +165,7 @@
     "load_error_title": "Camerele nu au putut fi încărcate",
     "load_error_description": "A apărut o problemă la încărcarea camerelor. Încearcă din nou.",
     "retry": "Încearcă din nou",
-    "availability_toggle_label": "Arată indisponibile",
-    "availability_toggle_aria": "Arată camerele temporar indisponibile",
+    "status_available": "Funcțională",
     "status_unavailable": "Temporar indisponibilă",
     "show_on_map": "Arată pe hartă",
     "pin_source_exact": "Pin exact cameră",
@@ -175,10 +174,7 @@
     "badge_image": "Imagine",
     "badge_iframe": "Iframe",
     "badge_live_link": "Link live",
-    "unmapped_notice": "{count} camere din această vizualizare nu au încă coordonate valide pe hartă.",
-    "no_available_cameras_title": "Nu există camere funcționale acum",
-    "no_available_cameras_description": "Camerele marcate temporar indisponibile pot fi afișate cu comutatorul.",
-    "no_map_visible_description": "Camerele disponibile nu au momentan coordonate valide pe hartă."
+    "unmapped_notice": "{count} camere din această vizualizare nu au încă coordonate valide pe hartă."
   },
   "governmentSnapshot": {
     "title": "Funcții guvernamentale",

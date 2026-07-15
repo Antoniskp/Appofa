@@ -165,8 +165,7 @@
     "load_error_title": "Δεν ήταν δυνατή η φόρτωση των καμερών",
     "load_error_description": "Παρουσιάστηκε πρόβλημα κατά την ανάκτηση των καμερών. Δοκίμασε ξανά.",
     "retry": "Δοκίμασε ξανά",
-    "availability_toggle_label": "Εμφάνιση εκτός λειτουργίας",
-    "availability_toggle_aria": "Εμφάνιση καμερών που είναι προσωρινά εκτός λειτουργίας",
+    "status_available": "Σε λειτουργία",
     "status_unavailable": "Προσωρινά εκτός",
     "show_on_map": "Εστίαση στον χάρτη",
     "pin_source_exact": "Ακριβές pin κάμερας",
@@ -175,10 +174,7 @@
     "badge_image": "Εικόνα",
     "badge_iframe": "Iframe",
     "badge_live_link": "Live σύνδεσμος",
-    "unmapped_notice": "{count} κάμερες σε αυτή την προβολή δεν έχουν ακόμη έγκυρες συντεταγμένες χάρτη.",
-    "no_available_cameras_title": "Δεν υπάρχουν κάμερες σε λειτουργία",
-    "no_available_cameras_description": "Οι κάμερες που είναι προσωρινά εκτός λειτουργίας μπορούν να εμφανιστούν από τον διακόπτη.",
-    "no_map_visible_description": "Οι διαθέσιμες κάμερες δεν έχουν προς το παρόν έγκυρες συντεταγμένες χάρτη."
+    "unmapped_notice": "{count} κάμερες σε αυτή την προβολή δεν έχουν ακόμη έγκυρες συντεταγμένες χάρτη."
   },
   "governmentSnapshot": {
     "title": "Κυβερνητικές Θέσεις",

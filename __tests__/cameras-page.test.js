@@ -121,7 +121,8 @@ describe('CamerasPageClient', () => {
     expect(container.textContent).toContain('Κάμερες κοινότητας');
     expect(container.textContent).toContain('Harbour camera');
     expect(container.textContent).toContain('Square camera');
-    expect(container.querySelector('button[role="switch"]')).toBeTruthy();
+    expect(container.querySelector('button[role="switch"]')).toBeNull();
+    expect(container.querySelectorAll('span[aria-label="Σε λειτουργία"]')).toHaveLength(2);
     expect(container.querySelector('[data-testid="base-map"]')).toBeTruthy();
 
     expect(baseMapRenderSpy).toHaveBeenCalledTimes(1);
@@ -136,7 +137,7 @@ describe('CamerasPageClient', () => {
     expect(typeof mapProps.onMarkerClick).toBe('function');
   });
 
-  test('hides unavailable cameras by default and reveals them with the availability switch', async () => {
+  test('shows each camera availability with green and red status indicators', async () => {
     useAsyncData.mockReturnValue({
       data: [
         {
@@ -171,20 +172,15 @@ describe('CamerasPageClient', () => {
     });
 
     expect(container.querySelector('[role="radiogroup"]')).toBeNull();
+    expect(container.querySelector('button[role="switch"]')).toBeNull();
 
-    let mapProps = baseMapRenderSpy.mock.calls[baseMapRenderSpy.mock.calls.length - 1][0];
-    expect(mapProps.markers).toHaveLength(1);
+    const mapProps = baseMapRenderSpy.mock.calls[baseMapRenderSpy.mock.calls.length - 1][0];
+    expect(mapProps.markers).toHaveLength(2);
     expect(mapProps.markers[0].id).toBe('1:0');
     expect(container.textContent).toContain('Harbour camera');
-    expect(container.textContent).not.toContain('Center cam');
-
-    await act(async () => {
-      container.querySelector('button[role="switch"]').dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    });
-
     expect(container.textContent).toContain('Center cam');
-    mapProps = baseMapRenderSpy.mock.calls[baseMapRenderSpy.mock.calls.length - 1][0];
-    expect(mapProps.markers).toHaveLength(2);
+    expect(container.querySelectorAll('span[aria-label="Σε λειτουργία"]')).toHaveLength(1);
+    expect(container.querySelectorAll('span[aria-label="Προσωρινά εκτός"]')).toHaveLength(1);
 
     await act(async () => {
       const marker = container.querySelector('[data-testid="marker-1:0"]');
@@ -301,7 +297,7 @@ describe('CamerasPageClient', () => {
     });
 
     // BaseMap re-renders but the bounds reference must be the SAME object:
-    // memoized bounds depend only on visible camera data (not hover state), so fitBounds
+    // memoized bounds depend only on camera data (not hover state), so fitBounds
     // must NOT be triggered again by the hover.
     const latestBounds = baseMapRenderSpy.mock.calls[baseMapRenderSpy.mock.calls.length - 1][0].bounds;
     expect(latestBounds).toBe(initialBounds);

@@ -165,8 +165,7 @@
     "load_error_title": "Could not load cameras",
     "load_error_description": "There was a problem loading cameras. Please try again.",
     "retry": "Try again",
-    "availability_toggle_label": "Show unavailable",
-    "availability_toggle_aria": "Show cameras that are temporarily unavailable",
+    "status_available": "Working",
     "status_unavailable": "Temporarily unavailable",
     "show_on_map": "Show on map",
     "pin_source_exact": "Exact camera pin",
@@ -175,10 +174,7 @@
     "badge_image": "Image",
     "badge_iframe": "Iframe",
     "badge_live_link": "Live link",
-    "unmapped_notice": "{count} cameras in this view do not have valid map coordinates yet.",
-    "no_available_cameras_title": "No working cameras right now",
-    "no_available_cameras_description": "Cameras marked temporarily unavailable can be shown with the switch.",
-    "no_map_visible_description": "The available cameras currently have no valid map coordinates."
+    "unmapped_notice": "{count} cameras in this view do not have valid map coordinates yet."
   },
   "governmentSnapshot": {
     "title": "Government Positions",

@@ -221,7 +221,7 @@ export function WebcamsEditor({ content, onChange }) {
               role="switch"
               aria-checked={item.isWorking !== false}
               onClick={() => update(i, 'isWorking', item.isWorking === false)}
-              className={`relative h-6 w-11 rounded-full transition-colors ${item.isWorking !== false ? 'bg-green-600' : 'bg-gray-300'}`}
+              className={`relative h-6 w-11 rounded-full transition-colors ${item.isWorking !== false ? 'bg-green-600' : 'bg-red-600'}`}
             >
               <span
                 className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${item.isWorking !== false ? 'translate-x-5' : 'translate-x-0.5'}`}

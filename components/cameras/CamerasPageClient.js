@@ -134,6 +134,7 @@ function getMapBounds(markers) {
 function CameraRow({ camera, t, isHighlighted, onHoverChange }) {
   const safeCameraUrl = getSafeCameraUrl(camera.url);
   const cameraWorking = isCameraWorking(camera);
+  const statusLabel = cameraWorking ? t('status_available') : t('status_unavailable');
 
   return (
     <article
@@ -143,11 +144,11 @@ function CameraRow({ camera, t, isHighlighted, onHoverChange }) {
     >
       <h3 className="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">{camera.label}</h3>
 
-      {!cameraWorking && (
-        <span className="shrink-0 rounded-md bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
-          {t('status_unavailable')}
-        </span>
-      )}
+      <span
+        aria-label={statusLabel}
+        title={statusLabel}
+        className={`inline-flex h-3 w-3 shrink-0 rounded-full ${cameraWorking ? 'bg-green-500' : 'bg-red-500'}`}
+      />
 
       {cameraWorking && safeCameraUrl && (
         <a
@@ -203,7 +204,6 @@ function CameraLocationGroup({ group, t, highlightedCameraId, onHoverChange }) {
 
 export default function CamerasPageClient() {
   const t = useTranslations('cameras');
-  const [showUnavailable, setShowUnavailable] = useState(false);
   const [hoveredMarkerId, setHoveredMarkerId] = useState(null);
   const [hoveredCardId, setHoveredCardId] = useState(null);
   const {
@@ -224,40 +224,36 @@ export default function CamerasPageClient() {
   );
 
   const allCameras = cameras || [];
-  const visibleCameras = useMemo(
-    () => (showUnavailable ? allCameras : allCameras.filter(isCameraWorking)),
-    [allCameras, showUnavailable]
-  );
   const cameraGroups = useMemo(
-    () => groupCamerasByLocation(visibleCameras, t),
-    [visibleCameras, t]
+    () => groupCamerasByLocation(allCameras, t),
+    [allCameras, t]
   );
 
   const highlightedMarkerId = hoveredCardId || hoveredMarkerId || null;
   const markers = useMemo(
-    () => buildCameraMarkers(visibleCameras, highlightedMarkerId),
-    [visibleCameras, highlightedMarkerId]
+    () => buildCameraMarkers(allCameras, highlightedMarkerId),
+    [allCameras, highlightedMarkerId]
   );
-  // Stable bounds and center: derived from visible camera coordinates only so that
+  // Stable bounds and center: derived from camera coordinates only so that
   // BaseMap.fitBounds is NOT re-triggered when hover/focus state changes (which only
   // affect marker icon variant, not the viewport).  fitBounds fires only when the
-  // camera data or the availability toggle actually changes.
+  // camera data actually changes.
   const bounds = useMemo(() => {
-    const pts = visibleCameras
+    const pts = allCameras
       .filter(hasMapLocation)
       .map((c) => ({ lat: Number(c.mapLocation.lat), lng: Number(c.mapLocation.lng) }));
     return getMapBounds(pts);
-  }, [visibleCameras]);
+  }, [allCameras]);
   const mapCenter = useMemo(() => {
-    const first = visibleCameras.find(hasMapLocation);
+    const first = allCameras.find(hasMapLocation);
     return first ? [Number(first.mapLocation.lat), Number(first.mapLocation.lng)] : GREECE_CENTER;
-  }, [visibleCameras]);
-  const unmappedCount = visibleCameras.length - markers.length;
+  }, [allCameras]);
+  const unmappedCount = allCameras.length - markers.length;
   const mappedCount = allCameras.filter(hasMapLocation).length;
   const unavailableCount = allCameras.filter((camera) => !isCameraWorking(camera)).length;
 
   function handleMarkerClick(cameraId) {
-    const camera = visibleCameras.find((c) => c.id === cameraId);
+    const camera = allCameras.find((c) => c.id === cameraId);
     const safeUrl = camera ? getSafeCameraUrl(camera.url) : null;
     if (isCameraWorking(camera) && safeUrl && typeof window !== 'undefined') {
       window.open(safeUrl, '_blank', 'noopener,noreferrer');
@@ -295,27 +291,6 @@ export default function CamerasPageClient() {
                 <h2 className="text-2xl font-semibold text-gray-900">{t('map_title')}</h2>
                 <p className="mt-2 text-sm text-gray-600">{t('map_subtitle')}</p>
               </div>
-              {!loading && !error && (
-                <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-slate-50 px-3 py-2">
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={showUnavailable}
-                    aria-label={t('availability_toggle_aria')}
-                    onClick={() => {
-                      setShowUnavailable((value) => !value);
-                      setHoveredCardId(null);
-                      setHoveredMarkerId(null);
-                    }}
-                    className={`relative h-6 w-11 rounded-full transition-colors ${showUnavailable ? 'bg-blue-600' : 'bg-gray-300'}`}
-                  >
-                    <span
-                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${showUnavailable ? 'translate-x-5' : 'translate-x-0.5'}`}
-                    />
-                  </button>
-                  <span className="text-sm font-semibold text-slate-700">{t('availability_toggle_label')}</span>
-                </div>
-              )}
             </div>
 
             {loading ? (
@@ -344,7 +319,7 @@ export default function CamerasPageClient() {
             ) : (
               <EmptyState
                 title={t('no_map_title')}
-                description={visibleCameras.length > 0 ? t('no_map_visible_description') : t('no_map_description')}
+                description={allCameras.length > 0 ? t('no_map_description') : t('no_cameras_description')}
               />
             )}
             {!loading && !error && unmappedCount > 0 && (
@@ -359,7 +334,7 @@ export default function CamerasPageClient() {
               <div>
                 <h2 className="text-2xl font-semibold text-gray-900">{t('list_title')}</h2>
                 {!loading && !error && (
-                  <p className="mt-1 text-sm text-gray-600">{t('summary_total', { count: visibleCameras.length })}</p>
+                  <p className="mt-1 text-sm text-gray-600">{t('summary_total', { count: allCameras.length })}</p>
                 )}
               </div>
             </div>
@@ -375,10 +350,10 @@ export default function CamerasPageClient() {
                 description={error}
                 action={{ text: t('retry'), onClick: refetch }}
               />
-            ) : visibleCameras.length === 0 ? (
+            ) : allCameras.length === 0 ? (
               <EmptyState
-                title={showUnavailable ? t('no_cameras_title') : t('no_available_cameras_title')}
-                description={showUnavailable ? t('no_cameras_description') : t('no_available_cameras_description')}
+                title={t('no_cameras_title')}
+                description={t('no_cameras_description')}
               />
             ) : (
               <div className="space-y-4">
