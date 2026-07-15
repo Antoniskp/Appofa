@@ -121,6 +121,7 @@ describe('CamerasPageClient', () => {
     expect(container.textContent).toContain('Κάμερες κοινότητας');
     expect(container.textContent).toContain('Harbour camera');
     expect(container.textContent).toContain('Square camera');
+    expect(container.querySelector('button[role="switch"]')).toBeTruthy();
     expect(container.querySelector('[data-testid="base-map"]')).toBeTruthy();
 
     expect(baseMapRenderSpy).toHaveBeenCalledTimes(1);

@@ -295,7 +295,7 @@ export default function CamerasPageClient() {
                 <h2 className="text-2xl font-semibold text-gray-900">{t('map_title')}</h2>
                 <p className="mt-2 text-sm text-gray-600">{t('map_subtitle')}</p>
               </div>
-              {!loading && !error && unavailableCount > 0 && (
+              {!loading && !error && (
                 <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-slate-50 px-3 py-2">
                   <button
                     type="button"
