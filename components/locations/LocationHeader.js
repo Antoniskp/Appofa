@@ -28,10 +28,6 @@ export default function LocationHeader({
   children,
   hideChildren = false,
   activePolls,
-  newsArticles,
-  regularArticles,
-  suggestionsCount = 0,
-  entities,
   imageError,
   setImageError,
   canManageLocations,
@@ -49,7 +45,6 @@ export default function LocationHeader({
 
   const locationNeedsModerator = !location.hasModerator;
   const hasActivePolls = activePolls.length > 0;
-  const hasSuggestions = suggestionsCount > 0;
   const canEditLocation = canManageLocations();
   const moderatorDisplayName = [location?.moderatorPreview?.firstNameNative, location?.moderatorPreview?.lastNameNative]
     .filter(Boolean)
@@ -134,7 +129,7 @@ export default function LocationHeader({
               <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-2xl" aria-hidden="true">{getTypeIcon(location.type, location.code)}</span>
-                    <h1 className="text-2xl font-bold text-gray-900 truncate">{location.name}</h1>
+                    <h1 className="text-2xl font-bold text-gray-900 break-words">{location.name}</h1>
                     <Badge variant="primary" size="sm">{location.type}</Badge>
                     {canEditLocation && (
                       <button
@@ -156,6 +151,10 @@ export default function LocationHeader({
                       Ανήκει στην τοποθεσία: <span className="font-medium text-gray-800">{location.parent.name_local || location.parent.name}</span>
                     </p>
                   )}
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
+                    Σε αυτή τη σελίδα συγκεντρώνονται η τοπική συμμετοχή, η συζήτηση, οι εκπρόσωποι,
+                    οι χρήσιμες πληροφορίες και η γεωγραφία της περιοχής.
+                  </p>
               </div>
 
               <div className="flex items-center gap-2 mt-1.5 text-sm">
@@ -190,35 +189,22 @@ export default function LocationHeader({
                 ) : null}
               </div>
 
-              {(populationValue || activePolls.length > 0 || suggestionsCount > 0 || entities.usersCount > 0 || newsArticles.length > 0 || regularArticles.length > 0) ? (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
-                  {populationValue && (
-                    <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-                      <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Πληθυσμός</div>
-                      <div className="text-sm font-semibold text-gray-900">{formatPopulation(populationValue)}</div>
-                    </div>
-                  )}
-                  <div className={`rounded-lg border px-3 py-2 ${hasActivePolls ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
-                    <div className={`text-[11px] font-medium uppercase tracking-wide ${hasActivePolls ? 'text-blue-600' : 'text-gray-500'}`}>Ψηφοφορίες</div>
-                    <div className={`text-sm font-semibold ${hasActivePolls ? 'text-blue-900' : 'text-gray-700'}`}>{activePolls.length}</div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {populationValue && (
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                    <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Πληθυσμός</div>
+                    <div className="text-sm font-semibold text-gray-900">{formatPopulation(populationValue)}</div>
                   </div>
-                  <div className={`rounded-lg border px-3 py-2 ${hasSuggestions ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-gray-50'}`}>
-                    <div className={`text-[11px] font-medium uppercase tracking-wide ${hasSuggestions ? 'text-indigo-600' : 'text-gray-500'}`}>Προτάσεις</div>
-                    <div className={`text-sm font-semibold ${hasSuggestions ? 'text-indigo-900' : 'text-gray-700'}`}>{suggestionsCount}</div>
+                )}
+                <div className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2">
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-sky-700">Τι καλύπτει</div>
+                  <div className="text-sm font-semibold text-sky-950">
+                    {children.length > 0 && !hideChildren
+                      ? `${childLocationTerms.label}, συμμετοχή, ρόλοι και πληροφορίες`
+                      : 'Συμμετοχή, ρόλοι, πληροφορίες και σχετικές τοποθεσίες'}
                   </div>
-                  <div className={`rounded-lg border px-3 py-2 ${(entities.usersCount || 0) > 0 ? 'border-violet-200 bg-violet-50' : 'border-gray-200 bg-gray-50'}`}>
-                    <div className={`text-[11px] font-medium uppercase tracking-wide ${(entities.usersCount || 0) > 0 ? 'text-violet-600' : 'text-gray-500'}`}>Χρήστες</div>
-                    <div className={`text-sm font-semibold ${(entities.usersCount || 0) > 0 ? 'text-violet-900' : 'text-gray-700'}`}>{entities.usersCount || 0}</div>
-                  </div>
-                  {(newsArticles.length > 0 || regularArticles.length > 0) && (
-                    <div className="col-span-2 sm:col-span-4 text-xs text-gray-500 pt-1">
-                      Περιεχόμενο: Ειδήσεις {newsArticles.length} • Άρθρα {regularArticles.length}
-                    </div>
-                  )}
                 </div>
-              ) : (
-                <p className="mt-3 text-xs text-gray-400 italic">Δεν υπάρχει περιεχόμενο ακόμα</p>
-              )}
+              </div>
 
               {hasExtendedInfo && (
                 <details className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 lg:hidden">

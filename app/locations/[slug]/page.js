@@ -72,6 +72,34 @@ export function shouldShowMainLocationMap({ location, children = [], secondaryLo
   return hasOwnGeometry;
 }
 
+function LocationPageNav({ items }) {
+  if (!items.length) return null;
+
+  return (
+    <nav
+      aria-label="Πλοήγηση σελίδας τοποθεσίας"
+      className="sticky top-16 z-20 mb-6 rounded-lg border border-gray-200 bg-white/95 px-3 py-2 shadow-sm backdrop-blur"
+    >
+      <div className="flex items-center gap-3 overflow-x-auto">
+        <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          Σελίδα
+        </span>
+        <div className="flex min-w-max items-center gap-2">
+          {items.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className="inline-flex items-center rounded-md px-3 py-1.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              {item.label}
+            </a>
+          ))}
+        </div>
+      </div>
+    </nav>
+  );
+}
+
 export default function LocationDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -500,16 +528,6 @@ export default function LocationDetailPage() {
     : (visibleTabs[0] ?? DEFAULT_TAB);
 
   const bodySections = sections.filter(s => s.isPublished && !HEADER_SECTION_TYPES.includes(s.type));
-  const summaryCounts = bodySections.reduce((acc, section) => {
-    if (section.type === 'announcements') {
-      const activeItems = (section.content?.items || []).filter((item) => !item.endsAt || new Date(item.endsAt) >= new Date());
-      acc.announcements += activeItems.length;
-    }
-    if (section.type === 'news_sources') {
-      acc.media += (section.content?.sources || []).length;
-    }
-    return acc;
-  }, { announcements: 0, media: 0 });
 
   // Merge all news_sources sections into a single one to prevent duplicate boxes
   const mergedBodySections = (() => {
@@ -530,6 +548,18 @@ export default function LocationDetailPage() {
     };
     return [...otherSections, merged];
   })();
+  const canHaveChildHierarchy = !['municipality', 'electoral_district'].includes(location?.type);
+  const showHierarchyNearTop = children.length > 0 || (secondaryLoading && canHaveChildHierarchy);
+  const hasExploreSection = showHierarchyNearTop || secondaryLoading || children.length > 0 || Boolean(location.parent || siblings.length > 0);
+  const hasLocalInfoSection = secondaryLoading || mergedBodySections.length > 0;
+  const pageNavItems = [
+    { href: '#location-content', label: 'Συμμετοχή' },
+    { href: '#location-wall', label: 'Συζήτηση' },
+    { href: '#location-roles', label: 'Εκπρόσωποι' },
+    hasLocalInfoSection ? { href: '#location-local-info', label: 'Πληροφορίες' } : null,
+    showMainLocationMap ? { href: '#location-map', label: 'Χάρτης' } : null,
+    hasExploreSection ? { href: '#location-children-explorer', label: 'Περιοχή' } : null,
+  ].filter(Boolean);
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -575,6 +605,8 @@ export default function LocationDetailPage() {
         {/* Location Sections (published, non-header types) — shown between header and tabs */}
         {!isEditing && (
           <>
+            <LocationPageNav items={pageNavItems} />
+
             <LocationActionSummary
               counts={{
                 polls: activePolls.length,
@@ -587,6 +619,16 @@ export default function LocationDetailPage() {
               isAuthenticated={isAuthenticated}
               onTabSelect={handleTabChange}
             />
+
+            {showHierarchyNearTop && (
+              <LocationChildrenExplorer
+                location={location}
+                parent={location.parent}
+                siblings={siblings}
+                children={children}
+                loading={secondaryLoading}
+              />
+            )}
 
             {/* Map: own geometry only when the hierarchy explorer will not render a map. */}
             {showMainLocationMap && (
@@ -673,14 +715,15 @@ export default function LocationDetailPage() {
               </div>
             )}
 
-            {/* Location hierarchy browser - kept last so participation and local info lead. */}
-            <LocationChildrenExplorer
-              location={location}
-              parent={location.parent}
-              siblings={siblings}
-              children={children}
-              loading={secondaryLoading}
-            />
+            {!showHierarchyNearTop && (
+              <LocationChildrenExplorer
+                location={location}
+                parent={location.parent}
+                siblings={siblings}
+                children={children}
+                loading={secondaryLoading}
+              />
+            )}
           </>
         )}
       </div>
