@@ -87,6 +87,12 @@ const validateContent = (type, content) => {
         if (!cam.label || typeof cam.label !== 'string') return 'Each webcam must have a string "label"';
         if (!cam.url || typeof cam.url !== 'string') return 'Each webcam must have a string "url"';
         if (!isValidHttpsUrl(cam.url)) return `Webcam URL must start with https://: "${cam.url}"`;
+        if (cam.isWorking !== undefined && typeof cam.isWorking !== 'boolean') {
+          return 'Each webcam isWorking must be a boolean';
+        }
+        if (cam.isWorking === undefined) {
+          cam.isWorking = true;
+        }
         const normalizedLat = normalizeOptionalCoordinate(cam.lat, -90, 90);
         const normalizedLng = normalizeOptionalCoordinate(cam.lng, -180, 180);
         if (cam.lat !== undefined || cam.lng !== undefined) {
@@ -245,6 +251,7 @@ exports.getAllCameras = async (_req, res) => {
           label: camera.label,
           url: camera.url,
           embedType: camera.embedType || 'link',
+          isWorking: camera.isWorking !== false,
           sourceLocation,
           exactCoordinates,
           mapLocation,

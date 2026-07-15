@@ -48,7 +48,7 @@ const SECTION_EMOJIS = {
 const EMPTY_CONTENT = {
   official_links: { links: [{ label: '', url: '' }] },
   contacts: { phones: [], emails: [] },
-  webcams: { webcams: [{ label: '', url: '' }] },
+  webcams: { webcams: [{ label: '', url: '', isWorking: true }] },
   announcements: { items: [{ title: '', priority: 0 }] },
   news_sources: { sources: [{ name: '', url: '' }] },
 };
@@ -194,7 +194,7 @@ export function WebcamsEditor({ content, onChange }) {
     <RepeatingRows
       items={webcams}
       setItems={setWebcams}
-      newRow={{ label: '', url: '', lat: '', lng: '' }}
+      newRow={{ label: '', url: '', lat: '', lng: '', isWorking: true }}
       renderRow={(item, i, update) => (
         <div className="space-y-3">
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -210,6 +210,23 @@ export function WebcamsEditor({ content, onChange }) {
               value={item.url}
               onChange={(e) => update(i, 'url', e.target.value)}
             />
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+            <div>
+              <p className="text-sm font-medium text-gray-700">Working now</p>
+              <p className="text-xs text-gray-500">Turn off temporarily when this camera is down.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={item.isWorking !== false}
+              onClick={() => update(i, 'isWorking', item.isWorking === false)}
+              className={`relative h-6 w-11 rounded-full transition-colors ${item.isWorking !== false ? 'bg-green-600' : 'bg-gray-300'}`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${item.isWorking !== false ? 'translate-x-5' : 'translate-x-0.5'}`}
+              />
+            </button>
           </div>
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
             <div className="mb-3 flex items-center justify-between gap-3">

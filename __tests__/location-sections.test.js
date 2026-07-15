@@ -116,6 +116,19 @@ describe('Location Sections', () => {
         expect(content.webcams[0].lat).toBe(37.9838);
         expect(content.webcams[0].lng).toBe(23.7275);
       });
+      it('accepts and defaults webcam working status', () => {
+        const explicitContent = {
+          webcams: [{ label: 'Offline cam', url: 'https://cam.example.com/stream', isWorking: false }]
+        };
+        const defaultContent = {
+          webcams: [{ label: 'Default cam', url: 'https://cam.example.com/stream' }]
+        };
+
+        expect(validateContent('webcams', explicitContent)).toBeNull();
+        expect(validateContent('webcams', defaultContent)).toBeNull();
+        expect(explicitContent.webcams[0].isWorking).toBe(false);
+        expect(defaultContent.webcams[0].isWorking).toBe(true);
+      });
       it('auto-detects image embedType for .jpg URL', () => {
         const content = { webcams: [{ label: 'Still', url: 'https://cam.example.com/still.jpg' }] };
         validateContent('webcams', content);
@@ -140,6 +153,11 @@ describe('Location Sections', () => {
         expect(validateContent('webcams', {
           webcams: [{ label: 'Cam', url: 'https://cam.example.com', embedType: 'invalid' }]
         })).not.toBeNull();
+      });
+      it('rejects non-boolean working status', () => {
+        expect(validateContent('webcams', {
+          webcams: [{ label: 'Cam', url: 'https://cam.example.com', isWorking: 'no' }]
+        })).toBe('Each webcam isWorking must be a boolean');
       });
       it('rejects http URL', () => {
         expect(validateContent('webcams', {
@@ -414,6 +432,16 @@ describe('Location Sections', () => {
     });
 
     it('GET /api/locations/cameras returns flattened published cameras with map locations', async () => {
+      await LocationSection.create({
+        locationId: testLocation.id,
+        type: 'webcams',
+        content: { webcams: [{ label: 'Temporarily offline', url: 'https://cam.example.com/offline', isWorking: false }] },
+        isPublished: true,
+        sortOrder: 99,
+        createdByUserId: 1,
+        updatedByUserId: 1
+      });
+
       const res = await request(app)
         .get('/api/locations/cameras')
         .expect(200);
@@ -437,6 +465,10 @@ describe('Location Sections', () => {
       expect(exactPinCamera.mapLocation.lat).toBe(37.991111);
       expect(exactPinCamera.mapLocation.lng).toBe(23.744444);
       expect(exactPinCamera.sourceLocation.id).toBe(testLocation.id);
+
+      const offlineCamera = res.body.cameras.find((camera) => camera.label === 'Temporarily offline');
+      expect(offlineCamera).toBeTruthy();
+      expect(offlineCamera.isWorking).toBe(false);
     });
 
     it('reorders sections', async () => {

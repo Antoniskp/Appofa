@@ -100,4 +100,31 @@ describe('WebcamsEditor', () => {
       }],
     });
   });
+
+  test('toggles webcam working status', async () => {
+    const onChange = jest.fn();
+
+    await act(async () => {
+      root.render(React.createElement(WebcamsEditor, {
+        content: {
+          webcams: [{ label: 'Square cam', url: 'https://cam.example.com/live', isWorking: true }],
+        },
+        onChange,
+      }));
+    });
+
+    expect(container.textContent).toContain('Working now');
+
+    await act(async () => {
+      container.querySelector('button[role="switch"]').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(onChange).toHaveBeenCalledWith({
+      webcams: [{
+        label: 'Square cam',
+        url: 'https://cam.example.com/live',
+        isWorking: false,
+      }],
+    });
+  });
 });

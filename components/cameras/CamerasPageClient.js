@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import {
   ArrowTopRightOnSquareIcon,
-  FunnelIcon,
   MapPinIcon,
   VideoCameraIcon,
 } from '@heroicons/react/24/outline';
@@ -56,6 +55,10 @@ function getSafeCameraUrl(url) {
   } catch {
     return null;
   }
+}
+
+function isCameraWorking(camera) {
+  return camera?.isWorking !== false;
 }
 
 function getEmbedTypeLabel(camera, t) {
@@ -130,6 +133,7 @@ function getMapBounds(markers) {
 
 function CameraRow({ camera, t, isHighlighted, onHoverChange }) {
   const safeCameraUrl = getSafeCameraUrl(camera.url);
+  const cameraWorking = isCameraWorking(camera);
 
   return (
     <article
@@ -139,7 +143,13 @@ function CameraRow({ camera, t, isHighlighted, onHoverChange }) {
     >
       <h3 className="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">{camera.label}</h3>
 
-      {safeCameraUrl && (
+      {!cameraWorking && (
+        <span className="shrink-0 rounded-md bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
+          {t('status_unavailable')}
+        </span>
+      )}
+
+      {cameraWorking && safeCameraUrl && (
         <a
           href={safeCameraUrl}
           target="_blank"
@@ -193,7 +203,7 @@ function CameraLocationGroup({ group, t, highlightedCameraId, onHoverChange }) {
 
 export default function CamerasPageClient() {
   const t = useTranslations('cameras');
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [showUnavailable, setShowUnavailable] = useState(false);
   const [hoveredMarkerId, setHoveredMarkerId] = useState(null);
   const [hoveredCardId, setHoveredCardId] = useState(null);
   const {
@@ -214,61 +224,42 @@ export default function CamerasPageClient() {
   );
 
   const allCameras = cameras || [];
-  const filteredCameras = useMemo(() => {
-    if (activeFilter === 'mapped') {
-      return allCameras.filter((camera) => hasMapLocation(camera));
-    }
-    if (activeFilter === 'exact') {
-      return allCameras.filter((camera) => hasMapLocation(camera) && camera.mapLocationSource === 'camera');
-    }
-    if (activeFilter === 'image') {
-      return allCameras.filter((camera) => camera.embedType === 'image');
-    }
-    if (activeFilter === 'live') {
-      return allCameras.filter((camera) => camera.embedType !== 'image');
-    }
-    return allCameras;
-  }, [activeFilter, allCameras]);
+  const visibleCameras = useMemo(
+    () => (showUnavailable ? allCameras : allCameras.filter(isCameraWorking)),
+    [allCameras, showUnavailable]
+  );
   const cameraGroups = useMemo(
-    () => groupCamerasByLocation(filteredCameras, t),
-    [filteredCameras, t]
+    () => groupCamerasByLocation(visibleCameras, t),
+    [visibleCameras, t]
   );
 
   const highlightedMarkerId = hoveredCardId || hoveredMarkerId || null;
   const markers = useMemo(
-    () => buildCameraMarkers(filteredCameras, highlightedMarkerId),
-    [filteredCameras, highlightedMarkerId]
+    () => buildCameraMarkers(visibleCameras, highlightedMarkerId),
+    [visibleCameras, highlightedMarkerId]
   );
-  // Stable bounds and center — derived from filteredCameras coordinates only so that
+  // Stable bounds and center: derived from visible camera coordinates only so that
   // BaseMap.fitBounds is NOT re-triggered when hover/focus state changes (which only
   // affect marker icon variant, not the viewport).  fitBounds fires only when the
-  // camera data or the active filter actually changes.
+  // camera data or the availability toggle actually changes.
   const bounds = useMemo(() => {
-    const pts = filteredCameras
+    const pts = visibleCameras
       .filter(hasMapLocation)
       .map((c) => ({ lat: Number(c.mapLocation.lat), lng: Number(c.mapLocation.lng) }));
     return getMapBounds(pts);
-  }, [filteredCameras]);
+  }, [visibleCameras]);
   const mapCenter = useMemo(() => {
-    const first = filteredCameras.find(hasMapLocation);
+    const first = visibleCameras.find(hasMapLocation);
     return first ? [Number(first.mapLocation.lat), Number(first.mapLocation.lng)] : GREECE_CENTER;
-  }, [filteredCameras]);
-  const unmappedCount = filteredCameras.length - markers.length;
+  }, [visibleCameras]);
+  const unmappedCount = visibleCameras.length - markers.length;
   const mappedCount = allCameras.filter(hasMapLocation).length;
-  const liveCount = allCameras.filter((camera) => camera.embedType !== 'image').length;
-
-  const filters = [
-    { id: 'all', label: t('filter_all') },
-    { id: 'mapped', label: t('filter_mapped') },
-    { id: 'exact', label: t('filter_exact') },
-    { id: 'image', label: t('filter_image') },
-    { id: 'live', label: t('filter_live') },
-  ];
+  const unavailableCount = allCameras.filter((camera) => !isCameraWorking(camera)).length;
 
   function handleMarkerClick(cameraId) {
-    const camera = filteredCameras.find((c) => c.id === cameraId);
+    const camera = visibleCameras.find((c) => c.id === cameraId);
     const safeUrl = camera ? getSafeCameraUrl(camera.url) : null;
-    if (safeUrl && typeof window !== 'undefined') {
+    if (isCameraWorking(camera) && safeUrl && typeof window !== 'undefined') {
       window.open(safeUrl, '_blank', 'noopener,noreferrer');
     }
   }
@@ -291,7 +282,7 @@ export default function CamerasPageClient() {
               <div className="flex flex-wrap gap-3 text-sm font-semibold text-blue-100">
                 <span>{t('summary_total', { count: allCameras.length })}</span>
                 <span>{t('summary_mapped', { count: mappedCount })}</span>
-                <span>{t('filter_live')}: {liveCount}</span>
+                <span>{t('summary_unavailable', { count: unavailableCount })}</span>
               </div>
             )}
           </div>
@@ -299,42 +290,31 @@ export default function CamerasPageClient() {
 
         <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(360px,0.9fr)_minmax(0,1.1fr)]">
           <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5 xl:sticky xl:top-24 xl:self-start">
-            <div
-              className="mb-4 flex flex-wrap items-center gap-2"
-              role="radiogroup"
-              aria-label={t('filters_label')}
-            >
-              <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                <FunnelIcon className="h-4 w-4" />
-                {t('filters_label')}
-              </span>
-              {filters.map((filter) => (
-                <button
-                  key={filter.id}
-                  type="button"
-                  role="radio"
-                  onClick={() => {
-                    setActiveFilter(filter.id);
-                    setHoveredCardId(null);
-                    setHoveredMarkerId(null);
-                  }}
-                  aria-checked={activeFilter === filter.id}
-                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${activeFilter === filter.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
-                >
-                  {filter.label}
-                </button>
-              ))}
-            </div>
-
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-semibold text-gray-900">{t('map_title')}</h2>
                 <p className="mt-2 text-sm text-gray-600">{t('map_subtitle')}</p>
               </div>
-              {!loading && !error && (
-                <p className="rounded-md bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">
-                  {t('summary_mapped', { count: markers.length })}
-                </p>
+              {!loading && !error && unavailableCount > 0 && (
+                <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-slate-50 px-3 py-2">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={showUnavailable}
+                    aria-label={t('availability_toggle_aria')}
+                    onClick={() => {
+                      setShowUnavailable((value) => !value);
+                      setHoveredCardId(null);
+                      setHoveredMarkerId(null);
+                    }}
+                    className={`relative h-6 w-11 rounded-full transition-colors ${showUnavailable ? 'bg-blue-600' : 'bg-gray-300'}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${showUnavailable ? 'translate-x-5' : 'translate-x-0.5'}`}
+                    />
+                  </button>
+                  <span className="text-sm font-semibold text-slate-700">{t('availability_toggle_label')}</span>
+                </div>
               )}
             </div>
 
@@ -364,7 +344,7 @@ export default function CamerasPageClient() {
             ) : (
               <EmptyState
                 title={t('no_map_title')}
-                description={filteredCameras.length > 0 ? t('no_map_filtered_description') : t('no_map_description')}
+                description={visibleCameras.length > 0 ? t('no_map_visible_description') : t('no_map_description')}
               />
             )}
             {!loading && !error && unmappedCount > 0 && (
@@ -379,7 +359,7 @@ export default function CamerasPageClient() {
               <div>
                 <h2 className="text-2xl font-semibold text-gray-900">{t('list_title')}</h2>
                 {!loading && !error && (
-                  <p className="mt-1 text-sm text-gray-600">{t('summary_total', { count: filteredCameras.length })}</p>
+                  <p className="mt-1 text-sm text-gray-600">{t('summary_total', { count: visibleCameras.length })}</p>
                 )}
               </div>
             </div>
@@ -395,10 +375,10 @@ export default function CamerasPageClient() {
                 description={error}
                 action={{ text: t('retry'), onClick: refetch }}
               />
-            ) : filteredCameras.length === 0 ? (
+            ) : visibleCameras.length === 0 ? (
               <EmptyState
-                title={t('no_filtered_cameras_title')}
-                description={t('no_filtered_cameras_description')}
+                title={showUnavailable ? t('no_cameras_title') : t('no_available_cameras_title')}
+                description={showUnavailable ? t('no_cameras_description') : t('no_available_cameras_description')}
               />
             ) : (
               <div className="space-y-4">
