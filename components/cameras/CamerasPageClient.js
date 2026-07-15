@@ -10,6 +10,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
 import { locationSectionAPI } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import EmptyState from '@/components/ui/EmptyState';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -131,10 +132,40 @@ function getMapBounds(markers) {
   };
 }
 
-function CameraRow({ camera, t, isHighlighted, onHoverChange }) {
-  const safeCameraUrl = getSafeCameraUrl(camera.url);
+function CameraStatusControl({ camera, t, canToggle, isUpdating, onToggle }) {
   const cameraWorking = isCameraWorking(camera);
   const statusLabel = cameraWorking ? t('status_available') : t('status_unavailable');
+  const statusClass = cameraWorking ? 'bg-green-500' : 'bg-red-500';
+
+  if (!canToggle) {
+    return (
+      <span
+        aria-label={statusLabel}
+        title={statusLabel}
+        className={`inline-flex h-3 w-3 shrink-0 rounded-full ${statusClass}`}
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={cameraWorking}
+      aria-label={t('toggle_status_aria', { label: camera.label, status: statusLabel })}
+      title={t('toggle_status_title', { status: statusLabel })}
+      disabled={isUpdating}
+      onClick={() => onToggle(camera)}
+      className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-opacity ${isUpdating ? 'cursor-wait opacity-60' : 'hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'}`}
+    >
+      <span className={`h-3 w-3 rounded-full ${statusClass}`} />
+    </button>
+  );
+}
+
+function CameraRow({ camera, t, isHighlighted, onHoverChange, canToggleStatus, isUpdatingStatus, onToggleStatus }) {
+  const safeCameraUrl = getSafeCameraUrl(camera.url);
+  const cameraWorking = isCameraWorking(camera);
 
   return (
     <article
@@ -144,10 +175,12 @@ function CameraRow({ camera, t, isHighlighted, onHoverChange }) {
     >
       <h3 className="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">{camera.label}</h3>
 
-      <span
-        aria-label={statusLabel}
-        title={statusLabel}
-        className={`inline-flex h-3 w-3 shrink-0 rounded-full ${cameraWorking ? 'bg-green-500' : 'bg-red-500'}`}
+      <CameraStatusControl
+        camera={camera}
+        t={t}
+        canToggle={canToggleStatus}
+        isUpdating={isUpdatingStatus}
+        onToggle={onToggleStatus}
       />
 
       {cameraWorking && safeCameraUrl && (
@@ -166,7 +199,7 @@ function CameraRow({ camera, t, isHighlighted, onHoverChange }) {
   );
 }
 
-function CameraLocationGroup({ group, t, highlightedCameraId, onHoverChange }) {
+function CameraLocationGroup({ group, t, highlightedCameraId, onHoverChange, canToggleStatus, updatingStatusIds, onToggleStatus }) {
   return (
     <section className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-slate-50 px-4 py-3">
@@ -195,6 +228,9 @@ function CameraLocationGroup({ group, t, highlightedCameraId, onHoverChange }) {
             t={t}
             isHighlighted={camera.id === highlightedCameraId}
             onHoverChange={onHoverChange}
+            canToggleStatus={canToggleStatus}
+            isUpdatingStatus={updatingStatusIds.has(camera.id)}
+            onToggleStatus={onToggleStatus}
           />
         ))}
       </div>
@@ -204,8 +240,12 @@ function CameraLocationGroup({ group, t, highlightedCameraId, onHoverChange }) {
 
 export default function CamerasPageClient() {
   const t = useTranslations('cameras');
+  const { user } = useAuth();
   const [hoveredMarkerId, setHoveredMarkerId] = useState(null);
   const [hoveredCardId, setHoveredCardId] = useState(null);
+  const [statusOverrides, setStatusOverrides] = useState({});
+  const [updatingStatusIds, setUpdatingStatusIds] = useState(() => new Set());
+  const [statusError, setStatusError] = useState(null);
   const {
     data: cameras,
     loading,
@@ -223,7 +263,14 @@ export default function CamerasPageClient() {
     { initialData: [] }
   );
 
-  const allCameras = cameras || [];
+  const allCameras = useMemo(
+    () => (cameras || []).map((camera) => (
+      Object.prototype.hasOwnProperty.call(statusOverrides, camera.id)
+        ? { ...camera, isWorking: statusOverrides[camera.id] }
+        : camera
+    )),
+    [cameras, statusOverrides]
+  );
   const cameraGroups = useMemo(
     () => groupCamerasByLocation(allCameras, t),
     [allCameras, t]
@@ -257,6 +304,33 @@ export default function CamerasPageClient() {
     const safeUrl = camera ? getSafeCameraUrl(camera.url) : null;
     if (isCameraWorking(camera) && safeUrl && typeof window !== 'undefined') {
       window.open(safeUrl, '_blank', 'noopener,noreferrer');
+    }
+  }
+
+  async function handleToggleStatus(camera) {
+    if (!user || updatingStatusIds.has(camera.id)) return;
+
+    const nextStatus = !isCameraWorking(camera);
+    setStatusError(null);
+    setUpdatingStatusIds((current) => new Set(current).add(camera.id));
+
+    try {
+      const response = await locationSectionAPI.updateCameraStatus(camera.sectionId, camera.index, nextStatus);
+      if (!response?.success) {
+        throw new Error(response?.message || t('status_update_error'));
+      }
+      setStatusOverrides((current) => ({
+        ...current,
+        [camera.id]: response.camera?.isWorking ?? nextStatus,
+      }));
+    } catch (err) {
+      setStatusError(err?.message || t('status_update_error'));
+    } finally {
+      setUpdatingStatusIds((current) => {
+        const next = new Set(current);
+        next.delete(camera.id);
+        return next;
+      });
     }
   }
 
@@ -338,6 +412,11 @@ export default function CamerasPageClient() {
                 )}
               </div>
             </div>
+            {statusError && (
+              <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                {statusError}
+              </p>
+            )}
 
             {loading ? (
               <div className="space-y-4">
@@ -366,6 +445,9 @@ export default function CamerasPageClient() {
                     onHoverChange={(id) => {
                       setHoveredCardId(id);
                     }}
+                    canToggleStatus={Boolean(user)}
+                    updatingStatusIds={updatingStatusIds}
+                    onToggleStatus={handleToggleStatus}
                   />
                 ))}
               </div>

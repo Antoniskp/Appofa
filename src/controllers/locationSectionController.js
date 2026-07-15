@@ -268,6 +268,68 @@ exports.getAllCameras = async (_req, res) => {
 };
 
 /**
+ * PUT /api/locations/cameras/:sectionId/:index/status
+ * Authenticated users can update the current working status for a published camera.
+ */
+exports.updateCameraStatus = async (req, res) => {
+  try {
+    const { sectionId, index } = req.params;
+    const { isWorking } = req.body;
+    const cameraIndex = Number(index);
+
+    if (!Number.isInteger(cameraIndex) || cameraIndex < 0) {
+      return res.status(400).json({ success: false, message: 'Invalid camera index' });
+    }
+
+    if (typeof isWorking !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'isWorking must be a boolean' });
+    }
+
+    const section = await LocationSection.findOne({
+      where: {
+        id: sectionId,
+        type: 'webcams',
+        isPublished: true,
+      },
+    });
+
+    if (!section) {
+      return res.status(404).json({ success: false, message: 'Camera section not found' });
+    }
+
+    const webcams = Array.isArray(section.content?.webcams) ? section.content.webcams : [];
+    if (!webcams[cameraIndex]) {
+      return res.status(404).json({ success: false, message: 'Camera not found' });
+    }
+
+    const nextWebcams = webcams.map((camera, itemIndex) => (
+      itemIndex === cameraIndex ? { ...camera, isWorking } : camera
+    ));
+
+    section.content = {
+      ...(section.content || {}),
+      webcams: nextWebcams,
+    };
+    section.updatedByUserId = req.user.id;
+
+    await section.save();
+
+    return res.status(200).json({
+      success: true,
+      camera: {
+        id: `${section.id}:${cameraIndex}`,
+        sectionId: section.id,
+        index: cameraIndex,
+        isWorking,
+      },
+    });
+  } catch (err) {
+    console.error('updateCameraStatus error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
  * POST /api/locations/:locationId/sections
  * Moderator/Admin only.
  */

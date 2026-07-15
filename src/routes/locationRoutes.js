@@ -16,6 +16,7 @@ const csrfProtection = require('../middleware/csrfProtection');
 // Public routes
 router.get('/', locationController.getLocations);
 router.get('/cameras', apiLimiter, locationSectionController.getAllCameras);
+router.put('/cameras/:sectionId/:index/status', apiLimiter, authMiddleware, locationSectionController.updateCameraStatus);
 
 // Country request routes (must be before /:id to avoid 'requests' being treated as an ID)
 router.post('/requests', apiLimiter, authMiddleware, locationController.createLocationRequest);

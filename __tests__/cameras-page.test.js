@@ -8,6 +8,7 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 const baseMapRenderSpy = jest.fn();
 const windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
+let mockAuthState = { user: null, loading: false };
 
 jest.mock('next/link', () => {
   const React = require('react');
@@ -61,7 +62,18 @@ jest.mock('@/hooks/useAsyncData', () => ({
   useAsyncData: jest.fn(),
 }));
 
+jest.mock('@/lib/auth-context', () => ({
+  useAuth: () => mockAuthState,
+}));
+
+jest.mock('@/lib/api', () => ({
+  locationSectionAPI: {
+    updateCameraStatus: jest.fn(),
+  },
+}));
+
 const { useAsyncData } = require('@/hooks/useAsyncData');
+const { locationSectionAPI } = require('@/lib/api');
 const CamerasPageClient = require('../components/cameras/CamerasPageClient').default;
 
 describe('CamerasPageClient', () => {
@@ -74,6 +86,8 @@ describe('CamerasPageClient', () => {
     root = createRoot(container);
     baseMapRenderSpy.mockClear();
     windowOpenSpy.mockClear();
+    locationSectionAPI.updateCameraStatus.mockReset();
+    mockAuthState = { user: null, loading: false };
   });
 
   afterEach(async () => {
@@ -89,6 +103,8 @@ describe('CamerasPageClient', () => {
       data: [
         {
           id: '1:0',
+          sectionId: 1,
+          index: 0,
           label: 'Harbour camera',
           url: 'https://cam.example.com/harbour.jpg',
           embedType: 'image',
@@ -100,6 +116,8 @@ describe('CamerasPageClient', () => {
         },
         {
           id: '1:1',
+          sectionId: 1,
+          index: 1,
           label: 'Square camera',
           url: 'https://cam.example.com/square',
           embedType: 'link',
@@ -142,6 +160,8 @@ describe('CamerasPageClient', () => {
       data: [
         {
           id: '1:0',
+          sectionId: 1,
+          index: 0,
           label: 'Harbour camera',
           url: 'https://cam.example.com/harbour.jpg',
           embedType: 'image',
@@ -152,6 +172,8 @@ describe('CamerasPageClient', () => {
         },
         {
           id: '2:0',
+          sectionId: 2,
+          index: 0,
           label: 'Center cam',
           url: 'https://cam.example.com/center',
           embedType: 'link',
@@ -192,6 +214,55 @@ describe('CamerasPageClient', () => {
 
     const showOnMapButton = Array.from(container.querySelectorAll('button')).find((btn) => btn.textContent === 'Εστίαση στον χάρτη');
     expect(showOnMapButton).toBeUndefined();
+  });
+
+  test('lets authenticated users toggle one camera status', async () => {
+    mockAuthState = { user: { id: 7, username: 'registered' }, loading: false };
+    locationSectionAPI.updateCameraStatus.mockResolvedValue({
+      success: true,
+      camera: {
+        id: '1:0',
+        sectionId: 1,
+        index: 0,
+        isWorking: false,
+      },
+    });
+
+    useAsyncData.mockReturnValue({
+      data: [
+        {
+          id: '1:0',
+          sectionId: 1,
+          index: 0,
+          label: 'Harbour camera',
+          url: 'https://cam.example.com/harbour.jpg',
+          embedType: 'image',
+          sourceLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
+          exactCoordinates: { lat: 37.91, lng: 23.71 },
+          mapLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.91, lng: 23.71 },
+          mapLocationSource: 'camera',
+          isWorking: true,
+        },
+      ],
+      loading: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+
+    await act(async () => {
+      root.render(React.createElement(CamerasPageClient));
+    });
+
+    const statusToggle = container.querySelector('button[role="switch"]');
+    expect(statusToggle).toBeTruthy();
+    expect(statusToggle.getAttribute('aria-checked')).toBe('true');
+
+    await act(async () => {
+      statusToggle.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(locationSectionAPI.updateCameraStatus).toHaveBeenCalledWith(1, 0, false);
+    expect(container.querySelector('button[role="switch"]').getAttribute('aria-checked')).toBe('false');
   });
 
   test('clicking a marker opens the camera stream URL in a new tab', async () => {

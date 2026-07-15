@@ -471,6 +471,47 @@ describe('Location Sections', () => {
       expect(offlineCamera.isWorking).toBe(false);
     });
 
+    it('allows an authenticated registered user to update a camera working status', async () => {
+      const cameraList = await request(app)
+        .get('/api/locations/cameras')
+        .expect(200);
+      const camera = cameraList.body.cameras.find((item) => item.label === 'Town square');
+      expect(camera).toBeTruthy();
+
+      const res = await request(app)
+        .put(`/api/locations/cameras/${camera.sectionId}/${camera.index}/status`)
+        .set('Cookie', `auth_token=${editorToken}`)
+        .send({ isWorking: false })
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.camera).toMatchObject({
+        id: camera.id,
+        sectionId: camera.sectionId,
+        index: camera.index,
+        isWorking: false,
+      });
+
+      const updatedList = await request(app)
+        .get('/api/locations/cameras')
+        .expect(200);
+      const updatedCamera = updatedList.body.cameras.find((item) => item.id === camera.id);
+      expect(updatedCamera.isWorking).toBe(false);
+    });
+
+    it('rejects camera status updates from unauthenticated visitors', async () => {
+      const cameraList = await request(app)
+        .get('/api/locations/cameras')
+        .expect(200);
+      const camera = cameraList.body.cameras.find((item) => item.label === 'Town square');
+      expect(camera).toBeTruthy();
+
+      await request(app)
+        .put(`/api/locations/cameras/${camera.sectionId}/${camera.index}/status`)
+        .send({ isWorking: true })
+        .expect(401);
+    });
+
     it('reorders sections', async () => {
       // Get current sections
       const listRes = await request(app)
