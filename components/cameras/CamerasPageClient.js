@@ -165,7 +165,6 @@ function CameraStatusControl({ camera, t, canToggle, isUpdating, onToggle }) {
 
 function CameraRow({ camera, t, isHighlighted, onHoverChange, canToggleStatus, isUpdatingStatus, onToggleStatus }) {
   const safeCameraUrl = getSafeCameraUrl(camera.url);
-  const cameraWorking = isCameraWorking(camera);
 
   return (
     <article
@@ -183,7 +182,7 @@ function CameraRow({ camera, t, isHighlighted, onHoverChange, canToggleStatus, i
         onToggle={onToggleStatus}
       />
 
-      {cameraWorking && safeCameraUrl && (
+      {safeCameraUrl && (
         <a
           href={safeCameraUrl}
           target="_blank"
@@ -302,7 +301,7 @@ export default function CamerasPageClient() {
   function handleMarkerClick(cameraId) {
     const camera = allCameras.find((c) => c.id === cameraId);
     const safeUrl = camera ? getSafeCameraUrl(camera.url) : null;
-    if (isCameraWorking(camera) && safeUrl && typeof window !== 'undefined') {
+    if (safeUrl && typeof window !== 'undefined') {
       window.open(safeUrl, '_blank', 'noopener,noreferrer');
     }
   }

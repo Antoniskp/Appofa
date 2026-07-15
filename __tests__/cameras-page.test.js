@@ -203,6 +203,7 @@ describe('CamerasPageClient', () => {
     expect(container.textContent).toContain('Center cam');
     expect(container.querySelectorAll('span[aria-label="Σε λειτουργία"]')).toHaveLength(1);
     expect(container.querySelectorAll('span[aria-label="Προσωρινά εκτός"]')).toHaveLength(1);
+    expect(container.querySelector('a[href="https://cam.example.com/center"]')).toBeTruthy();
 
     await act(async () => {
       const marker = container.querySelector('[data-testid="marker-1:0"]');
@@ -320,6 +321,44 @@ describe('CamerasPageClient', () => {
     });
 
     expect(windowOpenSpy).not.toHaveBeenCalled();
+  });
+
+  test('clicking an unavailable camera marker still opens its stream URL', async () => {
+    useAsyncData.mockReturnValue({
+      data: [
+        {
+          id: '1:0',
+          label: 'Offline camera',
+          url: 'https://cam.example.com/offline',
+          embedType: 'link',
+          sourceLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
+          exactCoordinates: null,
+          mapLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
+          mapLocationSource: 'sourceLocation',
+          isWorking: false,
+        },
+      ],
+      loading: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+
+    await act(async () => {
+      root.render(React.createElement(CamerasPageClient));
+    });
+
+    expect(container.querySelector('a[href="https://cam.example.com/offline"]')).toBeTruthy();
+
+    await act(async () => {
+      const marker = container.querySelector('[data-testid="marker-1:0"]');
+      marker.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(windowOpenSpy).toHaveBeenCalledWith(
+      'https://cam.example.com/offline',
+      '_blank',
+      'noopener,noreferrer'
+    );
   });
 
   test('hover on camera card does not change the bounds prop (avoids map zoom reset)', async () => {
