@@ -8,6 +8,7 @@ import {
   BuildingOffice2Icon,
   BriefcaseIcon,
   FlagIcon,
+  HomeModernIcon,
   MapPinIcon,
   MegaphoneIcon,
   ShareIcon,
@@ -58,6 +59,11 @@ const TYPE_DETAILS = {
     badge: 'bg-rose-100 text-rose-700',
     accent: 'bg-rose-50 text-rose-500',
   },
+  block: {
+    icon: HomeModernIcon,
+    badge: 'bg-cyan-100 text-cyan-700',
+    accent: 'bg-cyan-50 text-cyan-600',
+  },
 };
 
 function OrganizationTypeBadge({ type, t }) {
@@ -103,6 +109,12 @@ function OrganizationCard({ organization, t }) {
                   {organization.location.name}
                 </span>
               )}
+              {organization.address && (
+                <span className="inline-flex items-center gap-1 rounded bg-gray-100 px-2 py-1">
+                  <MapPinIcon className="h-3.5 w-3.5" />
+                  {organization.address}
+                </span>
+              )}
               {organization.parent && (
                 <span className="inline-flex items-center gap-1 rounded bg-gray-100 px-2 py-1">
                   <ShareIcon className="h-3.5 w-3.5" />
@@ -126,7 +138,8 @@ function OrganizationCard({ organization, t }) {
 export default function OrganizationsPage() {
   const t = useTranslations('organizations');
   const { user } = useAuth();
-  const canCreateOrganization = ['admin', 'moderator'].includes(user?.role);
+  const canCreateOrganization = Boolean(user);
+  const canManageOrganizations = ['admin', 'moderator'].includes(user?.role);
   const { filters, updateFilter } = useFilters({
     search: '',
     type: '',
@@ -163,14 +176,24 @@ export default function OrganizationsPage() {
       <div className="app-container">
         <div className="mb-6 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="min-w-0 text-2xl font-bold text-gray-900">{t('title')}</h1>
-          {canCreateOrganization && (
-            <Link
-              href="/admin/organizations"
-              className="inline-flex min-w-0 max-w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors sm:justify-start"
-            >
-              <span className="truncate">{t('create_button')}</span>
-            </Link>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {canCreateOrganization && (
+              <Link
+                href="/organizations/new"
+                className="inline-flex min-w-0 max-w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors sm:justify-start"
+              >
+                <span className="truncate">{t('create_block_button')}</span>
+              </Link>
+            )}
+            {canManageOrganizations && (
+              <Link
+                href="/admin/organizations"
+                className="inline-flex min-w-0 max-w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors sm:justify-start"
+              >
+                <span className="truncate">{t('manage_button')}</span>
+              </Link>
+            )}
+          </div>
         </div>
 
         <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6 space-y-4">

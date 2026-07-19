@@ -121,6 +121,42 @@ describe('Organizations API', () => {
     expect(createTwo.body.data.organization.slug).toBe('open-civic-lab-2');
   });
 
+  it('allows regular users to create blocks with an optional address and map pin', async () => {
+    const createBlock = await request(app)
+      .post('/api/organizations')
+      .set(withCsrf(viewerUser.id, viewerToken, 'csrf-org-create-viewer-block'))
+      .send({
+        name: 'Solonos 12 Block',
+        type: 'block',
+        description: 'Residents coordinating building matters.',
+        address: 'Solonos 12, Athens',
+        latitude: 37.98381,
+        longitude: 23.72754,
+        isPublic: false,
+      });
+
+    expect(createBlock.status).toBe(201);
+    expect(createBlock.body.data.organization.type).toBe('block');
+    expect(createBlock.body.data.organization.address).toBe('Solonos 12, Athens');
+    expect(Number(createBlock.body.data.organization.latitude)).toBeCloseTo(37.98381);
+    expect(Number(createBlock.body.data.organization.longitude)).toBeCloseTo(23.72754);
+
+    const membership = await OrganizationMember.findOne({
+      where: { organizationId: createBlock.body.data.organization.id, userId: viewerUser.id },
+    });
+    expect(membership.role).toBe('owner');
+    expect(membership.status).toBe('active');
+
+    const createNonBlock = await request(app)
+      .post('/api/organizations')
+      .set(withCsrf(viewerUser.id, viewerToken, 'csrf-org-create-viewer-company-denied'))
+      .send({
+        name: 'Viewer Company Denied',
+        type: 'company',
+      });
+    expect(createNonBlock.status).toBe(403);
+  });
+
   it('lists and fetches organizations by slug', async () => {
     const listRes = await request(app)
       .get('/api/organizations')
@@ -513,15 +549,21 @@ describe('Organizations API', () => {
       .send({
         title: 'Public Poll',
         visibility: 'public',
+        options: [{ text: 'Fuel supplier A' }, { text: 'Fuel supplier B' }],
       });
     expect(ownerCreatePublicPoll.status).toBe(201);
     expect(ownerCreatePublicPoll.body.data.poll.visibility).toBe('public');
+    expect(ownerCreatePublicPoll.body.data.poll.options.map((pollOption) => pollOption.text)).toEqual([
+      'Fuel supplier A',
+      'Fuel supplier B',
+    ]);
 
     const guestPolls = await request(app).get(`/api/organizations/${organizationId}/polls`);
     expect(guestPolls.status).toBe(200);
     expect(guestPolls.body.success).toBe(true);
     expect(guestPolls.body.data.polls).toHaveLength(1);
     expect(guestPolls.body.data.polls[0].visibility).toBe('public');
+    expect(guestPolls.body.data.polls[0].options).toHaveLength(2);
 
     const memberPolls = await request(app)
       .get(`/api/organizations/${organizationId}/polls`)

@@ -10,6 +10,8 @@ const {
   User,
   Location,
   Poll,
+  PollOption,
+  PollVote,
   Suggestion,
   sequelize,
 } = require('../models');
@@ -28,6 +30,7 @@ const MEMBER_STATUSES = ['active', 'invited', 'pending'];
 const ASSIGNABLE_MEMBER_ROLES = ['admin', 'moderator', 'member'];
 const OFFICIAL_POST_SCOPES = ['platform', 'organization'];
 const OFFICIAL_POST_ORG_TYPES = ['party', 'institution'];
+const USER_CREATABLE_ORG_TYPES = ['block'];
 const CLAIM_STATUSES = ['pending', 'approved', 'rejected'];
 const ORG_CONTENT_VISIBILITIES = organizationContentConfig.visibilities;
 const ORG_SUGGESTION_TYPES = organizationContentConfig.suggestionTypes;
@@ -71,6 +74,34 @@ function parseOptionalBoolean(value) {
 function parsePositiveInt(value) {
   const parsed = parseInt(value, 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function parseOptionalCoordinate(value, min, max, fieldName) {
+  if (value === undefined || value === null || value === '') {
+    return { value: null };
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < min || parsed > max) {
+    return { error: `${fieldName} must be a number between ${min} and ${max}.` };
+  }
+  return { value: parsed };
+}
+
+function normalizeOptionalPlainText(value, fieldName, maxLength) {
+  if (value === undefined || value === null || value === '') {
+    return { value: null };
+  }
+  if (typeof value !== 'string') {
+    return { error: `${fieldName} must be a string.` };
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return { value: null };
+  }
+  if (trimmed.length > maxLength) {
+    return { error: `${fieldName} must be ${maxLength} characters or fewer.` };
+  }
+  return { value: trimmed };
 }
 
 function paginationPayload(count, page, limit) {
@@ -133,6 +164,14 @@ function mapDbVisibilityToOrg(value) {
 
 function serializeOrgPoll(poll) {
   const data = poll.toJSON ? poll.toJSON() : poll;
+  if (Array.isArray(data.options)) {
+    data.options = data.options.map((option) => ({
+      ...option,
+      voteCount: option.votes ? option.votes.length : (option.voteCount || 0),
+      votes: undefined,
+    }));
+    data.totalVotes = data.options.reduce((sum, option) => sum + (option.voteCount || 0), 0);
+  }
   return {
     ...data,
     visibility: mapDbVisibilityToOrg(data.visibility),
@@ -407,6 +446,9 @@ const organizationController = {
         logo,
         website,
         contactEmail,
+        address,
+        latitude,
+        longitude,
         locationId,
         isPublic,
         isVerified,
@@ -420,6 +462,44 @@ const organizationController = {
       if (!organizationService.ORGANIZATION_TYPES.includes(type)) {
         await transaction.rollback();
         return res.status(400).json({ success: false, message: 'Invalid organization type.' });
+      }
+      if (!['admin', 'moderator'].includes(req.user.role) && !USER_CREATABLE_ORG_TYPES.includes(type)) {
+        await transaction.rollback();
+        return res.status(403).json({ success: false, message: 'Only block organizations can be created by regular users.' });
+      }
+
+      const addressResult = normalizeOptionalPlainText(address, 'Address', 500);
+      if (addressResult.error) {
+        await transaction.rollback();
+        return res.status(400).json({ success: false, message: addressResult.error });
+      }
+      const latitudeResult = parseOptionalCoordinate(latitude, -90, 90, 'Latitude');
+      if (latitudeResult.error) {
+        await transaction.rollback();
+        return res.status(400).json({ success: false, message: latitudeResult.error });
+      }
+      const longitudeResult = parseOptionalCoordinate(longitude, -180, 180, 'Longitude');
+      if (longitudeResult.error) {
+        await transaction.rollback();
+        return res.status(400).json({ success: false, message: longitudeResult.error });
+      }
+      if ((latitudeResult.value === null) !== (longitudeResult.value === null)) {
+        await transaction.rollback();
+        return res.status(400).json({ success: false, message: 'Latitude and longitude must be provided together.' });
+      }
+
+      let parsedLocationId = null;
+      if (locationId !== undefined && locationId !== null && locationId !== '') {
+        parsedLocationId = parsePositiveInt(locationId);
+        if (!parsedLocationId) {
+          await transaction.rollback();
+          return res.status(400).json({ success: false, message: 'locationId must be a positive integer.' });
+        }
+        const location = await Location.findByPk(parsedLocationId, { attributes: ['id'], transaction });
+        if (!location) {
+          await transaction.rollback();
+          return res.status(404).json({ success: false, message: 'Location not found.' });
+        }
       }
 
       const baseName = name.trim();
@@ -449,7 +529,10 @@ const organizationController = {
         logo: logo || null,
         website: website || null,
         contactEmail: contactEmail || null,
-        locationId: locationId || null,
+        address: addressResult.value,
+        latitude: latitudeResult.value,
+        longitude: longitudeResult.value,
+        locationId: parsedLocationId,
         isPublic: parsedIsPublic ?? true,
         isVerified: parsedIsVerified ?? false,
         createdByUserId: req.user.id,
@@ -483,17 +566,74 @@ const organizationController = {
         return res.status(404).json({ success: false, message: 'Organization not found.' });
       }
 
+      const canManage = await hasOrganizationManageAccess(organization.id, req.user);
+      if (!canManage) {
+        return res.status(403).json({ success: false, message: 'You do not have permission to update this organization.' });
+      }
+
       const updates = {};
-      const allowedFields = ['description', 'logo', 'website', 'contactEmail', 'locationId'];
+      const allowedFields = ['description', 'logo', 'website', 'contactEmail'];
       allowedFields.forEach((field) => {
         if (req.body[field] !== undefined) {
           updates[field] = req.body[field] || null;
         }
       });
 
+      if (req.body.address !== undefined) {
+        const addressResult = normalizeOptionalPlainText(req.body.address, 'Address', 500);
+        if (addressResult.error) {
+          return res.status(400).json({ success: false, message: addressResult.error });
+        }
+        updates.address = addressResult.value;
+      }
+
+      if (req.body.locationId !== undefined) {
+        let parsedLocationId = null;
+        if (req.body.locationId !== null && req.body.locationId !== '') {
+          parsedLocationId = parsePositiveInt(req.body.locationId);
+          if (!parsedLocationId) {
+            return res.status(400).json({ success: false, message: 'locationId must be a positive integer.' });
+          }
+          const location = await Location.findByPk(parsedLocationId, { attributes: ['id'] });
+          if (!location) {
+            return res.status(404).json({ success: false, message: 'Location not found.' });
+          }
+        }
+        updates.locationId = parsedLocationId;
+      }
+
+      if (req.body.latitude !== undefined || req.body.longitude !== undefined) {
+        const latitudeResult = parseOptionalCoordinate(
+          req.body.latitude !== undefined ? req.body.latitude : organization.latitude,
+          -90,
+          90,
+          'Latitude'
+        );
+        if (latitudeResult.error) {
+          return res.status(400).json({ success: false, message: latitudeResult.error });
+        }
+        const longitudeResult = parseOptionalCoordinate(
+          req.body.longitude !== undefined ? req.body.longitude : organization.longitude,
+          -180,
+          180,
+          'Longitude'
+        );
+        if (longitudeResult.error) {
+          return res.status(400).json({ success: false, message: longitudeResult.error });
+        }
+        if ((latitudeResult.value === null) !== (longitudeResult.value === null)) {
+          return res.status(400).json({ success: false, message: 'Latitude and longitude must be provided together.' });
+        }
+        updates.latitude = latitudeResult.value;
+        updates.longitude = longitudeResult.value;
+      }
+
       if (req.body.type !== undefined) {
         if (!organizationService.ORGANIZATION_TYPES.includes(req.body.type)) {
           return res.status(400).json({ success: false, message: 'Invalid organization type.' });
+        }
+        if (!['admin', 'moderator'].includes(req.user.role) && req.body.type !== 'block') {
+          return res.status(403).json({ success: false, message: 'Only block organizations can be managed by regular users.' });
         }
         updates.type = req.body.type;
       }
@@ -1178,14 +1318,27 @@ const organizationController = {
       const { page, limit, offset } = parsePagination(req.query);
       const { count, rows: polls } = await Poll.findAndCountAll({
         where,
+        distinct: true,
         include: [
           {
             model: User,
             as: 'creator',
             attributes: ['id', 'username', 'avatar', 'avatarColor'],
           },
+          {
+            model: PollOption,
+            as: 'options',
+            attributes: ['id', 'text', 'mediaAssetId', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
+            include: [
+              {
+                model: PollVote,
+                as: 'votes',
+                attributes: ['id'],
+              },
+            ],
+          },
         ],
-        order: [['createdAt', 'DESC']],
+        order: [['createdAt', 'DESC'], [{ model: PollOption, as: 'options' }, 'order', 'ASC']],
         limit,
         offset,
       });
@@ -1247,18 +1400,68 @@ const organizationController = {
         }
       }
 
-      const poll = await Poll.create({
-        title: titleResult.value,
-        description: req.body?.description || null,
-        creatorId: req.user.id,
-        organizationId,
-        visibility: mapOrgVisibilityToDb(visibilityResult.value),
-        deadline,
+      const rawOptions = Array.isArray(req.body?.options) ? req.body.options : [];
+      const options = rawOptions
+        .map((option) => (typeof option === 'string' ? option : option?.text))
+        .map((text) => String(text || '').trim())
+        .filter(Boolean);
+
+      if (rawOptions.length > 0 && options.length < 2) {
+        return res.status(400).json({ success: false, message: 'At least 2 poll options are required when options are provided.' });
+      }
+
+      const transaction = await sequelize.transaction();
+      let poll;
+      try {
+        poll = await Poll.create({
+          title: titleResult.value,
+          description: req.body?.description || null,
+          creatorId: req.user.id,
+          organizationId,
+          visibility: mapOrgVisibilityToDb(visibilityResult.value),
+          deadline,
+        }, { transaction });
+
+        for (let index = 0; index < options.length; index += 1) {
+          await PollOption.create({
+            pollId: poll.id,
+            text: options[index],
+            order: index,
+          }, { transaction });
+        }
+
+        await transaction.commit();
+      } catch (createError) {
+        await transaction.rollback();
+        throw createError;
+      }
+
+      const createdPoll = await Poll.findByPk(poll.id, {
+        include: [
+          {
+            model: User,
+            as: 'creator',
+            attributes: ['id', 'username', 'avatar', 'avatarColor'],
+          },
+          {
+            model: PollOption,
+            as: 'options',
+            attributes: ['id', 'text', 'mediaAssetId', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
+            include: [
+              {
+                model: PollVote,
+                as: 'votes',
+                attributes: ['id'],
+              },
+            ],
+          },
+        ],
+        order: [[{ model: PollOption, as: 'options' }, 'order', 'ASC']],
       });
 
       return res.status(201).json({
         success: true,
-        data: { poll: serializeOrgPoll(poll) },
+        data: { poll: serializeOrgPoll(createdPoll) },
       });
     } catch (error) {
       console.error('organizationController.createOrgPoll error:', error);

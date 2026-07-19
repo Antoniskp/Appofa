@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState, use } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   AcademicCapIcon, BuildingLibraryIcon, BuildingOffice2Icon, BriefcaseIcon, FlagIcon,
-  GlobeAltIcon, EnvelopeIcon, MapPinIcon, MegaphoneIcon,
+  GlobeAltIcon, EnvelopeIcon, HomeModernIcon, MapPinIcon, MegaphoneIcon,
   PencilSquareIcon, UserCircleIcon, PlusIcon, ChevronUpIcon, TrashIcon,
 } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
@@ -27,6 +28,7 @@ const OFFICIAL_POST_ORG_TYPES = ['party', 'institution'];
 const MANAGEABLE_ROLES = ['admin', 'moderator', 'member'];
 const ORG_VISIBILITY_OPTIONS = organizationContentConfig.visibilities;
 const ORG_SUGGESTION_TYPES = organizationContentConfig.suggestionTypes;
+const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false });
 const TYPE_PROFILE_DETAILS = {
   company: { icon: BriefcaseIcon, panel: 'border-slate-200 bg-slate-50 text-slate-700', iconBox: 'bg-white text-slate-500' },
   organization: { icon: BuildingOffice2Icon, panel: 'border-blue-200 bg-blue-50 text-blue-700', iconBox: 'bg-white text-blue-500' },
@@ -34,6 +36,7 @@ const TYPE_PROFILE_DETAILS = {
   school: { icon: AcademicCapIcon, panel: 'border-amber-200 bg-amber-50 text-amber-800', iconBox: 'bg-white text-amber-600' },
   university: { icon: AcademicCapIcon, panel: 'border-indigo-200 bg-indigo-50 text-indigo-700', iconBox: 'bg-white text-indigo-500' },
   party: { icon: FlagIcon, panel: 'border-rose-200 bg-rose-50 text-rose-700', iconBox: 'bg-white text-rose-500' },
+  block: { icon: HomeModernIcon, panel: 'border-cyan-200 bg-cyan-50 text-cyan-700', iconBox: 'bg-white text-cyan-600' },
 };
 const ROLE_TEMPLATES = {
   party: [
@@ -72,6 +75,12 @@ const ROLE_TEMPLATES = {
     ['role_template_treasurer', 'role_category_governance'],
     ['role_template_volunteer_lead', 'role_category_community'],
   ],
+  block: [
+    ['role_template_building_administrator', 'role_category_governance'],
+    ['role_template_treasurer', 'role_category_governance'],
+    ['role_template_maintenance_contact', 'role_category_operations'],
+    ['role_template_fuel_contact', 'role_category_operations'],
+  ],
 };
 
 export default function OrganizationProfilePage({ params }) {
@@ -88,7 +97,7 @@ export default function OrganizationProfilePage({ params }) {
   const [inviteSelectedUser, setInviteSelectedUser] = useState(null);
   const [inviteSearchError, setInviteSearchError] = useState('');
   const [roleDrafts, setRoleDrafts] = useState({});
-  const [pollForm, setPollForm] = useState({ title: '', description: '', deadline: '', visibility: 'members_only' });
+  const [pollForm, setPollForm] = useState({ title: '', description: '', optionsText: '', deadline: '', visibility: 'members_only' });
   const [suggestionForm, setSuggestionForm] = useState({ type: 'idea', title: '', body: '', visibility: 'members_only' });
   const [officialPostForm, setOfficialPostForm] = useState({
     contentType: 'suggestion',
@@ -306,6 +315,7 @@ export default function OrganizationProfilePage({ params }) {
   const claimSubmitted = searchParams.get('claim') === 'submitted';
   const profileDetail = TYPE_PROFILE_DETAILS[organization?.type] || TYPE_PROFILE_DETAILS.organization;
   const ProfileTypeIcon = profileDetail.icon;
+  const hasMapPin = organization?.latitude != null && organization?.longitude != null;
   const activeMemberCount = members.filter((member) => member.status === 'active').length;
   const currentRoleCount = orgRoles.filter((role) => role.isCurrent !== false).length;
   const roleTemplates = ROLE_TEMPLATES[organization?.type] || ROLE_TEMPLATES.organization;
@@ -426,13 +436,18 @@ export default function OrganizationProfilePage({ params }) {
   const handleCreatePoll = async (event) => {
     event.preventDefault();
     if (!organization?.id) return;
+    const options = pollForm.optionsText
+      .split(/\r?\n/)
+      .map((option) => option.trim())
+      .filter(Boolean)
+      .map((text) => ({ text }));
     await runContentAction(
-      () => organizationAPI.createPoll(organization.id, pollForm),
+      () => organizationAPI.createPoll(organization.id, { ...pollForm, options }),
       t('org_poll_create_success'),
       t('org_poll_create_failed'),
       refetchPolls
     );
-    setPollForm({ title: '', description: '', deadline: '', visibility: 'members_only' });
+    setPollForm({ title: '', description: '', optionsText: '', deadline: '', visibility: 'members_only' });
     setShowPollForm(false);
   };
 
@@ -608,7 +623,7 @@ export default function OrganizationProfilePage({ params }) {
                 <img src={organization.logo} alt={organization.name} className="w-20 h-20 rounded-xl object-cover flex-shrink-0 border border-gray-200" />
               ) : (
                 <div className="w-20 h-20 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
-                  <BuildingOffice2Icon className="w-10 h-10 text-gray-400" />
+                  <ProfileTypeIcon className="w-10 h-10 text-gray-400" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
@@ -669,6 +684,12 @@ export default function OrganizationProfilePage({ params }) {
                       <MapPinIcon className="h-4 w-4" />
                       {organization.location.name}
                     </Link>
+                  )}
+                  {organization.address && (
+                    <span className="inline-flex items-center gap-1">
+                      <MapPinIcon className="h-4 w-4" />
+                      {organization.address}
+                    </span>
                   )}
                 </div>
 
@@ -733,7 +754,24 @@ export default function OrganizationProfilePage({ params }) {
                 {organization.description && <p><span className="font-semibold">{t('description')}:</span> {organization.description}</p>}
                 {organization.website && <p><span className="font-semibold">{t('website')}:</span> <a className="text-blue-600 hover:underline" href={organization.website} target="_blank" rel="noopener noreferrer">{organization.website}</a></p>}
                 {organization.contactEmail && <p><span className="font-semibold">{t('contact_email')}:</span> <a className="text-blue-600 hover:underline" href={`mailto:${organization.contactEmail}`}>{organization.contactEmail}</a></p>}
+                {organization.address && <p><span className="font-semibold">{t('address')}:</span> {organization.address}</p>}
                 {organization.location && <p><span className="font-semibold">{t('location')}:</span> <Link className="text-blue-600 hover:underline" href={`/locations/${organization.location.slug}`}>{organization.location.name}</Link></p>}
+                {hasMapPin && (
+                  <div className="overflow-hidden rounded-lg border border-gray-200">
+                    <BaseMap
+                      center={[Number(organization.latitude), Number(organization.longitude)]}
+                      zoom={16}
+                      markers={[{
+                        lat: Number(organization.latitude),
+                        lng: Number(organization.longitude),
+                        label: organization.name,
+                        popup: organization.address || organization.name,
+                      }]}
+                      className="h-72 w-full"
+                      showFullscreenControl
+                    />
+                  </div>
+                )}
                 {organization.createdBy && <p><span className="font-semibold">{t('created_by')}:</span> <Link className="text-blue-600 hover:underline" href={`/users/${organization.createdBy.username}`}>@{organization.createdBy.username}</Link></p>}
                 {organization.parent && (
                   <p>
@@ -1195,6 +1233,13 @@ export default function OrganizationProfilePage({ params }) {
                           onChange={(e) => setPollForm((prev) => ({ ...prev, description: e.target.value }))}
                           placeholder={t('description')}
                           rows={3}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        />
+                        <textarea
+                          value={pollForm.optionsText}
+                          onChange={(e) => setPollForm((prev) => ({ ...prev, optionsText: e.target.value }))}
+                          placeholder={t('poll_options_placeholder')}
+                          rows={4}
                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                         />
                         <div className="grid gap-3 sm:grid-cols-2">

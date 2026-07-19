@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -14,6 +15,7 @@ import AlertMessage from '@/components/ui/AlertMessage';
 import organizationTypesConfig from '@/config/organizationTypes.json';
 
 const ORGANIZATION_TYPES = organizationTypesConfig.types;
+const LocationPickerMap = dynamic(() => import('@/components/map/LocationPickerMap'), { ssr: false });
 
 const INITIAL_FORM = {
   name: '',
@@ -22,6 +24,9 @@ const INITIAL_FORM = {
   logo: '',
   website: '',
   contactEmail: '',
+  address: '',
+  latitude: '',
+  longitude: '',
   locationId: '',
   isPublic: true,
   isVerified: false,
@@ -88,6 +93,9 @@ export default function AdminOrganizationsPage() {
         logo: target.logo || '',
         website: target.website || '',
         contactEmail: target.contactEmail || '',
+        address: target.address || '',
+        latitude: target.latitude != null ? String(target.latitude) : '',
+        longitude: target.longitude != null ? String(target.longitude) : '',
         locationId: target.locationId ? String(target.locationId) : '',
         isPublic: target.isPublic !== false,
         isVerified: target.isVerified === true,
@@ -134,6 +142,8 @@ export default function AdminOrganizationsPage() {
     const payload = {
       ...form,
       locationId: form.locationId ? Number(form.locationId) : null,
+      latitude: form.latitude !== '' ? Number(form.latitude) : null,
+      longitude: form.longitude !== '' ? Number(form.longitude) : null,
       isPublic: Boolean(form.isPublic),
     };
     if (isAdmin) {
@@ -170,6 +180,9 @@ export default function AdminOrganizationsPage() {
       logo: organization.logo || '',
       website: organization.website || '',
       contactEmail: organization.contactEmail || '',
+      address: organization.address || '',
+      latitude: organization.latitude != null ? String(organization.latitude) : '',
+      longitude: organization.longitude != null ? String(organization.longitude) : '',
       locationId: organization.locationId ? String(organization.locationId) : '',
       isPublic: organization.isPublic !== false,
       isVerified: organization.isVerified === true,
@@ -420,6 +433,16 @@ export default function AdminOrganizationsPage() {
               />
             </label>
 
+            <label className="text-sm text-gray-700 md:col-span-2">
+              {t('address')}
+              <input
+                type="text"
+                value={form.address}
+                onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
+              />
+            </label>
+
             <label className="text-sm text-gray-700">
               {t('location')}
               <input
@@ -430,6 +453,48 @@ export default function AdminOrganizationsPage() {
                 className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"
               />
             </label>
+
+            <div className="md:col-span-2 rounded-lg border border-gray-200 p-3">
+              <p className="mb-2 text-sm font-medium text-gray-700">{t('map_pin')}</p>
+              <LocationPickerMap
+                lat={form.latitude}
+                lng={form.longitude}
+                onChange={({ lat, lng }) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    latitude: lat.toFixed(7),
+                    longitude: lng.toFixed(7),
+                  }));
+                }}
+                className="h-64 w-full overflow-hidden rounded-lg"
+              />
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <label className="text-xs font-medium text-gray-600">
+                  {t('latitude')}
+                  <input
+                    type="number"
+                    min="-90"
+                    max="90"
+                    step="0.0000001"
+                    value={form.latitude}
+                    onChange={(e) => setForm((prev) => ({ ...prev, latitude: e.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </label>
+                <label className="text-xs font-medium text-gray-600">
+                  {t('longitude')}
+                  <input
+                    type="number"
+                    min="-180"
+                    max="180"
+                    step="0.0000001"
+                    value={form.longitude}
+                    onChange={(e) => setForm((prev) => ({ ...prev, longitude: e.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </label>
+              </div>
+            </div>
 
             <div className="flex flex-wrap gap-4 md:col-span-2">
               <label className="inline-flex items-center gap-2 text-sm text-gray-700">
@@ -492,6 +557,7 @@ export default function AdminOrganizationsPage() {
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
+                  <th className="text-left px-4 py-3">{t('address')}</th>
                   <th className="text-left px-4 py-3">{t('name')}</th>
                   <th className="text-left px-4 py-3">{t('type')}</th>
                   <th className="text-left px-4 py-3">{t('parent_org')}</th>
@@ -507,6 +573,9 @@ export default function AdminOrganizationsPage() {
                   const isEditing = editingOrganization?.id === organization.id;
                   return (
                     <tr key={organization.id} className={`border-b border-gray-100 ${isEditing ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'hover:bg-gray-50'}`}>
+                      <td className="px-4 py-3 text-gray-600">
+                        {organization.address || (organization.latitude && organization.longitude ? t('map_pin') : 'â€”')}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           <span className={`font-medium ${isEditing ? 'text-blue-700' : 'text-gray-900'}`}>{organization.name}</span>
@@ -597,7 +666,7 @@ export default function AdminOrganizationsPage() {
                 })}
                 {filteredOrganizations.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                       {searchQuery.trim() ? t('no_organizations_filtered') : t('no_organizations')}
                     </td>
                   </tr>

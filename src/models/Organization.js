@@ -17,7 +17,7 @@ const Organization = sequelize.define('Organization', {
     unique: true,
   },
   type: {
-    type: DataTypes.ENUM('company', 'organization', 'institution', 'school', 'university', 'party'),
+    type: DataTypes.ENUM('company', 'organization', 'institution', 'school', 'university', 'party', 'block'),
     allowNull: false,
   },
   description: {
@@ -34,6 +34,18 @@ const Organization = sequelize.define('Organization', {
   },
   contactEmail: {
     type: DataTypes.STRING(255),
+    allowNull: true,
+  },
+  address: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+  },
+  latitude: {
+    type: DataTypes.DECIMAL(10, 7),
+    allowNull: true,
+  },
+  longitude: {
+    type: DataTypes.DECIMAL(10, 7),
     allowNull: true,
   },
   locationId: {
@@ -76,6 +88,7 @@ const Organization = sequelize.define('Organization', {
     { unique: true, fields: ['slug'], name: 'organization_slug_unique' },
     { fields: ['type'], name: 'organization_type_index' },
     { fields: ['locationId'], name: 'organization_location_id_index' },
+    { fields: ['latitude', 'longitude'], name: 'organization_coordinates_index' },
     { fields: ['parentId'], name: 'organization_parent_id_index' },
     { fields: ['createdByUserId'], name: 'organization_created_by_user_id_index' },
   ],
