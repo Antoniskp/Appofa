@@ -23,7 +23,9 @@ describe('countryBlockMiddleware', () => {
       blockedCountriesRedirects: new Map(),
       settings: {
         unknownCountryAction: 'allow',
+        unknownCountryRedirectPath: '/unknown-country',
         noIpAction: 'block',
+        noIpRedirectPath: '/unknown-country',
       },
     });
   });
@@ -99,5 +101,68 @@ describe('countryBlockMiddleware', () => {
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith({ success: false, message: 'Access denied.' });
     expect(next).not.toHaveBeenCalled();
+  });
+
+  test('redirects unknown country with IP when unknownCountryAction=redirect', async () => {
+    countryAccessService.getCountryRulesCache.mockResolvedValue({
+      blockedCountries: new Set(),
+      blockedCountriesRedirects: new Map(),
+      settings: {
+        unknownCountryAction: 'redirect',
+        unknownCountryRedirectPath: '/unknown-country',
+        noIpAction: 'allow',
+        noIpRedirectPath: '/no-ip',
+      },
+    });
+    const req = { path: '/api/auth/login', headers: {}, ip: '203.0.113.10' };
+    const res = createRes();
+    const next = jest.fn();
+
+    await countryBlockMiddleware(req, res, next);
+
+    expect(res.redirect).toHaveBeenCalledWith(302, '/unknown-country');
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('redirects no-IP requests when noIpAction=redirect', async () => {
+    countryAccessService.getCountryRulesCache.mockResolvedValue({
+      blockedCountries: new Set(),
+      blockedCountriesRedirects: new Map(),
+      settings: {
+        unknownCountryAction: 'allow',
+        unknownCountryRedirectPath: '/unknown-country',
+        noIpAction: 'redirect',
+        noIpRedirectPath: '/no-ip-country',
+      },
+    });
+    const req = { path: '/api/auth/login', headers: {}, ip: '' };
+    const res = createRes();
+    const next = jest.fn();
+
+    await countryBlockMiddleware(req, res, next);
+
+    expect(res.redirect).toHaveBeenCalledWith(302, '/no-ip-country');
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('ignores unsafe redirect paths for unknown country settings', async () => {
+    countryAccessService.getCountryRulesCache.mockResolvedValue({
+      blockedCountries: new Set(),
+      blockedCountriesRedirects: new Map(),
+      settings: {
+        unknownCountryAction: 'redirect',
+        unknownCountryRedirectPath: 'https://example.com/phish',
+        noIpAction: 'allow',
+        noIpRedirectPath: '/no-ip',
+      },
+    });
+    const req = { path: '/api/auth/login', headers: {}, ip: '203.0.113.10' };
+    const res = createRes();
+    const next = jest.fn();
+
+    await countryBlockMiddleware(req, res, next);
+
+    expect(res.redirect).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledTimes(1);
   });
 });

@@ -52,6 +52,31 @@ const getValidTrackingIp = (...candidates) => {
   return null;
 };
 
+const getServerDetectedCountryCode = (req, ipAddress) => {
+  const headerCandidates = [
+    req.headers['cf-ipcountry'],
+    req.headers['x-vercel-ip-country'],
+    req.headers['x-country-code'],
+    req.headers['x-detected-country'],
+  ];
+
+  for (const candidate of headerCandidates) {
+    const normalized = normalizeCountryCode(candidate);
+    if (normalized) return normalized;
+  }
+
+  if (!ipAddress) return null;
+
+  try {
+    // Optional dependency. Server-side fallback only; never trust body country for tracking.
+    const geoip = require('geoip-lite');
+    const geo = geoip.lookup(ipAddress);
+    return normalizeCountryCode(geo?.country);
+  } catch {
+    return null;
+  }
+};
+
 const CRAWLER_USER_AGENT_PATTERNS = [
   { key: 'google', label: 'Google', pattern: /(googlebot|adsbot-google|mediapartners-google|apis-google|google-inspectiontool|googleother)/i },
   { key: 'bing', label: 'Bing / Microsoft', pattern: /(bingbot|adidxbot|msnbot|bingpreview)/i },
@@ -112,7 +137,7 @@ const bumpGroup = (map, key, defaults, row) => {
 
 router.post('/track', apiLimiter, async (req, res, next) => {
   try {
-    const { path: visitPath, countryCode, locale } = req.body;
+    const { path: visitPath, locale } = req.body;
     if (!visitPath || typeof visitPath !== 'string') {
       return res.status(400).json({ success: false, message: 'path is required.' });
     }
@@ -148,7 +173,7 @@ router.post('/track', apiLimiter, async (req, res, next) => {
       }
     }
 
-    const validCode = normalizeCountryCode(countryCode);
+    const validCode = getServerDetectedCountryCode(req, ipAddress);
     const sessionHash = ipAddress
       ? crypto.createHash('sha256').update(String(ipAddress)).digest('hex')
       : null;

@@ -1,6 +1,19 @@
 const API_BASE_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const ALLOWED_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD']);
-const ALLOWED_HEADERS = new Set(['content-type', 'x-csrf-token', 'authorization', 'cookie']);
+const ALLOWED_HEADERS = new Set([
+  'content-type',
+  'x-csrf-token',
+  'authorization',
+  'cookie',
+  'cf-connecting-ip',
+  'cf-ipcountry',
+  'x-forwarded-for',
+  'x-real-ip',
+  'x-vercel-ip-country',
+  'x-country-code',
+  'x-detected-country',
+  'user-agent',
+]);
 const REQUEST_TIMEOUT = 30000; // 30 seconds
 
 const buildHeaders = (request) => {

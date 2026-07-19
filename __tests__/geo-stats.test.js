@@ -347,6 +347,7 @@ describe('Geo Stats Admin API', () => {
     const res = await request(app)
       .post('/api/admin/geo-stats/track')
       .set('x-forwarded-for', '::ffff:185.230.31.201')
+      .set('cf-ipcountry', 'GR')
       .set('User-Agent', 'Mozilla/5.0 Test Browser')
       .send({
         path: '/locations/gr',
@@ -369,6 +370,25 @@ describe('Geo Stats Admin API', () => {
     expect(saved.sessionHash).toBe(
       crypto.createHash('sha256').update('185.230.31.201').digest('hex')
     );
+  });
+
+  it('POST /track prefers server country headers over client-supplied countryCode', async () => {
+    const path = '/track-server-country-wins';
+    const res = await request(app)
+      .post('/api/admin/geo-stats/track')
+      .set('cf-ipcountry', 'CY')
+      .send({
+        path,
+        countryCode: 'US',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const saved = await GeoVisit.findOne({ where: { path } });
+    expect(saved).toBeTruthy();
+    expect(saved.countryCode).toBe('CY');
+    expect(saved.countryName).toBe('Cyprus');
   });
 
   it('POST /track ignores client-supplied ipAddress body field (spoofing prevention)', async () => {

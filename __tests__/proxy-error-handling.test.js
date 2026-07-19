@@ -196,6 +196,49 @@ describe('API Proxy Error Handling', () => {
     expect(forwardedHeaders.get('cookie')).toBe('auth_token=test; csrf_token=abc');
   });
 
+  test('forwards trusted geo and client IP headers to the backend', async () => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        status: 200,
+        statusText: 'OK',
+        body: JSON.stringify({ success: true }),
+        headers: new Headers({
+          'Content-Type': 'application/json'
+        })
+      })
+    );
+
+    const { POST } = require('../app/api/[...path]/route.js');
+
+    const mockRequest = {
+      method: 'POST',
+      nextUrl: {
+        pathname: '/api/admin/geo-stats/track',
+        search: ''
+      },
+      text: () => Promise.resolve(JSON.stringify({ path: '/' })),
+      headers: new Headers({
+        'content-type': 'application/json',
+        'cf-connecting-ip': '203.0.113.10',
+        'cf-ipcountry': 'GR',
+        'x-forwarded-for': '203.0.113.10, 10.0.0.4',
+        'x-real-ip': '203.0.113.10',
+        'x-vercel-ip-country': 'GR',
+        'user-agent': 'Mozilla/5.0 Test Browser'
+      })
+    };
+
+    await POST(mockRequest);
+    const forwardedHeaders = global.fetch.mock.calls[0][1].headers;
+
+    expect(forwardedHeaders.get('cf-connecting-ip')).toBe('203.0.113.10');
+    expect(forwardedHeaders.get('cf-ipcountry')).toBe('GR');
+    expect(forwardedHeaders.get('x-forwarded-for')).toBe('203.0.113.10, 10.0.0.4');
+    expect(forwardedHeaders.get('x-real-ip')).toBe('203.0.113.10');
+    expect(forwardedHeaders.get('x-vercel-ip-country')).toBe('GR');
+    expect(forwardedHeaders.get('user-agent')).toBe('Mozilla/5.0 Test Browser');
+  });
+
   test('logs errors for debugging', async () => {
     const testError = new Error('Connection failed');
     global.fetch = jest.fn(() => Promise.reject(testError));

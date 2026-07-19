@@ -19,6 +19,12 @@ const normalizeCountryCode = (value) => {
 
 const sanitizeIp = (value) => (typeof value === 'string' && value.trim() ? value.trim() : '');
 
+const sanitizeRedirectPath = (value) => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.startsWith('/') ? trimmed : null;
+};
+
 const getClientIp = (req) => {
   const trustedReqIp = sanitizeIp(req.ip);
   if (trustedReqIp) return trustedReqIp;
@@ -74,8 +80,14 @@ const countryBlockMiddleware = async (req, res, next) => {
 
     if (!countryCode) {
       const action = hasIp ? settings.unknownCountryAction : settings.noIpAction;
+      const redirectPath = sanitizeRedirectPath(
+        hasIp ? settings.unknownCountryRedirectPath : settings.noIpRedirectPath
+      );
       if (action === 'block') {
         return res.status(403).json({ success: false, message: 'Access denied.' });
+      }
+      if (action === 'redirect' && redirectPath) {
+        return res.redirect(302, redirectPath);
       }
     }
 
