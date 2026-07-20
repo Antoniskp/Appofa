@@ -78,7 +78,9 @@ describe('Security visitor entry tracking — always-on, no consent required', (
     const res = await request(app)
       .post('/api/admin/geo-stats/track')
       .set('x-forwarded-for', '192.0.2.55')
-      // No analytics consent header — consent decisions are client-side only
+      .set('cf-ipcountry', 'DE')
+      // No analytics consent header — consent decisions are client-side only.
+      // Country is server-provided; /track must not rely on client-supplied countryCode.
       .send({ path: '/security-consent-declined', countryCode: 'DE', locale: 'en' });
 
     expect(res.status).toBe(200);

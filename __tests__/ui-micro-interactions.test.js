@@ -55,7 +55,9 @@ describe('InlineSuggestionVote micro-interaction', () => {
   });
 
   afterEach(async () => {
-    jest.runAllTimers();
+    await act(async () => {
+      jest.runAllTimers();
+    });
     await act(async () => { root.unmount(); });
     document.body.innerHTML = '';
     jest.useRealTimers();
@@ -75,9 +77,7 @@ describe('InlineSuggestionVote micro-interaction', () => {
       );
     });
 
-    const buttons = container.querySelectorAll('button');
-    // First button is upvote
-    const upBtn = buttons[0];
+    const upBtn = container.querySelector('[data-vote-action="up"]');
     expect(upBtn.className).not.toContain('animate-vote-pop');
 
     await act(async () => {
@@ -100,8 +100,7 @@ describe('InlineSuggestionVote micro-interaction', () => {
       );
     });
 
-    const buttons = container.querySelectorAll('button');
-    const downBtn = buttons[1];
+    const downBtn = container.querySelector('[data-vote-action="down"]');
     expect(downBtn.className).not.toContain('animate-vote-pop');
 
     await act(async () => {
@@ -124,7 +123,7 @@ describe('InlineSuggestionVote micro-interaction', () => {
       );
     });
 
-    const upBtn = container.querySelectorAll('button')[0];
+    const upBtn = container.querySelector('[data-vote-action="up"]');
 
     await act(async () => {
       upBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -154,7 +153,7 @@ describe('InlineSuggestionVote micro-interaction', () => {
       );
     });
 
-    const upBtn = container.querySelectorAll('button')[0];
+    const upBtn = container.querySelector('[data-vote-action="up"]');
 
     await act(async () => {
       upBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -181,7 +180,9 @@ describe('CivicQuestionVoting micro-interaction', () => {
   });
 
   afterEach(async () => {
-    jest.runAllTimers();
+    await act(async () => {
+      jest.runAllTimers();
+    });
     await act(async () => { root.unmount(); });
     document.body.innerHTML = '';
     jest.useRealTimers();

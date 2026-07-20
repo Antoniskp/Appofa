@@ -122,6 +122,7 @@ export default function InlineSuggestionVote({
       {/* Upvote */}
       <button
         type="button"
+        data-vote-action="up"
         onClick={(e) => handleVote(e, 1)}
         disabled={!user || isVoting || !!rateLimit}
         title={user ? labels.up : 'Συνδεθείτε για να ψηφίσετε'}
@@ -140,6 +141,7 @@ export default function InlineSuggestionVote({
       {/* Downvote */}
       <button
         type="button"
+        data-vote-action="down"
         onClick={(e) => handleVote(e, -1)}
         disabled={!user || isVoting || !!rateLimit}
         title={user ? labels.down : 'Συνδεθείτε για να ψηφίσετε'}
