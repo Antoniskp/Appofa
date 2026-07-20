@@ -23,6 +23,7 @@ export default function AdminTableActions({ item, onEdit, onDelete }) {
       <div className="flex items-center justify-end gap-3">
         {onEdit && (
           <button
+            type="button"
             onClick={() => onEdit(item)}
             className="text-blue-600 hover:text-blue-900 font-medium transition-colors"
           >
@@ -31,6 +32,7 @@ export default function AdminTableActions({ item, onEdit, onDelete }) {
         )}
         {onDelete && (
           <button
+            type="button"
             onClick={() => setDeleteDialogOpen(true)}
             className="text-red-600 hover:text-red-900 font-medium transition-colors"
           >

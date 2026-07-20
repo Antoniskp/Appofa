@@ -1,5 +1,7 @@
 'use client';
 
+import { cloneElement } from 'react';
+
 /**
  * Reusable skeleton loader component for consistent loading states
  * 
@@ -13,15 +15,22 @@
  *   - 'avatar': Circular avatar skeleton
  *   - 'button': Button skeleton
  * @param {number} count - Number of skeleton items to render
+ * @param {number} rows - Alias for count when rendering table rows
  * @param {string} className - Additional CSS classes
  * @param {string} variant - For backward compatibility with 'card' type: 'grid' or 'list'
  */
 export default function SkeletonLoader({ 
   type = 'card', 
   count = 1,
+  rows,
   className = '',
   variant = 'grid'
 }) {
+  const rawCount = rows ?? count;
+  const itemCount = Number.isFinite(Number(rawCount))
+    ? Math.max(0, Math.floor(Number(rawCount)))
+    : 1;
+
   const skeletons = {
     // Article card skeleton (for /articles, /news pages)
     card: (
@@ -174,11 +183,21 @@ export default function SkeletonLoader({
       <div className="h-10 w-24 bg-gray-200 rounded animate-pulse"></div>
     )
   };
+
+  if (type === 'table') {
+    return (
+      <>
+        {Array.from({ length: itemCount }).map((_, index) => (
+          cloneElement(skeletons.table, { key: index })
+        ))}
+      </>
+    );
+  }
   
   return (
     <div className={className}>
-      {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className={count > 1 && type !== 'text' && type !== 'button' ? 'mb-4' : ''}>
+      {Array.from({ length: itemCount }).map((_, index) => (
+        <div key={index} className={itemCount > 1 && type !== 'text' && type !== 'button' ? 'mb-4' : ''}>
           {skeletons[type] || skeletons.card}
         </div>
       ))}
