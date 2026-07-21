@@ -33,7 +33,7 @@ export default function SkillsTab({
   return (
     <div className="space-y-8">
       <Card>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">{tProfile('professions_expertise')}</h2>
+        <h2 id="profile-skills-heading" className="text-lg font-semibold text-gray-900 mb-4">{tProfile('professions_expertise')}</h2>
         <h3 className="text-sm font-semibold text-gray-700 mb-3">{tProfile('professions')} <span className="text-gray-400 text-xs font-normal">({tCommon('max_count', { count: 5 })})</span></h3>
         <ProfileProfessionsSection
           professions={profileData.professions}
@@ -63,15 +63,17 @@ export default function SkillsTab({
       </Card>
 
       <Card>
-        <ProfileBadgesSection
-          badgeProgress={badgeProgress}
-          badgeEvaluating={badgeEvaluating}
-          displayBadge={displayBadge}
-          savingDisplayBadge={savingDisplayBadge}
-          onEvaluate={handleEvaluateBadges}
-          onSelectDisplayBadge={handleSelectDisplayBadge}
-          onClearDisplayBadge={handleClearDisplayBadge}
-        />
+        <div id="profile-badges-heading" tabIndex={-1}>
+          <ProfileBadgesSection
+            badgeProgress={badgeProgress}
+            badgeEvaluating={badgeEvaluating}
+            displayBadge={displayBadge}
+            savingDisplayBadge={savingDisplayBadge}
+            onEvaluate={handleEvaluateBadges}
+            onSelectDisplayBadge={handleSelectDisplayBadge}
+            onClearDisplayBadge={handleClearDisplayBadge}
+          />
+        </div>
       </Card>
     </div>
   );

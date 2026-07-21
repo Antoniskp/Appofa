@@ -1025,8 +1025,34 @@ async function getPublicUserProfile(userId, viewer = null) {
 
   const user = await User.findOne({
     where: { id: userId },
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'politicalAffiliationStatus', 'politicalAffiliationOtherText', 'twitchChannel', 'profileVisibility'],
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'politicalAffiliationStatus', 'politicalAffiliationOtherText', 'twitchChannel', 'profileVisibility', 'profileCommentsEnabled', 'profileCommentsLocked', 'homeLocationId'],
     include: [
+      {
+        model: Location,
+        as: 'homeLocation',
+        attributes: ['id', 'name', 'type', 'slug'],
+        include: [
+          {
+            model: Location,
+            as: 'parent',
+            attributes: ['id', 'name', 'type', 'slug'],
+            include: [
+              {
+                model: Location,
+                as: 'parent',
+                attributes: ['id', 'name', 'type', 'slug'],
+                include: [
+                  {
+                    model: Location,
+                    as: 'parent',
+                    attributes: ['id', 'name', 'type', 'slug']
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
       {
         model: UserPoliticalAffiliation,
         as: 'politicalAffiliations',
@@ -1063,8 +1089,34 @@ async function getPublicUserProfileByUsername(username, viewer = null) {
 
   const user = await User.findOne({
     where: { username: username.trim() },
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'politicalAffiliationStatus', 'politicalAffiliationOtherText', 'twitchChannel', 'profileVisibility'],
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'politicalAffiliationStatus', 'politicalAffiliationOtherText', 'twitchChannel', 'profileVisibility', 'profileCommentsEnabled', 'profileCommentsLocked', 'homeLocationId'],
     include: [
+      {
+        model: Location,
+        as: 'homeLocation',
+        attributes: ['id', 'name', 'type', 'slug'],
+        include: [
+          {
+            model: Location,
+            as: 'parent',
+            attributes: ['id', 'name', 'type', 'slug'],
+            include: [
+              {
+                model: Location,
+                as: 'parent',
+                attributes: ['id', 'name', 'type', 'slug'],
+                include: [
+                  {
+                    model: Location,
+                    as: 'parent',
+                    attributes: ['id', 'name', 'type', 'slug']
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
       {
         model: UserPoliticalAffiliation,
         as: 'politicalAffiliations',

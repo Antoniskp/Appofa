@@ -8,14 +8,14 @@ const STEPS = [
   {
     key: 'email',
     labelKey: 'completeness_step_email_verified',
-    points: 25,
+    points: 20,
     isDone: ({ user }) => user?.emailVerified === true,
     missingLabelKey: 'completeness_verify_email_cta',
   },
   {
     key: 'nationality',
     labelKey: 'completeness_step_nationality',
-    points: 20,
+    points: 15,
     isDone: ({ profileData }) => Boolean(profileData?.nationality),
     tabId: 'location-politics',
     sectionId: 'profile-location-heading',
@@ -24,7 +24,7 @@ const STEPS = [
   {
     key: 'homeLocation',
     labelKey: 'completeness_step_home_location',
-    points: 20,
+    points: 15,
     isDone: ({ profileData }) => Boolean(profileData?.homeLocationId),
     tabId: 'location-politics',
     sectionId: 'profile-location-heading',
@@ -57,9 +57,48 @@ const STEPS = [
     sectionId: 'profile-basic-info-heading',
     missingLabelKey: 'completeness_add_avatar',
   },
+  {
+    key: 'socialLinks',
+    labelKey: 'completeness_step_social_links',
+    points: 5,
+    isDone: ({ profileData }) => Boolean(profileData?.socialLinks && Object.values(profileData.socialLinks).some(Boolean)),
+    tabId: 'profile',
+    sectionId: 'profile-about-heading',
+    missingLabelKey: 'completeness_add_social_links',
+  },
+  {
+    key: 'professionalIdentity',
+    labelKey: 'completeness_step_professional_identity',
+    points: 5,
+    isDone: ({ profileData }) => Boolean(
+      (profileData?.professions && profileData.professions.length > 0) ||
+      (profileData?.expertiseArea && profileData.expertiseArea.length > 0)
+    ),
+    tabId: 'skills',
+    sectionId: 'profile-skills-heading',
+    missingLabelKey: 'completeness_add_professional_identity',
+  },
+  {
+    key: 'displayBadge',
+    labelKey: 'completeness_step_display_badge',
+    points: 3,
+    isDone: ({ displayBadge }) => Boolean(displayBadge?.slug && displayBadge?.tier),
+    tabId: 'skills',
+    sectionId: 'profile-badges-heading',
+    missingLabelKey: 'completeness_choose_display_badge',
+  },
+  {
+    key: 'visibility',
+    labelKey: 'completeness_step_visibility',
+    points: 2,
+    isDone: ({ interactionSettings }) => Boolean(interactionSettings?.profileVisibility && interactionSettings.profileVisibility !== 'hidden'),
+    tabId: 'settings',
+    sectionId: 'profile-privacy-heading',
+    missingLabelKey: 'completeness_set_visibility',
+  },
 ];
 
-export default function ProfileCompleteness({ user, profileData, onNavigateToSection }) {
+export default function ProfileCompleteness({ user, profileData, displayBadge, interactionSettings, onNavigateToSection }) {
   const t = useTranslations('profile');
   const [resendStatus, setResendStatus] = useState(null);
   const [sendingResend, setSendingResend] = useState(false);
@@ -67,11 +106,11 @@ export default function ProfileCompleteness({ user, profileData, onNavigateToSec
   const { score, stepStates } = useMemo(() => {
     const states = STEPS.map((step) => ({
       ...step,
-      done: step.isDone({ user, profileData }),
+      done: step.isDone({ user, profileData, displayBadge, interactionSettings }),
     }));
     const total = states.reduce((sum, step) => (step.done ? sum + step.points : sum), 0);
     return { score: total, stepStates: states };
-  }, [profileData, user]);
+  }, [displayBadge, interactionSettings, profileData, user]);
 
   const missingSteps = stepStates.filter((step) => !step.done);
 

@@ -35,6 +35,52 @@ const INITIAL_PROFILE_DATA = {
   twitchChannel: '',
 };
 
+function sortObjectKeys(value) {
+  if (Array.isArray(value)) {
+    return value.map(sortObjectKeys);
+  }
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+  return Object.keys(value).sort().reduce((acc, key) => {
+    acc[key] = sortObjectKeys(value[key]);
+    return acc;
+  }, {});
+}
+
+function normalizeOptionalString(value) {
+  if (value === null || value === undefined) return '';
+  return String(value);
+}
+
+function normalizeProfileDataForComparison(data = {}) {
+  return {
+    username: normalizeOptionalString(data.username).trim(),
+    firstNameNative: normalizeOptionalString(data.firstNameNative).trim(),
+    lastNameNative: normalizeOptionalString(data.lastNameNative).trim(),
+    firstNameEn: normalizeOptionalString(data.firstNameEn).trim(),
+    lastNameEn: normalizeOptionalString(data.lastNameEn).trim(),
+    nickname: normalizeOptionalString(data.nickname).trim(),
+    avatar: normalizeOptionalString(data.avatar).trim(),
+    githubAvatar: normalizeOptionalString(data.githubAvatar).trim(),
+    googleAvatar: normalizeOptionalString(data.googleAvatar).trim(),
+    avatarColor: normalizeOptionalString(data.avatarColor).trim(),
+    homeLocationId: data.homeLocationId || null,
+    mobileTel: normalizeOptionalString(data.mobileTel).trim(),
+    bio: normalizeOptionalString(data.bio).trim(),
+    socialLinks: sortObjectKeys(data.socialLinks || {}),
+    dateOfBirth: normalizeOptionalString(data.dateOfBirth),
+    professions: sortObjectKeys(data.professions || []),
+    interests: sortObjectKeys(data.interests || []),
+    expertiseArea: sortObjectKeys(data.expertiseArea || []),
+    partyId: data.partyId || null,
+    politicalAffiliationStatus: normalizeOptionalString(data.politicalAffiliationStatus),
+    politicalAffiliationOtherText: normalizeOptionalString(data.politicalAffiliationOtherText).trim(),
+    nationality: normalizeOptionalString(data.nationality).trim(),
+    twitchChannel: normalizeOptionalString(data.twitchChannel).trim(),
+  };
+}
+
 export function useProfileForm() {
   const tProfile = useTranslations('profile');
   const tCommon = useTranslations('common');
@@ -95,7 +141,8 @@ export function useProfileForm() {
 
   useEffect(() => {
     if (!savedProfileData) return;
-    const dirty = JSON.stringify(profileData) !== JSON.stringify(savedProfileData);
+    const dirty = JSON.stringify(normalizeProfileDataForComparison(profileData)) !==
+      JSON.stringify(normalizeProfileDataForComparison(savedProfileData));
     setIsDirty(dirty);
   }, [profileData, savedProfileData]);
 

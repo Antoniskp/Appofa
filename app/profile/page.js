@@ -174,6 +174,8 @@ function ProfileContent() {
             savedProfileData={savedProfileData}
             followersCount={followersCount}
             followingCount={followingCount}
+            displayBadge={displayBadge}
+            interactionSettings={interactionSettings}
             onNavigateToSection={handleNavigateToSection}
             handleProfileChange={handleProfileChange}
             handleAvatarUpload={handleAvatarUpload}

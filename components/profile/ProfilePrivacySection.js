@@ -22,7 +22,7 @@ export default function ProfilePrivacySection({
 }) {
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-gray-900">Privacy &amp; Interaction</h2>
+      <h2 id="profile-privacy-heading" className="text-lg font-semibold text-gray-900" tabIndex={-1}>Privacy &amp; Interaction</h2>
 
       {/* Allow comments */}
       <div className="flex items-start justify-between gap-4">

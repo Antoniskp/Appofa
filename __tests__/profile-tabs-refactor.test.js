@@ -4,6 +4,7 @@ const path = require('path');
 describe('Profile page tab refactor', () => {
   const profilePagePath = path.join(__dirname, '..', 'app', 'profile', 'page.js');
   const publicProfilePagePath = path.join(__dirname, '..', 'app', 'users', '[username]', 'page.js');
+  const publicProfileHeaderPath = path.join(__dirname, '..', 'components', 'profile', 'public', 'PublicProfileHeader.js');
   const profileHookPath = path.join(__dirname, '..', 'hooks', 'useProfileForm.js');
   const profilePoliticsSectionPath = path.join(__dirname, '..', 'components', 'profile', 'ProfilePoliticsSection.js');
   const politicalAffiliationStatusPath = path.join(__dirname, '..', 'lib', 'utils', 'politicalAffiliationStatus.js');
@@ -45,13 +46,15 @@ describe('Profile page tab refactor', () => {
     const politicsSource = fs.readFileSync(profilePoliticsSectionPath, 'utf8');
     const statusSource = fs.readFileSync(politicalAffiliationStatusPath, 'utf8');
     const publicProfileSource = fs.readFileSync(publicProfilePagePath, 'utf8');
+    const publicProfileHeaderSource = fs.readFileSync(publicProfileHeaderPath, 'utf8');
 
     expect(hookSource).toContain('politicalAffiliationStatus');
     expect(hookSource).toContain('politicalAffiliationOtherText');
     expect(statusSource).toContain('PREFER_NOT_TO_SAY');
     expect(politicsSource).toContain('formatPoliticalAffiliationStatus');
-    expect(publicProfileSource).toContain('politicalStatusLabel');
-    expect(publicProfileSource).toContain('showPoliticalAffiliations');
+    expect(publicProfileSource).toContain('PublicProfileHeader');
+    expect(publicProfileHeaderSource).toContain('politicalStatusLabel');
+    expect(publicProfileHeaderSource).toContain('showPoliticalAffiliations');
   });
 
   it('defines profile tab labels for supported locales', () => {

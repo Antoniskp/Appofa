@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import Card from '@/components/ui/Card';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileCompleteness from '@/components/profile/ProfileCompleteness';
+import ProfilePublicPreview from '@/components/profile/ProfilePublicPreview';
 import ProfileBasicInfoForm from '@/components/profile/ProfileBasicInfoForm';
 import ProfileBioSection from '@/components/profile/ProfileBioSection';
 import ProfileSocialLinksSection from '@/components/profile/ProfileSocialLinksSection';
@@ -15,6 +16,8 @@ export default function ProfileTab({
   savedProfileData,
   followersCount,
   followingCount,
+  displayBadge,
+  interactionSettings,
   onNavigateToSection,
   handleProfileChange,
   handleAvatarUpload,
@@ -44,9 +47,18 @@ export default function ProfileTab({
         <ProfileCompleteness
           user={user}
           profileData={profileData}
+          displayBadge={displayBadge}
+          interactionSettings={interactionSettings}
           onNavigateToSection={onNavigateToSection}
         />
       </Card>
+
+      <ProfilePublicPreview
+        user={user}
+        profileData={profileData}
+        displayBadge={displayBadge}
+        interactionSettings={interactionSettings}
+      />
 
       <Card>
         <h2 id="profile-basic-info-heading" className="text-lg font-semibold text-gray-900 mb-4">{tProfile('personal_info')}</h2>
