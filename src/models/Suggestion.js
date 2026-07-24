@@ -83,6 +83,18 @@ const Suggestion = sequelize.define('Suggestion', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  mapLat: {
+    type: DataTypes.DECIMAL(10, 7),
+    allowNull: true
+  },
+  mapLng: {
+    type: DataTypes.DECIMAL(10, 7),
+    allowNull: true
+  },
+  mapIssueType: {
+    type: DataTypes.STRING(40),
+    allowNull: true
+  },
   partyId: {
     type: DataTypes.STRING(50),
     allowNull: true
@@ -95,6 +107,7 @@ const Suggestion = sequelize.define('Suggestion', {
     { fields: ['locationId'] },
     { fields: ['status'] },
     { fields: ['type'] },
+    { fields: ['mapIssueType'] },
     { fields: ['createdAt'] }
   ]
 });

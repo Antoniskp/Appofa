@@ -12,9 +12,73 @@ const SUGGESTION_VISIBILITIES = ['public', 'private', 'locals_only'];
 const SUGGESTION_VOTE_RESTRICTIONS = ['authenticated', 'locals_only'];
 const VOTE_IDENTITY_VISIBILITIES = ['anonymous', 'public'];
 const VOTE_VALUES = [-1, 1];
+const MAP_ISSUE_TYPES = [
+  'pothole',
+  'neglected_building',
+  'broken_lighting',
+  'sidewalk_access',
+  'trash',
+  'unsafe_crossing',
+  'flooding',
+  'illegal_dumping',
+  'graffiti_vandalism',
+  'abandoned_vehicle',
+  'noise',
+  'other'
+];
 
 const requiresLocation = (visibility, voteRestriction) =>
   visibility === 'locals_only' || voteRestriction === 'locals_only';
+
+function parseOptionalCoordinate(value, min, max, label) {
+  if (value === undefined || value === null || value === '') {
+    return { value: null, provided: false };
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < min || parsed > max) {
+    return { error: `${label} must be a number between ${min} and ${max}.` };
+  }
+  return { value: parsed, provided: true };
+}
+
+function normalizeMapPin(body, requireLocationId) {
+  const latResult = parseOptionalCoordinate(body.mapLat, -90, 90, 'Map latitude');
+  if (latResult.error) return { error: latResult.error };
+
+  const lngResult = parseOptionalCoordinate(body.mapLng, -180, 180, 'Map longitude');
+  if (lngResult.error) return { error: lngResult.error };
+
+  if (latResult.provided !== lngResult.provided) {
+    return { error: 'Map pin requires both latitude and longitude.' };
+  }
+
+  const rawIssueType = body.mapIssueType === undefined || body.mapIssueType === null || body.mapIssueType === ''
+    ? null
+    : String(body.mapIssueType).trim();
+
+  if (!latResult.provided) {
+    if (rawIssueType) {
+      return { error: 'Map issue type requires a map pin.' };
+    }
+    return { mapLat: null, mapLng: null, mapIssueType: null, hasPin: false };
+  }
+
+  if (!requireLocationId) {
+    return { error: 'Location is required for map issue pins.' };
+  }
+
+  const mapIssueType = rawIssueType || 'other';
+  if (!MAP_ISSUE_TYPES.includes(mapIssueType)) {
+    return { error: 'Invalid map issue type.' };
+  }
+
+  return {
+    mapLat: latResult.value,
+    mapLng: lngResult.value,
+    mapIssueType,
+    hasPin: true
+  };
+}
 
 /**
  * Compute the aggregate score (sum of vote values) for a given target.
@@ -342,6 +406,9 @@ const suggestionController = {
         return res.status(400).json({ success: false, message: 'Location is required for local-only suggestions.' });
       }
 
+      const mapPinResult = normalizeMapPin(req.body, Boolean(parsedLocationId));
+      if (mapPinResult.error) return res.status(400).json({ success: false, message: mapPinResult.error });
+
       const suggestion = await Suggestion.create({
         title: titleResult.value,
         body: bodyResult.value,
@@ -352,6 +419,9 @@ const suggestionController = {
         hideCreator: hideCreatorResult.value !== undefined ? hideCreatorResult.value : false,
         visibility: visibilityResult.value || 'public',
         voteRestriction: voteRestrictionResult.value || 'authenticated',
+        mapLat: mapPinResult.mapLat,
+        mapLng: mapPinResult.mapLng,
+        mapIssueType: mapPinResult.mapIssueType,
         ...(category ? { category } : {})
       });
 
@@ -475,6 +545,23 @@ const suggestionController = {
 
       if (req.body.category !== undefined) {
         updates.category = req.body.category || null;
+      }
+
+      if (
+        req.body.mapLat !== undefined
+        || req.body.mapLng !== undefined
+        || req.body.mapIssueType !== undefined
+      ) {
+        const nextMapBody = {
+          mapLat: req.body.mapLat !== undefined ? req.body.mapLat : suggestion.mapLat,
+          mapLng: req.body.mapLng !== undefined ? req.body.mapLng : suggestion.mapLng,
+          mapIssueType: req.body.mapIssueType !== undefined ? req.body.mapIssueType : suggestion.mapIssueType
+        };
+        const mapPinResult = normalizeMapPin(nextMapBody, Boolean(nextLocationId));
+        if (mapPinResult.error) return res.status(400).json({ success: false, message: mapPinResult.error });
+        updates.mapLat = mapPinResult.mapLat;
+        updates.mapLng = mapPinResult.mapLng;
+        updates.mapIssueType = mapPinResult.mapIssueType;
       }
 
       await suggestion.update(updates);

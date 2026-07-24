@@ -20,7 +20,16 @@ import LocationMap from '@/components/locations/LocationMap';
 import LocationChildrenExplorer from '@/components/locations/LocationChildrenExplorer';
 import CommentsThread from '@/components/comments/CommentsThread';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import LoginLink from '@/components/ui/LoginLink';
 import { VALID_TABS, ALWAYS_VISIBLE_TABS, DEFAULT_TAB, HEADER_SECTION_TYPES } from '@/lib/constants/locations';
+import { MAP_ISSUE_TYPES } from '@/lib/constants/mapIssues';
+
+const DEFAULT_MAP_ISSUE_FORM = {
+  mapIssueType: 'pothole',
+  title: '',
+  body: '',
+  hideCreator: false,
+};
 
 export async function buildLocationBreadcrumb(locationIdOrSlug) {
   const crumbs = [];
@@ -124,6 +133,9 @@ export default function LocationDetailPage() {
   const [secondaryLoading, setSecondaryLoading] = useState(false);
   const [fundingData, setFundingData] = useState(null);
   const [fundingLoaded, setFundingLoaded] = useState(false);
+  const [mapIssuePin, setMapIssuePin] = useState(null);
+  const [mapIssueForm, setMapIssueForm] = useState(DEFAULT_MAP_ISSUE_FORM);
+  const [isSubmittingMapIssue, setIsSubmittingMapIssue] = useState(false);
 
   // Derive active tab from URL query param
   const rawTab = searchParams.get('tab');
@@ -155,6 +167,8 @@ export default function LocationDetailPage() {
         setSections([]);
         setImageError(false);
         setIsEditing(false);
+        setMapIssuePin(null);
+        setMapIssueForm(DEFAULT_MAP_ISSUE_FORM);
         setFundingData(null);
         setFundingLoaded(false);
         setSecondaryLoading(true);
@@ -447,6 +461,75 @@ export default function LocationDetailPage() {
     }
   };
 
+  const handleMapIssueTypeChange = (mapIssueType) => {
+    setMapIssueForm((prev) => ({ ...prev, mapIssueType }));
+    setMapIssuePin((prev) => (prev ? { ...prev, mapIssueType } : prev));
+  };
+
+  const handleMapIssueMapClick = (lat, lng) => {
+    if (!isAuthenticated) return;
+    setMapIssuePin({
+      lat,
+      lng,
+      mapIssueType: mapIssueForm.mapIssueType || DEFAULT_MAP_ISSUE_FORM.mapIssueType,
+    });
+  };
+
+  const handleSubmitMapIssue = async (event) => {
+    event.preventDefault();
+    if (!location) return;
+    if (!isAuthenticated) {
+      toastError('Please sign in to post a local issue.');
+      return;
+    }
+    if (!mapIssuePin) {
+      toastError('Select a point on the map first.');
+      return;
+    }
+
+    const title = mapIssueForm.title.trim();
+    const body = mapIssueForm.body.trim();
+    if (title.length < 5) {
+      toastError('Title must be at least 5 characters.');
+      return;
+    }
+    if (body.length < 10) {
+      toastError('Details must be at least 10 characters.');
+      return;
+    }
+
+    setIsSubmittingMapIssue(true);
+    try {
+      const response = await suggestionAPI.create({
+        title,
+        body,
+        type: 'problem',
+        locationId: location.id,
+        visibility: 'public',
+        voteRestriction: 'locals_only',
+        category: 'map_issue',
+        mapLat: mapIssuePin.lat,
+        mapLng: mapIssuePin.lng,
+        mapIssueType: mapIssueForm.mapIssueType || 'other',
+        hideCreator: mapIssueForm.hideCreator,
+      });
+
+      if (!response?.success) {
+        throw new Error(response?.message || 'Failed to post local issue.');
+      }
+
+      setSuggestions((prev) => [response.data, ...prev]);
+      setMapIssuePin(null);
+      setMapIssueForm(DEFAULT_MAP_ISSUE_FORM);
+      toastSuccess('Local issue posted.');
+    } catch (err) {
+      console.error('Failed to post local issue:', err);
+      toastError(err.message || 'Failed to post local issue.');
+    } finally {
+      setIsSubmittingMapIssue(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
@@ -481,6 +564,9 @@ export default function LocationDetailPage() {
 
   // Filter out archived polls (single iteration)
   const activePolls = entities.polls.filter(poll => poll.status !== 'archived');
+  const mapIssueSuggestions = suggestions.filter((suggestion) => (
+    suggestion.mapLat != null && suggestion.mapLng != null
+  ));
   const mapSummaryCounts = {
     polls: activePolls.length,
     suggestions: suggestions.length,
@@ -634,12 +720,109 @@ export default function LocationDetailPage() {
             {showMainLocationMap && (
               <div id="location-map" className="mb-8">
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">Χάρτης</h2>
-                <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                <div className="overflow-hidden rounded-lg bg-white shadow-md lg:grid lg:grid-cols-[minmax(0,1fr)_360px]">
                   <LocationMap
                     location={location}
                     summaryCounts={mapSummaryCounts}
-                    className="h-80 w-full"
+                    mapIssues={mapIssueSuggestions}
+                    pendingIssuePin={mapIssuePin}
+                    onMapClick={isAuthenticated ? handleMapIssueMapClick : undefined}
+                    className="h-80 w-full lg:h-full"
                   />
+                  <form
+                    onSubmit={handleSubmitMapIssue}
+                    className="space-y-4 border-t border-gray-200 p-4 lg:border-l lg:border-t-0"
+                  >
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Local issue</p>
+                      <h3 className="mt-1 text-base font-semibold text-gray-900">
+                        {mapIssuePin ? 'Pin selected' : 'Add a map pin'}
+                      </h3>
+                    </div>
+
+                    <label className="block">
+                      <span className="text-sm font-medium text-gray-700">Type</span>
+                      <select
+                        value={mapIssueForm.mapIssueType}
+                        onChange={(event) => handleMapIssueTypeChange(event.target.value)}
+                        className="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={!isAuthenticated || isSubmittingMapIssue}
+                      >
+                        {MAP_ISSUE_TYPES.map((issueType) => (
+                          <option key={issueType.value} value={issueType.value}>
+                            {issueType.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="text-sm font-medium text-gray-700">Title</span>
+                      <input
+                        type="text"
+                        value={mapIssueForm.title}
+                        onChange={(event) => setMapIssueForm((prev) => ({ ...prev, title: event.target.value }))}
+                        placeholder="Broken pavement on main street"
+                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={!isAuthenticated || isSubmittingMapIssue}
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="text-sm font-medium text-gray-700">Details</span>
+                      <textarea
+                        value={mapIssueForm.body}
+                        onChange={(event) => setMapIssueForm((prev) => ({ ...prev, body: event.target.value }))}
+                        rows={4}
+                        placeholder="Add what locals should know."
+                        className="mt-1 block w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={!isAuthenticated || isSubmittingMapIssue}
+                      />
+                    </label>
+
+                    <label className="flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={mapIssueForm.hideCreator}
+                        onChange={(event) => setMapIssueForm((prev) => ({ ...prev, hideCreator: event.target.checked }))}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        disabled={!isAuthenticated || isSubmittingMapIssue}
+                      />
+                      Post anonymously
+                    </label>
+
+                    {mapIssuePin && (
+                      <p className="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-600">
+                        {Number(mapIssuePin.lat).toFixed(5)}, {Number(mapIssuePin.lng).toFixed(5)}
+                      </p>
+                    )}
+
+                    {isAuthenticated ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="submit"
+                          disabled={isSubmittingMapIssue || !mapIssuePin}
+                          className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                        >
+                          {isSubmittingMapIssue ? 'Posting...' : 'Post issue'}
+                        </button>
+                        {mapIssuePin && (
+                          <button
+                            type="button"
+                            onClick={() => setMapIssuePin(null)}
+                            className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+                            disabled={isSubmittingMapIssue}
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <LoginLink className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
+                        Sign in to post
+                      </LoginLink>
+                    )}
+                  </form>
                 </div>
               </div>
             )}

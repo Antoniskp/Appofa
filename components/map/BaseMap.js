@@ -164,10 +164,25 @@ const DEFAULT_POLY_HOVER_STYLE = {
 // where the Leaflet mock may not include divIcon.
 const _explorerIcons = {};
 
-function resolveMarkerIcon(variant) {
+function resolveMarkerIcon(variant, iconColor) {
   if (!L.divIcon) {
     // Fallback when Leaflet mock does not provide divIcon (e.g. in jest)
     return DEFAULT_ICON;
+  }
+  if (iconColor) {
+    const cacheKey = `${variant || 'default'}:${iconColor}`;
+    if (!_explorerIcons[cacheKey]) {
+      const size = variant === 'hovered' || variant === 'selected' ? 18 : 14;
+      _explorerIcons[cacheKey] = L.divIcon({
+        html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${escapeHtml(iconColor)};border:2px solid #fff;box-shadow:0 2px 7px rgba(15,23,42,0.42)"></div>`,
+        className: '',
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+        popupAnchor: [0, -12],
+        tooltipAnchor: [size / 2, -8],
+      });
+    }
+    return _explorerIcons[cacheKey];
   }
   if (variant === 'hovered') {
     if (!_explorerIcons.hovered) {
@@ -411,8 +426,8 @@ export default function BaseMap({
 
     const map = mapInstanceRef.current;
 
-    function renderSingleMarker({ lat, lng, popup, tooltip, id, variant }) {
-      const icon = resolveMarkerIcon(variant);
+    function renderSingleMarker({ lat, lng, popup, tooltip, id, variant, iconColor }) {
+      const icon = resolveMarkerIcon(variant, iconColor);
       const marker = L.marker([lat, lng], { icon }).addTo(layer);
       if (popup) {
         marker.bindPopup(popup, { maxWidth: 260 });
@@ -495,11 +510,13 @@ export default function BaseMap({
       onMarkersReadyRef.current({
         highlight: (id) => {
           const marker = idToMarker.get(id);
-          if (marker) marker.setIcon(resolveMarkerIcon('hovered'));
+          const markerDef = markers.find((item) => item.id === id);
+          if (marker) marker.setIcon(resolveMarkerIcon('hovered', markerDef?.iconColor));
         },
         unhighlight: (id, variant = 'default') => {
           const marker = idToMarker.get(id);
-          if (marker) marker.setIcon(resolveMarkerIcon(variant));
+          const markerDef = markers.find((item) => item.id === id);
+          if (marker) marker.setIcon(resolveMarkerIcon(variant, markerDef?.iconColor));
         },
       });
     }

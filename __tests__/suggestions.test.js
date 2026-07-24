@@ -280,6 +280,56 @@ describe('Suggestions & Solutions API Tests', () => {
       expect(testSuggestionId).toBeTruthy();
     });
 
+    it('should create a map-pinned local issue suggestion', async () => {
+      const location = await Location.create({
+        name: 'Pinned Issue Municipality',
+        type: 'municipality',
+        slug: 'pinned-issue-municipality'
+      });
+
+      const res = await request(app)
+        .post('/api/suggestions')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set(csrfHeadersFor(csrf1, user1Id))
+        .send({
+          title: 'Large pothole near school',
+          body: 'There is a large pothole near the school entrance.',
+          type: 'problem',
+          locationId: location.id,
+          visibility: 'public',
+          voteRestriction: 'locals_only',
+          mapLat: 37.98381,
+          mapLng: 23.72754,
+          mapIssueType: 'pothole'
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data).toMatchObject({
+        type: 'problem',
+        locationId: location.id,
+        voteRestriction: 'locals_only',
+        mapIssueType: 'pothole'
+      });
+      expect(Number(res.body.data.mapLat)).toBeCloseTo(37.98381);
+      expect(Number(res.body.data.mapLng)).toBeCloseTo(23.72754);
+    });
+
+    it('should reject incomplete map pins', async () => {
+      const res = await request(app)
+        .post('/api/suggestions')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set(csrfHeadersFor(csrf1, user1Id))
+        .send({
+          title: 'Incomplete map issue',
+          body: 'This map issue is missing a longitude value.',
+          type: 'problem',
+          mapLat: 37.98381
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('both latitude and longitude');
+    });
+
     it('should set authorId to the authenticated user', async () => {
       const suggestion = await Suggestion.findByPk(testSuggestionId);
       expect(suggestion.authorId).toBe(user1Id);

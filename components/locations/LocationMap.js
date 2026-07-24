@@ -26,6 +26,7 @@
  */
 
 import dynamic from 'next/dynamic';
+import { MAP_ISSUE_TYPE_COLORS, MAP_ISSUE_TYPE_LABELS } from '@/lib/constants/mapIssues';
 
 // Dynamic import keeps Leaflet (which needs `window`) out of the SSR bundle.
 // ssr:false is required — Leaflet uses browser APIs at import time.
@@ -161,10 +162,13 @@ export default function LocationMap({
   location,
   childLocations = [],
   summaryCounts,
+  mapIssues = [],
+  pendingIssuePin = null,
   className,
   overlays = [],
   scrollWheelZoom = false,
   interactive = true,
+  onMapClick,
 }) {
   if (!location) return null;
 
@@ -233,18 +237,62 @@ export default function LocationMap({
       };
     });
 
+  const issueMarkers = mapIssues
+    .filter((issue) => isValidCoord(issue.mapLat, -90, 90) && isValidCoord(issue.mapLng, -180, 180))
+    .map((issue) => {
+      const issueType = issue.mapIssueType || 'other';
+      const issueLabel = MAP_ISSUE_TYPE_LABELS[issueType] || MAP_ISSUE_TYPE_LABELS.other;
+      const href = issue.id ? `/suggestions/${issue.id}` : null;
+      const title = issue.title || issueLabel;
+      const status = issue.status ? String(issue.status).replace('_', ' ') : 'open';
+      return {
+        id: issue.id ? `issue-${issue.id}` : undefined,
+        lat: Number(issue.mapLat),
+        lng: Number(issue.mapLng),
+        label: title,
+        meta: issueLabel,
+        href,
+        variant: 'explorer',
+        iconColor: MAP_ISSUE_TYPE_COLORS[issueType] || MAP_ISSUE_TYPE_COLORS.other,
+        tooltip: escapeHtml(title),
+        popup: `<div style="min-width:180px"><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.04em">${escapeHtml(issueLabel)}</div><strong>${escapeHtml(title)}</strong><div style="font-size:12px;color:#64748b;margin-top:4px">${escapeHtml(status)}${Number.isFinite(Number(issue.score)) ? ` - score ${Number(issue.score)}` : ''}</div>${href ? `<a href="${escapeHtml(href)}" style="display:inline-block;margin-top:8px;color:#1d4ed8;font-weight:600;text-decoration:none">Open issue</a>` : ''}</div>`,
+      };
+    });
+
+  const pendingMarker = pendingIssuePin
+    && isValidCoord(pendingIssuePin.lat, -90, 90)
+    && isValidCoord(pendingIssuePin.lng, -180, 180)
+    ? [{
+        id: 'pending-map-issue',
+        lat: Number(pendingIssuePin.lat),
+        lng: Number(pendingIssuePin.lng),
+        variant: 'selected',
+        iconColor: MAP_ISSUE_TYPE_COLORS[pendingIssuePin.mapIssueType] || MAP_ISSUE_TYPE_COLORS.other,
+        tooltip: 'New local issue',
+        popup: '<strong>New local issue</strong>',
+      }]
+    : [];
+
   // Nothing to render if we have neither valid coords nor a boundary polygon nor child markers.
-  if (!hasValidCoords && !normalizedBoundary && childMarkers.length === 0) return null;
+  if (!hasValidCoords && !normalizedBoundary && childMarkers.length === 0 && issueMarkers.length === 0 && pendingMarker.length === 0) return null;
 
   const hasDefaultCenter =
     isValidCoord(location.map_default_center_lat, -90, 90)
     && isValidCoord(location.map_default_center_lng, -180, 180);
   const center = hasDefaultCenter
     ? [Number(location.map_default_center_lat), Number(location.map_default_center_lng)]
-    : (hasValidCoords ? [Number(lat), Number(lng)] : GREECE_CENTER);
+    : (
+        hasValidCoords
+          ? [Number(lat), Number(lng)]
+          : issueMarkers.length > 0
+            ? [issueMarkers[0].lat, issueMarkers[0].lng]
+            : pendingMarker.length > 0
+              ? [pendingMarker[0].lat, pendingMarker[0].lng]
+              : GREECE_CENTER
+      );
   const zoom = Number.isFinite(Number(location.map_default_zoom))
     ? Number(location.map_default_zoom)
-    : (hasValidCoords ? 12 : GREECE_ZOOM);
+    : (hasValidCoords ? 12 : (issueMarkers.length > 0 || pendingMarker.length > 0 ? 14 : GREECE_ZOOM));
   const locationHref = location.slug ? `/locations/${location.slug}` : null;
   const pollsHref = locationHref ? `${locationHref}?tab=polls#location-content` : '#location-content';
   const suggestionsHref = locationHref ? `${locationHref}?tab=suggestions#location-content` : '#location-content';
@@ -263,8 +311,10 @@ export default function LocationMap({
         }]
       : []),
     ...childMarkers,
+    ...issueMarkers,
+    ...pendingMarker,
   ];
-  const initialBounds = boundaryBounds || bounding_box || (childMarkers.length > 0 ? getMarkersBounds(markers) : null);
+  const initialBounds = boundaryBounds || bounding_box || (markers.length > 1 ? getMarkersBounds(markers) : null);
 
   return (
     <BaseMap
@@ -272,12 +322,13 @@ export default function LocationMap({
       zoom={zoom}
       bounds={initialBounds}
       markers={markers}
-      clusterMarkers={childMarkers.length > 8}
+      clusterMarkers={(childMarkers.length + issueMarkers.length) > 8}
       overlays={overlays}
       polygonLayers={polygonLayers}
       className={className || 'h-64 w-full rounded-lg overflow-hidden'}
       scrollWheelZoom={scrollWheelZoom}
       interactive={interactive}
+      onMapClick={onMapClick}
       showFullscreenControl
     />
   );
