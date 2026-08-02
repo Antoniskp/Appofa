@@ -1,4 +1,5 @@
 /** @jest-environment <rootDir>/jest-jsdom-env.js */
+/* global window, document, MouseEvent */
 
 const React = require('react');
 const { act } = require('react');
@@ -30,25 +31,32 @@ jest.mock('@/components/map/BaseMap', () => {
   const React = require('react');
   return {
     __esModule: true,
-    default: (props) => {
+    default: function MockBaseMap(props) {
+      const {
+        markers = [],
+        onMarkerHover,
+        onMarkerClick,
+        onMarkersReady,
+      } = props;
+
       baseMapRenderSpy(props);
       React.useEffect(() => {
-        if (props.onMarkersReady) {
-          props.onMarkersReady({});
+        if (onMarkersReady) {
+          onMarkersReady({});
         }
-      }, [props.onMarkersReady]);
+      }, [onMarkersReady]);
 
       return React.createElement(
         'div',
         { 'data-testid': 'base-map' },
-        (props.markers || []).map((marker) => React.createElement(
+        markers.map((marker) => React.createElement(
           'button',
           {
             key: marker.id,
             type: 'button',
-            onMouseEnter: () => props.onMarkerHover?.(marker.id),
-            onMouseLeave: () => props.onMarkerHover?.(null),
-            onClick: () => props.onMarkerClick?.(marker.id),
+            onMouseEnter: () => onMarkerHover?.(marker.id),
+            onMouseLeave: () => onMarkerHover?.(null),
+            onClick: () => onMarkerClick?.(marker.id),
             'data-testid': `marker-${marker.id}`,
           },
           marker.id
@@ -70,11 +78,40 @@ jest.mock('@/lib/api', () => ({
   locationSectionAPI: {
     updateCameraStatus: jest.fn(),
   },
+  videoPinAPI: {
+    getAll: jest.fn(),
+    create: jest.fn(),
+  },
 }));
 
 const { useAsyncData } = require('@/hooks/useAsyncData');
-const { locationSectionAPI } = require('@/lib/api');
+const { locationSectionAPI, videoPinAPI } = require('@/lib/api');
 const CamerasPageClient = require('../components/cameras/CamerasPageClient').default;
+
+function mockPageData(cameras, videoPins = []) {
+  const cameraRefetch = jest.fn();
+  const videoPinRefetch = jest.fn();
+
+  useAsyncData.mockImplementation((_fetcher, dependencies = []) => {
+    if (dependencies.length > 0) {
+      return {
+        data: videoPins,
+        loading: false,
+        error: null,
+        refetch: videoPinRefetch,
+      };
+    }
+
+    return {
+      data: cameras,
+      loading: false,
+      error: null,
+      refetch: cameraRefetch,
+    };
+  });
+
+  return { cameraRefetch, videoPinRefetch };
+}
 
 describe('CamerasPageClient', () => {
   let container;
@@ -87,6 +124,8 @@ describe('CamerasPageClient', () => {
     baseMapRenderSpy.mockClear();
     windowOpenSpy.mockClear();
     locationSectionAPI.updateCameraStatus.mockReset();
+    videoPinAPI.getAll.mockReset();
+    videoPinAPI.create.mockReset();
     mockAuthState = { user: null, loading: false };
   });
 
@@ -99,38 +138,33 @@ describe('CamerasPageClient', () => {
   });
 
   test('renders cameras and passes only mappable cameras to the map markers', async () => {
-    useAsyncData.mockReturnValue({
-      data: [
-        {
-          id: '1:0',
-          sectionId: 1,
-          index: 0,
-          label: 'Harbour camera',
-          url: 'https://cam.example.com/harbour.jpg',
-          embedType: 'image',
-          sourceLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
-          exactCoordinates: { lat: 37.91, lng: 23.71 },
-          mapLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.91, lng: 23.71 },
-          mapLocationSource: 'camera',
-          isWorking: true,
-        },
-        {
-          id: '1:1',
-          sectionId: 1,
-          index: 1,
-          label: 'Square camera',
-          url: 'https://cam.example.com/square',
-          embedType: 'link',
-          sourceLocation: { id: 3, name: 'Square', slug: 'square', lat: null, lng: null },
-          exactCoordinates: null,
-          mapLocation: { id: 3, name: 'Square', slug: 'square', lat: null, lng: null },
-          mapLocationSource: 'sourceLocation',
-        },
-      ],
-      loading: false,
-      error: null,
-      refetch: jest.fn(),
-    });
+    mockPageData([
+      {
+        id: '1:0',
+        sectionId: 1,
+        index: 0,
+        label: 'Harbour camera',
+        url: 'https://cam.example.com/harbour.jpg',
+        embedType: 'image',
+        sourceLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
+        exactCoordinates: { lat: 37.91, lng: 23.71 },
+        mapLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.91, lng: 23.71 },
+        mapLocationSource: 'camera',
+        isWorking: true,
+      },
+      {
+        id: '1:1',
+        sectionId: 1,
+        index: 1,
+        label: 'Square camera',
+        url: 'https://cam.example.com/square',
+        embedType: 'link',
+        sourceLocation: { id: 3, name: 'Square', slug: 'square', lat: null, lng: null },
+        exactCoordinates: null,
+        mapLocation: { id: 3, name: 'Square', slug: 'square', lat: null, lng: null },
+        mapLocationSource: 'sourceLocation',
+      },
+    ]);
 
     await act(async () => {
       root.render(React.createElement(CamerasPageClient));
@@ -156,38 +190,33 @@ describe('CamerasPageClient', () => {
   });
 
   test('shows each camera availability with green and red status indicators', async () => {
-    useAsyncData.mockReturnValue({
-      data: [
-        {
-          id: '1:0',
-          sectionId: 1,
-          index: 0,
-          label: 'Harbour camera',
-          url: 'https://cam.example.com/harbour.jpg',
-          embedType: 'image',
-          sourceLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
-          exactCoordinates: { lat: 37.91, lng: 23.71 },
-          mapLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.91, lng: 23.71 },
-          mapLocationSource: 'camera',
-        },
-        {
-          id: '2:0',
-          sectionId: 2,
-          index: 0,
-          label: 'Center cam',
-          url: 'https://cam.example.com/center',
-          embedType: 'link',
-          sourceLocation: { id: 2, name: 'Center', slug: 'center', lat: 37.9, lng: 23.7 },
-          exactCoordinates: null,
-          mapLocation: { id: 2, name: 'Center', slug: 'center', lat: 37.9, lng: 23.7 },
-          mapLocationSource: 'sourceLocation',
-          isWorking: false,
-        },
-      ],
-      loading: false,
-      error: null,
-      refetch: jest.fn(),
-    });
+    mockPageData([
+      {
+        id: '1:0',
+        sectionId: 1,
+        index: 0,
+        label: 'Harbour camera',
+        url: 'https://cam.example.com/harbour.jpg',
+        embedType: 'image',
+        sourceLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
+        exactCoordinates: { lat: 37.91, lng: 23.71 },
+        mapLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.91, lng: 23.71 },
+        mapLocationSource: 'camera',
+      },
+      {
+        id: '2:0',
+        sectionId: 2,
+        index: 0,
+        label: 'Center cam',
+        url: 'https://cam.example.com/center',
+        embedType: 'link',
+        sourceLocation: { id: 2, name: 'Center', slug: 'center', lat: 37.9, lng: 23.7 },
+        exactCoordinates: null,
+        mapLocation: { id: 2, name: 'Center', slug: 'center', lat: 37.9, lng: 23.7 },
+        mapLocationSource: 'sourceLocation',
+        isWorking: false,
+      },
+    ]);
 
     await act(async () => {
       root.render(React.createElement(CamerasPageClient));
@@ -229,26 +258,21 @@ describe('CamerasPageClient', () => {
       },
     });
 
-    useAsyncData.mockReturnValue({
-      data: [
-        {
-          id: '1:0',
-          sectionId: 1,
-          index: 0,
-          label: 'Harbour camera',
-          url: 'https://cam.example.com/harbour.jpg',
-          embedType: 'image',
-          sourceLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
-          exactCoordinates: { lat: 37.91, lng: 23.71 },
-          mapLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.91, lng: 23.71 },
-          mapLocationSource: 'camera',
-          isWorking: true,
-        },
-      ],
-      loading: false,
-      error: null,
-      refetch: jest.fn(),
-    });
+    mockPageData([
+      {
+        id: '1:0',
+        sectionId: 1,
+        index: 0,
+        label: 'Harbour camera',
+        url: 'https://cam.example.com/harbour.jpg',
+        embedType: 'image',
+        sourceLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
+        exactCoordinates: { lat: 37.91, lng: 23.71 },
+        mapLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.91, lng: 23.71 },
+        mapLocationSource: 'camera',
+        isWorking: true,
+      },
+    ]);
 
     await act(async () => {
       root.render(React.createElement(CamerasPageClient));
@@ -267,33 +291,28 @@ describe('CamerasPageClient', () => {
   });
 
   test('clicking a marker opens the camera stream URL in a new tab', async () => {
-    useAsyncData.mockReturnValue({
-      data: [
-        {
-          id: '1:0',
-          label: 'Harbour camera',
-          url: 'https://cam.example.com/harbour.jpg',
-          embedType: 'image',
-          sourceLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
-          exactCoordinates: { lat: 37.91, lng: 23.71 },
-          mapLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.91, lng: 23.71 },
-          mapLocationSource: 'camera',
-        },
-        {
-          id: '2:0',
-          label: 'No-URL camera',
-          url: 'javascript:alert(1)',
-          embedType: 'link',
-          sourceLocation: { id: 2, name: 'Center', slug: 'center', lat: 37.9, lng: 23.7 },
-          exactCoordinates: null,
-          mapLocation: { id: 2, name: 'Center', slug: 'center', lat: 37.9, lng: 23.7 },
-          mapLocationSource: 'sourceLocation',
-        },
-      ],
-      loading: false,
-      error: null,
-      refetch: jest.fn(),
-    });
+    mockPageData([
+      {
+        id: '1:0',
+        label: 'Harbour camera',
+        url: 'https://cam.example.com/harbour.jpg',
+        embedType: 'image',
+        sourceLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
+        exactCoordinates: { lat: 37.91, lng: 23.71 },
+        mapLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.91, lng: 23.71 },
+        mapLocationSource: 'camera',
+      },
+      {
+        id: '2:0',
+        label: 'No-URL camera',
+        url: 'javascript:alert(1)',
+        embedType: 'link',
+        sourceLocation: { id: 2, name: 'Center', slug: 'center', lat: 37.9, lng: 23.7 },
+        exactCoordinates: null,
+        mapLocation: { id: 2, name: 'Center', slug: 'center', lat: 37.9, lng: 23.7 },
+        mapLocationSource: 'sourceLocation',
+      },
+    ]);
 
     await act(async () => {
       root.render(React.createElement(CamerasPageClient));
@@ -324,24 +343,19 @@ describe('CamerasPageClient', () => {
   });
 
   test('clicking an unavailable camera marker still opens its stream URL', async () => {
-    useAsyncData.mockReturnValue({
-      data: [
-        {
-          id: '1:0',
-          label: 'Offline camera',
-          url: 'https://cam.example.com/offline',
-          embedType: 'link',
-          sourceLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
-          exactCoordinates: null,
-          mapLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
-          mapLocationSource: 'sourceLocation',
-          isWorking: false,
-        },
-      ],
-      loading: false,
-      error: null,
-      refetch: jest.fn(),
-    });
+    mockPageData([
+      {
+        id: '1:0',
+        label: 'Offline camera',
+        url: 'https://cam.example.com/offline',
+        embedType: 'link',
+        sourceLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
+        exactCoordinates: null,
+        mapLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
+        mapLocationSource: 'sourceLocation',
+        isWorking: false,
+      },
+    ]);
 
     await act(async () => {
       root.render(React.createElement(CamerasPageClient));
@@ -361,9 +375,9 @@ describe('CamerasPageClient', () => {
     );
   });
 
-  test('hover on camera card does not change the bounds prop (avoids map zoom reset)', async () => {
-    useAsyncData.mockReturnValue({
-      data: [
+  test('renders video pins as colored map markers and opens the source video', async () => {
+    mockPageData(
+      [
         {
           id: '1:0',
           label: 'Harbour camera',
@@ -374,21 +388,71 @@ describe('CamerasPageClient', () => {
           mapLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.91, lng: 23.71 },
           mapLocationSource: 'camera',
         },
-        {
-          id: '2:0',
-          label: 'Center cam',
-          url: 'https://cam.example.com/center',
-          embedType: 'link',
-          sourceLocation: { id: 2, name: 'Center', slug: 'center', lat: 37.9, lng: 23.7 },
-          exactCoordinates: null,
-          mapLocation: { id: 2, name: 'Center', slug: 'center', lat: 37.9, lng: 23.7 },
-          mapLocationSource: 'sourceLocation',
-        },
       ],
-      loading: false,
-      error: null,
-      refetch: jest.fn(),
+      [
+        {
+          id: 12,
+          title: 'Harbour TikTok update',
+          contentType: 'viral',
+          category: 'local-news',
+          canonicalUrl: 'https://www.tiktok.com/@creator/video/123',
+          sourceUrl: 'https://www.tiktok.com/@creator/video/123',
+          creatorHandle: '@creator',
+          lat: 37.92,
+          lng: 23.72,
+          location: { id: 1, name: 'Port town', slug: 'port-town' },
+        },
+      ]
+    );
+
+    await act(async () => {
+      root.render(React.createElement(CamerasPageClient));
     });
+
+    expect(container.textContent).toContain('Harbour TikTok update');
+    expect(container.textContent).toContain('@creator');
+
+    const mapProps = baseMapRenderSpy.mock.calls[baseMapRenderSpy.mock.calls.length - 1][0];
+    expect(mapProps.markers).toHaveLength(2);
+    const videoMarker = mapProps.markers.find((marker) => marker.id === 'video-pin:12');
+    expect(videoMarker).toBeDefined();
+    expect(videoMarker.iconColor).toBe('#2563eb');
+
+    await act(async () => {
+      const marker = container.querySelector('[data-testid="marker-video-pin:12"]');
+      marker.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(windowOpenSpy).toHaveBeenCalledWith(
+      'https://www.tiktok.com/@creator/video/123',
+      '_blank',
+      'noopener,noreferrer'
+    );
+  });
+
+  test('hover on camera card does not change the bounds prop (avoids map zoom reset)', async () => {
+    mockPageData([
+      {
+        id: '1:0',
+        label: 'Harbour camera',
+        url: 'https://cam.example.com/harbour.jpg',
+        embedType: 'image',
+        sourceLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
+        exactCoordinates: { lat: 37.91, lng: 23.71 },
+        mapLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.91, lng: 23.71 },
+        mapLocationSource: 'camera',
+      },
+      {
+        id: '2:0',
+        label: 'Center cam',
+        url: 'https://cam.example.com/center',
+        embedType: 'link',
+        sourceLocation: { id: 2, name: 'Center', slug: 'center', lat: 37.9, lng: 23.7 },
+        exactCoordinates: null,
+        mapLocation: { id: 2, name: 'Center', slug: 'center', lat: 37.9, lng: 23.7 },
+        mapLocationSource: 'sourceLocation',
+      },
+    ]);
 
     await act(async () => {
       root.render(React.createElement(CamerasPageClient));
