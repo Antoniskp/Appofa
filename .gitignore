@@ -16,6 +16,7 @@ tmp/
 .pglog
 .pgsocket/
 .vscode/
+.codex_*_key*
 # Hero settings (modified at runtime by admin panel; stored in DB)
 src/data/hero-settings.json
 
