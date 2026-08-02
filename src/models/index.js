@@ -62,6 +62,7 @@ const MunicipalityDistrictMap = require('./MunicipalityDistrictMap');
 const CandidateRegistration = require('./CandidateRegistration');
 const OnboardingEvent = require('./OnboardingEvent');
 const MediaAsset = require('./MediaAsset');
+const VideoPin = require('./VideoPin');
 
 // Define associations
 User.hasMany(Article, {
@@ -559,6 +560,14 @@ Location.hasMany(CandidateRegistration, { foreignKey: 'locationId', as: 'candida
 OnboardingEvent.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(OnboardingEvent, { foreignKey: 'userId', as: 'onboardingEvents' });
 
+// Video pin associations
+VideoPin.belongsTo(User, { foreignKey: 'submittedByUserId', as: 'submittedBy' });
+VideoPin.belongsTo(User, { foreignKey: 'moderatedByUserId', as: 'moderatedBy' });
+VideoPin.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
+User.hasMany(VideoPin, { foreignKey: 'submittedByUserId', as: 'submittedVideoPins' });
+User.hasMany(VideoPin, { foreignKey: 'moderatedByUserId', as: 'moderatedVideoPins' });
+Location.hasMany(VideoPin, { foreignKey: 'locationId', as: 'videoPins' });
+
 module.exports = {
   sequelize,
   User,
@@ -624,4 +633,5 @@ module.exports = {
   CandidateRegistration,
   OnboardingEvent,
   MediaAsset,
+  VideoPin,
 };

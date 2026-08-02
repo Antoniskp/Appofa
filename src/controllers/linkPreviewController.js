@@ -535,6 +535,7 @@ module.exports = {
   // Exported for testing
   validateAndParseUrl,
   normalizeUrl,
+  buildPreview,
   extractYouTubeVideoId,
   buildYouTubeEmbedUrl,
   extractTikTokVideoId,
