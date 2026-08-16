@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { articleAPI, pollAPI, suggestionAPI, manifestAPI, locationAPI, tagAPI, homepageSettingsAPI } from '@/lib/api';
+import { homepageAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import HomeHero from '@/components/HomeHero';
 import HomeActionLanes from '@/components/HomeActionLanes';
@@ -62,204 +62,45 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    const fetchLatestArticles = async () => {
+    const loadHomepage = async () => {
       try {
-        const response = await articleAPI.getAll({
-          status: 'published',
-          type: 'articles',
-          orderBy: 'createdAt',
-          order: 'desc',
-          limit: 3,
-          page: 1,
-        });
-        if (response.success) {
-          setLatestArticles(response.data.articles || []);
+        const res = await homepageAPI.get();
+        if (res?.success) {
+          const payload = res.data || {};
+          setLatestArticles(payload.latestArticles || []);
+          setSuggestions(payload.suggestions || []);
+          setPolls(payload.polls || []);
+          setLatestNews(payload.latestNews || []);
+          setVideos(payload.videos || []);
+          setPrefectures(payload.prefectures || []);
+          setArticleTags(payload.tags?.article || []);
+          setSuggestionTags(payload.tags?.suggestion || []);
+          setPollTags(payload.tags?.poll || []);
+          setHomepageSettings(payload.homepageSettings || null);
+          setFeaturedPoll(payload.featuredPoll || null);
+          setManifestData(payload.manifestData || []);
         }
       } catch (err) {
-        setArticlesError(err.message);
+        const message = err?.message || 'Failed to load homepage.';
+        setArticlesError(message);
+        setSuggestionsError(message);
+        setPollsError(message);
+        setNewsError(message);
+        setVideosError(message);
+        setFeaturedPoll(null);
       } finally {
         setArticlesLoading(false);
-      }
-    };
-
-    const fetchSuggestions = async () => {
-      try {
-        const response = await suggestionAPI.getAll({ sort: 'top', limit: 3, page: 1 });
-        if (response.success) {
-          setSuggestions(response.data?.suggestions || response.data || []);
-        }
-      } catch (err) {
-        setSuggestionsError(err.message);
-      } finally {
         setSuggestionsLoading(false);
-      }
-    };
-
-    const fetchPolls = async () => {
-      try {
-        const response = await pollAPI.getAll({ limit: 3 });
-        if (response.success && Array.isArray(response.data)) {
-          setPolls(response.data);
-        }
-      } catch (err) {
-        setPollsError(err.message);
-      } finally {
         setPollsLoading(false);
-      }
-    };
-
-    const fetchLatestNews = async () => {
-      try {
-        const response = await articleAPI.getAll({
-          status: 'published',
-          type: 'news',
-          newsApproved: true,
-          orderBy: 'newsApprovedAt',
-          order: 'desc',
-          limit: 3,
-          page: 1,
-        });
-        if (response.success) {
-          setLatestNews(response.data.articles || []);
-        }
-      } catch (err) {
-        setNewsError(err.message);
-      } finally {
         setNewsLoading(false);
-      }
-    };
-
-    const fetchVideos = async () => {
-      try {
-        const response = await articleAPI.getAll({
-          type: 'video',
-          status: 'published',
-          limit: 6,
-          orderBy: 'createdAt',
-          order: 'desc',
-        });
-        if (response.success) {
-          setVideos(response.data.articles || []);
-        }
-      } catch (err) {
-        setVideosError(err.message);
-      } finally {
         setVideosLoading(false);
-      }
-    };
-
-    const fetchPrefectures = async () => {
-      try {
-        // Scope prefectures to Greece only: first resolve Greece's location ID, then
-        // fetch prefectures filtered by that parent_id so Cyprus / other countries are excluded.
-        const greeceRes = await locationAPI.getAll({ type: 'country', code: 'GR', limit: 1 });
-        const greeceId =
-          greeceRes.success && greeceRes.locations?.length > 0
-            ? greeceRes.locations[0].id
-            : null;
-        if (!greeceId) return;
-        const response = await locationAPI.getAll({
-          type: 'prefecture',
-          parent_id: greeceId,
-          includeUserCounts: true,
-          includeCandidatePreview: true,
-          limit: 50,
-        });
-        if (response.success) {
-          setPrefectures(response.locations || []);
-        }
-      } catch {
-        // non-critical — fail silently
-      } finally {
         setPrefecturesLoading(false);
-      }
-    };
-
-    const fetchTagsForType = async (entityType, setter) => {
-      try {
-        const response = await tagAPI.getSuggestions({ entityType });
-        const tags = Array.isArray(response?.tags) ? response.tags : [];
-        setter(
-          tags
-            .slice(0, 5)
-            .map((tag) => tag?.name || tag)
-            .filter(Boolean)
-        );
-      } catch {
-        // non-critical — fail silently
-      }
-    };
-
-    const fetchHomepageSettings = async () => {
-      try {
-        const res = await homepageSettingsAPI.get();
-        if (res?.success) {
-          const settings = res.data;
-          setHomepageSettings(settings);
-
-          const featuredConfig = settings?.featuredPoll;
-          if (featuredConfig?.enabled && featuredConfig.pollId) {
-            setFeaturedPollLoading(true);
-            try {
-              const pollRes = await pollAPI.getById(featuredConfig.pollId);
-              setFeaturedPoll(pollRes?.success ? pollRes.data : null);
-            } catch {
-              setFeaturedPoll(null);
-            } finally {
-              setFeaturedPollLoading(false);
-            }
-          } else {
-            setFeaturedPoll(null);
-            setFeaturedPollLoading(false);
-          }
-        }
-      } catch (err) {
-        // Non-critical but log for debugging
-        console.warn('[HomepageSettings] Failed to load:', err?.message || err);
-        setFeaturedPoll(null);
+        setManifestLoading(false);
         setFeaturedPollLoading(false);
       }
     };
 
-    fetchLatestArticles();
-    fetchSuggestions();
-    fetchPolls();
-    fetchLatestNews();
-    fetchVideos();
-    fetchPrefectures();
-    fetchTagsForType('article', setArticleTags);
-    fetchTagsForType('suggestion', setSuggestionTags);
-    fetchTagsForType('poll', setPollTags);
-    fetchHomepageSettings();
-
-    // Fetch manifest supporters for homepage
-    const fetchManifestSupporters = async () => {
-      try {
-        const res = await manifestAPI.getAll();
-        if (res?.success && res.data?.manifests?.length) {
-          const manifests = res.data.manifests;
-          const withSupporters = await Promise.all(
-            manifests.map(async (m) => {
-              try {
-                const supportersRes = await manifestAPI.getRandomSupporters(m.slug, 8);
-                return {
-                  ...m,
-                  randomSupporters: supportersRes?.success ? supportersRes.data?.users || [] : [],
-                };
-              } catch {
-                return { ...m, randomSupporters: [] };
-              }
-            })
-          );
-          setManifestData(withSupporters);
-        }
-      } catch {
-        // non-critical
-      } finally {
-        setManifestLoading(false);
-      }
-    };
-    fetchManifestSupporters();
+    loadHomepage();
   }, []);
 
   const mergedLatestContent = [...latestNews, ...latestArticles]

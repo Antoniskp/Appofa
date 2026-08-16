@@ -20,6 +20,7 @@ const personRoutes = require('./personRoutes');
 const personRemovalRequestRoutes = require('./personRemovalRequestRoutes');
 const reportRoutes = require('./reportRoutes');
 const dreamTeamRoutes = require('./dreamTeamRoutes');
+const homepageRoutes = require('./homepageRoutes');
 const heroSettingsRoutes = require('./heroSettingsRoutes');
 const homepageSettingsRoutes = require('./homepageSettingsRoutes');
 const badgeRoutes = require('./badges');
@@ -66,6 +67,7 @@ const routes = [
   { prefix: '/api/person-removal-requests', router: personRemovalRequestRoutes },
   { prefix: '/api/reports', router: reportRoutes },
   { prefix: '/api/dream-team', router: dreamTeamRoutes },
+  { prefix: '/api/homepage', router: homepageRoutes },
   { prefix: '/api/hero-settings', router: heroSettingsRoutes },
   { prefix: '/api/homepage-settings', router: homepageSettingsRoutes },
   { prefix: '/api/badges', router: badgeRoutes },

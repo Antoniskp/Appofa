@@ -197,6 +197,23 @@ jest.mock('@/lib/api', () => ({
   homepageSettingsAPI: {
     get: jest.fn(() => Promise.resolve({ success: true, data: null })),
   },
+  homepageAPI: {
+    get: jest.fn(() => Promise.resolve({
+      success: true,
+      data: {
+        latestArticles: [],
+        latestNews: [],
+        videos: [],
+        polls: [],
+        suggestions: [],
+        prefectures: [],
+        tags: { article: [], suggestion: [], poll: [] },
+        homepageSettings: null,
+        featuredPoll: null,
+        manifestData: [],
+      },
+    })),
+  },
   geoAPI: {
     detect: jest.fn(() => Promise.resolve({ success: true, data: { countryCode: null, countryName: null } })),
   }
@@ -209,7 +226,7 @@ jest.mock('next/headers', () => ({
 }));
 
 const { useAuth } = require('@/lib/auth-context');
-const { geoAPI, locationAPI, pollAPI } = require('@/lib/api');
+const { geoAPI, homepageAPI, locationAPI, pollAPI } = require('@/lib/api');
 
 const buildAuthState = (overrides = {}) => ({
   user: null,
@@ -262,6 +279,22 @@ describe('Frontend smoke tests', () => {
     useAuth.mockReset();
     pollAPI.getAll.mockReset();
     pollAPI.getAll.mockResolvedValue({ success: true, data: [] });
+    homepageAPI.get.mockReset();
+    homepageAPI.get.mockResolvedValue({
+      success: true,
+      data: {
+        latestArticles: [],
+        latestNews: [],
+        videos: [],
+        polls: [],
+        suggestions: [],
+        prefectures: [],
+        tags: { article: [], suggestion: [], poll: [] },
+        homepageSettings: null,
+        featuredPoll: null,
+        manifestData: [],
+      },
+    });
     geoAPI.detect.mockReset();
     geoAPI.detect.mockResolvedValue({ success: true, data: { countryCode: null, countryName: null } });
     locationAPI.getAll.mockReset();
