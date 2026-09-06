@@ -170,7 +170,7 @@ describe('CamerasPageClient', () => {
       root.render(React.createElement(CamerasPageClient));
     });
 
-    expect(container.textContent).toContain('Κάμερες κοινότητας');
+    expect(container.textContent).toContain('Live κάμερες');
     expect(container.textContent).toContain('Harbour camera');
     expect(container.textContent).toContain('Square camera');
     expect(container.querySelector('button[role="switch"]')).toBeNull();
@@ -240,10 +240,10 @@ describe('CamerasPageClient', () => {
     });
 
     const harbourTitle = Array.from(container.querySelectorAll('h3')).find((el) => el.textContent === 'Harbour camera');
-    expect(harbourTitle.closest('article').className).toContain('bg-blue-50');
+    expect(harbourTitle.closest('article').className).toContain('ring-blue-100');
 
     const showOnMapButton = Array.from(container.querySelectorAll('button')).find((btn) => btn.textContent === 'Εστίαση στον χάρτη');
-    expect(showOnMapButton).toBeUndefined();
+    expect(showOnMapButton).toBeTruthy();
   });
 
   test('lets authenticated users toggle one camera status', async () => {

@@ -7,8 +7,10 @@ import {
   ArrowTopRightOnSquareIcon,
   ClockIcon,
   FunnelIcon,
+  MagnifyingGlassIcon,
   MapPinIcon,
   PlusIcon,
+  SignalIcon,
   VideoCameraIcon,
 } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
@@ -35,6 +37,7 @@ const GREECE_ZOOM = 6;
 const VIDEO_PIN_CATEGORIES = Object.keys(VIDEO_PIN_CATEGORY_STYLES);
 const VIDEO_PIN_SORTS = ['newest', 'expiresSoon', 'recentlyApproved', 'category'];
 const LIVE_EXPIRY_OPTIONS = [2, 6, 24, 72];
+const CAMERA_STATUS_FILTERS = ['all', 'working', 'unavailable'];
 
 function isValidCoord(value, min, max) {
   if (value == null || value === '') return false;
@@ -74,6 +77,21 @@ function getSafeCameraUrl(url) {
   }
 }
 
+function cleanDisplayText(value, fallback = '') {
+  return String(value || fallback)
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/[*_`#>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeSearchText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
 function isCameraWorking(camera) {
   return camera?.isWorking !== false;
 }
@@ -86,6 +104,16 @@ function getEmbedTypeLabel(camera, t) {
 
 function getCameraGroupLocation(camera) {
   return camera.location || camera.sourceLocation || camera.mapLocation || null;
+}
+
+function getCameraLocationText(camera, t) {
+  const location = getCameraGroupLocation(camera);
+  return getLocationLabel(location) || t('map_unavailable');
+}
+
+function getCameraMapSourceLabel(camera, t) {
+  if (!hasMapLocation(camera)) return t('map_unavailable');
+  return camera.mapLocationSource === 'camera' ? t('pin_source_exact') : t('pin_source_source');
 }
 
 function groupCamerasByLocation(cameras, t) {
@@ -112,7 +140,7 @@ function groupCamerasByLocation(cameras, t) {
 }
 
 function buildCameraTooltip(camera) {
-  const label = escapeHtml(camera.label);
+  const label = escapeHtml(cleanDisplayText(camera.label));
   const locationLabel = escapeHtml(getLocationLabel(camera.mapLocation));
   return locationLabel ? `${label} - ${locationLabel}` : label;
 }
@@ -129,7 +157,7 @@ function buildCameraMarkers(cameras, highlightedMarkerId = null) {
       id: camera.id,
       lat: Number(mapLocation.lat),
       lng: Number(mapLocation.lng),
-      label: camera.label,
+      label: cleanDisplayText(camera.label),
       meta: getLocationLabel(mapLocation),
       href: mapLocation.slug ? `/locations/${mapLocation.slug}` : null,
       tooltip: buildCameraTooltip(camera),
@@ -151,15 +179,21 @@ function getMapBounds(markers) {
 function CameraStatusControl({ camera, t, canToggle, isUpdating, onToggle }) {
   const cameraWorking = isCameraWorking(camera);
   const statusLabel = cameraWorking ? t('status_available') : t('status_unavailable');
-  const statusClass = cameraWorking ? 'bg-green-500' : 'bg-red-500';
+  const statusClass = cameraWorking
+    ? 'bg-green-50 text-green-700 ring-green-600/20'
+    : 'bg-red-50 text-red-700 ring-red-600/20';
+  const dotClass = cameraWorking ? 'bg-green-500' : 'bg-red-500';
 
   if (!canToggle) {
     return (
       <span
         aria-label={statusLabel}
         title={statusLabel}
-        className={`inline-flex h-3 w-3 shrink-0 rounded-full ${statusClass}`}
-      />
+        className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-semibold ring-1 ring-inset ${statusClass}`}
+      >
+        <span className={`h-2 w-2 rounded-full ${dotClass}`} />
+        {statusLabel}
+      </span>
     );
   }
 
@@ -172,54 +206,106 @@ function CameraStatusControl({ camera, t, canToggle, isUpdating, onToggle }) {
       title={t('toggle_status_title', { status: statusLabel })}
       disabled={isUpdating}
       onClick={() => onToggle(camera)}
-      className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-opacity ${isUpdating ? 'cursor-wait opacity-60' : 'hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-semibold ring-1 ring-inset transition-opacity ${statusClass} ${isUpdating ? 'cursor-wait opacity-60' : 'hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'}`}
     >
-      <span className={`h-3 w-3 rounded-full ${statusClass}`} />
+      <span className={`h-2 w-2 rounded-full ${dotClass}`} />
+      {statusLabel}
     </button>
   );
 }
 
-function CameraRow({ camera, t, isHighlighted, onHoverChange, canToggleStatus, isUpdatingStatus, onToggleStatus }) {
+function CameraRow({
+  camera,
+  t,
+  isHighlighted,
+  onHoverChange,
+  onFocusMap,
+  canToggleStatus,
+  isUpdatingStatus,
+  onToggleStatus,
+}) {
   const safeCameraUrl = getSafeCameraUrl(camera.url);
+  const cameraLabel = cleanDisplayText(camera.label);
+  const locationLabel = getCameraLocationText(camera, t);
+  const mapSourceLabel = getCameraMapSourceLabel(camera, t);
+  const hasValidMapLocation = hasMapLocation(camera);
 
   return (
     <article
-      className={`flex items-center justify-between gap-3 border-t px-3 py-2.5 transition first:border-t-0 sm:px-4 ${isHighlighted ? 'border-blue-200 bg-blue-50' : 'border-gray-100 hover:bg-slate-50'}`}
+      className={`rounded-lg border bg-white p-4 shadow-sm transition ${isHighlighted ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300'}`}
       onMouseEnter={() => onHoverChange(camera.id)}
       onMouseLeave={() => onHoverChange(null)}
     >
-      <h3 className="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">{camera.label}</h3>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="line-clamp-2 text-base font-semibold leading-6 text-gray-900">{cameraLabel}</h3>
+          <p className="mt-1 flex items-center gap-1.5 text-sm text-gray-600">
+            <MapPinIcon className="h-4 w-4 shrink-0" />
+            <span className="truncate">{locationLabel}</span>
+          </p>
+        </div>
+        <CameraStatusControl
+          camera={camera}
+          t={t}
+          canToggle={canToggleStatus}
+          isUpdating={isUpdatingStatus}
+          onToggle={onToggleStatus}
+        />
+      </div>
 
-      <CameraStatusControl
-        camera={camera}
-        t={t}
-        canToggle={canToggleStatus}
-        isUpdating={isUpdatingStatus}
-        onToggle={onToggleStatus}
-      />
+      <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium text-gray-600">
+        <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1">
+          {getEmbedTypeLabel(camera, t)}
+        </span>
+        <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1">
+          {mapSourceLabel}
+        </span>
+      </div>
 
-      {safeCameraUrl && (
-        <a
-          href={safeCameraUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={t('open_camera_new_tab_aria', { label: camera.label })}
-          title={getEmbedTypeLabel(camera, t)}
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-blue-600 text-white transition-colors hover:bg-blue-700"
-        >
-          <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-        </a>
-      )}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        {safeCameraUrl && (
+          <a
+            href={safeCameraUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t('open_camera_new_tab_aria', { label: cameraLabel })}
+            title={getEmbedTypeLabel(camera, t)}
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-blue-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+          >
+            <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+            {t('open_camera')}
+          </a>
+        )}
+        {hasValidMapLocation && (
+          <button
+            type="button"
+            onClick={() => onFocusMap(camera.id)}
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+          >
+            <MapPinIcon className="h-4 w-4" />
+            {t('show_on_map')}
+          </button>
+        )}
+      </div>
     </article>
   );
 }
 
-function CameraLocationGroup({ group, t, highlightedCameraId, onHoverChange, canToggleStatus, updatingStatusIds, onToggleStatus }) {
+function CameraLocationGroup({
+  group,
+  t,
+  highlightedCameraId,
+  onHoverChange,
+  onFocusMap,
+  canToggleStatus,
+  updatingStatusIds,
+  onToggleStatus,
+}) {
   return (
-    <section className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-slate-50 px-4 py-3">
+    <section className="space-y-3">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="truncate text-base font-semibold text-gray-900">{group.label}</h2>
+          <h2 className="truncate text-lg font-semibold text-gray-900">{group.label}</h2>
           <p className="mt-0.5 text-xs font-medium text-gray-500">{t('summary_total', { count: group.cameras.length })}</p>
         </div>
 
@@ -227,7 +313,7 @@ function CameraLocationGroup({ group, t, highlightedCameraId, onHoverChange, can
           <Link
             href={`/locations/${group.slug}`}
             aria-label={t('view_location_aria', { location: group.label })}
-            className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
           >
             <MapPinIcon className="h-4 w-4" />
             {t('view_location')}
@@ -235,7 +321,7 @@ function CameraLocationGroup({ group, t, highlightedCameraId, onHoverChange, can
         )}
       </header>
 
-      <div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
         {group.cameras.map((camera) => (
           <CameraRow
             key={camera.id}
@@ -243,6 +329,7 @@ function CameraLocationGroup({ group, t, highlightedCameraId, onHoverChange, can
             t={t}
             isHighlighted={camera.id === highlightedCameraId}
             onHoverChange={onHoverChange}
+            onFocusMap={onFocusMap}
             canToggleStatus={canToggleStatus}
             isUpdatingStatus={updatingStatusIds.has(camera.id)}
             onToggleStatus={onToggleStatus}
@@ -254,7 +341,7 @@ function CameraLocationGroup({ group, t, highlightedCameraId, onHoverChange, can
 }
 
 function getVideoPinTitle(pin) {
-  return pin?.title || pin?.sourceMeta?.title || 'Video';
+  return cleanDisplayText(pin?.title || pin?.sourceMeta?.title, 'Video');
 }
 
 function getVideoPinCreator(pin) {
@@ -273,6 +360,13 @@ function getTranslatedCategoryLabel(category, t) {
 
 function getTranslatedContentTypeLabel(contentType, t) {
   return contentType === 'live' ? t('content_type_live') : t('content_type_viral');
+}
+
+function getVideoPinSourceLabel(pin, t) {
+  const source = String(pin?.canonicalUrl || pin?.sourceUrl || '').toLowerCase();
+  if (source.includes('tiktok.com')) return t('source_tiktok');
+  if (source.includes('youtube.com') || source.includes('youtu.be')) return t('source_youtube');
+  return t('source_video');
 }
 
 function formatExpiry(expiresAt) {
@@ -297,6 +391,28 @@ function LayerToggle({ active, onClick, children }) {
   );
 }
 
+function VideoPinMedia({ pin, label, t }) {
+  const [failed, setFailed] = useState(false);
+
+  if (pin.thumbnailUrl && !failed) {
+    return (
+      <img
+        src={pin.thumbnailUrl}
+        alt=""
+        className="h-36 w-full bg-slate-900 object-cover"
+        loading="lazy"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-36 w-full items-center justify-center bg-slate-900 px-4 text-center text-sm font-semibold text-white">
+      <span>{label || t('video_preview_unavailable')}</span>
+    </div>
+  );
+}
+
 function VideoPinCard({ pin, t, isHighlighted, onHoverChange }) {
   const markerId = `video-pin:${pin.id}`;
   const safeWatchUrl = getVideoPinWatchUrl(pin);
@@ -305,6 +421,7 @@ function VideoPinCard({ pin, t, isHighlighted, onHoverChange }) {
   const locationLabel = getVideoPinLocationLabel(pin);
   const categoryStyle = getVideoPinCategoryStyle(pin.category);
   const expiry = pin.contentType === 'live' ? formatExpiry(pin.expiresAt) : '';
+  const sourceLabel = getVideoPinSourceLabel(pin, t);
 
   return (
     <article
@@ -312,14 +429,7 @@ function VideoPinCard({ pin, t, isHighlighted, onHoverChange }) {
       onMouseEnter={() => onHoverChange(markerId)}
       onMouseLeave={() => onHoverChange(null)}
     >
-      {pin.thumbnailUrl && (
-        <img
-          src={pin.thumbnailUrl}
-          alt=""
-          className="h-36 w-full bg-slate-900 object-cover"
-          loading="lazy"
-        />
-      )}
+      <VideoPinMedia pin={pin} label={title} t={t} />
       <div className="space-y-3 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">
@@ -330,6 +440,9 @@ function VideoPinCard({ pin, t, isHighlighted, onHoverChange }) {
             style={{ backgroundColor: categoryStyle.color }}
           >
             {getTranslatedCategoryLabel(pin.category, t)}
+          </span>
+          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+            {sourceLabel}
           </span>
         </div>
 
@@ -357,11 +470,62 @@ function VideoPinCard({ pin, t, isHighlighted, onHoverChange }) {
             className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900"
           >
             <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-            {t('open_video')}
+            {pin.contentType === 'live' ? t('open_live_video') : t('open_tiktok_video')}
           </a>
         )}
       </div>
     </article>
+  );
+}
+
+function VideoPinSection({
+  title,
+  subtitle,
+  pins,
+  loading,
+  error,
+  emptyTitle,
+  emptyDescription,
+  onRetry,
+  t,
+  highlightedMarkerId,
+  onHoverChange,
+}) {
+  return (
+    <section className="space-y-4">
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+        <p className="mt-1 text-sm leading-6 text-gray-600">{subtitle}</p>
+      </div>
+
+      {loading ? (
+        <SkeletonLoader type="card" count={2} variant="grid" />
+      ) : error ? (
+        <EmptyState
+          type="error"
+          title={t('video_load_error_title')}
+          description={error}
+          action={{ text: t('retry'), onClick: onRetry }}
+        />
+      ) : pins.length === 0 ? (
+        <EmptyState
+          title={emptyTitle}
+          description={emptyDescription}
+        />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {pins.map((pin) => (
+            <VideoPinCard
+              key={pin.id}
+              pin={pin}
+              t={t}
+              isHighlighted={highlightedMarkerId === `video-pin:${pin.id}`}
+              onHoverChange={onHoverChange}
+            />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -606,6 +770,8 @@ export default function CamerasPageClient() {
   const [updatingStatusIds, setUpdatingStatusIds] = useState(() => new Set());
   const [statusError, setStatusError] = useState(null);
   const [visibleLayers, setVisibleLayers] = useState({ cameras: true, live: true, viral: true });
+  const [cameraSearch, setCameraSearch] = useState('');
+  const [cameraStatusFilter, setCameraStatusFilter] = useState('all');
   const [videoCategoryFilter, setVideoCategoryFilter] = useState('all');
   const [videoSort, setVideoSort] = useState('newest');
   const [isSubmissionOpen, setIsSubmissionOpen] = useState(false);
@@ -655,14 +821,40 @@ export default function CamerasPageClient() {
     )),
     [cameras, statusOverrides]
   );
+  const filteredCameras = useMemo(() => {
+    const search = normalizeSearchText(cameraSearch);
+
+    return allCameras.filter((camera) => {
+      const statusMatches = cameraStatusFilter === 'all'
+        || (cameraStatusFilter === 'working' && isCameraWorking(camera))
+        || (cameraStatusFilter === 'unavailable' && !isCameraWorking(camera));
+
+      if (!statusMatches) return false;
+      if (!search) return true;
+
+      return normalizeSearchText([
+        camera.label,
+        getLocationLabel(getCameraGroupLocation(camera)),
+        camera.embedType,
+      ].join(' ')).includes(search);
+    });
+  }, [allCameras, cameraSearch, cameraStatusFilter]);
   const cameraGroups = useMemo(
-    () => groupCamerasByLocation(allCameras, t),
-    [allCameras, t]
+    () => groupCamerasByLocation(filteredCameras, t),
+    [filteredCameras, t]
   );
   const allVideoPins = useMemo(() => videoPins || [], [videoPins]);
+  const liveVideoPins = useMemo(
+    () => allVideoPins.filter((pin) => pin.contentType === 'live'),
+    [allVideoPins]
+  );
+  const viralVideoPins = useMemo(
+    () => allVideoPins.filter((pin) => pin.contentType !== 'live'),
+    [allVideoPins]
+  );
   const visibleCameras = useMemo(
-    () => (visibleLayers.cameras ? allCameras : []),
-    [allCameras, visibleLayers.cameras]
+    () => (visibleLayers.cameras ? filteredCameras : []),
+    [filteredCameras, visibleLayers.cameras]
   );
   const visibleVideoPins = useMemo(
     () => allVideoPins.filter((pin) => visibleLayers[pin.contentType] !== false),
@@ -704,17 +896,26 @@ export default function CamerasPageClient() {
     const first = mapPoints[0];
     return first ? [first.lat, first.lng] : GREECE_CENTER;
   }, [mapPoints]);
-  const unmappedCount = allCameras.length - allCameras.filter(hasMapLocation).length;
+  const unmappedCount = filteredCameras.length - filteredCameras.filter(hasMapLocation).length;
   const mappedCount = allCameras.filter(hasMapLocation).length;
   const unavailableCount = allCameras.filter((camera) => !isCameraWorking(camera)).length;
-  const liveVideoCount = allVideoPins.filter((pin) => pin.contentType === 'live').length;
-  const viralVideoCount = allVideoPins.filter((pin) => pin.contentType === 'viral').length;
+  const workingCount = allCameras.length - unavailableCount;
+  const liveVideoCount = liveVideoPins.length;
+  const viralVideoCount = viralVideoPins.length;
 
   function handleLayerToggle(layer) {
     setVisibleLayers((current) => ({
       ...current,
       [layer]: !current[layer],
     }));
+  }
+
+  function handleFocusCameraOnMap(cameraId) {
+    setHoveredCardId(cameraId);
+    setHoveredMarkerId(cameraId);
+    if (typeof document !== 'undefined') {
+      document.getElementById('camera-map')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   function handleMarkerClick(markerId) {
@@ -769,100 +970,69 @@ export default function CamerasPageClient() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="app-container py-8 sm:py-10">
-        <section className="overflow-hidden rounded-lg bg-slate-950 px-5 py-8 text-white shadow-sm sm:px-8">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
-            <div className="max-w-3xl">
-              <p className="mb-3 inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-100">
-                <VideoCameraIcon className="mr-2 h-4 w-4" />
-                {t('community_badge')}
+      <div className="app-container space-y-6 py-6 sm:py-8">
+        <section className="rounded-lg border border-blue-100 bg-white px-5 py-6 shadow-sm sm:px-6">
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <div>
+              <p className="mb-3 inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase text-blue-700">
+                <SignalIcon className="mr-2 h-4 w-4" />
+                {t('live_cameras_badge')}
               </p>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{t('title')}</h1>
-              <p className="mt-4 text-sm leading-7 text-blue-100 sm:text-base">{t('subtitle')}</p>
+              <h1 className="text-3xl font-bold tracking-tight text-gray-950 sm:text-4xl">{t('title')}</h1>
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600 sm:text-base">{t('subtitle')}</p>
             </div>
 
             {!loading && !error && (
-              <div className="flex flex-wrap gap-3 text-sm font-semibold text-blue-100">
-                <span>{t('summary_total', { count: allCameras.length })}</span>
-                <span>{t('summary_mapped', { count: mappedCount })}</span>
-                <span>{t('summary_unavailable', { count: unavailableCount })}</span>
-                <span>{t('summary_videos', { count: allVideoPins.length })}</span>
+              <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4 lg:w-[520px]">
+                <span className="rounded-lg bg-slate-50 px-3 py-2 font-semibold text-gray-800">{t('summary_total', { count: allCameras.length })}</span>
+                <span className="rounded-lg bg-green-50 px-3 py-2 font-semibold text-green-800">{t('summary_working', { count: workingCount })}</span>
+                <span className="rounded-lg bg-amber-50 px-3 py-2 font-semibold text-amber-800">{t('summary_unavailable', { count: unavailableCount })}</span>
+                <span className="rounded-lg bg-blue-50 px-3 py-2 font-semibold text-blue-800">{t('summary_mapped', { count: mappedCount })}</span>
               </div>
             )}
           </div>
         </section>
 
-        <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(360px,0.9fr)_minmax(0,1.1fr)]">
-          <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5 xl:sticky xl:top-24 xl:self-start">
-            <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900">{t('map_title')}</h2>
-                <p className="mt-2 text-sm text-gray-600">{t('map_subtitle')}</p>
-              </div>
-              {user ? (
-                <Button
-                  size="sm"
-                  onClick={() => setIsSubmissionOpen(true)}
-                  icon={<PlusIcon className="h-4 w-4" />}
-                >
-                  {t('add_video_pin')}
-                </Button>
-              ) : (
-                <Link
-                  href="/login"
-                  className="inline-flex h-9 items-center justify-center rounded-md border border-blue-600 bg-white px-3 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50"
-                >
-                  {t('login_to_submit')}
-                </Link>
-              )}
-            </div>
-
-            <div className="mb-4 space-y-3 rounded-lg border border-gray-200 bg-slate-50 p-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <LayerToggle active={visibleLayers.cameras} onClick={() => handleLayerToggle('cameras')}>
-                  <VideoCameraIcon className="h-4 w-4" />
-                  {t('layer_cameras')}
-                </LayerToggle>
-                <LayerToggle active={visibleLayers.live} onClick={() => handleLayerToggle('live')}>
-                  <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                  {t('layer_live')}
-                </LayerToggle>
-                <LayerToggle active={visibleLayers.viral} onClick={() => handleLayerToggle('viral')}>
-                  <span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
-                  {t('layer_viral')}
-                </LayerToggle>
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_430px]">
+          <section id="live-cameras" className="space-y-5">
+            <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2 className="text-2xl font-semibold text-gray-900">{t('list_title')}</h2>
+                  {!loading && !error && (
+                    <p className="mt-1 text-sm text-gray-600">{t('camera_results_count', { shown: filteredCameras.length, total: allCameras.length })}</p>
+                  )}
+                </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
+                <label className="block text-sm font-medium text-gray-700">
+                  <span className="inline-flex items-center gap-1.5">
+                    <MagnifyingGlassIcon className="h-4 w-4" />
+                    {t('camera_search_label')}
+                  </span>
+                  <input
+                    type="search"
+                    value={cameraSearch}
+                    onChange={(event) => setCameraSearch(event.target.value)}
+                    placeholder={t('camera_search_placeholder')}
+                    className="mt-1 h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </label>
+
                 <label className="block text-sm font-medium text-gray-700">
                   <span className="inline-flex items-center gap-1.5">
                     <FunnelIcon className="h-4 w-4" />
-                    {t('category_filter')}
+                    {t('camera_status_filter')}
                   </span>
                   <select
-                    value={videoCategoryFilter}
-                    onChange={(event) => setVideoCategoryFilter(event.target.value)}
-                    className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    value={cameraStatusFilter}
+                    onChange={(event) => setCameraStatusFilter(event.target.value)}
+                    className="mt-1 h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
-                    <option value="all">{t('category_all')}</option>
-                    {VIDEO_PIN_CATEGORIES.map((category) => (
-                      <option key={category} value={category}>
-                        {getTranslatedCategoryLabel(category, t)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="block text-sm font-medium text-gray-700">
-                  {t('sort_label')}
-                  <select
-                    value={videoSort}
-                    onChange={(event) => setVideoSort(event.target.value)}
-                    className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    {VIDEO_PIN_SORTS.map((sortKey) => (
-                      <option key={sortKey} value={sortKey}>
-                        {t(`sort_${sortKey}`)}
+                    {CAMERA_STATUS_FILTERS.map((statusKey) => (
+                      <option key={statusKey} value={statusKey}>
+                        {t(`camera_status_${statusKey}`)}
                       </option>
                     ))}
                   </select>
@@ -870,103 +1040,16 @@ export default function CamerasPageClient() {
               </div>
             </div>
 
-            {loading ? (
-              <SkeletonLoader type="card" count={1} />
-            ) : error ? (
-              <EmptyState
-                type="error"
-                title={t('load_error_title')}
-                description={error}
-                action={{ text: t('retry'), onClick: refetch }}
-              />
-            ) : markers.length > 0 ? (
-              <BaseMap
-                center={mapCenter}
-                zoom={GREECE_ZOOM}
-                bounds={bounds}
-                markers={markers}
-                clusterMarkers
-                onMarkerHover={setHoveredMarkerId}
-                onMarkerClick={handleMarkerClick}
-                className="h-[360px] w-full overflow-hidden rounded-lg sm:h-[460px] xl:h-[620px]"
-                scrollWheelZoom
-                tileMode="political"
-                showFullscreenControl
-              />
-            ) : (
-              <EmptyState
-                title={t('no_map_title')}
-                description={allCameras.length > 0 ? t('no_map_description') : t('no_cameras_description')}
-              />
-            )}
-            {!loading && !error && unmappedCount > 0 && (
-              <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                {t('unmapped_notice', { count: unmappedCount })}
-              </p>
-            )}
-          </section>
-
-          <section>
-            <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900">{t('list_title')}</h2>
-                {!loading && !error && (
-                  <p className="mt-1 text-sm text-gray-600">{t('summary_total', { count: allCameras.length })}</p>
-                )}
-              </div>
-            </div>
             {statusError && (
-              <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+              <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
                 {statusError}
               </p>
             )}
             {submissionNotice && (
-              <p className="mb-4 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
+              <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
                 {submissionNotice}
               </p>
             )}
-
-            <section className="mb-8">
-              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <h2 className="text-2xl font-semibold text-gray-900">{t('video_pins_title')}</h2>
-                  <p className="mt-1 text-sm text-gray-600">{t('video_pins_subtitle')}</p>
-                </div>
-                {!videoPinsLoading && (
-                  <p className="text-sm font-medium text-gray-500">
-                    {t('video_pin_counts', { live: liveVideoCount, viral: viralVideoCount })}
-                  </p>
-                )}
-              </div>
-
-              {videoPinsLoading ? (
-                <SkeletonLoader type="card" count={2} variant="grid" />
-              ) : videoPinsError ? (
-                <EmptyState
-                  type="error"
-                  title={t('video_load_error_title')}
-                  description={videoPinsError}
-                  action={{ text: t('retry'), onClick: refetchVideoPins }}
-                />
-              ) : visibleVideoPins.length === 0 ? (
-                <EmptyState
-                  title={allVideoPins.length === 0 ? t('no_video_pins_title') : t('video_empty_title')}
-                  description={allVideoPins.length === 0 ? t('no_video_pins_description') : t('video_empty_description')}
-                />
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                  {visibleVideoPins.map((pin) => (
-                    <VideoPinCard
-                      key={pin.id}
-                      pin={pin}
-                      t={t}
-                      isHighlighted={highlightedMarkerId === `video-pin:${pin.id}`}
-                      onHoverChange={setHoveredCardId}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
 
             {loading ? (
               <div className="space-y-4">
@@ -984,8 +1067,13 @@ export default function CamerasPageClient() {
                 title={t('no_cameras_title')}
                 description={t('no_cameras_description')}
               />
+            ) : filteredCameras.length === 0 ? (
+              <EmptyState
+                title={t('no_filtered_cameras_title')}
+                description={t('no_filtered_cameras_description')}
+              />
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {cameraGroups.map((group) => (
                   <CameraLocationGroup
                     key={group.key}
@@ -995,6 +1083,7 @@ export default function CamerasPageClient() {
                     onHoverChange={(id) => {
                       setHoveredCardId(id);
                     }}
+                    onFocusMap={handleFocusCameraOnMap}
                     canToggleStatus={Boolean(user)}
                     updatingStatusIds={updatingStatusIds}
                     onToggleStatus={handleToggleStatus}
@@ -1003,7 +1092,154 @@ export default function CamerasPageClient() {
               </div>
             )}
           </section>
+
+          <aside id="camera-map" className="space-y-5 xl:sticky xl:top-24 xl:self-start">
+            <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+              <div className="mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">{t('map_title')}</h2>
+                <p className="mt-1 text-sm leading-6 text-gray-600">{t('map_subtitle')}</p>
+              </div>
+
+              <div className="mb-4 space-y-3 rounded-lg border border-gray-200 bg-slate-50 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <LayerToggle active={visibleLayers.cameras} onClick={() => handleLayerToggle('cameras')}>
+                    <VideoCameraIcon className="h-4 w-4" />
+                    {t('layer_cameras')}
+                  </LayerToggle>
+                  <LayerToggle active={visibleLayers.live} onClick={() => handleLayerToggle('live')}>
+                    <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                    {t('layer_live_videos')}
+                  </LayerToggle>
+                  <LayerToggle active={visibleLayers.viral} onClick={() => handleLayerToggle('viral')}>
+                    <span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
+                    {t('layer_tiktok_videos')}
+                  </LayerToggle>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    <span className="inline-flex items-center gap-1.5">
+                      <FunnelIcon className="h-4 w-4" />
+                      {t('category_filter')}
+                    </span>
+                    <select
+                      value={videoCategoryFilter}
+                      onChange={(event) => setVideoCategoryFilter(event.target.value)}
+                      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="all">{t('category_all')}</option>
+                      {VIDEO_PIN_CATEGORIES.map((category) => (
+                        <option key={category} value={category}>
+                          {getTranslatedCategoryLabel(category, t)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block text-sm font-medium text-gray-700">
+                    {t('sort_label')}
+                    <select
+                      value={videoSort}
+                      onChange={(event) => setVideoSort(event.target.value)}
+                      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      {VIDEO_PIN_SORTS.map((sortKey) => (
+                        <option key={sortKey} value={sortKey}>
+                          {t(`sort_${sortKey}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              </div>
+
+              {loading ? (
+                <SkeletonLoader type="card" count={1} />
+              ) : error ? (
+                <EmptyState
+                  type="error"
+                  title={t('load_error_title')}
+                  description={error}
+                  action={{ text: t('retry'), onClick: refetch }}
+                />
+              ) : markers.length > 0 ? (
+                <BaseMap
+                  center={mapCenter}
+                  zoom={GREECE_ZOOM}
+                  bounds={bounds}
+                  markers={markers}
+                  clusterMarkers
+                  onMarkerHover={setHoveredMarkerId}
+                  onMarkerClick={handleMarkerClick}
+                  className="h-[360px] w-full overflow-hidden rounded-lg sm:h-[460px] xl:h-[540px]"
+                  scrollWheelZoom
+                  tileMode="political"
+                  showFullscreenControl
+                />
+              ) : (
+                <EmptyState
+                  title={t('no_map_title')}
+                  description={filteredCameras.length > 0 ? t('no_map_description') : t('no_filtered_cameras_description')}
+                />
+              )}
+              {!loading && !error && unmappedCount > 0 && (
+                <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  {t('unmapped_notice', { count: unmappedCount })}
+                </p>
+              )}
+            </section>
+
+            <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+              {user ? (
+                <Button
+                  size="sm"
+                  onClick={() => setIsSubmissionOpen(true)}
+                  icon={<PlusIcon className="h-4 w-4" />}
+                  className="w-full"
+                >
+                  {t('add_video_pin')}
+                </Button>
+              ) : (
+                <Link
+                  href="/login"
+                  className="inline-flex h-10 w-full items-center justify-center rounded-md border border-blue-600 bg-white px-3 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50"
+                >
+                  {t('login_to_submit')}
+                </Link>
+              )}
+            </div>
+          </aside>
         </div>
+
+        <section className="grid gap-6 lg:grid-cols-2">
+          <VideoPinSection
+            title={t('live_videos_title')}
+            subtitle={t('live_videos_subtitle', { count: liveVideoCount })}
+            pins={liveVideoPins}
+            loading={videoPinsLoading}
+            error={videoPinsError}
+            emptyTitle={allVideoPins.length === 0 ? t('no_video_pins_title') : t('no_live_videos_title')}
+            emptyDescription={allVideoPins.length === 0 ? t('no_video_pins_description') : t('no_live_videos_description')}
+            onRetry={refetchVideoPins}
+            t={t}
+            highlightedMarkerId={highlightedMarkerId}
+            onHoverChange={setHoveredCardId}
+          />
+
+          <VideoPinSection
+            title={t('tiktok_videos_title')}
+            subtitle={t('tiktok_videos_subtitle', { count: viralVideoCount })}
+            pins={viralVideoPins}
+            loading={videoPinsLoading}
+            error={videoPinsError}
+            emptyTitle={allVideoPins.length === 0 ? t('no_video_pins_title') : t('no_tiktok_videos_title')}
+            emptyDescription={allVideoPins.length === 0 ? t('no_video_pins_description') : t('no_tiktok_videos_description')}
+            onRetry={refetchVideoPins}
+            t={t}
+            highlightedMarkerId={highlightedMarkerId}
+            onHoverChange={setHoveredCardId}
+          />
+        </section>
       </div>
       <VideoPinSubmissionModal
         isOpen={isSubmissionOpen}
