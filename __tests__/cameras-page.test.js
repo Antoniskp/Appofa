@@ -240,9 +240,9 @@ describe('CamerasPageClient', () => {
     });
 
     const harbourTitle = Array.from(container.querySelectorAll('h3')).find((el) => el.textContent === 'Harbour camera');
-    expect(harbourTitle.closest('article').className).toContain('ring-blue-100');
+    expect(harbourTitle.closest('article').className).toContain('bg-blue-50');
 
-    const showOnMapButton = Array.from(container.querySelectorAll('button')).find((btn) => btn.textContent === 'Εστίαση στον χάρτη');
+    const showOnMapButton = container.querySelector('button[title="Εστίαση στον χάρτη"]');
     expect(showOnMapButton).toBeTruthy();
   });
 

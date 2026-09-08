@@ -35,7 +35,6 @@ const LocationPickerMap = dynamic(() => import('@/components/map/LocationPickerM
 const GREECE_CENTER = [38.5, 23.8];
 const GREECE_ZOOM = 6;
 const VIDEO_PIN_CATEGORIES = Object.keys(VIDEO_PIN_CATEGORY_STYLES);
-const VIDEO_PIN_SORTS = ['newest', 'expiresSoon', 'recentlyApproved', 'category'];
 const LIVE_EXPIRY_OPTIONS = [2, 6, 24, 72];
 const CAMERA_STATUS_FILTERS = ['all', 'working', 'unavailable'];
 
@@ -232,18 +231,23 @@ function CameraRow({
 
   return (
     <article
-      className={`rounded-lg border bg-white p-4 shadow-sm transition ${isHighlighted ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300'}`}
+      className={`flex flex-col gap-3 border-t px-4 py-3 transition first:border-t-0 sm:flex-row sm:items-center sm:justify-between ${isHighlighted ? 'border-blue-200 bg-blue-50' : 'border-gray-100 hover:bg-slate-50'}`}
       onMouseEnter={() => onHoverChange(camera.id)}
       onMouseLeave={() => onHoverChange(null)}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="line-clamp-2 text-base font-semibold leading-6 text-gray-900">{cameraLabel}</h3>
-          <p className="mt-1 flex items-center gap-1.5 text-sm text-gray-600">
+      <div className="min-w-0">
+        <h3 className="truncate text-sm font-semibold text-gray-900">{cameraLabel}</h3>
+        <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+          <span className="inline-flex min-w-0 items-center gap-1.5">
             <MapPinIcon className="h-4 w-4 shrink-0" />
             <span className="truncate">{locationLabel}</span>
-          </p>
-        </div>
+          </span>
+          <span>{getEmbedTypeLabel(camera, t)}</span>
+          <span>{mapSourceLabel}</span>
+        </p>
+      </div>
+
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
         <CameraStatusControl
           camera={camera}
           t={t}
@@ -251,18 +255,6 @@ function CameraRow({
           isUpdating={isUpdatingStatus}
           onToggle={onToggleStatus}
         />
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium text-gray-600">
-        <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1">
-          {getEmbedTypeLabel(camera, t)}
-        </span>
-        <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1">
-          {mapSourceLabel}
-        </span>
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center gap-2">
         {safeCameraUrl && (
           <a
             href={safeCameraUrl}
@@ -280,10 +272,11 @@ function CameraRow({
           <button
             type="button"
             onClick={() => onFocusMap(camera.id)}
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+            aria-label={t('show_camera_on_map_aria', { label: cameraLabel })}
+            title={t('show_on_map')}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 transition-colors hover:bg-gray-50"
           >
             <MapPinIcon className="h-4 w-4" />
-            {t('show_on_map')}
           </button>
         )}
       </div>
@@ -302,10 +295,10 @@ function CameraLocationGroup({
   onToggleStatus,
 }) {
   return (
-    <section className="space-y-3">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+    <section className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-slate-50 px-4 py-3">
         <div className="min-w-0">
-          <h2 className="truncate text-lg font-semibold text-gray-900">{group.label}</h2>
+          <h2 className="truncate text-base font-semibold text-gray-900">{group.label}</h2>
           <p className="mt-0.5 text-xs font-medium text-gray-500">{t('summary_total', { count: group.cameras.length })}</p>
         </div>
 
@@ -321,7 +314,7 @@ function CameraLocationGroup({
         )}
       </header>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+      <div>
         {group.cameras.map((camera) => (
           <CameraRow
             key={camera.id}
@@ -391,7 +384,7 @@ function LayerToggle({ active, onClick, children }) {
   );
 }
 
-function VideoPinMedia({ pin, label, t }) {
+function VideoPinMedia({ pin }) {
   const [failed, setFailed] = useState(false);
 
   if (pin.thumbnailUrl && !failed) {
@@ -406,11 +399,7 @@ function VideoPinMedia({ pin, label, t }) {
     );
   }
 
-  return (
-    <div className="flex h-36 w-full items-center justify-center bg-slate-900 px-4 text-center text-sm font-semibold text-white">
-      <span>{label || t('video_preview_unavailable')}</span>
-    </div>
-  );
+  return null;
 }
 
 function VideoPinCard({ pin, t, isHighlighted, onHoverChange }) {
@@ -429,19 +418,19 @@ function VideoPinCard({ pin, t, isHighlighted, onHoverChange }) {
       onMouseEnter={() => onHoverChange(markerId)}
       onMouseLeave={() => onHoverChange(null)}
     >
-      <VideoPinMedia pin={pin} label={title} t={t} />
-      <div className="space-y-3 p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center rounded-full bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white">
+      <VideoPinMedia pin={pin} />
+      <div className="space-y-3 p-3">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center rounded-full bg-slate-900 px-2 py-0.5 text-xs font-semibold text-white">
             {getTranslatedContentTypeLabel(pin.contentType, t)}
           </span>
           <span
-            className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold text-white"
+            className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold text-white"
             style={{ backgroundColor: categoryStyle.color }}
           >
             {getTranslatedCategoryLabel(pin.category, t)}
           </span>
-          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+          <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
             {sourceLabel}
           </span>
         </div>
@@ -501,17 +490,22 @@ function VideoPinSection({
       {loading ? (
         <SkeletonLoader type="card" count={2} variant="grid" />
       ) : error ? (
-        <EmptyState
-          type="error"
-          title={t('video_load_error_title')}
-          description={error}
-          action={{ text: t('retry'), onClick: onRetry }}
-        />
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+          <h3 className="text-sm font-semibold text-red-800">{t('video_load_error_title')}</h3>
+          <p className="mt-1 text-sm text-red-700">{error}</p>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-3 text-sm font-semibold text-red-800 hover:text-red-950"
+          >
+            {t('retry')}
+          </button>
+        </div>
       ) : pins.length === 0 ? (
-        <EmptyState
-          title={emptyTitle}
-          description={emptyDescription}
-        />
+        <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600">
+          <h3 className="font-semibold text-gray-900">{emptyTitle}</h3>
+          <p className="mt-1 leading-6">{emptyDescription}</p>
+        </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {pins.map((pin) => (
@@ -772,8 +766,6 @@ export default function CamerasPageClient() {
   const [visibleLayers, setVisibleLayers] = useState({ cameras: true, live: true, viral: true });
   const [cameraSearch, setCameraSearch] = useState('');
   const [cameraStatusFilter, setCameraStatusFilter] = useState('all');
-  const [videoCategoryFilter, setVideoCategoryFilter] = useState('all');
-  const [videoSort, setVideoSort] = useState('newest');
   const [isSubmissionOpen, setIsSubmissionOpen] = useState(false);
   const [submissionNotice, setSubmissionNotice] = useState(null);
   const {
@@ -801,15 +793,13 @@ export default function CamerasPageClient() {
     async () => {
       const response = await videoPinAPI.getAll({
         contentType: 'all',
-        category: videoCategoryFilter,
-        sort: videoSort,
       });
       if (!response?.success) {
         throw new Error(response?.message || t('video_load_error_description'));
       }
       return response.data?.videoPins || [];
     },
-    [videoCategoryFilter, videoSort],
+    ['videoPins'],
     { initialData: [] }
   );
 
@@ -983,11 +973,11 @@ export default function CamerasPageClient() {
             </div>
 
             {!loading && !error && (
-              <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4 lg:w-[520px]">
-                <span className="rounded-lg bg-slate-50 px-3 py-2 font-semibold text-gray-800">{t('summary_total', { count: allCameras.length })}</span>
-                <span className="rounded-lg bg-green-50 px-3 py-2 font-semibold text-green-800">{t('summary_working', { count: workingCount })}</span>
-                <span className="rounded-lg bg-amber-50 px-3 py-2 font-semibold text-amber-800">{t('summary_unavailable', { count: unavailableCount })}</span>
-                <span className="rounded-lg bg-blue-50 px-3 py-2 font-semibold text-blue-800">{t('summary_mapped', { count: mappedCount })}</span>
+              <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold text-gray-600 lg:justify-end">
+                <span>{t('summary_total', { count: allCameras.length })}</span>
+                <span>{t('summary_working', { count: workingCount })}</span>
+                <span>{t('summary_unavailable', { count: unavailableCount })}</span>
+                <span>{t('summary_mapped', { count: mappedCount })}</span>
               </div>
             )}
           </div>
@@ -1100,68 +1090,28 @@ export default function CamerasPageClient() {
                 <p className="mt-1 text-sm leading-6 text-gray-600">{t('map_subtitle')}</p>
               </div>
 
-              <div className="mb-4 space-y-3 rounded-lg border border-gray-200 bg-slate-50 p-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <LayerToggle active={visibleLayers.cameras} onClick={() => handleLayerToggle('cameras')}>
-                    <VideoCameraIcon className="h-4 w-4" />
-                    {t('layer_cameras')}
-                  </LayerToggle>
-                  <LayerToggle active={visibleLayers.live} onClick={() => handleLayerToggle('live')}>
-                    <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                    {t('layer_live_videos')}
-                  </LayerToggle>
-                  <LayerToggle active={visibleLayers.viral} onClick={() => handleLayerToggle('viral')}>
-                    <span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
-                    {t('layer_tiktok_videos')}
-                  </LayerToggle>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                  <label className="block text-sm font-medium text-gray-700">
-                    <span className="inline-flex items-center gap-1.5">
-                      <FunnelIcon className="h-4 w-4" />
-                      {t('category_filter')}
-                    </span>
-                    <select
-                      value={videoCategoryFilter}
-                      onChange={(event) => setVideoCategoryFilter(event.target.value)}
-                      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value="all">{t('category_all')}</option>
-                      {VIDEO_PIN_CATEGORIES.map((category) => (
-                        <option key={category} value={category}>
-                          {getTranslatedCategoryLabel(category, t)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="block text-sm font-medium text-gray-700">
-                    {t('sort_label')}
-                    <select
-                      value={videoSort}
-                      onChange={(event) => setVideoSort(event.target.value)}
-                      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      {VIDEO_PIN_SORTS.map((sortKey) => (
-                        <option key={sortKey} value={sortKey}>
-                          {t(`sort_${sortKey}`)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
+              <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-slate-50 p-3">
+                <LayerToggle active={visibleLayers.cameras} onClick={() => handleLayerToggle('cameras')}>
+                  <VideoCameraIcon className="h-4 w-4" />
+                  {t('layer_cameras')}
+                </LayerToggle>
+                <LayerToggle active={visibleLayers.live} onClick={() => handleLayerToggle('live')}>
+                  <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                  {t('layer_live_videos')}
+                </LayerToggle>
+                <LayerToggle active={visibleLayers.viral} onClick={() => handleLayerToggle('viral')}>
+                  <span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
+                  {t('layer_tiktok_videos')}
+                </LayerToggle>
               </div>
 
               {loading ? (
                 <SkeletonLoader type="card" count={1} />
               ) : error ? (
-                <EmptyState
-                  type="error"
-                  title={t('load_error_title')}
-                  description={error}
-                  action={{ text: t('retry'), onClick: refetch }}
-                />
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                  <p className="font-semibold text-red-800">{t('map_load_error_title')}</p>
+                  <p className="mt-1">{error}</p>
+                </div>
               ) : markers.length > 0 ? (
                 <BaseMap
                   center={mapCenter}
@@ -1211,35 +1161,49 @@ export default function CamerasPageClient() {
           </aside>
         </div>
 
-        <section className="grid gap-6 lg:grid-cols-2">
-          <VideoPinSection
-            title={t('live_videos_title')}
-            subtitle={t('live_videos_subtitle', { count: liveVideoCount })}
-            pins={liveVideoPins}
-            loading={videoPinsLoading}
-            error={videoPinsError}
-            emptyTitle={allVideoPins.length === 0 ? t('no_video_pins_title') : t('no_live_videos_title')}
-            emptyDescription={allVideoPins.length === 0 ? t('no_video_pins_description') : t('no_live_videos_description')}
-            onRetry={refetchVideoPins}
-            t={t}
-            highlightedMarkerId={highlightedMarkerId}
-            onHoverChange={setHoveredCardId}
-          />
+        {videoPinsError ? (
+          <section className="rounded-lg border border-red-200 bg-red-50 p-4">
+            <h2 className="text-sm font-semibold text-red-800">{t('video_load_error_title')}</h2>
+            <p className="mt-1 text-sm text-red-700">{videoPinsError}</p>
+            <button
+              type="button"
+              onClick={refetchVideoPins}
+              className="mt-3 text-sm font-semibold text-red-800 hover:text-red-950"
+            >
+              {t('retry')}
+            </button>
+          </section>
+        ) : (
+          <section className="grid gap-6 lg:grid-cols-2">
+            <VideoPinSection
+              title={t('live_videos_title')}
+              subtitle={t('live_videos_subtitle', { count: liveVideoCount })}
+              pins={liveVideoPins}
+              loading={videoPinsLoading}
+              error={null}
+              emptyTitle={allVideoPins.length === 0 ? t('no_video_pins_title') : t('no_live_videos_title')}
+              emptyDescription={allVideoPins.length === 0 ? t('no_video_pins_description') : t('no_live_videos_description')}
+              onRetry={refetchVideoPins}
+              t={t}
+              highlightedMarkerId={highlightedMarkerId}
+              onHoverChange={setHoveredCardId}
+            />
 
-          <VideoPinSection
-            title={t('tiktok_videos_title')}
-            subtitle={t('tiktok_videos_subtitle', { count: viralVideoCount })}
-            pins={viralVideoPins}
-            loading={videoPinsLoading}
-            error={videoPinsError}
-            emptyTitle={allVideoPins.length === 0 ? t('no_video_pins_title') : t('no_tiktok_videos_title')}
-            emptyDescription={allVideoPins.length === 0 ? t('no_video_pins_description') : t('no_tiktok_videos_description')}
-            onRetry={refetchVideoPins}
-            t={t}
-            highlightedMarkerId={highlightedMarkerId}
-            onHoverChange={setHoveredCardId}
-          />
-        </section>
+            <VideoPinSection
+              title={t('tiktok_videos_title')}
+              subtitle={t('tiktok_videos_subtitle', { count: viralVideoCount })}
+              pins={viralVideoPins}
+              loading={videoPinsLoading}
+              error={null}
+              emptyTitle={allVideoPins.length === 0 ? t('no_video_pins_title') : t('no_tiktok_videos_title')}
+              emptyDescription={allVideoPins.length === 0 ? t('no_video_pins_description') : t('no_tiktok_videos_description')}
+              onRetry={refetchVideoPins}
+              t={t}
+              highlightedMarkerId={highlightedMarkerId}
+              onHoverChange={setHoveredCardId}
+            />
+          </section>
+        )}
       </div>
       <VideoPinSubmissionModal
         isOpen={isSubmissionOpen}
