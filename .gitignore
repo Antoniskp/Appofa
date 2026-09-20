@@ -5,6 +5,7 @@ dist/
 .DS_Store
 coverage/
 .next/
+.next-redesign/
 out/
 .vercel
 *.tsbuildinfo

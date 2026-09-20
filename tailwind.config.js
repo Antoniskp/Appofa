@@ -7,15 +7,26 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        ivory: '#F7F5F0',
+        charcoal: '#252627',
+        copper: '#955438',
+        'brand-border': '#DCD8D0',
+        // Compatibility palette for existing brand utilities across the app.
         blue: {
-          500: '#4f5470',
-          600: '#464b65',
-          700: '#3b4058',
-          800: '#2f344b',
-          900: '#262a3d',
+          50: '#F7F5F0',
+          100: '#EAE4DA',
+          200: '#DCD8D0',
+          300: '#C3B5A8',
+          400: '#A77A63',
+          500: '#955438',
+          600: '#80462F',
+          700: '#693A28',
+          800: '#49352C',
+          900: '#252627',
+          950: '#18191A',
         },
-        seafoam: '#b7c2b2',
-        sand: '#d6d2c4',
+        seafoam: '#EAE4DA',
+        sand: '#EAE4DA',
       },
       animation: {
         fadeIn: 'fadeIn 0.2s ease-in-out',

@@ -37,10 +37,12 @@ export default function LanguageSwitcher() {
         <div key={option.value} className="contents">
           <button
             onClick={() => handleSwitch(option.value)}
-            className={`px-2 py-1 rounded ${current === option.value ? 'font-bold' : 'opacity-50 hover:opacity-100'}`}
+            className={`min-h-11 min-w-11 px-2 py-1 rounded ${current === option.value ? 'font-semibold text-charcoal' : 'text-gray-600 hover:text-charcoal'}`}
+            aria-pressed={current === option.value}
+            lang={option.value}
             aria-label={option.ariaLabel}
           >
-            {option.flag} {option.label}
+            {option.label}
           </button>
           {index < LOCALE_OPTIONS.length - 1 && <span className="opacity-30">|</span>}
         </div>

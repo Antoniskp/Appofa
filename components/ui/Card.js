@@ -33,8 +33,8 @@ const Card = forwardRef(function Card({
   className = ''
 }, ref) {
   const variants = {
-    default: 'bg-white rounded-lg shadow-sm border border-gray-200',
-    outlined: 'bg-white rounded-lg border border-gray-200',
+    default: 'bg-white rounded-2xl shadow-sm border border-brand-border',
+    outlined: 'bg-white rounded-2xl border border-brand-border',
     elevated: 'bg-white rounded-lg shadow-md border border-gray-200'
   };
   

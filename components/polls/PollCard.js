@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Card from '@/components/ui/Card';
 import { ImageTopCard } from '@/components/ui/Card';
@@ -32,6 +33,8 @@ export default function PollCard({ poll, variant = 'grid' }) {
   const isOfficialOrgPoll = Boolean(poll.isOfficialPost && poll.organization);
   
   const isPollActive = poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date());
+  const r = useTranslations('redesign');
+  const locale = useLocale();
   const totalVotes = poll.totalVotes || 0;
 
   // ── Inline voting state ───────────────────────────────────────────────────
@@ -512,6 +515,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
         {poll.description || 'Χωρίς περιγραφή'}
       </p>
       
+      {poll.deadline && <p className="mb-3 text-sm font-semibold text-copper">{r('deadline', { date: new Date(poll.deadline).toLocaleDateString(locale) })}</p>}
       <ParticipationNotice restriction={poll.voteRestriction} compact />
       <div className="mt-auto">
         <div className="flex justify-between items-center text-sm text-gray-500">
@@ -548,7 +552,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
               hasVoted ? (
                 <Link
                   href={pollHref}
-                  className="inline-flex items-center gap-1.5 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition text-sm font-medium"
+                  className="inline-flex items-center gap-1.5 bg-charcoal text-white px-4 py-2 rounded-lg hover:bg-black transition text-sm font-medium"
                 >
                   <CheckCircleIcon className="h-4 w-4" />
                   Αλλαγή Ψήφου
@@ -556,7 +560,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
               ) : (
                 <Link
                   href={pollHref}
-                  className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium"
+                  className="inline-block bg-charcoal text-white px-4 py-2 rounded-lg hover:bg-black transition text-sm font-medium"
                 >
                   Ψηφοφορία Τώρα
                 </Link>

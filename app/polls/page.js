@@ -43,7 +43,7 @@ function PollsContent() {
     category: initialCategory,
     tag: initialTag,
     search: '',
-    locationId: null,
+    locationId: /^\d+$/.test(searchParams.get('locationId') || '') ? searchParams.get('locationId') : null,
     voteRestriction: initialVoteRestriction,
   });
 

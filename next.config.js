@@ -4,6 +4,8 @@ const withNextIntl = createNextIntlPlugin('./i18n.js');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Keep review builds separate from an already running local preview.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   // API proxying is handled by app/api/[...path]/route.js
   // which provides proper error handling and JSON responses
   

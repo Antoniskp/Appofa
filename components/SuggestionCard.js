@@ -32,14 +32,14 @@ export default function SuggestionCard({ suggestion }) {
   const showLocationBadge = suggestion.location && suggestion.voteRestriction !== 'locals_only';
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
+    <div className="bg-white border border-brand-border rounded-2xl p-6 hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
       <Link href={`/suggestions/${suggestion.id}`} className="block flex-1">
         <div className="flex flex-wrap gap-2 mb-3">
-          <Badge variant={TYPE_VARIANTS[suggestion.type] || 'default'}>
+          <Badge variant="default">
             {TYPE_LABELS[suggestion.type] || suggestion.type}
           </Badge>
           {suggestion.category && (
-            <Badge variant="purple">{suggestion.category}</Badge>
+            <Badge variant="default">{suggestion.category}</Badge>
           )}
           {suggestion.voteRestriction === 'locals_only' && suggestion.location && (
             <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
@@ -52,10 +52,10 @@ export default function SuggestionCard({ suggestion }) {
             </span>
           )}
           {Array.isArray(suggestion.tags) && suggestion.tags.map((t) => (
-            <Badge key={t} variant="purple">{t}</Badge>
+            <Badge key={t} variant="default">{t}</Badge>
           ))}
         </div>
-        <h3 className="text-base font-bold text-gray-900 mb-3">
+        <h3 className="text-xl font-semibold text-charcoal mb-4">
           <TruncatedTextTooltip maxLines={2}>
             {suggestion.title}
           </TruncatedTextTooltip>

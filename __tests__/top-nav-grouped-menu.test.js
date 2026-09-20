@@ -123,64 +123,42 @@ describe('TopNav simplified navigation', () => {
     document.body.innerHTML = '';
   });
 
-  test('guest desktop nav exposes core value paths directly and tucks deeper pages under More', () => {
-    const desktopNavContainer = container.querySelector('a[href="/locations"]')?.parentElement;
-    expect(desktopNavContainer).toBeTruthy();
-    expect(desktopNavContainer.querySelector('a[href="/locations"]')).toBeTruthy();
-    expect(desktopNavContainer.querySelector('a[href="/polls"]')).toBeTruthy();
-    expect(desktopNavContainer.querySelector('a[href="/suggestions"]')).toBeTruthy();
-    expect(desktopNavContainer.querySelector('a[href="/news"]')).toBeTruthy();
-
-    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-more-menu"]');
-    expect(moreDropdown).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/articles"]')).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/civic-questions"]')).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/dream-team"]')).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/platform"]')).toBeTruthy();
+  test('uses the same community-first destinations for guests and members', async () => {
+    for (const user of [null, { username: 'demo', homeLocation: { slug: 'athens' } }]) {
+      mockAuthUser = user;
+      await renderTopNav();
+      for (const id of ['community', 'participation', 'information', 'pages']) {
+        expect(container.querySelector('[data-testid="dropdown-desktop-nav-' + id + '-menu"]')).toBeTruthy();
+      }
+      expect(container.querySelector('a[href="/progress"]')).toBeTruthy();
+      expect(container.querySelector('a[href="/suggestions/new"]')).toBeTruthy();
+    }
   });
 
-  test('shows Cameras under the guest More navigation in desktop and mobile menus', () => {
-    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-more-menu"]');
-    expect(moreDropdown).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/cameras"]')).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/users"]')).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/candidates"]')).toBeTruthy();
-
-    const mobileCamerasLink = container.querySelector('#mobile-menu a[href="/cameras"]');
-    expect(mobileCamerasLink).toBeTruthy();
-    expect(container.querySelector('#mobile-menu a[href="/candidates"]')).toBeTruthy();
+  test('groups people with discovery and keeps civic actions together', () => {
+    const discover = container.querySelector('[data-testid="dropdown-desktop-nav-information-menu"]');
+    for (const route of ['/news', '/articles', '/videos', '/topics', '/users', '/candidates', '/organizations']) {
+      expect(discover.querySelector('a[href="' + route + '"]')).toBeTruthy();
+    }
+    const participation = container.querySelector('[data-testid="dropdown-desktop-nav-participation-menu"]');
+    for (const route of ['/polls', '/suggestions', '/civic-questions', '/dream-team']) {
+      expect(participation.querySelector('a[href="' + route + '"]')).toBeTruthy();
+      expect(container.querySelector('#mobile-menu a[href="' + route + '"]')).toBeTruthy();
+    }
   });
 
-  test('guest More dropdown includes sub-page links without the legacy all-pages item', () => {
-    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-more-menu"]');
-    expect(moreDropdown).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/platform"]')).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/elections"]')).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/citizen-help"]')).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/education"]')).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/pages"]')).toBeFalsy();
+  test('keeps practical guides reachable without platform documentation in primary menus', () => {
+    const guides = container.querySelector('[data-testid="dropdown-desktop-nav-pages-menu"]');
+    for (const route of ['/citizen-help', '/elections', '/education']) expect(guides.querySelector('a[href="' + route + '"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/platform"]')).toBeFalsy();
+    expect(container.querySelector('a[href="/pages"]')).toBeFalsy();
+    expect(container.querySelector('a[href="/education/ai"]')).toBeFalsy();
   });
 
-  test('guest desktop dropdown and mobile sections both exclude legacy /pages link', () => {
-    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-more-menu"]');
-    expect(moreDropdown).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/pages"]')).toBeFalsy();
-
-    const mobileMenu = container.querySelector('#mobile-menu');
-    expect(mobileMenu).toBeTruthy();
-    expect(mobileMenu.querySelector('a[href="/platform"]')).toBeTruthy();
-    expect(mobileMenu.querySelector('a[href="/elections"]')).toBeTruthy();
-    expect(mobileMenu.querySelector('a[href="/pages"]')).toBeFalsy();
-  });
-
-  test('marks guest More menu active when inside civic polls routes', async () => {
+  test('marks participation active for a civic-question detail route', async () => {
     mockPathname = '/civic-questions/123';
     await renderTopNav();
-
-    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-more-menu"]');
-    expect(moreDropdown).toBeTruthy();
-    expect(moreDropdown.getAttribute('data-trigger-class')).toContain('bg-blue-50');
-    expect(moreDropdown.getAttribute('data-trigger-class')).toContain('text-blue-700');
+    expect(container.querySelector('[data-testid="dropdown-desktop-nav-participation-menu"]').getAttribute('data-trigger-class')).toContain('bg-blue-50');
   });
 
   test('uses stronger auth CTA hierarchy and improved mobile touch-target classes', () => {
@@ -244,59 +222,14 @@ describe('TopNav simplified navigation', () => {
     expect(mobileMenu.className).toContain('hidden');
   });
 
-  test('uses md breakpoint classes for desktop/mobile nav switch', () => {
-    const desktopNavContainer = container.querySelector('a[href="/locations"]')?.parentElement;
-    const desktopAuthContainer = container.querySelector('a[href="/login"].inline-flex')?.parentElement;
-    const mobileToggle = container.querySelector('button[aria-controls="mobile-menu"]');
-    const mobileMenu = container.querySelector('#mobile-menu');
-
-    expect(desktopNavContainer).toBeTruthy();
-    expect(desktopNavContainer.className).toContain('md:flex');
-    expect(desktopNavContainer.className).toContain('md:ml-6');
-    expect(desktopNavContainer.className).not.toContain('sm:flex');
-
-    expect(desktopAuthContainer).toBeTruthy();
-    expect(desktopAuthContainer.className).toContain('md:flex');
-    expect(desktopAuthContainer.className).not.toContain('sm:flex');
-
-    expect(mobileToggle.className).toContain('md:hidden');
-    expect(mobileToggle.className).not.toContain('sm:hidden');
-
-    expect(mobileMenu.className).toContain('md:hidden');
-    expect(mobileMenu.className).not.toContain('sm:hidden');
-  });
-
-  test('Education AI page is NOT in the guest More dropdown or mobile nav', () => {
-    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-more-menu"]');
-    expect(moreDropdown).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/education/ai"]')).toBeNull();
-
-    const mobileMenu = container.querySelector('#mobile-menu');
-    expect(mobileMenu).toBeTruthy();
-    expect(mobileMenu.querySelector('a[href="/education/ai"]')).toBeNull();
-  });
-
-  test('Education page /education is still in the guest More dropdown', () => {
-    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-more-menu"]');
-    expect(moreDropdown).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/education"]')).toBeTruthy();
-  });
-
-  test('authenticated users keep the grouped desktop sections', async () => {
-    mockAuthUser = { username: 'demo', homeLocation: { slug: 'athens' } };
-    await renderTopNav();
-
-    const communityDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-community-menu"]');
-    expect(communityDropdown).toBeTruthy();
-    expect(communityDropdown.querySelector('a[href="/candidates"]')).toBeTruthy();
-    expect(communityDropdown.querySelector('a[href="/independents"]')).toBeFalsy();
-
-    const participationDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-participation-menu"]');
-    expect(participationDropdown).toBeTruthy();
-    expect(participationDropdown.querySelector('a[href="/polls"]')).toBeTruthy();
-    expect(participationDropdown.querySelector('a[href="/civic-questions"]')).toBeTruthy();
-    expect(participationDropdown.querySelector('a[href="/suggestions"]')).toBeTruthy();
-    expect(participationDropdown.querySelector('a[href="/dream-team"]')).toBeTruthy();
+  test('uses the compact menu on tablets and restores focus on Escape', async () => {
+    const toggle = container.querySelector('button[aria-controls="mobile-menu"]');
+    expect(toggle.className).toContain('lg:hidden');
+    await act(async () => toggle.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    await act(async () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(toggle);
   });
 
   test('authenticated desktop menu stays focused on account-level links', async () => {

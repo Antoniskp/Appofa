@@ -5,7 +5,7 @@ const articleService = require('../services/articleService');
 const pollService = require('../services/pollService');
 const locationService = require('../services/locationService');
 const { attachTags } = require('../utils/tagUtils');
-const { getAncestorLocationIds } = require('../utils/locationUtils');
+const { getAncestorLocationIds, getDescendantLocationIds } = require('../utils/locationUtils');
 const { shouldHideSuggestionAuthor } = require('../utils/suggestionAuthorVisibility');
 const {
   HomepageSettings,
@@ -96,8 +96,9 @@ async function buildSuggestionWhere(user) {
   };
 }
 
-async function getTopSuggestions(user) {
+async function getTopSuggestions(user, locationId) {
   const where = await buildSuggestionWhere(user);
+  if (locationId) where.locationId = { [Op.in]: await getDescendantLocationIds(locationId, true) };
   const voteScore = sequelize.literal(`(
     SELECT COALESCE(SUM("value"), 0)
     FROM "SuggestionVotes"
@@ -129,7 +130,7 @@ async function getTopSuggestions(user) {
         attributes: ['id', 'name', 'slug', 'type', 'logo', 'isVerified'],
         required: false,
       },
-      { model: Location, as: 'location', attributes: ['id', 'name', 'slug'], required: false },
+      { model: Location, as: 'location', attributes: ['id', 'name', 'slug', 'imageUrl'], required: false },
     ],
     attributes: {
       include: [
@@ -274,6 +275,10 @@ async function getFeaturedPoll(featuredConfig, user, req) {
 
 const getHomepagePayload = async (req, res) => {
   const user = toUserObj(req.user);
+  const locationId = req.query.locationId ? Number(req.query.locationId) : null;
+  if (locationId !== null && (!Number.isSafeInteger(locationId) || locationId < 1)) {
+    return res.status(400).json({ success: false, message: 'Invalid location ID.' });
+  }
 
   try {
     const [
@@ -292,8 +297,8 @@ const getHomepagePayload = async (req, res) => {
       articleService.getAllArticles({ status: 'published', type: 'articles', orderBy: 'createdAt', order: 'desc', limit: 3, page: 1 }, user),
       articleService.getAllArticles({ status: 'published', type: 'news', newsApproved: true, orderBy: 'newsApprovedAt', order: 'desc', limit: 3, page: 1 }, user),
       articleService.getAllArticles({ type: 'video', status: 'published', limit: 6, orderBy: 'createdAt', order: 'desc' }, user),
-      pollService.getAllPolls({ limit: 3 }, user, getClientIp(req), getUserAgent(req)),
-      getTopSuggestions(user),
+      pollService.getAllPolls({ limit: 3, ...(locationId ? { locationId } : {}) }, user, getClientIp(req), getUserAgent(req)),
+      getTopSuggestions(user, locationId),
       getPrefectures(),
       getTopTags('article'),
       getTopTags('suggestion'),

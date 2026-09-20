@@ -35,7 +35,7 @@ function SuggestionsContent() {
     filters,
     handleFilterChange,
     updateFilter,
-  } = useFilters({ type: '', status: '', sort: 'newest', category: '', tag: initialTag, search: '', locationId: null });
+  } = useFilters({ type: '', status: '', sort: 'newest', category: '', tag: initialTag, search: '', locationId: /^\d+$/.test(searchParams.get('locationId') || '') ? searchParams.get('locationId') : null });
 
   const [categoryCounts, setCategoryCounts] = useState({});
   const [countsLoaded, setCountsLoaded] = useState(false);

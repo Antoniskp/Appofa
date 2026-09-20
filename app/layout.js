@@ -6,6 +6,16 @@ import AppShell from '@/components/layout/AppShell';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
+import localFont from 'next/font/local';
+
+const notoSans = localFont({
+  src: [
+    { path: '../public/fonts/NotoSans-Regular.ttf', weight: '400', style: 'normal' },
+    { path: '../public/fonts/NotoSans-SemiBold.ttf', weight: '600', style: 'normal' },
+  ],
+  variable: '--font-noto-sans',
+  display: 'swap',
+});
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'https://appofasi.gr';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/images/branding/news default.png`;
@@ -61,7 +71,7 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang={locale}>
-      <body className="flex flex-col min-h-screen">
+      <body className={`${notoSans.variable} flex flex-col min-h-screen`}>
         <GoogleAnalytics />
         <GeoTracker />
         <NextIntlClientProvider locale={locale} messages={messages}>

@@ -266,7 +266,7 @@ export default function MobileBottomNav() {
                   </span>
                 </Link>
 
-                <Link href="/progress" onClick={handleCloseSheet} className="flex min-h-[44px] items-center gap-3 rounded-xl bg-teal-50 px-4 py-3 text-sm font-medium text-teal-900 hover:bg-teal-100">
+                <Link href="/progress" onClick={handleCloseSheet} className="flex min-h-[44px] items-center gap-3 rounded-xl bg-ivory px-4 py-3 text-sm font-medium text-charcoal hover:bg-sand">
                   <ClipboardDocumentListIcon className="h-5 w-5" aria-hidden="true" />
                   {tDemocracy('progress')}
                 </Link>

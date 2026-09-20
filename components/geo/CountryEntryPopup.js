@@ -116,8 +116,8 @@ export default function CountryEntryPopup({ isAuthenticated = false }) {
   if (!isVisible || !detectedCountry) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-4 z-50 px-4">
-      <div className="mx-auto max-w-2xl rounded-2xl border border-blue-200 bg-white shadow-xl">
+    <aside className="app-container py-5" aria-label={tHome('country_popup_title')}>
+      <div className="rounded-2xl border border-brand-border bg-white">
         <div className="p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -181,6 +181,6 @@ export default function CountryEntryPopup({ isAuthenticated = false }) {
           )}
         </div>
       </div>
-    </div>
+    </aside>
   );
 }

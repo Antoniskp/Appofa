@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { Children, cloneElement, isValidElement } from 'react';
+import { useTranslations } from 'next-intl';
 
 /**
  * Reusable layout component for static content pages
@@ -20,6 +22,19 @@ export default function StaticPageLayout({
   showHelpfulLinks = true,
   breadcrumb = null
 }) {
+  const r = useTranslations('redesign');
+  const contents = [];
+  const addAnchors = nodes => Children.map(nodes, node => {
+    if (!isValidElement(node)) return node;
+    if (node.type === 'h2') {
+      const id = node.props.id || `reading-section-${contents.length + 1}`;
+      contents.push({ id, label: node.props.children });
+      return cloneElement(node, { id });
+    }
+    return typeof node.type === 'string' && node.props.children
+      ? cloneElement(node, {}, addAnchors(node.props.children)) : node;
+  });
+  const readingContent = addAnchors(children);
   const helpfulLinks = [
     { href: '/faq', label: 'Συχνές Ερωτήσεις' },
     { href: '/instructions', label: 'Οδηγίες Χρήσης' },
@@ -28,7 +43,7 @@ export default function StaticPageLayout({
   ];
 
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
+    <div className="bg-ivory min-h-screen py-10 sm:py-16">
       <div className="app-container">
         {breadcrumb && (
           <nav aria-label="Breadcrumb" className="mb-4 text-sm text-gray-500">
@@ -36,11 +51,13 @@ export default function StaticPageLayout({
           </nav>
         )}
         {title && (
-          <h1 className="text-4xl font-bold mb-8">{title}</h1>
+          <h1 className="max-w-3xl text-3xl sm:text-4xl font-semibold tracking-tight mb-10">{title}</h1>
         )}
-        <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-8 ${className}`}>
-          <div className={`${maxWidth} space-y-12 mx-auto`}>
-            {children}
+        <div className={contents.length >= 3 ? 'grid items-start gap-8 lg:grid-cols-[13rem_minmax(0,1fr)]' : ''}>
+        {contents.length >= 3 && <nav aria-label={r('contents')} className="border-t border-brand-border pt-5 lg:sticky lg:top-6"><p className="mb-3 text-sm font-semibold text-copper">{r('contents')}</p><ol className="space-y-2">{contents.map(item => <li key={item.id}><a href={`#${item.id}`} className="block py-2 text-sm leading-relaxed hover:text-copper hover:underline">{item.label}</a></li>)}</ol></nav>}
+        <div className={`min-w-0 bg-white rounded-2xl border border-brand-border p-5 sm:p-10 ${className}`}>
+          <div className={`${maxWidth} editorial-copy space-y-12 mx-auto`}>
+            {readingContent}
 
             {showHelpfulLinks && (
               <section className="border-t border-gray-200 pt-8" aria-label="Χρήσιμοι σύνδεσμοι">
@@ -59,6 +76,7 @@ export default function StaticPageLayout({
               </section>
             )}
           </div>
+        </div>
         </div>
       </div>
     </div>

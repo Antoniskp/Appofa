@@ -3,14 +3,32 @@
 @tailwind utilities;
 
 :root {
-  --background: #d6d2c4;
-  --foreground: #262a3d;
+  --background: #F7F5F0;
+  --foreground: #252627;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-noto-sans), Arial, Helvetica, sans-serif;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+html { scroll-behavior: smooth; scroll-padding-top: 2rem; }
+h1, h2, h3 { text-wrap: balance; }
+a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid #955438; outline-offset: 4px; }
+.editorial-copy { font-size: 1.0625rem; line-height: 1.85; overflow-wrap: anywhere; }
+.editorial-copy p, .editorial-copy li { max-width: 72ch; }
+.editorial-copy h2 { scroll-margin-top: 2rem; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 input:-webkit-autofill,
@@ -30,11 +48,11 @@ select:-webkit-autofill:focus {
 @layer components {
   /* Button Styles */
   .btn-primary {
-    @apply inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition;
+    @apply inline-block bg-charcoal text-white px-6 py-3 rounded-lg font-semibold hover:bg-black transition;
   }
   
   .btn-secondary {
-    @apply inline-block bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-seafoam transition border border-blue-600;
+    @apply inline-block bg-white text-charcoal px-6 py-3 rounded-lg font-semibold hover:bg-sand transition border border-brand-border;
   }
 
   /* Card Styles */
