@@ -7,6 +7,7 @@ const { validateWorkerToken, isValidWorkerTokenFormat } = require('../services/w
 
 const connectedWorkers = new Map();
 const pendingRequests = new Map();
+const pendingTasks = new Map();
 
 const pruneDisconnectedWorkers = () => {
   for (const [workerId, worker] of connectedWorkers.entries()) {
@@ -46,10 +47,17 @@ const getConnectedWorkers = () => {
   }));
 };
 
-const getFirstConnectedWorkerId = () => {
+const getFirstConnectedWorkerId = (requiredCapability = null) => {
   pruneDisconnectedWorkers();
-  const first = connectedWorkers.keys().next();
-  return first.done ? null : first.value;
+  for (const [workerId, worker] of connectedWorkers.entries()) {
+    if (
+      !requiredCapability ||
+      (Array.isArray(worker.capabilities) && worker.capabilities.includes(requiredCapability))
+    ) {
+      return workerId;
+    }
+  }
+  return null;
 };
 
 const sendRequest = (workerId, message, timeoutMs = 10000) => {
@@ -65,6 +73,33 @@ const sendRequest = (workerId, message, timeoutMs = 10000) => {
     }, timeoutMs);
     pendingRequests.set(requestId, { resolve, reject, timeout });
     worker.ws.send(JSON.stringify({ ...message, requestId }));
+  });
+};
+
+const sendTaskToWorker = (workerId, taskType, payload = {}, timeoutMs = 30000) => {
+  return new Promise((resolve, reject) => {
+    const worker = connectedWorkers.get(workerId);
+    if (!worker || !worker.ws || worker.ws.readyState !== WebSocket.OPEN) {
+      return reject(new Error('Worker not connected'));
+    }
+
+    if (!taskType || typeof taskType !== 'string') {
+      return reject(new Error('Worker task type is required'));
+    }
+
+    const taskId = crypto.randomUUID();
+    const timeout = setTimeout(() => {
+      pendingTasks.delete(taskId);
+      reject(new Error('Worker task timed out'));
+    }, timeoutMs);
+
+    pendingTasks.set(taskId, { resolve, reject, timeout });
+    worker.ws.send(JSON.stringify({
+      type: 'task',
+      taskId,
+      taskType,
+      payload,
+    }));
   });
 };
 
@@ -117,6 +152,15 @@ const handleWorkerMessage = (ws, parsedMessage) => {
   }
 
   if (type === 'taskResult') {
+    const { taskId } = parsedMessage;
+    const pending = taskId && pendingTasks.get(taskId);
+    if (pending) {
+      clearTimeout(pending.timeout);
+      pendingTasks.delete(taskId);
+      pending.resolve(parsedMessage);
+      return;
+    }
+
     console.log('Worker task result received:', {
       workerId: parsedMessage.workerId || ws.workerId || ws.workerHeaderId || null,
       taskId: parsedMessage.taskId || null,
@@ -206,4 +250,5 @@ module.exports = {
   getConnectedWorkers,
   getFirstConnectedWorkerId,
   sendRequest,
+  sendTaskToWorker,
 };

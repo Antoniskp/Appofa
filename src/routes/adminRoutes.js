@@ -9,7 +9,7 @@ const csrfProtection = require('../middleware/csrfProtection');
 const dreamTeamController = require('../controllers/dreamTeamController');
 const workerClientService = require('../services/workerClientService');
 const workerTokenService = require('../services/workerTokenService');
-const { sendRequest, getFirstConnectedWorkerId } = require('../websocket/workerWsServer');
+const { sendRequest, sendTaskToWorker, getConnectedWorkers, getFirstConnectedWorkerId } = require('../websocket/workerWsServer');
 
 const runCheck = async (checkFn) => {
   const start = Date.now();
@@ -329,6 +329,68 @@ router.post('/worker-status/test-snapshot', apiLimiter, authMiddleware, checkRol
     return res.json({ success: true, data: result });
   } catch (error) {
     return res.status(502).json({ success: false, message: error.message || 'Worker snapshot failed.' });
+  }
+});
+
+router.get('/legal/worker', apiLimiter, authMiddleware, checkRole('admin'), async (req, res) => {
+  const workers = getConnectedWorkers();
+  const legalWorkers = workers.filter((worker) => (
+    Array.isArray(worker.capabilities) &&
+    worker.capabilities.includes('importParliamentLaws') &&
+    worker.capabilities.includes('normalizeGreekLaw')
+  ));
+
+  return res.json({
+    success: true,
+    data: {
+      connected: legalWorkers.length > 0,
+      workers,
+      legalWorkers,
+      requiredCapabilities: ['importParliamentLaws', 'normalizeGreekLaw', 'greekLegalCitations'],
+    },
+  });
+});
+
+router.post('/legal/import-parliament-laws', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, async (req, res) => {
+  const workerId = getFirstConnectedWorkerId('importParliamentLaws');
+  if (!workerId) {
+    return res.status(503).json({ success: false, message: 'No legal import worker connected.' });
+  }
+
+  const payload = req.body && typeof req.body === 'object' ? req.body : {};
+  const pageNo = Math.max(1, Number.parseInt(payload.pageNo, 10) || 1);
+  const pageSize = Math.min(50, Math.max(1, Number.parseInt(payload.pageSize, 10) || 10));
+  const workerPayload = {
+    pageNo,
+    pageSize,
+  };
+
+  if (payload.lawNum) workerPayload.lawNum = String(payload.lawNum).trim();
+  if (payload.title) workerPayload.title = String(payload.title).trim();
+  if (payload.type) workerPayload.type = String(payload.type).trim();
+  if (payload.includeRaw === true) workerPayload.includeRaw = true;
+  if (Array.isArray(payload.knownDocuments)) workerPayload.knownDocuments = payload.knownDocuments;
+
+  try {
+    const taskResult = await sendTaskToWorker(workerId, 'importParliamentLaws', workerPayload, 45000);
+    if (taskResult.status !== 'success') {
+      return res.status(502).json({
+        success: false,
+        message: taskResult.error || 'Legal import worker task failed.',
+        data: taskResult,
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        workerId,
+        taskId: taskResult.taskId,
+        result: taskResult.result,
+      },
+    });
+  } catch (error) {
+    return res.status(502).json({ success: false, message: error.message || 'Legal import worker task failed.' });
   }
 });
 

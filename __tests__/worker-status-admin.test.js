@@ -9,12 +9,19 @@ jest.mock('../src/services/workerClientService', () => ({
 }));
 
 jest.mock('../src/websocket/workerWsServer', () => ({
+  getConnectedWorkers: jest.fn(),
   sendRequest: jest.fn(),
+  sendTaskToWorker: jest.fn(),
   getFirstConnectedWorkerId: jest.fn(),
 }));
 
 const workerClientService = require('../src/services/workerClientService');
-const { sendRequest, getFirstConnectedWorkerId } = require('../src/websocket/workerWsServer');
+const {
+  getConnectedWorkers,
+  sendRequest,
+  sendTaskToWorker,
+  getFirstConnectedWorkerId,
+} = require('../src/websocket/workerWsServer');
 const adminRoutes = require('../src/routes/adminRoutes');
 const authRoutes = require('../src/routes/authRoutes');
 
@@ -157,5 +164,63 @@ describe('Admin Worker Status routes', () => {
       .set('x-csrf-token', csrfToken)
       .send({ snapshot: { source: 'viewer-test' } });
     expect(snapshotResponse.status).toBe(403);
+  });
+
+  test('GET /api/admin/legal/worker returns legal worker capability status', async () => {
+    getConnectedWorkers.mockReturnValue([
+      {
+        workerId: 'worker-legal',
+        capabilities: ['linkPreview', 'importParliamentLaws', 'normalizeGreekLaw', 'greekLegalCitations'],
+      },
+      {
+        workerId: 'worker-basic',
+        capabilities: ['linkPreview'],
+      },
+    ]);
+
+    const response = await request(app)
+      .get('/api/admin/legal/worker')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.connected).toBe(true);
+    expect(response.body.data.workers).toHaveLength(2);
+    expect(response.body.data.legalWorkers).toHaveLength(1);
+    expect(response.body.data.legalWorkers[0].workerId).toBe('worker-legal');
+  });
+
+  test('POST /api/admin/legal/import-parliament-laws sends import task to legal worker', async () => {
+    getFirstConnectedWorkerId.mockReturnValue('worker-legal');
+    sendTaskToWorker.mockResolvedValue({
+      taskId: 'task-legal-import',
+      status: 'success',
+      result: {
+        page: { page_no: 1, page_size: 2, total_records: 10 },
+        documents: [],
+        stats: { document_count: 0, reference_count: 0 },
+      },
+    });
+    const csrfToken = 'csrf-legal-import-admin';
+    storeCsrfToken(csrfToken, adminUserId);
+
+    const response = await request(app)
+      .post('/api/admin/legal/import-parliament-laws')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Cookie', [`csrf_token=${csrfToken}`])
+      .set('x-csrf-token', csrfToken)
+      .send({ pageNo: 1, pageSize: 200, title: 'στεγαστική', lawNum: 5329 });
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.workerId).toBe('worker-legal');
+    expect(response.body.data.taskId).toBe('task-legal-import');
+    expect(getFirstConnectedWorkerId).toHaveBeenCalledWith('importParliamentLaws');
+    expect(sendTaskToWorker).toHaveBeenCalledWith('worker-legal', 'importParliamentLaws', {
+      pageNo: 1,
+      pageSize: 50,
+      lawNum: '5329',
+      title: 'στεγαστική',
+    }, 45000);
   });
 });

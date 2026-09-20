@@ -30,6 +30,7 @@ describe('admin navigation registry', () => {
       'System',
     ]);
     expect(adminHrefs).toContain('/admin/geo');
+    expect(adminHrefs).toContain('/admin/legal');
     expect(adminHrefs).toContain('/admin/worker-status');
   });
 });

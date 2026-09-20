@@ -13,6 +13,7 @@ const {
   getConnectedWorkers,
   getFirstConnectedWorkerId,
   sendRequest,
+  sendTaskToWorker,
 } = require('../src/websocket/workerWsServer');
 
 const waitForEvent = (emitter, eventName) => new Promise((resolve) => {
@@ -201,6 +202,46 @@ describe('worker websocket server', () => {
     expect(response.type).toBe('health_response');
     expect(response.status).toBe(200);
     expect(response.data).toEqual({ ok: true });
+
+    ws.close();
+    await waitForEvent(ws, 'close');
+  });
+
+  test('sendTaskToWorker sends task messages and resolves matching taskResult', async () => {
+    isValidWorkerTokenFormat.mockReturnValue(true);
+    validateWorkerToken.mockResolvedValue({ valid: true, source: 'database', tokenId: 12 });
+
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/workers?token=appofa_wt_worker_token_1234567890`);
+    clients.push(ws);
+    await waitForEvent(ws, 'open');
+
+    ws.send(JSON.stringify({
+      type: 'register',
+      workerId: 'worker-task',
+      name: 'Worker Task',
+      capabilities: ['importParliamentLaws'],
+    }));
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    const taskPromise = sendTaskToWorker('worker-task', 'importParliamentLaws', { pageNo: 1, pageSize: 1 });
+    const [messageData] = await waitForEvent(ws, 'message');
+    const taskMessage = JSON.parse(messageData.toString());
+    expect(taskMessage.type).toBe('task');
+    expect(taskMessage.taskType).toBe('importParliamentLaws');
+    expect(taskMessage.payload).toEqual({ pageNo: 1, pageSize: 1 });
+    expect(typeof taskMessage.taskId).toBe('string');
+
+    ws.send(JSON.stringify({
+      type: 'taskResult',
+      taskId: taskMessage.taskId,
+      status: 'success',
+      result: { documents: [] },
+    }));
+
+    const response = await taskPromise;
+    expect(response.status).toBe('success');
+    expect(response.result).toEqual({ documents: [] });
 
     ws.close();
     await waitForEvent(ws, 'close');
