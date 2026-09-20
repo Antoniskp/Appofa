@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '@/lib/constants/i18n';
 
 const LOCALE_OPTIONS = [
@@ -10,6 +11,7 @@ const LOCALE_OPTIONS = [
 ];
 
 export default function LanguageSwitcher() {
+  const t = useTranslations('redesign');
   const [current, setCurrent] = useState(DEFAULT_LOCALE);
 
   useEffect(() => {
@@ -32,21 +34,13 @@ export default function LanguageSwitcher() {
   };
 
   return (
-    <div className="flex items-center gap-1 text-sm">
-      {LOCALE_OPTIONS.map((option, index) => (
-        <div key={option.value} className="contents">
-          <button
-            onClick={() => handleSwitch(option.value)}
-            className={`min-h-11 min-w-11 px-2 py-1 rounded ${current === option.value ? 'font-semibold text-charcoal' : 'text-gray-600 hover:text-charcoal'}`}
-            aria-pressed={current === option.value}
-            lang={option.value}
-            aria-label={option.ariaLabel}
-          >
-            {option.label}
-          </button>
-          {index < LOCALE_OPTIONS.length - 1 && <span className="opacity-30">|</span>}
-        </div>
-      ))}
-    </div>
+    <select
+      aria-label={t('language')}
+      value={current}
+      onChange={event => handleSwitch(event.target.value)}
+      className="min-h-11 shrink-0 cursor-pointer rounded-md border border-white/20 bg-transparent px-3 py-2 text-sm text-brand-border hover:border-white/50"
+    >
+      {LOCALE_OPTIONS.map(option => <option key={option.value} value={option.value} lang={option.value} className="bg-charcoal text-white">{option.ariaLabel}</option>)}
+    </select>
   );
 }

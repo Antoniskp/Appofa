@@ -108,7 +108,7 @@ describe('TopNav plain header behavior', () => {
   test('keeps mobile menu panel internally scrollable for short viewports', () => {
     const mobileMenu = container.querySelector('#mobile-menu');
     expect(mobileMenu).toBeTruthy();
-    expect(mobileMenu.className).toContain('max-h-[calc(100dvh-9rem)]');
+    expect(mobileMenu.className).toContain('max-h-[calc(100dvh-8rem)]');
     expect(mobileMenu.className).toContain('overflow-y-auto');
   });
 

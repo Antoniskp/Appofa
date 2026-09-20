@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 import { useTranslations } from 'next-intl';
 import NewsletterSignupForm from '@/components/newsletter/NewsletterSignupForm';
 import { useAuth } from '@/lib/auth-context';
@@ -109,7 +110,8 @@ export default function Footer() {
             </div>
           ))}
         </div>
-        <div className="border-t border-gray-700 mt-4 pt-4 text-center">
+        <div className="border-t border-gray-700 mt-6 pt-4 flex flex-col items-center justify-between gap-3 sm:flex-row sm:text-left">
+          <LanguageSwitcher />
           <p className="text-brand-border text-sm">
             © {currentYear} {t('copyright')}{' '}
             <a
