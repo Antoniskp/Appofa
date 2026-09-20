@@ -81,11 +81,13 @@ describe('News Application Integration Tests', () => {
   });
 
   test('should enable schema sync only when explicitly requested outside production', () => {
+    // Load startup config before varying the environment so dotenv cannot
+    // restore AUTO_SYNC_SCHEMA from a developer's local .env mid-assertion.
+    const { shouldSyncSchema } = require('../src/index');
     const originalEnv = process.env.NODE_ENV;
     const originalAutoSync = process.env.AUTO_SYNC_SCHEMA;
     process.env.NODE_ENV = 'test';
     delete process.env.AUTO_SYNC_SCHEMA;
-    const { shouldSyncSchema } = require('../src/index');
     expect(shouldSyncSchema()).toBe(false);
     process.env.AUTO_SYNC_SCHEMA = 'true';
     expect(shouldSyncSchema()).toBe(true);

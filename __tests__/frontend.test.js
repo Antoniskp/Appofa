@@ -185,6 +185,7 @@ jest.mock('@/lib/api', () => ({
     getCategoryCounts: jest.fn(() => Promise.resolve({ success: true, data: { counts: {} } })),
   },
   suggestionAPI: {
+    getProgress: jest.fn(() => Promise.resolve({ success: true, data: [], pagination: { currentPage: 1, totalPages: 0 } })),
     getAll: jest.fn(() => Promise.resolve({ success: true, data: { suggestions: [] } })),
   },
   manifestAPI: {
@@ -305,27 +306,29 @@ describe('Frontend smoke tests', () => {
     document.body.innerHTML = '';
   });
 
-  test('renders home page hero and merged news/articles section', async () => {
+  test('renders the participation journey and public progress links', async () => {
     useAuth.mockReturnValue(buildAuthState());
     const HomePage = require('../app/page').default;
     const { container, root } = await renderPage(HomePage);
 
-    expect(container.textContent).toContain('Δες τι συμβαίνει. Πάρε θέση. Πρότεινε λύσεις.');
-    expect(container.textContent).toContain('Ειδήσεις, απόψεις και αναλύσεις');
+    expect(container.textContent).toContain('Ο τόπος σου. Οι προτάσεις σου. Ορατή πρόοδος.');
+    expect(container.textContent).toContain('Τι γίνεται μετά τη συμμετοχή;');
+    expect(container.querySelector('a[href="/progress"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/suggestions/new"]')).toBeTruthy();
 
     await act(async () => {
       root.unmount();
     });
   });
 
-  test('shows guest polls subtitle note and does not request dedicated open-polls feed', async () => {
+  test('explains advisory participation and does not request a guest-only poll feed', async () => {
     useAuth.mockReturnValue(buildAuthState({ user: null }));
     pollAPI.getAll.mockResolvedValue({ success: true, data: [] });
 
     const HomePage = require('../app/page').default;
     const { container, root } = await renderPage(HomePage);
 
-    expect(container.textContent).toContain('Ορισμένες ψηφοφορίες είναι ανοιχτές χωρίς εγγραφή');
+    expect(container.textContent).toContain('Τα αποτελέσματα είναι συμβουλευτικά.');
     expect(container.textContent).not.toContain('Ψηφίστε χωρίς εγγραφή');
     expect(pollAPI.getAll).not.toHaveBeenCalledWith(expect.objectContaining({
       voteRestriction: 'anyone',

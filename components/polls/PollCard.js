@@ -12,6 +12,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { idSlug } from '@/lib/utils/slugify';
 import { pollAPI } from '@/lib/api';
 import UserAvatar from '@/components/user/UserAvatar';
+import ParticipationNotice from '@/components/ParticipationNotice';
 import OrgAvatar from '@/components/organization/OrgAvatar';
 
 /**
@@ -511,6 +512,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
         {poll.description || 'Χωρίς περιγραφή'}
       </p>
       
+      <ParticipationNotice restriction={poll.voteRestriction} compact />
       <div className="mt-auto">
         <div className="flex justify-between items-center text-sm text-gray-500">
           <span>

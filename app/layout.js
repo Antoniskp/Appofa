@@ -17,7 +17,7 @@ export const metadata = {
     default: 'Απόφαση',
     template: '%s | Απόφαση',
   },
-  description: 'Η πύλη σας για τελευταίες ειδήσεις, δημοσκοπήσεις και τοπικά νέα',
+  description: 'Προτάσεις πολιτών, δημόσιες διαβουλεύσεις και παρακολούθηση της υλοποίησης στην κοινότητά σας',
   manifest: '/manifest.webmanifest',
   icons: {
     apple: [{ url: APP_ICON, sizes: '512x512', type: 'image/png' }],
@@ -35,14 +35,14 @@ export const metadata = {
     type: 'website',
     siteName: 'Απόφαση',
     title: 'Απόφαση',
-    description: 'Η πύλη σας για τελευταίες ειδήσεις, δημοσκοπήσεις και τοπικά νέα',
+    description: 'Προτάσεις πολιτών, δημόσιες διαβουλεύσεις και παρακολούθηση της υλοποίησης στην κοινότητά σας',
     url: SITE_URL,
     images: [{ url: DEFAULT_OG_IMAGE, width: 1536, height: 1024, alt: 'Απόφαση' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Απόφαση',
-    description: 'Η πύλη σας για τελευταίες ειδήσεις, δημοσκοπήσεις και τοπικά νέα',
+    description: 'Προτάσεις πολιτών, δημόσιες διαβουλεύσεις και παρακολούθηση της υλοποίησης στην κοινότητά σας',
     images: [DEFAULT_OG_IMAGE],
   },
   alternates: {

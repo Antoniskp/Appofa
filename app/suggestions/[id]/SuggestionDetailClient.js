@@ -31,6 +31,7 @@ import { TooltipIconButton } from '@/components/ui/Tooltip';
 import ShareModal from '@/components/ui/ShareModal';
 import LoginLink from '@/components/ui/LoginLink';
 import UserAvatar from '@/components/user/UserAvatar';
+import ProposalProgress from '@/components/ProposalProgress';
 import VoteIdentitySelector from '@/components/VoteIdentitySelector';
 import { getEmbedPath } from '@/lib/utils/embed';
 
@@ -516,6 +517,7 @@ export default function SuggestionDetailPage() {
           })()}
         </div>
 
+        <ProposalProgress proposal={suggestion} user={user} onUpdated={(data) => setSuggestion((previous) => ({ ...previous, ...data }))} />
         {/* Response Section */}
         <div>
           <h2 className="text-lg font-bold text-gray-900 mb-4">

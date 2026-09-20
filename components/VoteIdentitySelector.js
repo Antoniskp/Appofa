@@ -1,4 +1,5 @@
 'use client';
+import { useTranslations } from 'next-intl';
 
 const OPTIONS = [
   { value: 'anonymous', label: 'Anonymous' },
@@ -11,10 +12,11 @@ export default function VoteIdentitySelector({
   disabled = false,
   compact = false,
 }) {
+  const t = useTranslations('democracy');
   return (
     <fieldset className={compact ? 'space-y-1' : 'space-y-2'}>
       <legend className={compact ? 'text-xs font-medium text-gray-500' : 'text-sm font-medium text-gray-700'}>
-        Vote as
+        {t('identity')}
       </legend>
       <div className="inline-flex rounded-lg border border-gray-300 bg-white p-0.5">
         {OPTIONS.map((option) => {
@@ -32,11 +34,12 @@ export default function VoteIdentitySelector({
                   : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
               }`}
             >
-              {option.label}
+              {t(option.value === 'anonymous' ? 'hiddenName' : 'publicName')}
             </button>
           );
         })}
       </div>
+      <p className="text-xs leading-relaxed text-gray-600">{t('privacy')}</p>
     </fieldset>
   );
 }

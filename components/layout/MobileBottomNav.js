@@ -22,10 +22,11 @@ import {
 const EXPLORE_ROOTS = ['/news', '/articles', '/videos', '/topics'];
 
 // Route groups that belong to the "Participate" tab (used for active-state only)
-const PARTICIPATE_ROOTS = ['/polls', '/civic-questions', '/suggestions', '/dream-team'];
+const PARTICIPATE_ROOTS = ['/polls', '/civic-questions', '/suggestions', '/dream-team', '/progress'];
 
 export default function MobileBottomNav() {
   const t = useTranslations('nav');
+  const tDemocracy = useTranslations('democracy');
   const { user, loading } = useAuth();
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -265,6 +266,10 @@ export default function MobileBottomNav() {
                   </span>
                 </Link>
 
+                <Link href="/progress" onClick={handleCloseSheet} className="flex min-h-[44px] items-center gap-3 rounded-xl bg-teal-50 px-4 py-3 text-sm font-medium text-teal-900 hover:bg-teal-100">
+                  <ClipboardDocumentListIcon className="h-5 w-5" aria-hidden="true" />
+                  {tDemocracy('progress')}
+                </Link>
                 {user && (
                   <Link
                     href="/suggestions/new"

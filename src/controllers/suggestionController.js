@@ -496,6 +496,9 @@ const suggestionController = {
       }
 
       if (req.body.status !== undefined) {
+        if (suggestion.progress && req.body.status !== suggestion.status) {
+          return res.status(409).json({ success: false, message: 'Update the proposal timeline to change its status.' });
+        }
         const r = normalizeEnum(req.body.status, SUGGESTION_STATUSES, 'Status');
         if (r.error) return res.status(400).json({ success: false, message: r.error });
         updates.status = r.value;
@@ -680,11 +683,11 @@ const suggestionController = {
         return res.status(403).json({ success: false, message: 'Official organization suggestions are not open for voting.' });
       }
 
-      if (suggestion.voteRestriction === 'locals_only' && suggestion.locationId) {
+      if (suggestion.voteRestriction === 'locals_only') {
         if (!req.user) {
           return res.status(403).json({ success: false, message: 'Authentication required.' });
         }
-        if (req.user.role !== 'admin') {
+        if (req.user) {
           const userRecord = await User.findByPk(req.user.id, { attributes: ['homeLocationId'] });
           if (!userRecord?.homeLocationId) {
             return res.status(403).json({ success: false, message: 'Πρέπει να έχετε αρχική τοποθεσία για να ψηφίσετε σε αυτή την πρόταση.' });
@@ -742,6 +745,16 @@ const suggestionController = {
 
       const solution = await Solution.findByPk(targetId);
       if (!solution) return res.status(404).json({ success: false, message: 'Solution not found.' });
+
+      const parent = await Suggestion.findByPk(solution.suggestionId);
+      if (!parent) return res.status(404).json({ success: false, message: 'Suggestion not found.' });
+      if (parent.voteRestriction === 'locals_only') {
+        const voter = await User.findByPk(req.user.id, { attributes: ['homeLocationId'] });
+        const locations = voter?.homeLocationId ? await getAncestorLocationIds(voter.homeLocationId, true) : [];
+        if (!parent.locationId || !locations.includes(parent.locationId)) {
+          return res.status(403).json({ success: false, message: 'This solution is restricted to local members.' });
+        }
+      }
 
       return handleVote(req, res, 'solution', targetId);
     } catch (error) {

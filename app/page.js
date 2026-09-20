@@ -1,317 +1,64 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { ArrowRightIcon, MapPinIcon, ChatBubbleLeftRightIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
 import { homepageAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import HomeHero from '@/components/HomeHero';
-import HomeActionLanes from '@/components/HomeActionLanes';
-import GovernmentSnapshotSection from '@/components/GovernmentSnapshotSection';
-import ArticleCard from '@/components/articles/ArticleCard';
+import { useAsyncData } from '@/hooks/useAsyncData';
+import HomepageSection from '@/components/HomepageSection';
 import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
-import HomepageSection from '@/components/HomepageSection';
 import OnboardingCard from '@/components/OnboardingCard';
+import ProgressFeed from '@/components/ProgressFeed';
+import AlertMessage from '@/components/ui/AlertMessage';
 import CountryEntryPopup from '@/components/geo/CountryEntryPopup';
 
-  const VideoThumbnailCard = dynamic(() => import('@/components/articles/VideoThumbnailCard'));
-  const ExploreLocationsMap = dynamic(() => import('@/components/locations/ExploreLocationsMap'), { ssr: false });
-
 export default function HomePage() {
-  const tHome = useTranslations('home');
+  const t = useTranslations('democracy');
   const { user } = useAuth();
+  const { data, loading, error, refetch } = useAsyncData(async () => {
+    const response = await homepageAPI.get();
+    if (!response.success) throw new Error(response.message);
+    return response.data;
+  }, [user?.id], { initialData: {} });
+  const community = user?.homeLocation?.slug ? `/locations/${user.homeLocation.slug}` : '/locations';
+  const featured = data?.homepageSettings?.featuredPoll;
+  const showFeatured = featured?.enabled && (featured.audience === 'all' || featured.audience === (user ? 'registered' : 'guest')) && data?.featuredPoll;
+  const actions = [
+    { title: 'community', body: 'communityBody', href: community, icon: MapPinIcon },
+    { title: 'proposals', body: 'proposalsBody', href: '/suggestions', icon: ChatBubbleLeftRightIcon },
+    { title: 'progress', body: 'progressBody', href: '/progress', icon: ClipboardDocumentCheckIcon },
+  ];
 
-  const [latestArticles, setLatestArticles] = useState([]);
-  const [articlesLoading, setArticlesLoading] = useState(true);
-  const [articlesError, setArticlesError] = useState(null);
-
-  const [suggestions, setSuggestions] = useState([]);
-  const [suggestionsLoading, setSuggestionsLoading] = useState(true);
-  const [suggestionsError, setSuggestionsError] = useState(null);
-
-  const [polls, setPolls] = useState([]);
-  const [pollsLoading, setPollsLoading] = useState(true);
-  const [pollsError, setPollsError] = useState(null);
-  const [featuredPoll, setFeaturedPoll] = useState(null);
-  const [featuredPollLoading, setFeaturedPollLoading] = useState(false);
-
-  const [latestNews, setLatestNews] = useState([]);
-  const [newsLoading, setNewsLoading] = useState(true);
-  const [newsError, setNewsError] = useState(null);
-
-  const [videos, setVideos] = useState([]);
-  const [videosLoading, setVideosLoading] = useState(true);
-  const [videosError, setVideosError] = useState(null);
-
-  const [manifestData, setManifestData] = useState([]);
-  const [manifestLoading, setManifestLoading] = useState(true);
-  const [prefectures, setPrefectures] = useState([]);
-  const [prefecturesLoading, setPrefecturesLoading] = useState(true);
-  const [articleTags, setArticleTags] = useState([]);
-  const [suggestionTags, setSuggestionTags] = useState([]);
-  const [pollTags, setPollTags] = useState([]);
-  const [homepageSettings, setHomepageSettings] = useState(null);
-
-  const isVisibleForAudience = (audience) => {
-    if (audience === 'all') return true;
-    if (audience === 'guest') return !user;
-    if (audience === 'registered') return !!user;
-    return false;
-  };
-
-  useEffect(() => {
-    const loadHomepage = async () => {
-      try {
-        const res = await homepageAPI.get();
-        if (res?.success) {
-          const payload = res.data || {};
-          setLatestArticles(payload.latestArticles || []);
-          setSuggestions(payload.suggestions || []);
-          setPolls(payload.polls || []);
-          setLatestNews(payload.latestNews || []);
-          setVideos(payload.videos || []);
-          setPrefectures(payload.prefectures || []);
-          setArticleTags(payload.tags?.article || []);
-          setSuggestionTags(payload.tags?.suggestion || []);
-          setPollTags(payload.tags?.poll || []);
-          setHomepageSettings(payload.homepageSettings || null);
-          setFeaturedPoll(payload.featuredPoll || null);
-          setManifestData(payload.manifestData || []);
-        }
-      } catch (err) {
-        const message = err?.message || 'Failed to load homepage.';
-        setArticlesError(message);
-        setSuggestionsError(message);
-        setPollsError(message);
-        setNewsError(message);
-        setVideosError(message);
-        setFeaturedPoll(null);
-      } finally {
-        setArticlesLoading(false);
-        setSuggestionsLoading(false);
-        setPollsLoading(false);
-        setNewsLoading(false);
-        setVideosLoading(false);
-        setPrefecturesLoading(false);
-        setManifestLoading(false);
-        setFeaturedPollLoading(false);
-      }
-    };
-
-    loadHomepage();
-  }, []);
-
-  const mergedLatestContent = [...latestNews, ...latestArticles]
-    .sort((a, b) => {
-      const dateA = new Date(a.newsApprovedAt || a.createdAt || 0).getTime();
-      const dateB = new Date(b.newsApprovedAt || b.createdAt || 0).getTime();
-      return dateB - dateA;
-    })
-    .slice(0, 6);
-
-  const latestContentLoading = articlesLoading || newsLoading;
-  const latestContentError = articlesError || newsError;
-  const pollsSubtitle = !user
-    ? `${tHome('top_polls_subtitle')} — ${tHome('top_polls_guest_note')}`
-    : tHome('top_polls_subtitle');
-  const featuredPollConfig = homepageSettings?.featuredPoll;
-  const shouldShowFeaturedPoll =
-    Boolean(featuredPollConfig?.enabled) &&
-    isVisibleForAudience(featuredPollConfig?.audience || 'all') &&
-    (featuredPollLoading || Boolean(featuredPoll));
-
-  return (
-    <div className="bg-gray-50">
-      <CountryEntryPopup isAuthenticated={Boolean(user)} />
-      <HomeHero
-        featuredPoll={shouldShowFeaturedPoll ? featuredPoll : null}
-        featuredPollLoading={shouldShowFeaturedPoll && featuredPollLoading}
-      />
-      <HomeActionLanes user={user} />
-
-      {user && (
-        <div className="app-container pt-4 pb-0">
-          <OnboardingCard user={user} />
+  return <div className="min-h-screen bg-slate-50 text-slate-900">
+    <CountryEntryPopup isAuthenticated={Boolean(user)} />
+    <section className="relative overflow-hidden bg-[#123c38] text-white">
+      <div aria-hidden="true" className="pointer-events-none absolute -right-32 -top-48 h-[36rem] w-[36rem] rounded-full border-[70px] border-white/5" />
+      <div className="app-container relative grid gap-10 py-14 sm:py-20 lg:grid-cols-[1.4fr_1fr] lg:items-center">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-200">{t('eyebrow')}</p>
+          <h1 className="mt-5 max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">{t('heroTitle')}</h1>
+          <p className="mt-6 max-w-xl text-base leading-relaxed text-teal-50/90 sm:text-lg">{t('heroBody')}</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/suggestions/new" className="inline-flex items-center gap-3 rounded-xl bg-[#e3ef9e] px-5 py-3 font-semibold text-[#123c38] hover:bg-white">{t('submit')}<ArrowRightIcon className="h-4 w-4" /></Link>
+            <Link href={community} className="rounded-xl border border-white/40 px-5 py-3 font-semibold hover:bg-white/10">{t('findCommunity')}</Link>
+          </div>
+          <p className="mt-5 text-xs leading-relaxed text-teal-100">{t('heroTrust')}</p>
         </div>
-      )}
-
-      <HomepageSection
-        title={tHome('top_polls_title')}
-        subtitle={pollsSubtitle}
-        linkHref="/polls"
-        loading={pollsLoading}
-        error={pollsError}
-        items={polls}
-        emptyTitle={tHome('empty_polls_title')}
-        emptyDescription={tHome('empty_polls_description')}
-        skeletonCount={3}
-        bgColor="bg-white"
-        renderItem={(poll) => <PollCard key={poll.id} poll={poll} variant="grid" />}
-        topTags={pollTags}
-      />
-
-      <HomepageSection
-        title={tHome('top_suggestions_title')}
-        subtitle={tHome('top_suggestions_subtitle')}
-        linkHref="/suggestions"
-        loading={suggestionsLoading}
-        error={suggestionsError}
-        items={suggestions}
-        emptyTitle={tHome('empty_suggestions_title')}
-        emptyDescription={tHome('empty_suggestions_description')}
-        skeletonCount={3}
-        bgColor="bg-gray-50"
-        renderItem={(suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} />}
-        topTags={suggestionTags}
-      />
-
-      {/* Featured Locations Section — map + prefecture pills, no location cards */}
-      {(prefecturesLoading || prefectures.length > 0) && (
-        <HomepageSection
-          title={tHome('explore_locations_title')}
-          subtitle={tHome('explore_locations_subtitle')}
-          linkHref="/locations"
-          loading={false}
-          error={null}
-          items={[]}
-          emptyTitle=""
-          emptyDescription=""
-          skeletonCount={0}
-          bgColor="bg-white"
-          renderItem={() => null}
-          mapSlot={
-            <div className="-mt-2 md:-mt-3">
-              <ExploreLocationsMap
-                prefectures={prefectures}
-                loading={prefecturesLoading}
-              />
-            </div>
-          }
-        />
-      )}
-
-      <GovernmentSnapshotSection />
-
-      <HomepageSection
-        title={tHome('latest_content_title')}
-        subtitle={tHome('latest_content_subtitle')}
-        linkHref="/news"
-        loading={latestContentLoading}
-        error={latestContentError}
-        items={mergedLatestContent}
-        emptyTitle={tHome('empty_news_title')}
-        emptyDescription={tHome('empty_news_description')}
-        skeletonCount={6}
-        bgColor="bg-white"
-        renderItem={(article) => (
-          <div key={article.id} className="relative">
-            <span className="absolute left-3 top-3 z-10 inline-flex items-center rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-gray-700 shadow-sm border border-gray-200">
-              {article.type === 'news' ? tHome('content_badge_news') : tHome('content_badge_article')}
-            </span>
-            <ArticleCard
-              article={article}
-              variant="grid"
-              tagLinkPrefix={article.type === 'news' ? '/news' : '/articles'}
-            />
-          </div>
-        )}
-        topTags={articleTags}
-        tagLinkPrefix="/articles"
-      />
-
-      <HomepageSection
-        title={tHome('latest_videos_title')}
-        subtitle={tHome('latest_videos_subtitle')}
-        linkHref="/videos"
-        loading={videosLoading}
-        error={videosError}
-        items={videos}
-        emptyTitle={tHome('empty_videos_title')}
-        emptyDescription={tHome('empty_videos_description')}
-        skeletonCount={3}
-        bgColor="bg-gray-50"
-        renderItem={(video) => <VideoThumbnailCard key={video.id} article={video} />}
-        topTags={articleTags}
-        tagLinkPrefix="/videos"
-      />
-
-      {/* Manifest Supporters Section */}
-      {(homepageSettings?.manifestSection?.enabled ?? true) &&
-        isVisibleForAudience(homepageSettings?.manifestSection?.audience || 'all') &&
-        !manifestLoading && manifestData.length > 0 && (
-        <section className="bg-gradient-to-b from-gray-50 to-white">
-          <div className="app-container py-16">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              {tHome('manifest_supporters_title')}
-            </h2>
-            <p className="text-sm text-gray-500 mb-8">{tHome('manifest_supporters_subtitle')}</p>
-            <div className="space-y-10">
-              {manifestData.map((manifest) => (
-                <div key={manifest.slug}>
-                  <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800">{manifest.title}</h3>
-                      <p className="text-xs text-gray-400">
-                         {tHome('manifest_total_supporters', { count: manifest.supportersCount || 0 })}
-                      </p>
-                    </div>
-                    <Link
-                      href={`/manifest-supporters?manifest=${encodeURIComponent(manifest.slug)}`}
-                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                       {tHome('view_all')}
-                    </Link>
-                  </div>
-                  {manifest.randomSupporters.length > 0 ? (
-                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-4">
-                      {manifest.randomSupporters.map((supporter) => (
-                        <Link
-                          key={supporter.id}
-                          href={`/users/${supporter.username}`}
-                          className="flex flex-col items-center group"
-                        >
-                          <div className="relative">
-                            <div
-                              className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold group-hover:ring-2 ring-blue-400 transition overflow-hidden"
-                              style={{ backgroundColor: supporter.avatarColor || '#dbeafe' }}
-                            >
-                              {supporter.avatar ? (
-                                <img
-                                  src={supporter.avatar}
-                                  alt={supporter.username}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <span className="text-blue-600">
-                                  {(supporter.firstName || supporter.username || '?')[0].toUpperCase()}
-                                </span>
-                              )}
-                            </div>
-                            {supporter.displayBadgeSlug && supporter.displayBadgeTier && (
-                              <img
-                                src={`/images/badges/${supporter.displayBadgeSlug}-${supporter.displayBadgeTier}.svg`}
-                                alt=""
-                                className="absolute -bottom-1 -right-1 w-5 h-5"
-                              />
-                            )}
-                          </div>
-                          <span className="text-xs text-gray-600 mt-1 truncate max-w-[80px] text-center">
-                            {supporter.firstName || supporter.username}
-                          </span>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                     <p className="text-sm text-gray-400">{tHome('no_manifest_supporters')}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-        )}
-    </div>
-  );
+        <div className="rounded-2xl border border-white/20 bg-white/5 p-6 sm:p-8">
+          <h2 className="text-sm font-semibold text-teal-200">{t('journey')}</h2>
+          <ol className="mt-6 space-y-6">{['propose', 'deliberate', 'decide', 'deliver'].map((step, index) => <li key={step} className="flex gap-4"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-teal-200/40 text-xs text-teal-100">0{index + 1}</span><div><h3 className="font-semibold">{t(step)}</h3><p className="mt-1 text-sm leading-relaxed text-teal-50/80">{t(`${step}Body`)}</p></div></li>)}</ol>
+        </div>
+      </div>
+    </section>
+    <nav aria-label={t('participate')} className="app-container grid gap-4 py-8 md:grid-cols-3">{actions.map(({ title, body, href, icon: Icon }) => <Link key={title} href={href} className="group rounded-2xl border border-slate-200 bg-white p-6 transition hover:border-teal-600 hover:shadow-sm"><Icon className="h-6 w-6 text-teal-800" /><h2 className="mt-4 flex items-center justify-between text-lg font-semibold">{t(title)}<ArrowRightIcon className="h-4 w-4 transition group-hover:translate-x-1" /></h2><p className="mt-2 text-sm leading-relaxed text-slate-600">{t(body)}</p></Link>)}</nav>
+    {user && <div className="app-container pb-6"><OnboardingCard user={user} /></div>}
+    {error && <div className="app-container pb-6"><AlertMessage message={error} /><button onClick={refetch} className="mt-3 font-semibold underline">{t('retry')}</button></div>}
+    {showFeatured && <section className="app-container pb-8"><h2 className="mb-4 text-xl font-semibold">{t('featured')}</h2><div className="max-w-xl"><PollCard poll={data.featuredPoll} /></div></section>}
+    <HomepageSection title={t('proposalHeading')} subtitle={t('proposalSubheading')} linkHref="/suggestions" items={data?.suggestions || []} loading={loading} error={error} emptyTitle={t('emptyProposals')} emptyDescription={t('emptyProposalsBody')} skeletonCount={3} bgColor="bg-white" renderItem={proposal => <SuggestionCard key={proposal.id} suggestion={proposal} />} />
+    <HomepageSection title={t('consultations')} subtitle={t('consultationsBody')} linkHref="/polls" items={data?.polls || []} loading={loading} error={error} emptyTitle={t('emptyPolls')} emptyDescription={t('emptyPollsBody')} skeletonCount={3} bgColor="bg-slate-50" renderItem={poll => <PollCard key={poll.id} poll={poll} />} />
+    <section className="border-y border-slate-200 bg-[#eef3ed] py-12"><div className="app-container"><div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-widest text-teal-800">{t('accountability')}</p><h2 className="mt-2 text-2xl font-semibold">{t('progressHeading')}</h2><p className="mt-2 text-sm text-slate-600">{t('reported')}</p></div><Link href="/progress" className="text-sm font-semibold text-teal-800">{t('allProgress')} →</Link></div><ProgressFeed preview /></div></section>
+    <section className="app-container py-12"><h2 className="text-xl font-semibold">{t('resources')}</h2><div className="mt-5 flex flex-wrap gap-3">{[['/news', 'news'], ['/civic-questions', 'civicQuestions'], ['/organizations', 'organizations'], ['/manifest-supporters', 'commitments'], ['/platform', 'platform']].map(([href, label]) => <Link key={href} href={href} className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm hover:border-teal-700">{t(label)}</Link>)}</div></section>
+  </div>;
 }

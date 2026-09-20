@@ -7,6 +7,7 @@ import { pollAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/ui/AlertMessage';
 import RateLimitBanner from '@/components/ui/RateLimitBanner';
+import ParticipationNotice from '@/components/ParticipationNotice';
 import VoteIdentitySelector from '@/components/VoteIdentitySelector';
 
 /**
@@ -135,6 +136,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   if (!canVote) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+        <ParticipationNotice restriction={poll.voteRestriction} />
         <p className="text-gray-600">
           {!isPollActive
             ? 'Αυτή η δημοσκόπηση έχει κλείσει ή έληξε.'
@@ -148,6 +150,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   
   return (
     <div className="space-y-4">
+      <ParticipationNotice restriction={poll.voteRestriction} />
       {error && <AlertMessage message={error} />}
       {success && <AlertMessage message={success} tone="success" />}
       {rateLimit && (

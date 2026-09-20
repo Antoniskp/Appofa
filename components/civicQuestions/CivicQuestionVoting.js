@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { civicQuestionAPI } from '@/lib/api';
 import { useTranslations } from 'next-intl';
+import ParticipationNotice from '@/components/ParticipationNotice';
 
 const CHOICES = [
   { value: 'agree', color: 'bg-green-600 hover:bg-green-700' },
@@ -39,6 +40,7 @@ export default function CivicQuestionVoting({ civicQuestion, onVoteSuccess }) {
 
   return (
     <div className="space-y-3">
+      <ParticipationNotice restriction={civicQuestion.voteRestriction} />
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {CHOICES.map((choice) => {
           const active = civicQuestion.myVote === choice.value;

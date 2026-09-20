@@ -1410,9 +1410,9 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
           where: {
             entity_type: 'poll',
             entity_id: pollId
-          }
-        },
-        { transaction }
+          },
+          transaction
+        }
       );
 
       // Create new location link if locationId is provided
@@ -1614,7 +1614,7 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent,
           message: 'Authentication required. This poll is for local members only.'
         };
       }
-      if (userRole !== 'admin') {
+      if (userId) {
         const userRecord = await User.findByPk(userId, { attributes: ['homeLocationId'] });
         const homeLocationId = userRecord?.homeLocationId;
         if (!homeLocationId) {
@@ -1647,7 +1647,7 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent,
       if (!userId) {
         return { success: false, status: 401, message: 'Authentication required to vote on organization polls.' };
       }
-      if (userRole !== 'admin') {
+      if (userId) {
         const isMember = await hasActiveOrgMembership(poll.organizationId, userId);
         if (!isMember) {
           return { success: false, status: 403, message: 'Access denied. This poll is restricted to organization members.' };

@@ -12,9 +12,21 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-07-11
+> **Last updated**: 2026-09-20
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
+
+### Democracy release additions (2026-09-20)
+
+- `app/page.js`: proposal, consultation and public progress homepage; retains onboarding, country suggestion and configured featured poll.
+- `app/progress/page.js`, `components/ProgressFeed.js`: paginated public delivery updates (public, non-organization proposals only).
+- `components/ProposalProgress.js`: linked consultation, responsible body, response, cost, milestones, evidence and versioned update history on proposal detail.
+- `components/ParticipationNotice.js`, `components/VoteIdentitySelector.js`: advisory eligibility and honest name-visibility disclosures.
+- `src/services/proposalProgressService.js`, `src/controllers/proposalProgressController.js`: transactional timeline updates, authorization, validation and public feed.
+- `GET /api/suggestions/progress`; `PATCH /api/suggestions/:id/progress` (auth + CSRF + rate limit).
+- `Suggestion.progress`: nullable JSON added by `src/migrations/20260920000000-add-proposal-progress.js`; history stores each full update snapshot, timestamp and publisher role without revealing a hidden author's identity.
+- `messages/{en,el,ro}.json`: `democracy` namespace; `__tests__/democracy-release.test.js`: workflow and voting eligibility regressions.
+- Release behavior and deployment notes: `doc/DEMOCRACY_RELEASE.md`.
 >
 > Dependency update notes: direct `axios` is pinned to `1.16.0` (no `overrides.axios`) and direct `nodemailer` is now at `^9.0.1` (upgraded from `^8.0.7`; resolves GHSA-p6gq-j5cr-w38f high-severity arbitrary file read + SSRF). `multer`, `qs`, and `ws` were patched via `npm audit fix` (non-breaking). Production audit is clean (`npm audit --omit=dev` → 0 vulnerabilities). Remaining 17 moderate advisories are `js-yaml` in the dev/test chain only (`@istanbuljs/load-nyc-config` → `babel-plugin-istanbul` → jest); absent from production tree. Direct `next` is now pinned to `16.2.6` to resolve high-severity advisories affecting `16.0.0 - 16.2.5` in CI security-audit workflow. `next-intl` bumped to `^4.11.1` (fixes GHSA-4c35-wcg5-mm9h prototype pollution). `overrides.ip-address: ">=10.1.1"` added to patch XSS in transitive `ip-address` used by `express-rate-limit` and `geoip-lite` (GHSA-v2v4-37r5-5v8g). `overrides.brace-expansion: ">=2.1.0 <3.0.0 || >=5.0.6"` added to resolve DoS vulnerability (GHSA-4gwj-5jf2). `overrides.nodemailer` removed — direct deps satisfy themselves and must not be in overrides. Direct `ws` dependency is now included for backend worker WebSocket support at `/ws/workers`.
 >

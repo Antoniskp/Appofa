@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const suggestionController = require('../controllers/suggestionController');
+const proposalProgressController = require('../controllers/proposalProgressController');
 const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const csrfProtection = require('../middleware/csrfProtection');
@@ -8,6 +9,7 @@ const { apiLimiter, createLimiter, authVoteLimiter } = require('../middleware/ra
 
 // Public routes – optional auth to expose myVote
 router.get('/', optionalAuthMiddleware, apiLimiter, suggestionController.getSuggestions);
+router.get('/progress', apiLimiter, proposalProgressController.list);
 router.get('/category-counts', apiLimiter, suggestionController.getCategoryCounts);
 router.get('/:id', optionalAuthMiddleware, apiLimiter, suggestionController.getSuggestionById);
 router.get('/:id/solutions', optionalAuthMiddleware, apiLimiter, suggestionController.getSolutions);
@@ -15,6 +17,7 @@ router.get('/:id/solutions', optionalAuthMiddleware, apiLimiter, suggestionContr
 // Protected routes – auth required
 router.post('/', createLimiter, authMiddleware, csrfProtection, suggestionController.createSuggestion);
 router.patch('/:id', apiLimiter, authMiddleware, csrfProtection, suggestionController.updateSuggestion);
+router.patch('/:id/progress', apiLimiter, authMiddleware, csrfProtection, proposalProgressController.update);
 router.delete('/:id', apiLimiter, authMiddleware, csrfProtection, suggestionController.deleteSuggestion);
 router.post('/:id/solutions', createLimiter, authMiddleware, csrfProtection, suggestionController.createSolution);
 // apiLimiter runs first (satisfies rate-limit check); authMiddleware sets req.user;

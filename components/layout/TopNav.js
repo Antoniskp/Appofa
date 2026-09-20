@@ -35,6 +35,7 @@ import NotificationBell from '@/components/notifications/NotificationBell';
 
 export default function TopNav() {
   const tNav = useTranslations('nav');
+  const tDemocracy = useTranslations('democracy');
   const { user, loading, logout } = useAuth();
   const { canAccessAdmin } = usePermissions();
   const pathname = usePathname();
@@ -112,6 +113,11 @@ export default function TopNav() {
       label: tNav('participation'),
       menuId: 'desktop-nav-participation-menu',
       items: [
+        {
+          id: 'progress', label: tDemocracy('progress'), href: '/progress',
+          icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
+          mobileIcon: <ClipboardDocumentListIcon className="h-5 w-5" />,
+        },
         {
           id: 'polls',
           label: tNav('polls'),
@@ -251,6 +257,11 @@ export default function TopNav() {
   ];
 
   const guestPrimaryItems = [
+    {
+      id: 'progress', label: tDemocracy('progress'), href: '/progress',
+      icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
+      mobileIcon: <ClipboardDocumentListIcon className="h-5 w-5" />,
+    },
     {
       id: 'locations',
       label: tNav('locations'),

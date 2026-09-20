@@ -55,7 +55,6 @@ const getUserRecord = async (user) => {
 const hasLocalAccess = async (user, locationId) => {
   if (!locationId) return false;
   if (!user) return false;
-  if (user.role === 'admin') return true;
 
   const userRecord = await getUserRecord(user);
   if (!userRecord?.homeLocationId) return false;
