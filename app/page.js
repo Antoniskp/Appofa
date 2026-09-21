@@ -1,78 +1,324 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { homepageAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { useAsyncData } from '@/hooks/useAsyncData';
-import HomepageSection from '@/components/HomepageSection';
+import HomeHero from '@/components/HomeHero';
+import HomeActionLanes from '@/components/HomeActionLanes';
+import GovernmentSnapshotSection from '@/components/GovernmentSnapshotSection';
+import ArticleCard from '@/components/articles/ArticleCard';
 import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
+import HomepageSection from '@/components/HomepageSection';
 import OnboardingCard from '@/components/OnboardingCard';
-import ProgressFeed from '@/components/ProgressFeed';
-import AlertMessage from '@/components/ui/AlertMessage';
 import CountryEntryPopup from '@/components/geo/CountryEntryPopup';
-import EditorialImage from '@/components/EditorialImage';
-import { idSlug } from '@/lib/utils/slugify';
+
+  const VideoThumbnailCard = dynamic(() => import('@/components/articles/VideoThumbnailCard'));
+  const ExploreLocationsMap = dynamic(() => import('@/components/locations/ExploreLocationsMap'), { ssr: false });
 
 export default function HomePage() {
-  const t = useTranslations('democracy');
-  const r = useTranslations('redesign');
-  const locale = useLocale();
-  const { user, loading: authLoading } = useAuth();
-  const [chosenArea, setChosenArea] = useState(null);
-  const locationId = chosenArea ?? String(user?.homeLocation?.id || user?.homeLocationId || '');
-  const { data, loading, error, refetch } = useAsyncData(async () => {
-    const response = await homepageAPI.get(locationId);
-    if (!response.success) throw new Error(response.message);
-    return response.data;
-  }, [user?.id, locationId], { initialData: {} });
-  const community = user?.homeLocation?.slug ? `/locations/${user.homeLocation.slug}` : '/locations';
-  const areas = [...(user?.homeLocation?.id ? [user.homeLocation] : []), ...(data?.prefectures || [])]
-    .filter((area, index, list) => list.findIndex(item => item.id === area.id) === index);
-  const selectedArea = areas.find(area => String(area.id) === locationId);
-  const scopeLabel = selectedArea?.name || (locationId ? r('communityNav') : r('allAreas'));
-  const featured = data?.homepageSettings?.featuredPoll;
-  const showFeatured = featured?.enabled && (featured.audience === 'all' || featured.audience === (user ? 'registered' : 'guest')) && data?.featuredPoll;
-  const proposal = !loading && !error ? data?.suggestions?.[0] : null;
-  const news = data?.latestNews || [];
+  const tHome = useTranslations('home');
+  const { user } = useAuth();
 
-  return <div className="min-h-screen bg-ivory text-charcoal">
-    <section className="border-b border-brand-border">
-      <div className={`app-container ${user || authLoading ? 'py-10 sm:py-14' : 'grid gap-10 py-12 sm:py-20 lg:grid-cols-[1.15fr_1fr] lg:items-center lg:gap-16'}`}>
-        <div>
-          <p className="mb-5 flex items-center gap-2 text-sm font-semibold text-copper"><span aria-hidden="true" className="h-px w-8 bg-copper" />{t('eyebrow')}</p>
-          <h1 className={user || authLoading ? 'text-3xl font-semibold tracking-tight sm:text-4xl' : 'max-w-3xl text-4xl font-semibold leading-[1.12] tracking-tight sm:text-5xl lg:text-6xl'}>{user ? r('welcome', { name: user.firstNameNative || user.username }) : t('heroTitle')}</h1>
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-[#62666A]">{user ? r('welcomeBody') : t('heroBody')}</p>
-          <div className="mt-8 flex flex-wrap gap-3"><Link href={community} className="btn-primary min-h-12">{user ? r('communityNav') : t('findCommunity')} →</Link><Link href={user ? '/suggestions/new' : '#community-activity'} className="btn-secondary min-h-12">{user ? t('submit') : t('proposals')}</Link></div>
-          {!user && <p className="mt-6 max-w-xl text-sm leading-relaxed text-[#62666A]">{t('heroTrust')}</p>}
+  const [latestArticles, setLatestArticles] = useState([]);
+  const [articlesLoading, setArticlesLoading] = useState(true);
+  const [articlesError, setArticlesError] = useState(null);
+
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(true);
+  const [suggestionsError, setSuggestionsError] = useState(null);
+
+  const [polls, setPolls] = useState([]);
+  const [pollsLoading, setPollsLoading] = useState(true);
+  const [pollsError, setPollsError] = useState(null);
+  const [featuredPoll, setFeaturedPoll] = useState(null);
+  const [featuredPollLoading, setFeaturedPollLoading] = useState(false);
+
+  const [latestNews, setLatestNews] = useState([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+  const [newsError, setNewsError] = useState(null);
+
+  const [videos, setVideos] = useState([]);
+  const [videosLoading, setVideosLoading] = useState(true);
+  const [videosError, setVideosError] = useState(null);
+
+  const [manifestData, setManifestData] = useState([]);
+  const [manifestLoading, setManifestLoading] = useState(true);
+  const [prefectures, setPrefectures] = useState([]);
+  const [prefecturesLoading, setPrefecturesLoading] = useState(true);
+  const [articleTags, setArticleTags] = useState([]);
+  const [suggestionTags, setSuggestionTags] = useState([]);
+  const [pollTags, setPollTags] = useState([]);
+  const [homepageSettings, setHomepageSettings] = useState(null);
+
+  const isVisibleForAudience = (audience) => {
+    if (audience === 'all') return true;
+    if (audience === 'guest') return !user;
+    if (audience === 'registered') return !!user;
+    return false;
+  };
+
+  useEffect(() => {
+    let active = true;
+    const loadHomepage = async () => {
+      try {
+        const res = await homepageAPI.get();
+        if (!active) return;
+        if (!res?.success) throw new Error(res?.message || 'Failed to load homepage.');
+        if (res?.success) {
+          const payload = res.data || {};
+          setLatestArticles(payload.latestArticles || []);
+          setSuggestions(payload.suggestions || []);
+          setPolls(payload.polls || []);
+          setLatestNews(payload.latestNews || []);
+          setVideos(payload.videos || []);
+          setPrefectures(payload.prefectures || []);
+          setArticleTags(payload.tags?.article || []);
+          setSuggestionTags(payload.tags?.suggestion || []);
+          setPollTags(payload.tags?.poll || []);
+          setHomepageSettings(payload.homepageSettings || null);
+          setFeaturedPoll(payload.featuredPoll || null);
+          setManifestData(payload.manifestData || []);
+        }
+      } catch (err) {
+        if (!active) return;
+        const message = err?.message || 'Failed to load homepage.';
+        setArticlesError(message);
+        setSuggestionsError(message);
+        setPollsError(message);
+        setNewsError(message);
+        setVideosError(message);
+        setFeaturedPoll(null);
+      } finally {
+        if (active) {
+        setArticlesLoading(false);
+        setSuggestionsLoading(false);
+        setPollsLoading(false);
+        setNewsLoading(false);
+        setVideosLoading(false);
+        setPrefecturesLoading(false);
+        setManifestLoading(false);
+        setFeaturedPollLoading(false);
+        }
+      }
+    };
+
+    loadHomepage();
+    return () => { active = false; };
+  }, [user?.id]);
+
+  const mergedLatestContent = [...latestNews, ...latestArticles]
+    .sort((a, b) => {
+      const dateA = new Date(a.newsApprovedAt || a.createdAt || 0).getTime();
+      const dateB = new Date(b.newsApprovedAt || b.createdAt || 0).getTime();
+      return dateB - dateA;
+    })
+    .slice(0, 6);
+
+  const latestContentLoading = articlesLoading || newsLoading;
+  const latestContentError = articlesError || newsError;
+  const pollsSubtitle = !user
+    ? `${tHome('top_polls_subtitle')} — ${tHome('top_polls_guest_note')}`
+    : tHome('top_polls_subtitle');
+  const featuredPollConfig = homepageSettings?.featuredPoll;
+  const shouldShowFeaturedPoll =
+    Boolean(featuredPollConfig?.enabled) &&
+    isVisibleForAudience(featuredPollConfig?.audience || 'all') &&
+    (featuredPollLoading || Boolean(featuredPoll));
+
+  return (
+    <div className="bg-ivory">
+      <CountryEntryPopup isAuthenticated={Boolean(user)} />
+      <HomeHero
+        featuredPoll={shouldShowFeaturedPoll ? featuredPoll : null}
+        featuredPollLoading={shouldShowFeaturedPoll && featuredPollLoading}
+      />
+      <HomeActionLanes user={user} />
+
+      {user && (
+        <div className="app-container pt-4 pb-0">
+          <OnboardingCard user={user} />
         </div>
-        {!user && !authLoading && <aside className="overflow-hidden rounded-2xl border border-brand-border bg-white">
-          {proposal?.location?.imageUrl && <EditorialImage src={proposal.location.imageUrl} alt={proposal.location.name} className="aspect-[16/9] w-full object-cover" />}
-          <div className="p-6 sm:p-8"><p className="text-sm font-semibold text-copper">{r('featuredProposal')}</p>
-            {loading ? <div aria-busy="true" className="mt-6 space-y-4"><div className="h-8 animate-pulse rounded bg-sand" /><div className="h-20 animate-pulse rounded bg-ivory" /></div> : <><h2 className="mt-5 text-2xl font-semibold leading-snug sm:text-3xl">{proposal?.title || r('heroEmpty')}</h2><p className="mt-4 text-sm text-[#62666A]">{proposal ? proposal.location?.name || r('allAreas') : r('heroEmptyBody')}</p>{proposal?.progress?.stage && <p className="mt-4 text-sm font-semibold">{t(`stage_${proposal.progress.stage}`)}</p>}<Link href={proposal ? `/suggestions/${proposal.id}` : '/locations'} className="mt-7 inline-flex min-h-11 items-center gap-3 font-semibold text-copper">{proposal ? r('readProposal') : t('findCommunity')} →</Link></>}
+      )}
+
+      <HomepageSection
+        title={tHome('top_polls_title')}
+        subtitle={pollsSubtitle}
+        linkHref="/polls"
+        loading={pollsLoading}
+        error={pollsError}
+        items={polls}
+        emptyTitle={tHome('empty_polls_title')}
+        emptyDescription={tHome('empty_polls_description')}
+        skeletonCount={3}
+        bgColor="bg-white"
+        renderItem={(poll) => <PollCard key={poll.id} poll={poll} variant="grid" />}
+        topTags={pollTags}
+      />
+
+      <HomepageSection
+        title={tHome('top_suggestions_title')}
+        subtitle={tHome('top_suggestions_subtitle')}
+        linkHref="/suggestions"
+        loading={suggestionsLoading}
+        error={suggestionsError}
+        items={suggestions}
+        emptyTitle={tHome('empty_suggestions_title')}
+        emptyDescription={tHome('empty_suggestions_description')}
+        skeletonCount={3}
+        bgColor="bg-ivory"
+        renderItem={(suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} />}
+        topTags={suggestionTags}
+      />
+
+      {/* Featured Locations Section — map + prefecture pills, no location cards */}
+      {(prefecturesLoading || prefectures.length > 0) && (
+        <HomepageSection
+          title={tHome('explore_locations_title')}
+          subtitle={tHome('explore_locations_subtitle')}
+          linkHref="/locations"
+          loading={false}
+          error={null}
+          items={[]}
+          emptyTitle=""
+          emptyDescription=""
+          skeletonCount={0}
+          bgColor="bg-white"
+          renderItem={() => null}
+          mapSlot={
+            <div className="-mt-2 md:-mt-3">
+              <ExploreLocationsMap
+                prefectures={prefectures}
+                loading={prefecturesLoading}
+              />
+            </div>
+          }
+        />
+      )}
+
+      <GovernmentSnapshotSection />
+
+      <HomepageSection
+        title={tHome('latest_content_title')}
+        subtitle={tHome('latest_content_subtitle')}
+        linkHref="/news"
+        loading={latestContentLoading}
+        error={latestContentError}
+        items={mergedLatestContent}
+        emptyTitle={tHome('empty_news_title')}
+        emptyDescription={tHome('empty_news_description')}
+        skeletonCount={6}
+        bgColor="bg-white"
+        renderItem={(article) => (
+          <div key={article.id} className="relative">
+            <span className="absolute left-3 top-3 z-10 inline-flex items-center rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-gray-700 shadow-sm border border-gray-200">
+              {article.type === 'news' ? tHome('content_badge_news') : tHome('content_badge_article')}
+            </span>
+            <ArticleCard
+              article={article}
+              variant="grid"
+              tagLinkPrefix={article.type === 'news' ? '/news' : '/articles'}
+            />
           </div>
-        </aside>}
-      </div>
-    </section>
-    <CountryEntryPopup isAuthenticated={Boolean(user)} />
-    <section id="community-activity" className="app-container py-10 sm:py-14" aria-labelledby="community-heading">
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-sm font-semibold text-copper">{scopeLabel}</p><h2 id="community-heading" className="mt-3 text-3xl font-semibold">{r('activity')}</h2><p className="mt-3 max-w-xl text-[#62666A]">{r(locationId ? 'scopeNote' : 'allNote')}</p></div>
-        <div className="w-full lg:max-w-xs"><label htmlFor="home-area" className="mb-2 block text-sm font-semibold">{r('scope')}</label><select id="home-area" value={locationId} onChange={event => setChosenArea(event.target.value)} className="min-h-12 w-full rounded-xl border border-brand-border bg-white px-4 text-base"><option value="">{r('allAreas')}</option>{locationId && !selectedArea && <option value={locationId}>{r('communityNav')}</option>}{areas.map(area => <option key={area.id} value={area.id}>{area.name}</option>)}</select><Link href="/locations" className="mt-2 inline-block min-h-11 py-2 text-sm text-copper underline underline-offset-4">{r('changeArea')}</Link></div>
-      </div>
-      {user && <div className="mt-6"><OnboardingCard user={user} /></div>}
-      {error && <div className="mt-6"><AlertMessage message={error} /><button onClick={refetch} className="mt-3 min-h-11 font-semibold underline">{t('retry')}</button></div>}
-    </section>
-    <HomepageSection title={t('proposalHeading')} subtitle={scopeLabel} linkHref={locationId ? `/suggestions?locationId=${locationId}` : '/suggestions'} items={loading || error ? [] : data?.suggestions || []} loading={loading} emptyTitle={error ? null : r('localEmpty')} emptyDescription={r('localEmptyBody')} bgColor="bg-white" renderItem={item => <SuggestionCard key={item.id} suggestion={item} />} />
-    <HomepageSection title={t('consultations')} subtitle={r('consultationNote')} linkHref={locationId ? `/polls?locationId=${locationId}` : '/polls'} items={loading || error ? [] : data?.polls || []} loading={loading} emptyTitle={error ? null : t('emptyPolls')} emptyDescription={t('emptyPollsBody')} bgColor="bg-ivory" renderItem={poll => <PollCard key={poll.id} poll={poll} />} />
-    {showFeatured && !loading && !error && <section className="app-container pb-12"><h2 className="mb-4 text-2xl font-semibold">{t('featured')}</h2><p className="mb-4 text-sm text-[#62666A]">{data.featuredPoll.location?.name || r('allAreas')}</p><div className="max-w-xl"><PollCard poll={data.featuredPoll} /></div></section>}
-    <section className="border-y border-brand-border bg-sand py-14 sm:py-20"><div className="app-container"><div className="mb-9 flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-semibold text-copper">{t('accountability')}</p><h2 className="mt-3 text-3xl font-semibold">{t('progressHeading')}</h2><p className="mt-3 max-w-2xl text-[#62666A]">{t('reported')}</p><p className="mt-2 text-sm text-[#62666A]">{r('progressScope')}</p></div><Link href="/progress" className="min-h-11 py-2 font-semibold text-copper">{t('allProgress')} →</Link></div><ProgressFeed preview /></div></section>
-    <section className="app-container py-14 sm:py-20" aria-labelledby="news-heading"><div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><h2 id="news-heading" className="text-3xl font-semibold">{r('latest')}</h2><p className="mt-3 text-[#62666A]">{r('latestBody')}</p></div><Link href="/news" className="min-h-11 py-2 font-semibold text-copper">{r('viewAll')} →</Link></div>
-      {!loading && !error && news.length === 0 && <p className="border-t border-brand-border py-6 text-[#62666A]">{r('newsEmpty')}</p>}
-      <div className="divide-y divide-brand-border">{!loading && !error && news.map((article, index) => <article key={article.id} className="py-6 first:pt-0"><Link href={`/news/${idSlug(article.id, article.title)}`} className="group grid gap-5 sm:grid-cols-[3rem_1fr_12rem] sm:items-center"><span aria-hidden="true" className="hidden text-2xl text-copper sm:block">{String(index + 1).padStart(2, '0')}</span><div><h3 className="text-xl font-semibold leading-snug group-hover:text-copper sm:text-2xl">{article.title}</h3>{article.createdAt && <time dateTime={article.createdAt} className="mt-3 block text-sm text-[#62666A]">{new Date(article.createdAt).toLocaleDateString(locale)}</time>}<span className="mt-3 inline-block text-sm font-semibold text-copper">{r('readStory')} →</span></div><EditorialImage src={article.coverImage?.variants?.thumbnail?.url || article.bannerImageUrl} alt={article.bannerImageAltText || ''} className="aspect-[3/2] w-full rounded-xl object-cover" /></Link></article>)}</div>
-    </section>
-    <section className="border-y border-brand-border bg-white py-14 sm:py-20"><div className="app-container"><h2 className="max-w-2xl text-3xl font-semibold">{r('how')}</h2><p className="mt-3 text-[#62666A]">{r('howBody')}</p><ol className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">{['propose', 'deliberate', 'decide', 'deliver'].map((step, index) => <li key={step} className="border-t border-brand-border pt-5"><span aria-hidden="true" className="text-sm font-semibold text-copper">0{index + 1}</span><h3 className="mt-4 text-xl font-semibold">{t(step)}</h3><p className="mt-3 leading-relaxed text-[#62666A]">{t(`${step}Body`)}</p></li>)}</ol><div className="mt-8 flex flex-wrap gap-6"><Link href="/rules" className="min-h-11 py-2 font-semibold text-copper">{r('rules')} →</Link><Link href="/transparency" className="min-h-11 py-2 font-semibold text-copper">{r('transparency')} →</Link></div></div></section>
-    <section className="app-container flex flex-col gap-6 py-14 sm:flex-row sm:items-center sm:justify-between sm:py-20"><div><h2 className="text-2xl font-semibold">{r('guidesNav')}</h2><p className="mt-3 text-[#62666A]">{r('guidesBody')}</p></div><Link href="/citizen-help" className="btn-secondary shrink-0">{r('viewAll')} →</Link></section>
-  </div>;
+        )}
+        topTags={articleTags}
+        tagLinkPrefix="/articles"
+      />
+
+      <HomepageSection
+        title={tHome('latest_videos_title')}
+        subtitle={tHome('latest_videos_subtitle')}
+        linkHref="/videos"
+        loading={videosLoading}
+        error={videosError}
+        items={videos}
+        emptyTitle={tHome('empty_videos_title')}
+        emptyDescription={tHome('empty_videos_description')}
+        skeletonCount={3}
+        bgColor="bg-ivory"
+        renderItem={(video) => <VideoThumbnailCard key={video.id} article={video} />}
+        topTags={articleTags}
+        tagLinkPrefix="/videos"
+      />
+
+      {/* Manifest Supporters Section */}
+      {(homepageSettings?.manifestSection?.enabled ?? true) &&
+        isVisibleForAudience(homepageSettings?.manifestSection?.audience || 'all') &&
+        !manifestLoading && manifestData.length > 0 && (
+        <section className="bg-gradient-to-b from-ivory to-white">
+          <div className="app-container py-16">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              {tHome('manifest_supporters_title')}
+            </h2>
+            <p className="text-sm text-gray-500 mb-8">{tHome('manifest_supporters_subtitle')}</p>
+            <div className="space-y-10">
+              {manifestData.map((manifest) => (
+                <div key={manifest.slug}>
+                  <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800">{manifest.title}</h3>
+                      <p className="text-xs text-gray-400">
+                         {tHome('manifest_total_supporters', { count: manifest.supportersCount || 0 })}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/manifest-supporters?manifest=${encodeURIComponent(manifest.slug)}`}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                       {tHome('view_all')}
+                    </Link>
+                  </div>
+                  {manifest.randomSupporters.length > 0 ? (
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-4">
+                      {manifest.randomSupporters.map((supporter) => (
+                        <Link
+                          key={supporter.id}
+                          href={`/users/${supporter.username}`}
+                          className="flex flex-col items-center group"
+                        >
+                          <div className="relative">
+                            <div
+                              className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold group-hover:ring-2 ring-blue-400 transition overflow-hidden"
+                              style={{ backgroundColor: supporter.avatarColor || '#dbeafe' }}
+                            >
+                              {supporter.avatar ? (
+                                <img
+                                  src={supporter.avatar}
+                                  alt={supporter.username}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-blue-600">
+                                  {(supporter.firstName || supporter.username || '?')[0].toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                            {supporter.displayBadgeSlug && supporter.displayBadgeTier && (
+                              <img
+                                src={`/images/badges/${supporter.displayBadgeSlug}-${supporter.displayBadgeTier}.svg`}
+                                alt=""
+                                className="absolute -bottom-1 -right-1 w-5 h-5"
+                              />
+                            )}
+                          </div>
+                          <span className="text-xs text-gray-600 mt-1 truncate max-w-[80px] text-center">
+                            {supporter.firstName || supporter.username}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                     <p className="text-sm text-gray-400">{tHome('no_manifest_supporters')}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+        )}
+    </div>
+  );
 }

@@ -651,7 +651,7 @@ export default memo(function GreeceBoundaryMap({
         className="h-full w-full"
         scrollWheelZoom={false}
         interactive={true}
-        tileMode={layerMode === 'satellite' ? 'satellite' : layerMode === 'political' ? 'political' : 'light'}
+        tileMode={layerMode === 'satellite' ? 'satellite' : 'political'}
         showFullscreenControl
         onMarkerHover={(idOrNull) => {
           if (idOrNull != null) showLocationCard(idOrNull);

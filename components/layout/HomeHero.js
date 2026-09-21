@@ -13,7 +13,7 @@ import {
   NewspaperIcon,
 } from '@heroicons/react/24/outline';
 
-const DEFAULT_BG_COLOR = '#1a2a3a';
+const DEFAULT_BG_COLOR = '#252627';
 const DEFAULT_TITLE = 'Δες τι συμβαίνει. Πάρε θέση. Πρότεινε λύσεις.';
 const DEFAULT_SUBTITLE = 'Ανακάλυψε τι αφορά την περιοχή σου, συμμετείχε σε ανοιχτές ψηφοφορίες και δώσε ορατότητα σε ιδέες, προβλήματα και ανθρώπους.';
 const SLIDE_INTERVAL_MS = 5000;
@@ -83,8 +83,8 @@ function FeaturedLivePoll({ poll, loading, user }) {
   };
 
   return (
-    <div className="rounded-lg border border-emerald-200/25 bg-white/[0.16] p-5 shadow-2xl shadow-black/15 backdrop-blur-md">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-100">
+    <div className="rounded-lg border border-white/25 bg-white/[0.16] p-5 shadow-2xl shadow-black/15 backdrop-blur-md">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sand">
         Δημόσια γνώμη
       </p>
       <h2 className="mt-2 text-xl font-bold leading-7 text-white">
@@ -113,7 +113,7 @@ function FeaturedLivePoll({ poll, loading, user }) {
                 className="group w-full rounded-lg border border-white/15 bg-white/10 p-3 text-left transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-75"
               >
                 <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className={`font-semibold ${isSelected ? 'text-emerald-100' : 'text-white/85'}`}>
+                  <span className={`font-semibold ${isSelected ? 'text-sand' : 'text-white/85'}`}>
                     {option.text || option.displayText}
                   </span>
                   <span className="shrink-0 text-xs font-bold text-white">
@@ -122,7 +122,7 @@ function FeaturedLivePoll({ poll, loading, user }) {
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/15">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${isSelected ? 'bg-emerald-300' : 'bg-cyan-200/70'}`}
+                    className={`h-full rounded-full transition-all duration-500 ${isSelected ? 'bg-sand' : 'bg-sand/70'}`}
                     style={{ width: `${percentage}%` }}
                   />
                 </div>
@@ -139,7 +139,7 @@ function FeaturedLivePoll({ poll, loading, user }) {
               type="button"
               disabled={!canVote || Boolean(submittingOptionId)}
               onClick={() => handleVote(option.id)}
-              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg border border-white/20 bg-white/10 px-4 py-2.5 text-left text-sm font-semibold text-white transition hover:border-emerald-200/60 hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-emerald-200/60 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg border border-white/20 bg-white/10 px-4 py-2.5 text-left text-sm font-semibold text-white transition hover:border-white/60 hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/60 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span>{option.text || option.displayText}</span>
               <span className="text-xs text-white/65">
@@ -284,8 +284,8 @@ export default function HomeHero({ featuredPoll = null, featuredPollLoading = fa
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/65 via-slate-900/35 to-emerald-950/50 pointer-events-none" />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-charcoal/65 via-charcoal/35 to-charcoal/50 pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ivory to-transparent pointer-events-none" />
 
         <div className="relative app-container py-12 md:py-16 lg:py-20">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-center animate-fade-in">
@@ -293,7 +293,7 @@ export default function HomeHero({ featuredPoll = null, featuredPollLoading = fa
             {/* Left – text & actions */}
             <div className="min-w-0 max-w-3xl">
               {!authLoading && user && (
-                <p className="text-sm mb-2 text-cyan-100 font-medium">
+                <p className="text-sm mb-2 text-sand font-medium">
                   Καλώς ήρθες, {user.firstNameNative || user.username}!
                 </p>
               )}
@@ -305,7 +305,7 @@ export default function HomeHero({ featuredPoll = null, featuredPollLoading = fa
                   className="h-11 w-11 rounded-lg border border-white/25 bg-white/90 p-1 shadow-lg"
                 />
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100">Appofa</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sand">Appofa</p>
                   <p className="text-sm text-white/75">Δημόσιος χώρος για καθαρές αποφάσεις</p>
                 </div>
               </div>
@@ -400,7 +400,7 @@ export default function HomeHero({ featuredPoll = null, featuredPollLoading = fa
                     key={href}
                     className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-white/90 backdrop-blur"
                   >
-                    <Icon className="h-4 w-4 text-cyan-100" />
+                    <Icon className="h-4 w-4 text-sand" />
                     {label}
                   </span>
                 ))}

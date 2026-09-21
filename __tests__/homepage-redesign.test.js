@@ -6,16 +6,23 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 let mockUser = null;
 const mockGet = jest.fn();
 jest.mock('next/link', () => ({ __esModule: true, default: ({ href, children, ...props }) => require('react').createElement('a', { href, ...props }, children) }));
+jest.mock('next/dynamic', () => loader => {
+  const isMap = loader.toString().includes('ExploreLocationsMap');
+  return props => require('react').createElement('div', { 'data-testid': isMap ? 'territory-map' : 'video' }, isMap ? props.prefectures.map(p => p.name).join(', ') : props.article.title);
+});
 jest.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: mockUser, loading: false }) }));
 jest.mock('@/lib/api', () => ({ homepageAPI: { get: (...args) => mockGet(...args) } }));
 jest.mock('@/components/geo/CountryEntryPopup', () => () => null);
 jest.mock('@/components/OnboardingCard', () => () => null);
-jest.mock('@/components/ProgressFeed', () => () => null);
+jest.mock('@/components/HomeHero', () => props => require('react').createElement('div', { 'data-testid': 'original-hero' }, props.featuredPoll?.title));
+jest.mock('@/components/HomeActionLanes', () => () => require('react').createElement('div', { 'data-testid': 'action-lanes' }));
+jest.mock('@/components/GovernmentSnapshotSection', () => () => require('react').createElement('div', { 'data-testid': 'government' }));
 jest.mock('@/components/SuggestionCard', () => ({ suggestion }) => require('react').createElement('p', null, suggestion.title));
 jest.mock('@/components/polls/PollCard', () => ({ poll }) => require('react').createElement('p', null, poll.title));
+jest.mock('@/components/articles/ArticleCard', () => ({ article }) => require('react').createElement('p', null, article.title));
 const Home = require('../app/page').default;
-const payload = { suggestions: [{ id: 1, title: 'Public sample proposal', location: { name: 'Athens' } }], polls: [], latestNews: [], prefectures: [{ id: 12, name: 'Attica' }] };
-describe('Community-first homepage', () => {
+const payload = { suggestions: [{ id: 1, title: 'Public sample proposal' }], polls: [], latestNews: [{ id: 2, title: 'Local news', type: 'news' }], latestArticles: [{ id: 3, title: 'Community article', type: 'articles' }], videos: [{ id: 4, title: 'Community video' }], prefectures: [{ id: 12, name: 'Attica' }], manifestData: [{ slug: 'public-commitment', title: 'Public commitment', randomSupporters: [] }] };
+describe('Restored map homepage', () => {
   let container, root;
   beforeEach(() => {
     mockUser = null;
@@ -25,31 +32,24 @@ describe('Community-first homepage', () => {
     root = createRoot(container);
   });
   afterEach(async () => { await act(async () => root.unmount()); container.remove(); });
-  const render = async () => { await act(async () => { root.render(React.createElement(Home)); }); };
-  test('shows a real featured proposal for guests and preserves scope in discovery links', async () => {
+  const render = async () => { await act(async () => root.render(React.createElement(Home))); };
+  test('restores the original hero, map, government overview, articles, videos and supporters', async () => {
     await render();
-    expect(container.querySelector('aside a').getAttribute('href')).toBe('/suggestions/1');
-    expect(mockGet).toHaveBeenLastCalledWith('');
-    const select = container.querySelector('#home-area');
-    await act(async () => { select.value = '12'; select.dispatchEvent(new Event('change', { bubbles: true })); });
-    expect(mockGet).toHaveBeenLastCalledWith('12');
-    expect(container.querySelector('a[href="/suggestions?locationId=12"]')).toBeTruthy();
-    expect(container.querySelector('a[href="/polls?locationId=12"]')).toBeTruthy();
+    for (const id of ['original-hero', 'territory-map', 'action-lanes', 'government']) expect(container.querySelector('[data-testid="' + id + '"]')).toBeTruthy();
+    for (const text of ['Attica', 'Local news', 'Community article', 'Community video', 'Public commitment']) expect(container.textContent).toContain(text);
+    expect(container.querySelector('#home-area')).toBeNull();
   });
-  test('gives returning members a compact home-area view', async () => {
-    mockUser = { id: 7, username: 'citizen', homeLocation: { id: 5, name: 'Athens', slug: 'athens' } };
+  test('preserves featured-poll audience settings', async () => {
+    mockGet.mockResolvedValue({ success: true, data: { ...payload, featuredPoll: { title: 'Members poll' }, homepageSettings: { featuredPoll: { enabled: true, audience: 'registered' } } } });
     await render();
-    expect(mockGet).toHaveBeenLastCalledWith('5');
-    expect(container.querySelector('aside')).toBeNull();
-    expect(container.querySelector('a[href="/locations/athens"]')).toBeTruthy();
-    expect(container.querySelector('#home-area').value).toBe('5');
+    expect(container.querySelector('[data-testid="original-hero"]').textContent).not.toContain('Members poll');
+    mockUser = { id: 1, username: 'member' };
+    await render();
+    expect(container.querySelector('[data-testid="original-hero"]').textContent).toContain('Members poll');
   });
-  test('does not leave old-area proposals visible when a new area fails', async () => {
+  test('shows a loading failure instead of silently rendering an empty response', async () => {
+    mockGet.mockResolvedValue({ success: false, message: 'Homepage unavailable' });
     await render();
-    mockGet.mockRejectedValueOnce(new Error('Area unavailable'));
-    const select = container.querySelector('#home-area');
-    await act(async () => { select.value = '12'; select.dispatchEvent(new Event('change', { bubbles: true })); });
-    expect(container.textContent).toContain('Area unavailable');
-    expect(container.textContent).not.toContain('Public sample proposal');
+    expect(container.textContent).toContain('Homepage unavailable');
   });
 });

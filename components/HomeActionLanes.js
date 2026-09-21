@@ -141,7 +141,7 @@ const civicPathActions = (user) => [
 
 const toneClasses = {
   blue: 'bg-blue-50 text-blue-700 border-blue-200 group-hover:bg-blue-100',
-  emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200 group-hover:bg-emerald-100',
+  emerald: 'bg-blue-50 text-blue-700 border-blue-200 group-hover:bg-blue-100',
   amber: 'bg-amber-50 text-amber-700 border-amber-200 group-hover:bg-amber-100',
   indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200 group-hover:bg-indigo-100',
 };
@@ -178,10 +178,10 @@ function GuestRegistrationBridge() {
   const handleAuthClick = () => saveReturnTo();
 
   return (
-    <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-5 py-5 text-gray-900 sm:px-6">
+    <div className="mt-5 rounded-lg border border-blue-200 bg-blue-50 px-5 py-5 text-gray-900 sm:px-6">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
             Κράτησε τη συμμετοχή σου
           </p>
           <h3 className="mt-1 text-lg font-bold leading-7">
@@ -190,7 +190,7 @@ function GuestRegistrationBridge() {
           <div className="mt-4 grid gap-3 text-sm text-gray-700 md:grid-cols-3">
             {guestRegistrationBenefits.map((benefit) => (
               <div key={benefit} className="flex gap-2">
-                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-500" />
                 <span>{benefit}</span>
               </div>
             ))}
@@ -200,14 +200,14 @@ function GuestRegistrationBridge() {
           <Link
             href="/register"
             onClick={handleAuthClick}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
           >
             Δημιούργησε δωρεάν προφίλ
             <ArrowRightIcon className="h-4 w-4" />
           </Link>
           <Link
             href="/newsletter"
-            className="inline-flex items-center justify-center rounded-md border border-emerald-300 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
+            className="inline-flex items-center justify-center rounded-md border border-blue-300 bg-white px-4 py-2.5 text-sm font-semibold text-blue-800 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
           >
             Ενημερώσεις email
           </Link>
@@ -226,7 +226,7 @@ export default function HomeActionLanes({ user }) {
   return (
     <section className="border-t border-gray-200 bg-white">
       <div className="app-container py-12">
-        <div className="mb-12 border-y border-blue-100 bg-gradient-to-r from-blue-50 via-white to-emerald-50 py-8 text-gray-900">
+        <div className="mb-12 border-y border-blue-100 bg-gradient-to-r from-blue-50 via-white to-blue-50 py-8 text-gray-900">
           <div className="grid gap-7 px-1 sm:px-2 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.45fr)] lg:items-start">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
