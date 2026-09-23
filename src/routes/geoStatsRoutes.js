@@ -1,6 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
-const jwt = require('jsonwebtoken');
+const { resolveSession } = require('../services/sessionService');
 const { fn, col, literal, Op, QueryTypes } = require('sequelize');
 const { normalizeIp } = require('../utils/normalizeIp');
 const { getCookie } = require('../utils/cookies');
@@ -152,26 +152,14 @@ router.post('/track', apiLimiter, async (req, res, next) => {
 
     // Identify the authenticated user from the verified HttpOnly cookie sent by the browser.
     // Fall back to body token (analytics hints from non-browser callers) but always verify it.
-    let isAuthenticated = false;
-    let userId = null;
-    const jwtSecret = process.env.JWT_SECRET;
-    if (jwtSecret) {
-      const cookieToken = getCookie(req, 'auth_token');
-      const bodyToken = typeof req.body.token === 'string' ? req.body.token : null;
-      const effectiveToken = cookieToken || bodyToken;
-      if (effectiveToken) {
-        try {
-          const payload = jwt.verify(effectiveToken, jwtSecret);
-          if (payload && typeof payload === 'object') {
-            const parsed = Number.parseInt(payload.id || payload.sub, 10);
-            userId = Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-            isAuthenticated = Boolean(userId);
-          }
-        } catch {
-          // Invalid or expired token — leave isAuthenticated false.
-        }
-      }
-    }
+    const cookieToken = getCookie(req, 'auth_token');
+    const bodyToken = typeof req.body.token === 'string' ? req.body.token : null;
+    const effectiveToken = cookieToken || bodyToken;
+    const session = effectiveToken
+      ? await resolveSession({ headers: { authorization: 'Bearer ' + effectiveToken } })
+      : await resolveSession(req);
+    const userId = session?.id || null;
+    const isAuthenticated = Boolean(userId);
 
     const validCode = getServerDetectedCountryCode(req, ipAddress);
     const sessionHash = ipAddress

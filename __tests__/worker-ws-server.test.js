@@ -207,6 +207,40 @@ describe('worker websocket server', () => {
     await waitForEvent(ws, 'close');
   });
 
+  test.each(['bytes', 'count'])('bounds pre-authentication buffered message %s', async (limit) => {
+    isValidWorkerTokenFormat.mockReturnValue(true);
+    validateWorkerToken.mockImplementation(() => new Promise(() => {}));
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/workers?token=pending`);
+    clients.push(ws);
+    await waitForEvent(ws, 'open');
+    const closed = waitForEvent(ws, 'close');
+    if (limit === 'bytes') ws.send(Buffer.alloc(65537));
+    else for (let i = 0; i < 9; i++) ws.send('{}');
+    await closed;
+    expect(getConnectedWorkers()).toEqual([]);
+  });
+
+  test('terminates a stalled authentication lookup', async () => {
+    isValidWorkerTokenFormat.mockReturnValue(true);
+    validateWorkerToken.mockImplementation(() => new Promise(() => {}));
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/workers?token=pending`);
+    clients.push(ws);
+    await waitForEvent(ws, 'close');
+    expect(getConnectedWorkers()).toEqual([]);
+  });
+
+  test('handles oversized frames while authentication is pending without crashing', async () => {
+    isValidWorkerTokenFormat.mockReturnValue(true);
+    validateWorkerToken.mockImplementation(() => new Promise(() => {}));
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/workers?token=pending`);
+    clients.push(ws);
+    await waitForEvent(ws, 'open');
+    const closed = waitForEvent(ws, 'close');
+    ws.send(Buffer.alloc(1024 * 1024 + 1));
+    await closed;
+    expect(getConnectedWorkers()).toEqual([]);
+  });
+
   test('sendTaskToWorker sends task messages and resolves matching taskResult', async () => {
     isValidWorkerTokenFormat.mockReturnValue(true);
     validateWorkerToken.mockResolvedValue({ valid: true, source: 'database', tokenId: 12 });

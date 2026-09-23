@@ -1,6 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 const bcrypt = require('bcryptjs');
+const { randomUUID } = require('crypto');
 const { normalizeProfessions, normalizeExpertiseTags } = require('../utils/professionTaxonomy');
 
 const User = sequelize.define('User', {
@@ -32,6 +33,11 @@ const User = sequelize.define('User', {
   resetPasswordTokenHash: {
     type: DataTypes.STRING(128),
     allowNull: true
+  },
+  sessionVersion: {
+    type: DataTypes.STRING(36),
+    allowNull: false,
+    defaultValue: '0'
   },
   resetPasswordExpires: {
     type: DataTypes.DATE,
@@ -438,6 +444,7 @@ const User = sequelize.define('User', {
     },
     beforeUpdate: async (user) => {
       if (user.changed('password')) {
+        user.sessionVersion = randomUUID();
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);
       }

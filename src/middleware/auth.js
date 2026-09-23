@@ -1,35 +1,12 @@
-const jwt = require('jsonwebtoken');
+const { resolveSession } = require('../services/sessionService');
 require('dotenv').config();
 
-const { getCookie } = require('../utils/cookies');
-
-const authMiddleware = async (req, res, next) => {
+module.exports = async (req, res, next) => {
   try {
-    const bearerToken = req.headers.authorization?.split(' ')[1];
-    const cookieToken = getCookie(req, 'auth_token');
-    const token = bearerToken || cookieToken;
-    
-    if (!token) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'No token provided. Authentication required.' 
-      });
-    }
-
-    // Ensure JWT_SECRET is configured
-    if (!process.env.JWT_SECRET) {
-      throw new Error('JWT_SECRET must be configured');
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
+    req.user = await resolveSession(req);
+    if (!req.user) return res.status(401).json({ success: false, message: 'Invalid or expired token. Authentication required.' });
+    return next();
   } catch {
-    return res.status(401).json({ 
-      success: false, 
-      message: 'Invalid or expired token.' 
-    });
+    return res.status(503).json({ success: false, message: 'Authentication temporarily unavailable.' });
   }
 };
-
-module.exports = authMiddleware;

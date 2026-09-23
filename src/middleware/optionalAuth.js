@@ -1,25 +1,13 @@
-const jwt = require('jsonwebtoken');
+const { resolveSession } = require('../services/sessionService');
 require('dotenv').config();
 
-// Optional authentication middleware - doesn't fail if no token is provided
-const { getCookie } = require('../utils/cookies');
-
-const optionalAuthMiddleware = async (req, res, next) => {
+module.exports = async (req, res, next) => {
+  delete req.user;
   try {
-    const bearerToken = req.headers.authorization?.split(' ')[1];
-    const cookieToken = getCookie(req, 'auth_token');
-    const token = bearerToken || cookieToken;
-
-    if (token && process.env.JWT_SECRET) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded;
-    }
-    // If no token, req.user remains undefined - this is expected
-    next();
+    const user = await resolveSession(req);
+    if (user) req.user = user;
+    return next();
   } catch {
-    // If token is invalid, continue without authentication
-    next();
+    return res.status(503).json({ success: false, message: 'Authentication temporarily unavailable.' });
   }
 };
-
-module.exports = optionalAuthMiddleware;

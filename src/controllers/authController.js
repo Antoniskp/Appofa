@@ -225,6 +225,8 @@ const authController = {
       } else {
         await authService.changePassword(req.user.id, currentPassword, newPassword);
       }
+      await user.reload();
+      setAuthCookies(res, authService.generateToken(user), user.id);
       res.status(200).json({ success: true, message: 'Password updated successfully.' });
     } catch (error) {
       if (error.status) {
@@ -451,6 +453,8 @@ const authController = {
 
   logout: async (req, res) => {
     try {
+      // Revoke all sessions, including copies of the browser's bearer token.
+      await User.update({ sessionVersion: require('crypto').randomUUID() }, { where: { id: req.user.id } });
       clearAuthCookies(res);
       res.status(200).json({ success: true, message: 'Logged out successfully.' });
     } catch (error) {

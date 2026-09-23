@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const optionalAuthMiddleware = require('../src/middleware/optionalAuth');
 const { getCookie } = require('../src/utils/cookies');
+const { User } = require('../src/models');
+jest.mock('../src/models', () => ({ User: { findByPk: jest.fn() } }));
 
 jest.mock('jsonwebtoken', () => ({
   verify: jest.fn()
@@ -37,6 +39,7 @@ describe('optionalAuthMiddleware', () => {
     process.env.JWT_SECRET = 'test-secret';
     getCookie.mockReturnValue('cookie-token');
     jwt.verify.mockReturnValue({ id: 123, role: 'viewer' });
+    User.findByPk.mockResolvedValue({ id: 123, role: 'viewer', sessionVersion: '0' });
 
     const req = { headers: {} };
     const res = {};
@@ -44,8 +47,8 @@ describe('optionalAuthMiddleware', () => {
 
     await optionalAuthMiddleware(req, res, next);
 
-    expect(jwt.verify).toHaveBeenCalledWith('cookie-token', 'test-secret');
-    expect(req.user).toEqual({ id: 123, role: 'viewer' });
+    expect(jwt.verify).toHaveBeenCalledWith('cookie-token', 'test-secret', { algorithms: ['HS256'] });
+    expect(req.user).toMatchObject({ id: 123, role: 'viewer' });
     expect(next).toHaveBeenCalledTimes(1);
   });
 });

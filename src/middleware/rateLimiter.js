@@ -1,66 +1,15 @@
 const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
-const jwt = require('jsonwebtoken');
+const { resolveSession } = require('../services/sessionService');
 const ipAccessService = require('../services/ipAccessService');
 const { normalizeIp } = require('../utils/normalizeIp');
-const { getCookie } = require('../utils/cookies');
-const { User } = require('../models');
 
 const API_LIMIT_ANONYMOUS = 200;
 const API_LIMIT_AUTHENTICATED = 1000;
-const USER_LIMIT_CACHE_TTL_MS = 60 * 1000;
-const userLimitCache = new Map();
-
-const getAuthToken = (req) => {
-  const bearerToken = req.headers.authorization?.split(' ')[1];
-  const cookieToken = getCookie(req, 'auth_token');
-  return bearerToken || cookieToken;
-};
-
-const getCachedUserLimitFields = async (userId) => {
-  const cached = userLimitCache.get(userId);
-  if (cached && cached.expiresAt > Date.now()) return cached.user;
-
-  const user = await User.findByPk(userId, {
-    attributes: ['id', 'role', 'isVerified', 'emailVerified'],
-  });
-  const userData = user
-    ? {
-        id: user.id,
-        role: user.role,
-        isVerified: Boolean(user.isVerified),
-        emailVerified: Boolean(user.emailVerified),
-      }
-    : null;
-
-  userLimitCache.set(userId, {
-    user: userData,
-    expiresAt: Date.now() + USER_LIMIT_CACHE_TTL_MS,
-  });
-
-  return userData;
-};
-
 const hydrateRateLimitUser = async (req) => {
-  if (req.user) return req.user;
-  if (!process.env.JWT_SECRET) return null;
-
-  const token = getAuthToken(req);
-  if (!token) return null;
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded?.id;
-    if (!userId) return null;
-
-    const cachedUser = await getCachedUserLimitFields(userId);
-    req.user = {
-      ...decoded,
-      ...(cachedUser || {}),
-    };
-    return req.user;
-  } catch {
-    return null;
-  }
+  const user = await resolveSession(req);
+  if (user) req.user = user;
+  else delete req.user;
+  return user;
 };
 
 const skipForWhitelist = async (req) => {

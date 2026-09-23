@@ -445,7 +445,7 @@ describe('Person Profile Tests (POST /api/persons)', () => {
     it('returns 404 when person does not exist', async () => {
       // Minimal 1×1 white PNG
       const png1x1 = Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI6QAAAABJRU5ErkJggg==',
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADUlEQVQImWP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==',
         'base64'
       );
       const res = await request(app)
@@ -458,7 +458,7 @@ describe('Person Profile Tests (POST /api/persons)', () => {
     it('admin can upload a photo for a person profile (200)', async () => {
       // Minimal 1×1 white PNG
       const png1x1 = Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI6QAAAABJRU5ErkJggg==',
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADUlEQVQImWP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==',
         'base64'
       );
       const res = await request(app)
@@ -478,7 +478,7 @@ describe('Person Profile Tests (POST /api/persons)', () => {
 
     it('moderator can upload a photo for a person profile (200)', async () => {
       const png1x1 = Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI6QAAAABJRU5ErkJggg==',
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADUlEQVQImWP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==',
         'base64'
       );
       const res = await request(app)

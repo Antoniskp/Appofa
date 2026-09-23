@@ -483,6 +483,9 @@ describe('News Application Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
+      // Password changes revoke the previous bearer token.
+      const cookie = response.headers['set-cookie'].find((value) => value.startsWith('auth_token='));
+      adminToken = cookie.split(';')[0].replace('auth_token=', '');
     });
 
     test('admin should fetch user stats', async () => {

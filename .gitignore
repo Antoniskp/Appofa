@@ -6,6 +6,7 @@ dist/
 coverage/
 .next/
 .next-redesign/
+.next-security-review/
 out/
 .vercel
 *.tsbuildinfo

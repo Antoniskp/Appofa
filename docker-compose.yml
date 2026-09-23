@@ -7,9 +7,9 @@ services:
     environment:
       POSTGRES_DB: newsapp
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set a strong DB_PASSWORD}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -29,12 +29,12 @@ services:
       DB_PORT: 5432
       DB_NAME: newsapp
       DB_USER: postgres
-      DB_PASSWORD: password
-      JWT_SECRET: your-production-secret-key-change-this
+      DB_PASSWORD: ${DB_PASSWORD:?Set a strong DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set a strong JWT_SECRET}
       PORT: 3000
       NODE_ENV: production
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     restart: unless-stopped
 
 volumes:

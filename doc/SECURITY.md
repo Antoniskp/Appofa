@@ -1,5 +1,7 @@
 # Security Summary
 
+For the latest review and local fixes, see [24 September 2026 remediation](SECURITY_REMEDIATION_2026-09-24.md). Historical audit counts and session descriptions below are not a statement of current deployment status.
+
 ## Security Features Implemented
 
 ### 1. Authentication & Authorization

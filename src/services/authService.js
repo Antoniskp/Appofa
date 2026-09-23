@@ -40,6 +40,7 @@ function generateToken(user) {
   return jwt.sign(
     {
       id: user.id,
+      sessionVersion: user.sessionVersion ?? '0',
       username: user.username,
       email: user.email,
       role: user.role,

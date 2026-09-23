@@ -82,6 +82,7 @@ app.use(errorHandler);
 // Database sync and server start
 const startServer = async () => {
   try {
+    require('./config/validateProductionConfig').validateProductionConfig();
     // Test database connection
     await sequelize.authenticate();
     console.log('Database connection established successfully.');

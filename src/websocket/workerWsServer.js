@@ -176,9 +176,20 @@ const createWorkerWsServer = (httpServer) => {
   const workerWsServer = new WebSocket.Server({
     server: httpServer,
     path: '/ws/workers',
+    maxPayload: 1024 * 1024,
   });
+  let pendingAuthentications = 0;
 
   workerWsServer.on('connection', async (ws, req) => {
+    // Install before any await: malformed frames can arrive during authentication.
+    ws.on('error', () => ws.terminate());
+    if (pendingAuthentications >= 32 || workerWsServer.clients.size > 64) {
+      ws.terminate();
+      return;
+    }
+    pendingAuthentications += 1;
+    const authTimeout = setTimeout(() => ws.terminate(), 5000);
+    ws.once('close', () => clearTimeout(authTimeout));
     try {
       ws.on('close', () => {
         if (ws.workerId) {
@@ -191,11 +202,22 @@ const createWorkerWsServer = (httpServer) => {
 
       // Buffer messages immediately before any await, so register is not lost
       const messageBuffer = [];
-      const bufferMessage = (raw) => messageBuffer.push(raw);
+      let bufferedBytes = 0;
+      const bufferMessage = (raw) => {
+        bufferedBytes += raw.length;
+        if (messageBuffer.length >= 8 || bufferedBytes > 64 * 1024) {
+          messageBuffer.length = 0;
+          ws.terminate();
+          return;
+        }
+        messageBuffer.push(raw);
+      };
       ws.on('message', bufferMessage);
 
       const token = getTokenFromRequest(req);
       const isAuthorized = await isAuthorizedToken(token);
+      clearTimeout(authTimeout);
+      if (ws.readyState !== WebSocket.OPEN) return;
 
       if (!isAuthorized) {
         ws.off('message', bufferMessage);
@@ -236,8 +258,11 @@ const createWorkerWsServer = (httpServer) => {
         console.error('Worker WebSocket error:', error.message);
       });
     } catch (error) {
+      clearTimeout(authTimeout);
       console.error('Worker WebSocket connection error:', error.message);
       ws.close(4001, 'Unauthorized');
+    } finally {
+      pendingAuthentications -= 1;
     }
   });
 
