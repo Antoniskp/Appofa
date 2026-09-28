@@ -6,7 +6,7 @@ In **Admin → Homepage**, use **Νέα ψηφοφορία πρόθεσης ψή
 
 Creation atomically creates an ordinary poll and its options, then selects it as the homepage featured poll. It adds Other, Undecided, Blank/invalid and Abstention. Names are snapshotted so later organization edits cannot silently alter the ballot. The existing poll editor can edit options before the first vote; afterwards start a new round to change options. Creating a new round does not close an older one: use its existing status control when appropriate.
 
-The existing homepage widget supports voting, changing a vote, counts, and a link to the complete results. An optional onboarding invitation appears for an active featured voting-intention poll when the current user has not voted. Hiding the featured poll also hides this invitation. Voting is never an onboarding requirement.
+The existing homepage widget supports voting, changing a vote, counts, and a link to the complete results. The optional onboarding invitation component is available but is not mounted: onboarding participation is deferred. Voting is never an onboarding requirement.
 
 ## Identity and privacy
 

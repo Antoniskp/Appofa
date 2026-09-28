@@ -23,7 +23,6 @@ import { useAuth } from '@/lib/auth-context';
 import { authAPI, messageAPI, candidateRegistrationAPI, onboardingEventAPI } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import VotingIntentionOnboarding from '@/components/polls/VotingIntentionOnboarding';
 
 const GOALS = ['moderator', 'creator', 'independent', 'citizen'];
 
@@ -528,7 +527,6 @@ function OnboardingContent() {
       {/* Main */}
       <main className="flex-1 flex items-start justify-center px-4 pb-12 pt-6 sm:pt-10">
         <div className="w-full max-w-xl">
-          <VotingIntentionOnboarding />
           {phase === 'choose' && (
             <>
               <div className="text-center mb-8">

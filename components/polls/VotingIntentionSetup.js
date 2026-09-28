@@ -51,7 +51,7 @@ export default function VotingIntentionSetup({ onCreated }) {
   return (
     <section className="rounded-xl border border-blue-200 bg-white p-6 space-y-4">
       <h2 className="text-lg font-semibold">Νέα ψηφοφορία πρόθεσης ψήφου</h2>
-      <p className="text-sm text-gray-600">Επιλέξτε τα κόμματα από τις υπάρχουσες οργανώσεις. Η νέα ψηφοφορία θα εμφανιστεί στην αρχική σελίδα και προαιρετικά στην εισαγωγή νέων μελών.</p>
+      <p className="text-sm text-gray-600">Επιλέξτε τα κόμματα από τις υπάρχουσες οργανώσεις. Η νέα ψηφοφορία θα εμφανιστεί στην αρχική σελίδα.</p>
       <Link href="/admin/organizations" className="inline-block text-sm text-blue-700 underline">Διαχείριση κομμάτων</Link>
       <fieldset disabled={saving || loading || Boolean(createdId)} className="space-y-2">
         <legend className="font-medium">Κόμματα στο ψηφοδέλτιο</legend>
