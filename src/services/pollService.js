@@ -26,6 +26,9 @@ const RESULTS_VISIBILITIES = ['always', 'after_vote', 'after_deadline'];
 const POLL_STATUSES = ['active', 'closed', 'archived'];
 const ANSWER_TYPES = ['person', 'article', 'custom'];
 const VOTE_IDENTITY_VISIBILITIES = ['anonymous', 'public'];
+const isVotingIntention = poll => poll.purpose === 'voting_intention';
+// Private, stable, per-poll account key; never include in API responses or exports.
+const googleVoterKey = (pollId, googleId) => crypto.createHash('sha256').update(`appofa:poll:${pollId}:google:${googleId}`).digest('hex');
 
 const TITLE_MIN_LENGTH = 5;
 const TITLE_MAX_LENGTH = 200;
@@ -965,6 +968,11 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
 
     const responsePoll = shouldHideCreator(pollData, user) ? { ...pollData, creator: null } : pollData;
 
+    if (isVotingIntention(poll)) {
+      const voter = user ? await User.findByPk(user.id, { attributes: ['googleId'] }) : null;
+      responsePoll.googleVotingEligible = Boolean(voter?.googleId);
+    }
+
     // Check if user has voted
     if (user) {
       const userVote = await PollVote.findOne({
@@ -1015,6 +1023,8 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
   const transaction = await sequelize.transaction();
 
   try {
+    // Coordinate ballot edits with the first verified vote.
+    await Poll.findByPk(pollId, { transaction, lock: transaction.LOCK.UPDATE });
     const {
       title,
       description,
@@ -1042,7 +1052,8 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
           model: PollVote,
           as: 'votes'
         }
-      ]
+      ],
+      transaction
     });
 
     if (!poll) {
@@ -1067,6 +1078,18 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
     }
 
     const updates = {};
+
+    if (isVotingIntention(poll)) {
+      const protectedFields = ['type', 'visibility', 'voteRestriction', 'resultsVisibility', 'allowUserContributions'];
+      if (protectedFields.some(field => updateData[field] !== undefined && updateData[field] !== poll[field])) {
+        await transaction.rollback();
+        return { success: false, status: 400, message: 'Voting-intention participation and privacy rules cannot be changed.' };
+      }
+      if (options !== undefined && poll.votes?.length) {
+        await transaction.rollback();
+        return { success: false, status: 400, message: 'Start a new round to change parties after voting has begun.' };
+      }
+    }
 
     // Validate and update title
     if (title !== undefined) {
@@ -1658,7 +1681,29 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent,
     transaction = await sequelize.transaction();
     let vote;
     const isAuthenticated = !!userId;
-    const voteIdentityVisibility = isAuthenticated ? identityVisibilityResult.value : 'anonymous';
+    const voteIdentityVisibility = isAuthenticated && !isVotingIntention(poll) ? identityVisibilityResult.value : 'anonymous';
+
+    let voterKey = null;
+    if (isVotingIntention(poll)) {
+      const lockedPoll = await Poll.findByPk(pollId, { transaction, lock: transaction.LOCK.UPDATE });
+      const currentOption = await PollOption.findOne({ where: { id: optionIdResult.value, pollId }, transaction });
+      if (!lockedPoll || lockedPoll.status !== 'active' || (lockedPoll.deadline && new Date(lockedPoll.deadline) <= new Date()) || !currentOption) {
+        await transaction.rollback();
+        return { success: false, status: 409, message: 'Η ψηφοφορία άλλαξε ή έληξε. Ανανεώστε τη σελίδα.' };
+      }
+      // Serialize submissions with OAuth linking/unlinking and other votes by this account.
+      const voter = userId ? await User.findByPk(userId, { attributes: ['id', 'googleId'], transaction, lock: transaction.LOCK.UPDATE }) : null;
+      if (!voter?.googleId) {
+        await transaction.rollback();
+        return { success: false, status: 403, message: 'Συνδέστε λογαριασμό Google για να συμμετάσχετε.' };
+      }
+      voterKey = googleVoterKey(poll.id, voter.googleId);
+      const identityVote = await PollVote.findOne({ where: { pollId, voterKey }, transaction });
+      if (identityVote && identityVote.userId !== userId) {
+        await transaction.rollback();
+        return { success: false, status: 409, message: 'Αυτός ο λογαριασμός Google έχει ήδη χρησιμοποιηθεί σε αυτή την ψηφοφορία.' };
+      }
+    }
 
     if (isAuthenticated) {
       // Check if user already voted
@@ -1668,6 +1713,10 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent,
       });
 
       if (existingVote) {
+        if (voterKey && existingVote.voterKey !== voterKey) {
+          await transaction.rollback();
+          return { success: false, status: 409, message: 'Χρησιμοποιήστε τον αρχικό λογαριασμό Google για να αλλάξετε την ψήφο σας.' };
+        }
         // Update existing vote
         await existingVote.update({ optionId: optionIdResult.value, identityVisibility: voteIdentityVisibility }, { transaction });
         vote = existingVote;
@@ -1679,6 +1728,7 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent,
             optionId: optionIdResult.value,
             userId,
             isAuthenticated: true,
+            voterKey,
             sessionId: null,
             ipAddress: clientIp,
             identityVisibility: voteIdentityVisibility
@@ -1748,6 +1798,9 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent,
       await transaction.rollback();
     }
     console.error('Error voting on poll:', error);
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return { success: false, status: 409, message: 'Η ψήφος έχει ήδη καταχωριστεί. Ανανεώστε τη σελίδα.' };
+    }
     return {
       success: false,
       status: 500,

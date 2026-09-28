@@ -53,6 +53,18 @@ const optionalCsrfProtection = (req, res, next) => {
 };
 
 // Public routes with optional authentication
+router.get('/voting-intention', optionalAuthMiddleware, apiLimiter, async (req, res, next) => {
+  try {
+    const result = await require('../services/votingIntentionService').getCurrent(req.user, req.ip, req.headers['user-agent']);
+    res.status(result.status || 200).json(result);
+  } catch (error) { next(error); }
+});
+router.post('/voting-intention', createLimiter, authMiddleware, csrfProtection, async (req, res, next) => {
+  try {
+    const result = await require('../services/votingIntentionService').create(req.user, req.body);
+    res.status(result.success ? 201 : result.status).json(result);
+  } catch (error) { next(error); }
+});
 router.get('/', optionalAuthMiddleware, apiLimiter, pollController.getAllPolls);
 router.get('/category-counts', apiLimiter, pollController.getCategoryCounts);
 router.get('/my-voted', apiLimiter, authMiddleware, pollController.getMyVotedPolls);

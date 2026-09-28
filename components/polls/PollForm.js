@@ -45,6 +45,8 @@ export default function PollForm({
   mode = 'create'
 }) {
   const { user } = useAuth();
+  const isVotingIntention = poll?.purpose === 'voting_intention';
+  const ballotLocked = isVotingIntention && poll.totalVotes > 0;
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -301,7 +303,7 @@ export default function PollForm({
     const payload = {
       ...formData,
       // Only include `options` for non-binary polls — backend rejects any options field on binary polls
-      ...(formData.type !== 'binary' && { options: validOptions }),
+      ...(formData.type !== 'binary' && !ballotLocked && { options: validOptions }),
       deadline: formData.deadline || null,
       binaryColors: formData.useCustomColors ? formData.binaryColors : undefined,
     };
@@ -408,6 +410,7 @@ export default function PollForm({
 
           <FormSelect
             name="visibility"
+            disabled={isVotingIntention}
             label="Ορατότητα"
             value={formData.visibility}
             onChange={handleInputChange}
@@ -421,6 +424,7 @@ export default function PollForm({
 
           <FormSelect
             name="resultsVisibility"
+            disabled={isVotingIntention}
             label="Εμφάνιση Αποτελεσμάτων"
             value={formData.resultsVisibility}
             onChange={handleInputChange}
@@ -462,6 +466,7 @@ export default function PollForm({
             <input
               type="checkbox"
               name="allowUserContributions"
+              disabled={isVotingIntention}
               checked={formData.allowUserContributions}
               onChange={handleInputChange}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
@@ -486,6 +491,7 @@ export default function PollForm({
 
           <FormSelect
             name="voteRestriction"
+            disabled={isVotingIntention}
             label="Ποιος μπορεί να ψηφίσει"
             value={formData.voteRestriction}
             onChange={handleInputChange}
@@ -596,8 +602,9 @@ export default function PollForm({
 
       {/* Poll Options — hidden for binary polls (options are auto-created) */}
       {formData.type !== 'binary' && (
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
+      <fieldset disabled={ballotLocked} className="bg-white border border-gray-200 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Επιλογές Δημοσκόπησης</h3>
+        {ballotLocked && <p className="mb-4 text-sm text-blue-700">Έχουν καταχωριστεί ψήφοι. Για αλλαγή κομμάτων, δημιουργήστε νέο γύρο από τη διαχείριση αρχικής σελίδας.</p>}
 
         <div className="space-y-4">
           {options.map((option, index) => {
@@ -730,7 +737,7 @@ export default function PollForm({
             Προσθήκη Επιλογής
           </button>
         </div>
-      </div>
+      </fieldset>
       )}
 
       {/* Submit Buttons */}

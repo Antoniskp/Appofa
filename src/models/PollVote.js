@@ -2,6 +2,10 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const PollVote = sequelize.define('PollVote', {
+  voterKey: {
+    type: DataTypes.STRING(64),
+    allowNull: true
+  },
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
@@ -59,6 +63,7 @@ const PollVote = sequelize.define('PollVote', {
   timestamps: true,
   tableName: 'PollVotes',
   indexes: [
+    { unique: true, fields: ['pollId', 'voterKey'], name: 'unique_verified_identity_per_poll' },
     {
       unique: true,
       fields: ['pollId', 'userId'],

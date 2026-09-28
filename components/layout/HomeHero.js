@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { heroSettingsAPI, pollAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import VotingIntentionNotice from '@/components/polls/VotingIntentionNotice';
 import { 
   ArrowRightIcon,
   ArrowLeftIcon,
@@ -54,7 +55,7 @@ function FeaturedLivePoll({ poll, loading, user }) {
 
   const options = Array.isArray(currentPoll.options) ? currentPoll.options : [];
   const isPollActive = currentPoll.status === 'active' && (!currentPoll.deadline || new Date(currentPoll.deadline) > new Date());
-  const canVote = isPollActive && (user || currentPoll.voteRestriction === 'anyone');
+  const canVote = isPollActive && (user || currentPoll.voteRestriction === 'anyone') && (currentPoll.purpose !== 'voting_intention' || currentPoll.googleVotingEligible);
   const totalVotes = options.reduce((sum, option) => sum + (option.voteCount || 0), 0);
 
   const handleVote = async (optionId) => {
@@ -72,7 +73,7 @@ function FeaturedLivePoll({ poll, loading, user }) {
         userVote: { optionId, createdAt: new Date().toISOString() },
         options: (prev.options || []).map((option) => ({
           ...option,
-          voteCount: voteCounts[String(option.id)] ?? voteCounts[option.id] ?? option.voteCount ?? 0,
+          voteCount: voteCounts[String(option.id)] ?? voteCounts[option.id] ?? 0,
         })),
       }));
     } catch (error) {
@@ -85,7 +86,7 @@ function FeaturedLivePoll({ poll, loading, user }) {
   return (
     <div className="rounded-lg border border-white/25 bg-white/[0.16] p-5 shadow-2xl shadow-black/15 backdrop-blur-md">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sand">
-        Δημόσια γνώμη
+        {currentPoll.purpose === 'voting_intention' ? 'Πρόθεση ψήφου' : 'Δημόσια γνώμη'}
       </p>
       <h2 className="mt-2 text-xl font-bold leading-7 text-white">
         {currentPoll.title}
@@ -96,7 +97,8 @@ function FeaturedLivePoll({ poll, loading, user }) {
         </p>
       )}
 
-      <div className="mt-5 space-y-2">
+      <div className="mt-3"><VotingIntentionNotice poll={currentPoll} user={user} /></div>
+      <div className="mt-5 max-h-96 overflow-y-auto space-y-2">
         {options.map((option) => {
           const count = option.voteCount || 0;
           const percentage = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
@@ -161,6 +163,7 @@ function FeaturedLivePoll({ poll, loading, user }) {
         </p>
       )}
       <div className="mt-4 flex items-center justify-between gap-3">
+        <Link href={`/polls/${currentPoll.id}`} className="text-xs font-semibold text-white underline">Αποτελέσματα και λεπτομέρειες</Link>
         <span className="text-xs font-medium text-white/70">
           {totalVotes.toLocaleString('el-GR')} {totalVotes === 1 ? 'ψήφος' : 'ψήφοι'}
         </span>

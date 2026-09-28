@@ -9,6 +9,7 @@ import AlertMessage from '@/components/ui/AlertMessage';
 import RateLimitBanner from '@/components/ui/RateLimitBanner';
 import ParticipationNotice from '@/components/ParticipationNotice';
 import VoteIdentitySelector from '@/components/VoteIdentitySelector';
+import VotingIntentionNotice from './VotingIntentionNotice';
 
 /**
  * Poll voting interface component
@@ -48,7 +49,8 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   
   const isPollActive = poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date());
   const isRateLimited = !!rateLimit && (rateLimit.resetTime ? rateLimit.resetTime > Date.now() : false);
-  const canVote = isPollActive && !isRateLimited && (user || poll.voteRestriction === 'anyone');
+  const isVotingIntention = poll.purpose === 'voting_intention';
+  const canVote = isPollActive && !isRateLimited && (user || poll.voteRestriction === 'anyone') && (!isVotingIntention || poll.googleVotingEligible);
   
   const resetAddOptionForm = () => {
     setNewOptionText('');
@@ -136,6 +138,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   if (!canVote) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+        <VotingIntentionNotice poll={poll} user={user} />
         <ParticipationNotice restriction={poll.voteRestriction} />
         <p className="text-gray-600">
           {!isPollActive
@@ -150,6 +153,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   
   return (
     <div className="space-y-4">
+      <VotingIntentionNotice poll={poll} user={user} />
       <ParticipationNotice restriction={poll.voteRestriction} />
       {error && <AlertMessage message={error} />}
       {success && <AlertMessage message={success} tone="success" />}
@@ -198,7 +202,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
       {/* Show options and voting button only if there are options */}
       {poll.options.length > 0 && (
         <>
-          {user && (
+          {user && !isVotingIntention && (
             <VoteIdentitySelector
               value={identityVisibility}
               onChange={setIdentityVisibility}

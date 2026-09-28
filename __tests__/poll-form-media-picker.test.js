@@ -81,6 +81,30 @@ describe('PollForm media picker', () => {
     document.body.innerHTML = '';
   });
 
+  test('a voting-intention ballot is locked after voting while status remains editable', async () => {
+    const PollForm = require('../components/polls/PollForm').default;
+    const onSubmit = jest.fn();
+    await act(async () => {
+      root.render(React.createElement(PollForm, {
+        mode: 'edit', onSubmit, onCancel: jest.fn(),
+        poll: { title: 'Voting intention', purpose: 'voting_intention', type: 'simple', totalVotes: 1,
+          status: 'active', voteRestriction: 'authenticated', resultsVisibility: 'always',
+          options: [{ id: 1, text: 'Party A' }, { id: 2, text: 'Party B' }] }
+      }));
+    });
+    expect(container.querySelector('fieldset').disabled).toBe(true);
+    expect(container.querySelector('[name="voteRestriction"]').disabled).toBe(true);
+    const status = container.querySelector('[name="status"]');
+    expect(status.disabled).toBe(false);
+    await act(async () => {
+      status.value = 'closed';
+      status.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await act(async () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+    expect(onSubmit.mock.calls[0][0].status).toBe('closed');
+    expect(onSubmit.mock.calls[0][0].options).toBeUndefined();
+  });
+
   test('uses the shared media picker for complex poll option assets', async () => {
     const PollForm = require('../components/polls/PollForm').default;
     const onSubmit = jest.fn();

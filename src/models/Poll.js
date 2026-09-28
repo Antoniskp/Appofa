@@ -2,6 +2,10 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const Poll = sequelize.define('Poll', {
+  purpose: {
+    type: DataTypes.STRING(40),
+    allowNull: true
+  },
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,

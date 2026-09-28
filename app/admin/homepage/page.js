@@ -8,6 +8,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { homepageSettingsAPI, pollAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
+import VotingIntentionSetup from '@/components/polls/VotingIntentionSetup';
 
 const DEFAULT_MANIFEST_SECTION = { enabled: true, audience: 'all' };
 const DEFAULT_FEATURED_POLL = { enabled: false, audience: 'all', pollId: null };
@@ -84,6 +85,7 @@ function HomepageSettingsContent() {
     <div>
       <AdminHeader title="Homepage" />
       <div className="space-y-6">
+        <VotingIntentionSetup onCreated={(pollId) => setFeaturedPoll({ enabled: true, audience: 'all', pollId })} />
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-4">
           <h2 className="text-lg font-semibold">Manifest Supporters Section</h2>
           <div className="flex items-center gap-3">
@@ -141,6 +143,7 @@ function HomepageSettingsContent() {
                 disabled={pollsLoading}
               >
                 <option value="">{pollsLoading ? 'Φόρτωση ψηφοφοριών...' : 'Χωρίς προβεβλημένη ψηφοφορία'}</option>
+                {featuredPoll.pollId && !pollOptions.some(poll => poll.id === featuredPoll.pollId) && <option value={featuredPoll.pollId}>#{featuredPoll.pollId} Πρόθεση ψήφου</option>}
                 {pollOptions.map((poll) => (
                   <option key={poll.id} value={poll.id}>
                     #{poll.id} {poll.title}
