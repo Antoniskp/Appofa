@@ -1,5 +1,7 @@
 'use client';
 
+import PollOptionLogo from './PollOptionLogo';
+
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { CheckCircleIcon, LinkIcon, PhotoIcon } from '@heroicons/react/24/outline';
@@ -279,7 +281,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500"
                       style={color ? { accentColor: color } : undefined}
                     />
-                    <span className="ml-3 text-gray-900 font-medium">{option.text}</span>
+                    <span className="ml-3 flex min-w-0 items-center gap-3 text-gray-900 font-medium"><PollOptionLogo poll={poll} option={option} />{option.text}</span>
                     {isSelected && (
                       <CheckCircleIcon
                         className={checkIconClassName}

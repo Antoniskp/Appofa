@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { heroSettingsAPI, pollAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import VotingIntentionNotice from '@/components/polls/VotingIntentionNotice';
+import PollOptionLogo from '@/components/polls/PollOptionLogo';
 import { 
   ArrowRightIcon,
   ArrowLeftIcon,
@@ -115,7 +116,8 @@ function FeaturedLivePoll({ poll, loading, user }) {
                 className="group w-full rounded-lg border border-white/15 bg-white/10 p-3 text-left transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-75"
               >
                 <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className={`font-semibold ${isSelected ? 'text-sand' : 'text-white/85'}`}>
+                  <span className={`flex min-w-0 items-center gap-3 font-semibold ${isSelected ? 'text-sand' : 'text-white/85'}`}>
+                    <PollOptionLogo poll={currentPoll} option={option} />
                     {option.text || option.displayText}
                   </span>
                   <span className="shrink-0 text-xs font-bold text-white">
@@ -143,7 +145,7 @@ function FeaturedLivePoll({ poll, loading, user }) {
               onClick={() => handleVote(option.id)}
               className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg border border-white/20 bg-white/10 px-4 py-2.5 text-left text-sm font-semibold text-white transition hover:border-white/60 hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/60 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <span>{option.text || option.displayText}</span>
+              <span className="flex min-w-0 items-center gap-3"><PollOptionLogo poll={currentPoll} option={option} />{option.text || option.displayText}</span>
               <span className="text-xs text-white/65">
                 {isSubmitting ? '...' : 'Ψήφος'}
               </span>

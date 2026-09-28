@@ -1,5 +1,7 @@
 'use client';
 
+import PollOptionLogo from './PollOptionLogo';
+
 import { useState, useRef, useEffect } from 'react';
 import { Bar, Pie, Doughnut } from 'react-chartjs-2';
 import {
@@ -412,11 +414,12 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
               : undefined;
             return (
               <div key={option.id} className="px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <span className={rankClassName} style={rankStyle}>
                       {index + 1}
                     </span>
+                    <PollOptionLogo poll={poll} option={option} />
                     <span className="font-medium text-gray-900">{option.text}</span>
                   </div>
                   <div className="text-right">

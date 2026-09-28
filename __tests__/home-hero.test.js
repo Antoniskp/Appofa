@@ -250,7 +250,8 @@ describe('HomeHero CTA link behavior', () => {
       .find((button) => button.textContent.includes('Περισσότερη άμεση δημοκρατία'));
 
     expect(voteButton).toBeTruthy();
-    expect(container.querySelector('a[href^="/polls/42"]')).toBeFalsy();
+    expect(voteButton.closest('a')).toBeNull();
+    expect(container.querySelector('a[href="/polls/42"]').textContent).toContain('Αποτελέσματα');
 
     await act(async () => {
       voteButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));

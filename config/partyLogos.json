@@ -1,0 +1,15 @@
+[
+  { "id": "mera25", "names": ["ΜέΡΑ25", "ΜέΡΑ25 – Ενωτική Αριστερά"], "source": "https://mera25.gr/wp-content/uploads/2024/03/MEPA25-Red-logo-LRG.png" },
+  { "id": "nd", "names": ["Νέα Δημοκρατία"], "source": "https://www.hellenicparliament.gr/UserFiles/7cc91e58-bcf3-4fbf-bdde-833257332fd6/logo_ND.svg" },
+  { "id": "pasok", "names": ["ΠΑΣΟΚ", "ΠΑΣΟΚ – Κίνημα Αλλαγής", "ΠΑΣΟΚ-ΚΙΝΗΜΑ ΑΛΛΑΓΗΣ"], "source": "https://www.hellenicparliament.gr/UserFiles/7cc91e58-bcf3-4fbf-bdde-833257332fd6/logo_KINHMA_ALLAGHS.svg" },
+  { "id": "syriza", "names": ["ΣΥΡΙΖΑ", "ΣΥΡΙΖΑ – Προοδευτική Συμμαχία"], "source": "https://www.hellenicparliament.gr/UserFiles/7cc91e58-bcf3-4fbf-bdde-833257332fd6/logo_SYRIZA.svg" },
+  { "id": "kke", "names": ["ΚΚΕ"], "source": "https://www.hellenicparliament.gr/UserFiles/7cc91e58-bcf3-4fbf-bdde-833257332fd6/logo_KKE.svg" },
+  { "id": "elliniki-lysi", "names": ["Ελληνική Λύση"], "source": "https://www.hellenicparliament.gr/UserFiles/7cc91e58-bcf3-4fbf-bdde-833257332fd6/logo_ELLHNIKH_LYSH.svg" },
+  { "id": "niki", "names": ["ΝΙΚΗ"], "source": "https://www.hellenicparliament.gr/UserFiles/7cc91e58-bcf3-4fbf-bdde-833257332fd6/logo_embedded_image.svg" },
+  { "id": "plefsi", "names": ["Πλεύση Ελευθερίας"], "source": "https://www.hellenicparliament.gr/UserFiles/7cc91e58-bcf3-4fbf-bdde-833257332fd6/logo_PLEYSH_ELEYTHERIAS.svg" },
+  { "id": "nea-aristera", "names": ["Νέα Αριστερά"], "dark": true, "source": "https://neaaristera.gr/wp-content/uploads/2025/06/NeaAr_New_Logo_Symbol_GR_WHITE-1-300x71.png" },
+  { "id": "foni-logikis", "names": ["Φωνή Λογικής"], "source": "https://fonilogikis.gr/wp-content/uploads/2026/07/fl-logo.png" },
+  { "id": "democrats", "names": ["Δημοκράτες – Προοδευτικό Κέντρο"], "source": "https://democrats-pc.gr/images/logos/democrats-logo-el.png" },
+  { "id": "elas", "names": ["Ελληνική Αριστερή Συμπαράταξη (ΕΛ.Α.Σ.)"], "source": "https://api.myelas.gr/media/pxda33i0/logo.svg" },
+  { "id": "elpida", "names": ["Ελπίδα για τη Δημοκρατία"], "source": "https://elpidagiatidimokratia.com/wp-content/uploads/2026/06/logo-elpida-new-01.png" }
+]
