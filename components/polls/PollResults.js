@@ -65,7 +65,7 @@ function PublicVoters({ voters = [] }) {
  * @param {boolean} canEdit - Whether user has edit rights (can access auditable export)
  */
 export default function PollResults({ poll, canView = true, canEdit = false }) {
-  const [chartType, setChartType] = useState('bar'); // 'bar', 'pie', 'doughnut'
+  const [chartType, setChartType] = useState('doughnut'); // 'bar', 'pie', 'doughnut'
   const [sortByVotes, setSortByVotes] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [isExportingJson, setIsExportingJson] = useState(false);
@@ -297,10 +297,11 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
       {!isBinaryPoll && (
         <>
       {/* Chart Type Toggle */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-2">
           <button
             onClick={() => setChartType('bar')}
+            aria-pressed={chartType === 'bar'}
             className={`px-4 py-2 rounded-md text-sm font-medium transition ${
               chartType === 'bar'
                 ? 'bg-blue-600 text-white'
@@ -311,6 +312,7 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
           </button>
           <button
             onClick={() => setChartType('pie')}
+            aria-pressed={chartType === 'pie'}
             className={`px-4 py-2 rounded-md text-sm font-medium transition ${
               chartType === 'pie'
                 ? 'bg-blue-600 text-white'
@@ -321,6 +323,7 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
           </button>
           <button
             onClick={() => setChartType('doughnut')}
+            aria-pressed={chartType === 'doughnut'}
             className={`px-4 py-2 rounded-md text-sm font-medium transition ${
               chartType === 'doughnut'
                 ? 'bg-blue-600 text-white'
@@ -378,7 +381,7 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
       
       {/* Chart Display */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div style={{ height: Math.max(400, optionsWithStats.length * 50) + 'px' }}>
+        <div style={{ height: chartType === 'bar' ? Math.max(400, optionsWithStats.length * 50) + 'px' : '440px' }}>
           {chartType === 'bar' && <Bar ref={chartRef} data={chartData} options={barOptions} />}
           {chartType === 'pie' && <Pie ref={chartRef} data={chartData} options={pieOptions} />}
           {chartType === 'doughnut' && <Doughnut ref={chartRef} data={chartData} options={pieOptions} />}

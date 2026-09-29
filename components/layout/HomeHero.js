@@ -7,6 +7,7 @@ import { heroSettingsAPI, pollAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import VotingIntentionNotice from '@/components/polls/VotingIntentionNotice';
 import PollOptionLogo from '@/components/polls/PollOptionLogo';
+import VotingIntentionSummary from '@/components/polls/VotingIntentionSummary';
 import { 
   ArrowRightIcon,
   ArrowLeftIcon,
@@ -53,6 +54,8 @@ function FeaturedLivePoll({ poll, loading, user }) {
   }
 
   if (!currentPoll) return null;
+
+  if (currentPoll.purpose === 'voting_intention') return <VotingIntentionSummary poll={currentPoll} />;
 
   const options = Array.isArray(currentPoll.options) ? currentPoll.options : [];
   const isPollActive = currentPoll.status === 'active' && (!currentPoll.deadline || new Date(currentPoll.deadline) > new Date());
