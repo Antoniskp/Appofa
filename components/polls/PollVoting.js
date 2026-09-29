@@ -1,6 +1,7 @@
 'use client';
 
 import PollOptionLogo from './PollOptionLogo';
+import PartyBallot from './PartyBallot';
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -141,7 +142,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
         <VotingIntentionNotice poll={poll} user={user} />
-        <ParticipationNotice restriction={poll.voteRestriction} />
+        {!isVotingIntention && <ParticipationNotice restriction={poll.voteRestriction} />}
         <p className="text-gray-600">
           {!isPollActive
             ? 'Αυτή η δημοσκόπηση έχει κλείσει ή έληξε.'
@@ -156,7 +157,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   return (
     <div className="space-y-4">
       <VotingIntentionNotice poll={poll} user={user} />
-      <ParticipationNotice restriction={poll.voteRestriction} />
+      {!isVotingIntention && <ParticipationNotice restriction={poll.voteRestriction} />}
       {error && <AlertMessage message={error} />}
       {success && <AlertMessage message={success} tone="success" />}
       {rateLimit && (
@@ -247,6 +248,8 @@ export default function PollVoting({ poll, onVoteSuccess }) {
                 }
               }}
             />
+          ) : isVotingIntention ? (
+            <PartyBallot poll={poll} selectedOptionId={selectedOptionId} onSelect={setSelectedOptionId} disabled={isSubmitting} />
           ) : poll.type === 'simple' ? (
             // Simple poll - radio buttons
             <div className="space-y-3">
@@ -303,7 +306,8 @@ export default function PollVoting({ poll, onVoteSuccess }) {
           )}
           
           {poll.type !== 'binary' && (
-          <div className="flex items-center gap-4 pt-4">
+          <div className={`flex flex-wrap items-center gap-3 ${isVotingIntention && selectedOptionId ? 'sticky bottom-20 z-20 rounded-xl border border-gray-200 bg-white p-3 shadow-lg md:bottom-4' : 'pt-4'}`}>
+            {isVotingIntention && selectedOptionId && <p className="min-w-0 flex-1 text-sm font-semibold text-gray-900" aria-live="polite">{poll.options.find(option => option.id === selectedOptionId)?.text}</p>}
             <button
               onClick={handleSubmitVote}
               disabled={isSubmitting || !selectedOptionId}
@@ -312,7 +316,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
               {isSubmitting ? 'Υποβολή...' : hasVoted ? 'Ενημέρωση Ψήφου' : 'Υποβολή Ψήφου'}
             </button>
             
-            {hasVoted && (
+            {hasVoted && !isVotingIntention && (
               <p className="text-sm text-gray-600">
                 Έχετε ήδη ψηφίσει. Μπορείτε να αλλάξετε την ψήφο σας.
               </p>

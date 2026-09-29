@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import PollOptionLogo from './PollOptionLogo';
-
-const COLORS = ['#38bdf8', '#34d399', '#fb923c', '#a78bfa', '#f472b6', '#facc15', '#2dd4bf', '#f87171', '#818cf8', '#a3e635', '#e879f9', '#fbbf24', '#60a5fa', '#94a3b8', '#cbd5e1', '#a8a29e', '#71717a'];
+import { POLL_CHART_COLORS as COLORS } from '@/lib/poll-chart-colors';
 
 export default function VotingIntentionSummary({ poll }) {
   const options = (poll.options || []).map((option, index) => ({ ...option, color: COLORS[index % COLORS.length] }));
@@ -17,7 +16,8 @@ export default function VotingIntentionSummary({ poll }) {
   });
 
   return (
-    <div className="rounded-xl border border-white/25 bg-white/10 p-5 text-white shadow-xl backdrop-blur-md">
+    <div className="rounded-xl border border-white/25 bg-slate-900 p-5 text-white shadow-xl">
+      <span className="mb-3 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-medium">{active ? 'Ενεργή ψηφοφορία' : 'Η ψηφοφορία ολοκληρώθηκε'}</span>
       <p className="text-xs font-semibold uppercase tracking-widest text-sand">Πρόθεση ψήφου</p>
       <h2 className="mt-2 text-xl font-bold leading-7">{poll.title}</h2>
       {visibleResults && (
@@ -40,7 +40,7 @@ export default function VotingIntentionSummary({ poll }) {
                   <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: option.color }} />
                   <PollOptionLogo poll={poll} option={option} />
                   <span className="min-w-0 flex-1">{option.text}</span>
-                  <strong>{option.percentage.toFixed(1)}%</strong>
+                  <span className="shrink-0 text-right"><strong>{option.percentage.toFixed(1)}%</strong><span className="block text-xs text-white/65">{option.voteCount} ψήφοι</span></span>
                 </li>)}
               </ul>
             </details>

@@ -1,6 +1,7 @@
 'use client';
 
 import PollOptionLogo from './PollOptionLogo';
+import { POLL_CHART_COLORS } from '@/lib/poll-chart-colors';
 
 import { useState, useRef, useEffect } from 'react';
 import { Bar, Pie, Doughnut } from 'react-chartjs-2';
@@ -66,6 +67,7 @@ function PublicVoters({ voters = [] }) {
  */
 export default function PollResults({ poll, canView = true, canEdit = false }) {
   const [chartType, setChartType] = useState('doughnut'); // 'bar', 'pie', 'doughnut'
+  const [highlightedId, setHighlightedId] = useState(null);
   const [sortByVotes, setSortByVotes] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [isExportingJson, setIsExportingJson] = useState(false);
@@ -111,34 +113,16 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
   }
   
   // Chart data
-  const defaultBackgroundColors = [
-    'rgba(59, 130, 246, 0.8)',   // blue-600
-    'rgba(16, 185, 129, 0.8)',   // green-600
-    'rgba(251, 146, 60, 0.8)',   // orange-600
-    'rgba(139, 92, 246, 0.8)',   // purple-600
-    'rgba(236, 72, 153, 0.8)',   // pink-600
-    'rgba(245, 158, 11, 0.8)',   // amber-600
-    'rgba(20, 184, 166, 0.8)',   // teal-600
-    'rgba(239, 68, 68, 0.8)',    // red-600
-  ];
-  const defaultBorderColors = [
-    'rgba(59, 130, 246, 1)',
-    'rgba(16, 185, 129, 1)',
-    'rgba(251, 146, 60, 1)',
-    'rgba(139, 92, 246, 1)',
-    'rgba(236, 72, 153, 1)',
-    'rgba(245, 158, 11, 1)',
-    'rgba(20, 184, 166, 1)',
-    'rgba(239, 68, 68, 1)',
-  ];
+  const defaultBackgroundColors = POLL_CHART_COLORS;
+  const defaultBorderColors = POLL_CHART_COLORS;
 
   const chartBackgroundColors = poll.useCustomColors
     ? optionsWithStats.map(opt => opt.color ? hexToRgba(opt.color, 0.8) : 'rgba(59, 130, 246, 0.8)')
-    : defaultBackgroundColors;
+    : optionsWithStats.map(opt => defaultBackgroundColors[options.findIndex(original => original.id === opt.id) % defaultBackgroundColors.length]);
 
   const chartBorderColors = poll.useCustomColors
     ? optionsWithStats.map(opt => opt.color ? hexToRgba(opt.color, 1) : 'rgba(59, 130, 246, 1)')
-    : defaultBorderColors;
+    : optionsWithStats.map(opt => defaultBorderColors[options.findIndex(original => original.id === opt.id) % defaultBorderColors.length]);
 
   const chartData = {
     labels: optionsWithStats.map(opt => opt.text.length > 30 ? opt.text.slice(0, 30) + '…' : opt.text),
@@ -154,7 +138,17 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
   };
   
   // Chart options
+  const chartInteraction = {
+    onHover: (_event, elements) => setHighlightedId(elements.length ? optionsWithStats[elements[0].index]?.id : null),
+    onClick: (_event, elements) => setHighlightedId(elements.length ? optionsWithStats[elements[0].index]?.id : null),
+  };
+  const highlightOption = (option, index) => {
+    setHighlightedId(option.id);
+    const chart = chartRef.current;
+    if (chart) { chart.setActiveElements([{ datasetIndex: 0, index }]); chart.update('none'); }
+  };
   const barOptions = {
+    ...chartInteraction,
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -204,11 +198,12 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
   };
   
   const pieOptions = {
+    ...chartInteraction,
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'bottom',
+        display: false,
       },
       title: {
         display: false,
@@ -379,9 +374,12 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
         </div>
       </div>
       
+      <p className="text-sm font-semibold text-gray-600">{totalVotes.toLocaleString('el-GR')} ψήφοι συνολικά</p>
+      <div className="grid items-start gap-4 lg:grid-cols-2">
       {/* Chart Display */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div style={{ height: chartType === 'bar' ? Math.max(400, optionsWithStats.length * 50) + 'px' : '440px' }}>
+      <div className="bg-white border border-gray-200 rounded-lg p-4 lg:sticky lg:top-24">
+        <div style={{ height: chartType === 'bar' ? '440px' : '320px' }}>
+          {totalVotes === 0 && <p className="text-center text-sm text-gray-500">Δεν έχουν καταχωριστεί ακόμη ψήφοι.</p>}
           {chartType === 'bar' && <Bar ref={chartRef} data={chartData} options={barOptions} />}
           {chartType === 'pie' && <Pie ref={chartRef} data={chartData} options={pieOptions} />}
           {chartType === 'doughnut' && <Doughnut ref={chartRef} data={chartData} options={pieOptions} />}
@@ -390,8 +388,8 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
       
       {/* Detailed Results Table */}
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Λεπτομερή Αποτελέσματα</h3>
+        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex flex-wrap gap-2 items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-900">Ανάλυση αποτελεσμάτων</h3>
           <button
             onClick={() => setSortByVotes(prev => !prev)}
             aria-pressed={sortByVotes}
@@ -408,28 +406,21 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
         
         <div className="divide-y divide-gray-200">
           {optionsWithStats.map((option, index) => {
-            const hasCustomColor = poll.useCustomColors && option.color;
-            const rankClassName = hasCustomColor
-              ? 'flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm'
-              : 'flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-bold text-sm';
-            const rankStyle = hasCustomColor
-              ? { backgroundColor: hexToRgba(option.color, 0.15), color: option.color }
-              : undefined;
             return (
-              <div key={option.id} className="px-6 py-4">
+              <div key={option.id} className={`px-3 py-2 transition ${highlightedId === option.id ? 'bg-blue-50 ring-2 ring-inset ring-blue-500' : ''}`}>
+                <button type="button" className="w-full text-left focus-visible:outline-blue-600" onMouseEnter={() => highlightOption(option, index)} onFocus={() => highlightOption(option, index)} onClick={() => highlightOption(option, index)} aria-label={`${option.text}: ${option.percentage}%, ${option.voteCount} ψήφοι`} aria-pressed={highlightedId === option.id}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className={rankClassName} style={rankStyle}>
-                      {index + 1}
-                    </span>
+                    <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: chartBackgroundColors[index] }} />
                     <PollOptionLogo poll={poll} option={option} />
                     <span className="font-medium text-gray-900">{option.text}</span>
                   </div>
-                  <div className="text-right">
+                  <div className="shrink-0 text-right">
                     <div className="text-lg font-bold text-gray-900">{option.voteCount}</div>
                     <div className="text-sm text-gray-500">{option.percentage}%</div>
                   </div>
                 </div>
+                </button>
                 <PublicVoters voters={option.publicVoters || []} />
               </div>
             );
@@ -468,6 +459,7 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
           })()}
         </div>
       </div>
+      </div>
         </>
       )}
     </div>
@@ -490,7 +482,7 @@ function BinarySplitBar({ options, totalVotes, useCustomColors }) {
   const color2 = (useCustomColors && opt2.color) ? opt2.color : null;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6">
+    <div className="bg-white border border-gray-200 rounded-lg p-4 lg:sticky lg:top-24">
       <h3 className="text-base font-semibold text-gray-700 mb-4 text-center">Αποτέλεσμα</h3>
 
       {/* Labels */}
