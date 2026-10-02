@@ -57,12 +57,13 @@
  *   - Pass `overlays` to render GeoJSON prefecture boundaries (simple, non-interactive).
  *   - Use `onMapClick` + a draggable-marker wrapper (LocationPickerMap) for coordinate-picking.
  *
- * Tile provider: CARTO Positron (light_all) — clean white design, free for non-commercial use.
- * Attribution: © OpenStreetMap contributors © CARTO (required; kept minimal via setPrefix).
+ * Default tile provider: OpenStreetMap Standard — shared with both coordinate pickers.
+ * Attribution: © OpenStreetMap contributors (required; kept visible via setPrefix).
  */
 
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
+import { STANDARD_MAP_TILES } from '@/lib/map-tiles';
 import 'leaflet/dist/leaflet.css';
 
 // Fix Leaflet's bundled default marker icon paths broken by webpack/next.js module resolution.
@@ -80,20 +81,8 @@ const DEFAULT_ICON = L.icon({
 });
 
 const TILE_MODES = {
-  light: {
-    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 20,
-  },
-  political: {
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
-    subdomains: 'abc',
-    maxZoom: 19,
-  },
+  light: STANDARD_MAP_TILES,
+  political: STANDARD_MAP_TILES,
   satellite: {
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attribution:
@@ -354,7 +343,7 @@ export default function BaseMap({
 
     mapInstanceRef.current = map;
 
-    // Tile layer — CARTO Positron (clean light design, free for non-commercial use).
+    // Tile layer — shared OpenStreetMap defaults, or the selected satellite layer.
     // Attribution is required by both OSM (ODbL) and CARTO's terms of service.
     // We remove the default "Leaflet" prefix to keep it minimal while staying compliant.
     const initialTile = getTileModeConfig(tileMode);
