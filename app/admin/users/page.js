@@ -28,7 +28,7 @@ function AdminUsersContent() {
   const [searchInput, setSearchInput] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [verifiedFilter, setVerifiedFilter] = useState('');
-  const [placeholderFilter, setPlaceholderFilter] = useState('');
+  const [placeholderFilter, setPlaceholderFilter] = useState('false');
   const [page, setPage] = useState(1);
 
   // Dialogs
@@ -37,18 +37,18 @@ function AdminUsersContent() {
   const [verifyingUserId, setVerifyingUserId] = useState(null);
 
   // Fetch users with server-side pagination and filtering
-  const { data: usersData, loading, refetch } = useAsyncData(
+  const { data: usersData, loading, error, refetch } = useAsyncData(
     async () => {
       const params = { page, limit: USERS_PER_PAGE };
       if (searchQuery.trim()) params.search = searchQuery.trim();
       if (roleFilter) params.role = roleFilter;
       if (verifiedFilter) params.verified = verifiedFilter;
-      if (placeholderFilter) params.placeholder = placeholderFilter;
+      params.placeholder = placeholderFilter;
       const response = await authAPI.getAdminUsers(params);
       if (response.success) {
         return response.data;
       }
-      return { users: [], stats: null, pagination: { currentPage: 1, totalPages: 1, totalItems: 0 } };
+      throw new Error(response.message || 'Αποτυχία φόρτωσης χρηστών.');
     },
     [page, searchQuery, roleFilter, verifiedFilter, placeholderFilter],
     {
@@ -140,12 +140,12 @@ function AdminUsersContent() {
     <AdminLayout>
       <div className="bg-gray-50 min-h-screen py-8">
         <div className="app-container">
-          <AdminHeader title="Διαχείριση Χρηστών" subtitle={`${pagination.totalItems} χρήστες συνολικά`} />
+          <AdminHeader title="Διαχείριση Χρηστών" subtitle={error ? 'Αποτυχία φόρτωσης χρηστών' : loading ? 'Φόρτωση…' : `${pagination.totalItems} ${placeholderFilter === 'false' ? 'εγγεγραμμένοι χρήστες' : 'προφίλ'} με τα επιλεγμένα φίλτρα`} />
 
           {/* Stats Cards */}
-          {stats?.byRole && (
+          {!loading && !error && stats?.byRole && (
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-              <StatsCard title="Σύνολο" value={stats.total || 0} icon={UserGroupIcon} />
+              <StatsCard title={placeholderFilter === 'false' ? 'Εγγεγραμμένοι χρήστες' : 'Προφίλ'} value={stats.total || 0} icon={UserGroupIcon} />
               <StatsCard title="Διαχειριστές" value={stats.byRole.admin || 0} icon={ShieldCheckIcon} />
               <StatsCard title="Συντονιστές" value={stats.byRole.moderator || 0} icon={ShieldExclamationIcon} />
               <StatsCard title="Αρθρογράφοι" value={stats.byRole.editor || 0} icon={UserIcon} />
@@ -173,7 +173,7 @@ function AdminUsersContent() {
                   id="roleFilter"
                   value={roleFilter}
                   onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="max-w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Όλοι</option>
                   <option value="admin">Διαχειριστής</option>
@@ -188,24 +188,24 @@ function AdminUsersContent() {
                   id="verifiedFilter"
                   value={verifiedFilter}
                   onChange={(e) => { setVerifiedFilter(e.target.value); setPage(1); }}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="max-w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Όλοι</option>
                   <option value="true">Επαληθευμένοι</option>
                   <option value="false">Μη επαληθευμένοι</option>
                 </select>
               </div>
-              <div>
+              <div className="min-w-0 w-full sm:w-auto">
                 <label htmlFor="placeholderFilter" className="block text-xs font-medium text-gray-500 mb-1">Τύπος</label>
                 <select
                   id="placeholderFilter"
                   value={placeholderFilter}
                   onChange={(e) => { setPlaceholderFilter(e.target.value); setPage(1); }}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="max-w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Όλοι</option>
-                  <option value="false">Κανονικοί</option>
-                  <option value="true">Placeholder</option>
+                  <option value="false">Εγγεγραμμένοι χρήστες</option>
+                  <option value="true">Προφίλ προσώπων (χωρίς λογαριασμό)</option>
+                  <option value="all">Όλοι οι λογαριασμοί και τα προφίλ</option>
                 </select>
               </div>
               <button
@@ -214,7 +214,7 @@ function AdminUsersContent() {
               >
                 Αναζήτηση
               </button>
-              {(searchQuery || roleFilter || verifiedFilter || placeholderFilter) && (
+              {(searchQuery || roleFilter || verifiedFilter || placeholderFilter !== 'false') && (
                 <button
                   type="button"
                   onClick={() => {
@@ -222,7 +222,7 @@ function AdminUsersContent() {
                     setSearchQuery('');
                     setRoleFilter('');
                     setVerifiedFilter('');
-                    setPlaceholderFilter('');
+                    setPlaceholderFilter('false');
                     setPage(1);
                   }}
                   className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
@@ -233,16 +233,18 @@ function AdminUsersContent() {
             </form>
           </div>
 
+          <p className="mb-4 text-sm text-gray-500">Οι εγγεγραμμένοι χρήστες δεν περιλαμβάνουν αδιεκδίκητα προφίλ προσώπων ή αιτήματα διεκδίκησης.</p>
+          {error && <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">{error} <button type="button" className="ml-2 underline" onClick={refetch}>Δοκιμάστε ξανά</button></div>}
           {/* Users Table */}
           {loading && <SkeletonLoader count={5} type="card" />}
 
-          {!loading && users.length === 0 && (
+          {!loading && !error && users.length === 0 && (
             <div className="text-center py-12 text-gray-500 bg-white rounded-xl shadow-sm border border-gray-200">
               Δεν βρέθηκαν χρήστες.
             </div>
           )}
 
-          {!loading && users.length > 0 && (
+          {!loading && !error && users.length > 0 && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">

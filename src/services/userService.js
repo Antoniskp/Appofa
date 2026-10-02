@@ -77,15 +77,16 @@ class ServiceError extends Error {
   }
 }
 
-async function buildUserStats() {
-  const totalUsers = await User.count();
+async function buildUserStats(where = { claimStatus: null }) {
+  const totalUsers = await User.count({ where });
   const roles = ['admin', 'moderator', 'editor', 'viewer'];
   const counts = await User.findAll({
     attributes: [
       'role',
       [sequelize.fn('COUNT', sequelize.col('role')), 'count']
     ],
-    group: ['role']
+    group: ['role'],
+    where
   });
   const byRole = roles.reduce((acc, role) => {
     acc[role] = 0;
@@ -132,7 +133,7 @@ async function getUserStatsForModeratorScope(moderatorUserId) {
   }
 
   const users = await User.findAll({
-    where: { homeLocationId: { [Op.in]: manageableLocationIds } },
+    where: { homeLocationId: { [Op.in]: manageableLocationIds }, claimStatus: null },
     attributes: ['id', 'role']
   });
 
@@ -661,7 +662,7 @@ async function getUsers(actorId, actorRole) {
   return { users, stats };
 }
 
-async function getAdminUsers(actorId, actorRole, { search, role, verified, placeholder, page, limit } = {}) {
+async function getAdminUsers(actorId, actorRole, { search, role, verified, placeholder = 'false', page, limit } = {}) {
   const pageNum = Math.max(1, parseInt(page) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
   const offset = (pageNum - 1) * limitNum;
@@ -711,7 +712,7 @@ async function getAdminUsers(actorId, actorRole, { search, role, verified, place
   // Filter by claim status (person profiles have claimStatus !== null)
   if (placeholder === 'true') {
     whereClause.claimStatus = { [Op.ne]: null };
-  } else if (placeholder === 'false') {
+  } else if (placeholder !== 'all') {
     whereClause.claimStatus = null;
   }
 
@@ -733,7 +734,8 @@ async function getAdminUsers(actorId, actorRole, { search, role, verified, place
     }
   }
 
-  const { count, rows: users } = await User.findAndCountAll({
+  const query = {
+    distinct: true,
     where: whereClause,
     attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified', 'claimStatus'],
     include: [
@@ -758,19 +760,21 @@ async function getAdminUsers(actorId, actorRole, { search, role, verified, place
         required: false
       }
     ],
-    order: [['createdAt', 'DESC']],
+    order: [['createdAt', 'DESC'], ['id', 'DESC']],
     limit: limitNum,
     offset
-  });
-
+  };
+  const { count, rows } = await User.findAndCountAll(query);
   const totalPages = Math.ceil(count / limitNum);
-  const stats = actorRole === 'admin' ? await buildUserStats() : buildUserStatsFromList(users);
+  const currentPage = Math.min(pageNum, Math.max(totalPages, 1));
+  const users = currentPage === pageNum ? rows : await User.findAll({ ...query, offset: (currentPage - 1) * limitNum });
+  const stats = await buildUserStats(whereClause);
 
   return {
     users,
     stats,
     pagination: {
-      currentPage: pageNum,
+      currentPage,
       totalPages,
       totalItems: count,
       itemsPerPage: limitNum
@@ -797,7 +801,7 @@ async function getUserStats(actorId, actorRole) {
   }
 
   const users = await User.findAll({
-    where: { homeLocationId: { [Op.in]: manageableLocationIds } },
+    where: { homeLocationId: { [Op.in]: manageableLocationIds }, claimStatus: null },
     attributes: ['id', 'role']
   });
 
