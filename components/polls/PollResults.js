@@ -1,7 +1,7 @@
 'use client';
 
 import PollOptionLogo from './PollOptionLogo';
-import { POLL_CHART_COLORS } from '@/lib/poll-chart-colors';
+import { getPollOptionColor } from '@/lib/poll-chart-colors';
 
 import { useState, useRef, useEffect } from 'react';
 import { Bar, Pie, Doughnut } from 'react-chartjs-2';
@@ -113,16 +113,12 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
   }
   
   // Chart data
-  const defaultBackgroundColors = POLL_CHART_COLORS;
-  const defaultBorderColors = POLL_CHART_COLORS;
-
+  const chartBorderColors = optionsWithStats.map(opt =>
+    getPollOptionColor(poll, opt, options.findIndex(original => original.id === opt.id))
+  );
   const chartBackgroundColors = poll.useCustomColors
-    ? optionsWithStats.map(opt => opt.color ? hexToRgba(opt.color, 0.8) : 'rgba(59, 130, 246, 0.8)')
-    : optionsWithStats.map(opt => defaultBackgroundColors[options.findIndex(original => original.id === opt.id) % defaultBackgroundColors.length]);
-
-  const chartBorderColors = poll.useCustomColors
-    ? optionsWithStats.map(opt => opt.color ? hexToRgba(opt.color, 1) : 'rgba(59, 130, 246, 1)')
-    : optionsWithStats.map(opt => defaultBorderColors[options.findIndex(original => original.id === opt.id) % defaultBorderColors.length]);
+    ? chartBorderColors.map(color => hexToRgba(color, 0.8))
+    : chartBorderColors;
 
   const chartData = {
     labels: optionsWithStats.map(opt => opt.text.length > 30 ? opt.text.slice(0, 30) + '…' : opt.text),

@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import PollOptionLogo from './PollOptionLogo';
-import { POLL_CHART_COLORS as COLORS } from '@/lib/poll-chart-colors';
+import { getPollOptionColor } from '@/lib/poll-chart-colors';
 
 export default function VotingIntentionSummary({ poll }) {
-  const options = (poll.options || []).map((option, index) => ({ ...option, color: COLORS[index % COLORS.length] }));
+  const options = (poll.options || []).map((option, index) => ({ ...option, color: getPollOptionColor(poll, option, index) }));
   const total = options.reduce((sum, option) => sum + (option.voteCount || 0), 0);
   const active = poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date());
   const visibleResults = poll.resultsVisibility === 'always' || (poll.resultsVisibility === 'after_vote' && Boolean(poll.userVote)) || (!active && poll.resultsVisibility === 'after_deadline');
