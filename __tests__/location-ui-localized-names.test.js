@@ -50,163 +50,19 @@ describe('Location UI localized names', () => {
     document.body.innerHTML = '';
   });
 
-  test('renders sub-location chips with local names and fallback generic child label for unsupported parent type', async () => {
-    const props = {
-      location: {
-        id: 101,
-        slug: 'athens',
-        name: 'Athens',
-        name_local: 'Αθήνα',
-        type: 'municipality',
-        hasModerator: false,
-      },
-      sections: [],
-      children: [
-        { id: 1, slug: 'piraeus', name: 'Piraeus', name_local: 'Πειραιάς' },
-        { id: 2, slug: 'patra', name: 'Patra' },
-      ],
-      activePolls: [],
-      newsArticles: [],
-      regularArticles: [],
-      entities: { usersCount: 0 },
-      imageError: false,
-      setImageError: jest.fn(),
-      canManageLocations: () => false,
-      onEdit: jest.fn(),
-    };
-
-    const { container, root } = await renderComponent(LocationHeader, props);
-
-    expect(container.textContent).toContain('Υποπεριοχές (2)');
-    expect(container.textContent).toContain('Πειραιάς');
-    expect(container.textContent).toContain('Patra');
-    expect(container.textContent).not.toContain('(Πειραιάς)');
-    expect(container.textContent).not.toContain('Piraeus');
-
-    await act(async () => {
-      root.unmount();
+  test('keeps the local name and one location-aware proposal action in the header', async () => {
+    const onEdit = jest.fn();
+    const { container, root } = await renderComponent(LocationHeader, {
+      location: { id: 101, slug: 'athens', name: 'Athens', name_local: 'Αθήνα', type: 'municipality', population: 1000 },
+      imageError: false, setImageError: jest.fn(), canManageLocations: () => true, onEdit,
     });
-  });
-
-  test('renders prefecture/region child label when parent is country', async () => {
-    const props = {
-      location: {
-        id: 201,
-        slug: 'greece',
-        name: 'Greece',
-        name_local: 'Ελλάδα',
-        type: 'country',
-        hasModerator: false,
-      },
-      sections: [],
-      children: [
-        { id: 1, slug: 'attica', name: 'Attica', name_local: 'Αττική' },
-      ],
-      activePolls: [],
-      newsArticles: [],
-      regularArticles: [],
-      entities: { usersCount: 0 },
-      imageError: false,
-      setImageError: jest.fn(),
-      canManageLocations: () => false,
-      onEdit: jest.fn(),
-    };
-
-    const { container, root } = await renderComponent(LocationHeader, props);
-
-    expect(container.textContent).toContain('Νομοί / Περιφέρειες (1)');
-
-    await act(async () => {
-      root.unmount();
-    });
-  });
-
-  test('shows limited sub-location chips by default and expands on demand', async () => {
-    const manyChildren = Array.from({ length: 10 }, (_, i) => ({
-      id: i + 1,
-      slug: `child-${i + 1}`,
-      name: `Child ${i + 1}`,
-      name_local: `Περιοχή ${i + 1}`,
-    }));
-    const props = {
-      location: {
-        id: 101,
-        slug: 'athens',
-        name: 'Athens',
-        name_local: 'Αθήνα',
-        type: 'prefecture',
-        hasModerator: false,
-      },
-      sections: [],
-      children: manyChildren,
-      activePolls: [],
-      newsArticles: [],
-      regularArticles: [],
-      entities: { usersCount: 0 },
-      imageError: false,
-      setImageError: jest.fn(),
-      canManageLocations: () => false,
-      onEdit: jest.fn(),
-    };
-
-    const { container, root } = await renderComponent(LocationHeader, props);
-
-    expect(container.textContent).toContain('Περιοχή 8');
-    expect(container.textContent).not.toContain('Περιοχή 9');
-    expect(container.textContent).toContain('+2 ακόμα δήμοι');
-
-    const toggleButton = container.querySelector('button[aria-label="Εναλλαγή προβολής δήμων"]');
-    expect(toggleButton).toBeTruthy();
-    await act(async () => {
-      toggleButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    });
-
-    expect(container.textContent).toContain('Περιοχή 9');
-    expect(container.textContent).toContain('Περιοχή 10');
-    expect(container.textContent).not.toContain('+2 ακόμα δήμοι');
-
-    await act(async () => {
-      root.unmount();
-    });
-  });
-
-  test('shows phase-2 quick actions and aligned side panel affordances', async () => {
-    const props = {
-      location: {
-        id: 77,
-        slug: 'attica',
-        name: 'Attica',
-        name_local: 'Αττική',
-        type: 'prefecture',
-        hasModerator: true,
-        code: 'AT',
-      },
-      sections: [],
-      children: [],
-      activePolls: [],
-      newsArticles: [],
-      regularArticles: [],
-      entities: { usersCount: 0 },
-      imageError: false,
-      setImageError: jest.fn(),
-      canManageLocations: () => true,
-      onEdit: jest.fn(),
-    };
-
-    const { container, root } = await renderComponent(LocationHeader, props);
-
-    expect(container.textContent).toContain('Συμμετοχή τώρα');
-    expect(container.textContent).toContain('Κάνε πρόταση');
-    expect(container.textContent).toContain('Δες ψηφοφορίες');
-    expect(container.textContent).toContain('Προτάσεις περιοχής');
-    expect(container.textContent).toContain('Κοινοποίηση');
-    expect(container.querySelector('button[aria-label="Επεξεργασία τοποθεσίας"]')).toBeTruthy();
-    expect(container.textContent).toContain('Περισσότερες πληροφορίες');
-    expect(container.querySelector('a[href="/locations/attica?tab=suggestions#location-content"]')).toBeTruthy();
-
-    await act(async () => {
-      root.unmount();
-    });
+    expect(container.querySelector('h1').textContent).toBe('Αθήνα');
+    expect(container.textContent).toContain('Δήμος');
+    expect(container.querySelectorAll('a')).toHaveLength(1);
+    expect(container.querySelector('a').getAttribute('href')).toBe('/suggestions/new?locationId=101');
+    await act(async () => container.querySelector('button[aria-label="Επεξεργασία τοποθεσίας"]').click());
+    expect(onEdit).toHaveBeenCalledTimes(1);
+    await act(async () => root.unmount());
   });
 
   test('renders breadcrumbs with local-name preference and fallback to name', async () => {

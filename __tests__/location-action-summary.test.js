@@ -1,96 +1,41 @@
 /** @jest-environment <rootDir>/jest-jsdom-env.js */
-
 const React = require('react');
-const { act } = require('react');
+const { act } = React;
 const { createRoot } = require('react-dom/client');
-
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+jest.mock('next/link', () => ({ __esModule: true, default: ({ href, children, ...props }) => require('react').createElement('a', { href, ...props }, children) }));
+const Summary = require('../components/locations/LocationActionSummary').default;
 
-jest.mock('next/link', () => {
-  const React = require('react');
-  return {
-    __esModule: true,
-    default: ({ href, children, ...props }) => React.createElement('a', { href, ...props }, children),
-  };
-});
-
-const LocationActionSummary = require('../components/locations/LocationActionSummary').default;
-
-const baseCounts = {
-  polls: 3,
-  suggestions: 4,
-  news: 2,
-  articles: 1,
-  users: 8,
-};
-
-const renderSummary = async (props = {}) => {
-  const container = document.createElement('div');
-  document.body.appendChild(container);
-  const root = createRoot(container);
-  const onTabSelect = jest.fn();
-
-  await act(async () => {
-    root.render(React.createElement(LocationActionSummary, {
-      counts: baseCounts,
-      loading: false,
-      isAuthenticated: false,
-      onTabSelect,
-      ...props,
-    }));
+describe('Location activity preview', () => {
+  let container, root;
+  beforeEach(() => { container = document.createElement('div'); document.body.appendChild(container); root = createRoot(container); });
+  afterEach(async () => { await act(async () => root.unmount()); container.remove(); });
+  test('prioritizes active votes, then newest updates, with at most four real links', async () => {
+    await act(async () => root.render(React.createElement(Summary, {
+      polls: [
+        { id: 1, title: 'Closed vote', status: 'closed', createdAt: '2026-10-03' },
+        { id: 2, title: 'Active vote', status: 'active', createdAt: '2026-01-01' },
+      ],
+      suggestions: [{ id: 3, title: 'Older proposal', createdAt: '2026-09-01' }, { id: 4, title: 'New proposal', createdAt: '2026-10-02' }],
+      news: [{ id: 5, title: 'Latest news', createdAt: '2026-10-03' }],
+      articles: [{ id: 6, title: 'Old article', createdAt: '2026-08-01' }],
+    })));
+    expect([...container.querySelectorAll('h3')].map(el => el.textContent)).toEqual(['Active vote', 'Latest news', 'New proposal', 'Older proposal']);
+    expect(container.querySelectorAll('a')).toHaveLength(4);
+    expect(container.querySelector('a[href="/suggestions/4"]')).toBeTruthy();
+    expect(container.textContent).not.toContain('Closed vote');
+    expect(container.textContent).not.toContain('Old article');
+    expect(container.querySelector('a[href="/register"]')).toBeNull();
   });
-
-  return { container, root, onTabSelect };
-};
-
-describe('LocationActionSummary guest conversion', () => {
-  afterEach(() => {
-    document.body.innerHTML = '';
+  test('shows one quiet-state message without zero counters or repeated actions', async () => {
+    await act(async () => root.render(React.createElement(Summary)));
+    expect(container.textContent).toContain('πρώτη πρόταση');
+    expect(container.querySelectorAll('a')).toHaveLength(0);
+    expect(container.querySelectorAll('p')).toHaveLength(1);
   });
-
-  test('shows location-specific registration benefits to guests', async () => {
-    const { container, root } = await renderSummary();
-
-    expect(container.textContent).toContain('Τοπική δραστηριότητα');
-    expect(container.textContent).toContain('Μην χάσεις όσα αλλάζουν σε αυτή την περιοχή.');
-    expect(container.textContent).toContain('Κράτησε την περιοχή σου στο προφίλ');
-    const registerLinks = [...container.querySelectorAll('a[href="/register"]')];
-    expect(registerLinks.some((link) => link.textContent.includes('Εγγραφή και επιλογή περιοχής'))).toBe(true);
-    expect(container.querySelector('a[href="/newsletter"]')).toBeTruthy();
-
-    await act(async () => {
-      root.unmount();
-    });
-  });
-
-  test('keeps guest bridge hidden for authenticated users', async () => {
-    const { container, root } = await renderSummary({ isAuthenticated: true });
-
-    expect(container.textContent).not.toContain('Μην χάσεις όσα αλλάζουν σε αυτή την περιοχή.');
-    expect(container.textContent).not.toContain('Εγγραφή και επιλογή περιοχής');
-    expect(container.querySelector('a[href="/polls/create"]')).toBeTruthy();
-    expect(container.querySelector('a[href="/suggestions/new"]')).toBeTruthy();
-
-    await act(async () => {
-      root.unmount();
-    });
-  });
-
-  test('uses early-activation copy when a location has no activity yet', async () => {
-    const { container, root } = await renderSummary({
-      counts: {
-        polls: 0,
-        suggestions: 0,
-        news: 0,
-        articles: 0,
-        users: 0,
-      },
-    });
-
-    expect(container.textContent).toContain('Γίνε από τους πρώτους που θα ενεργοποιήσουν αυτή την περιοχή.');
-
-    await act(async () => {
-      root.unmount();
-    });
+  test('does not show an empty-state message while data is loading', async () => {
+    await act(async () => root.render(React.createElement(Summary, { loading: true })));
+    expect(container.querySelector('[role="status"]')).toBeTruthy();
+    expect(container.textContent).not.toContain('πρώτη πρόταση');
   });
 });

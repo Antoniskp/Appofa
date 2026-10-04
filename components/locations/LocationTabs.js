@@ -115,6 +115,7 @@ export default function LocationTabs({
   candidates = [],
   isAuthenticated,
   locationIdentifier,
+  locationId,
   canManageLocations = false,
   TAB_LABELS,
   visibleTabs,
@@ -124,27 +125,40 @@ export default function LocationTabs({
   // Fall back to all tabs if visibleTabs not provided (e.g. during initial load)
   const tabs = visibleTabs && visibleTabs.length > 0 ? visibleTabs : VALID_TABS;
 
+  const groups = [
+    { label: 'Προτάσεις και ψηφοφορίες', tabs: ['suggestions', 'polls'] },
+    { label: 'Ενημέρωση', tabs: ['news', 'articles'] },
+    { label: 'Κοινότητα και εκλογές', tabs: ['users', 'unclaimed', 'candidates', 'elections'] },
+  ].map(group => ({ ...group, tabs: group.tabs.filter(tab => tabs.includes(tab)) })).filter(group => group.tabs.length);
+  const selectedGroup = groups.find(group => group.tabs.includes(activeTab)) || groups[0];
+  const groupTabs = selectedGroup?.tabs || tabs;
+  const suggestionHref = locationId ? '/suggestions/new?locationId=' + locationId : '/suggestions/new';
+
   // If no tabs have content (and we're not loading), show an empty state
   if (!loading && visibleTabs?.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-8 text-center" role="status">
+      <div className="bg-white rounded-lg shadow-sm p-8 text-center" role="status">
         <p className="text-gray-400 text-sm">Δεν υπάρχει περιεχόμενο για αυτή την τοποθεσία ακόμα.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md">
+    <div className="bg-white rounded-lg shadow-sm">
+      <div className="flex flex-wrap gap-2 px-4 pt-4" role="group" aria-label="Κατηγορίες περιεχομένου">
+        {groups.map(group => <button key={group.label} type="button" aria-pressed={group === selectedGroup} onClick={() => onTabChange(group.tabs[0])} className={'rounded-lg px-3 py-2 text-sm font-medium ' + (group === selectedGroup ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100')}>{group.label}</button>)}
+      </div>
       {/* Tab bar */}
       <div
         className="flex border-b border-gray-200 overflow-x-auto"
         role="tablist"
         aria-label="Location content tabs"
       >
-        {tabs.map((tab) => (
+        {groupTabs.map((tab) => (
           <button
             key={tab}
             role="tab"
+            tabIndex={activeTab === tab ? 0 : -1}
             aria-selected={activeTab === tab}
             aria-controls={`tabpanel-${tab}`}
             id={`tab-${tab}`}
@@ -155,12 +169,12 @@ export default function LocationTabs({
                 onTabChange(tab);
               }
               if (e.key === 'ArrowRight') {
-                const next = tabs[(tabs.indexOf(tab) + 1) % tabs.length];
+                const next = groupTabs[(groupTabs.indexOf(tab) + 1) % groupTabs.length];
                 onTabChange(next);
                 document.getElementById(`tab-${next}`)?.focus();
               }
               if (e.key === 'ArrowLeft') {
-                const prev = tabs[(tabs.indexOf(tab) - 1 + tabs.length) % tabs.length];
+                const prev = groupTabs[(groupTabs.indexOf(tab) - 1 + groupTabs.length) % groupTabs.length];
                 onTabChange(prev);
                 document.getElementById(`tab-${prev}`)?.focus();
               }
@@ -186,7 +200,7 @@ export default function LocationTabs({
           hidden={activeTab !== 'polls'}
         >
           {loading ? (
-            <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
+            <p className="text-center text-gray-400 py-8 animate-pulse">Φόρτωση…</p>
           ) : activePolls.length === 0 ? (
             <TabEmptyState
               title="Δεν υπάρχουν ακόμη ψηφοφορίες"
@@ -209,12 +223,12 @@ export default function LocationTabs({
                   title={poll.title}
                   excerpt={poll.description}
                   badges={[
-                    { label: 'Poll', className: 'bg-sky-50 text-sky-700 border-sky-200' },
-                    { label: poll.status || 'open', className: POLL_STATUS_BADGES[poll.status] || 'bg-gray-100 text-gray-700 border-gray-200' },
+                    { label: 'Ψηφοφορία', className: 'bg-sky-50 text-sky-700 border-sky-200' },
+                    { label: ({ active: 'Ενεργή', open: 'Ανοιχτή', closed: 'Ολοκληρωμένη', completed: 'Ολοκληρωμένη', draft: 'Πρόχειρη' })[poll.status] || 'Ψηφοφορία', className: POLL_STATUS_BADGES[poll.status] || 'bg-gray-100 text-gray-700 border-gray-200' },
                   ]}
                   metadata={[
                     poll.hideCreator || poll.creator?.username
-                      ? `by ${poll.hideCreator ? 'Anonymous' : poll.creator?.username}`
+                      ? `από ${poll.hideCreator ? 'Ανώνυμος' : poll.creator?.username}`
                       : null,
                     formatMetaDate(poll.createdAt),
                   ].filter(Boolean)}
@@ -233,7 +247,7 @@ export default function LocationTabs({
           hidden={activeTab !== 'news'}
         >
           {loading ? (
-            <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
+            <p className="text-center text-gray-400 py-8 animate-pulse">Φόρτωση…</p>
           ) : newsArticles.length === 0 ? (
             <TabEmptyState
               title="Δεν υπάρχουν ακόμη τοπικές ειδήσεις"
@@ -251,11 +265,11 @@ export default function LocationTabs({
                   title={article.title}
                   excerpt={article.summary}
                   badges={[
-                    { label: 'News', className: 'bg-purple-50 text-purple-700 border-purple-200' },
+                    { label: 'Είδηση', className: 'bg-purple-50 text-purple-700 border-purple-200' },
                   ]}
                   metadata={[
                     article.hideAuthor || article.author?.username
-                      ? `by ${article.hideAuthor ? 'Anonymous' : article.author?.username}`
+                      ? `από ${article.hideAuthor ? 'Ανώνυμος' : article.author?.username}`
                       : null,
                     formatMetaDate(article.createdAt),
                   ].filter(Boolean)}
@@ -273,7 +287,7 @@ export default function LocationTabs({
           hidden={activeTab !== 'articles'}
         >
           {loading ? (
-            <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
+            <p className="text-center text-gray-400 py-8 animate-pulse">Φόρτωση…</p>
           ) : regularArticles.length === 0 ? (
             <TabEmptyState
               title="Δεν υπάρχουν ακόμη άρθρα"
@@ -291,11 +305,11 @@ export default function LocationTabs({
                   title={article.title}
                   excerpt={article.summary}
                   badges={[
-                    { label: article.type || 'article', className: 'bg-green-50 text-green-700 border-green-200' },
+                    { label: 'Άρθρο', className: 'bg-green-50 text-green-700 border-green-200' },
                   ]}
                   metadata={[
                     article.hideAuthor || article.author?.username
-                      ? `by ${article.hideAuthor ? 'Anonymous' : article.author?.username}`
+                      ? `από ${article.hideAuthor ? 'Ανώνυμος' : article.author?.username}`
                       : null,
                     formatMetaDate(article.createdAt),
                   ].filter(Boolean)}
@@ -313,9 +327,9 @@ export default function LocationTabs({
           hidden={activeTab !== 'users'}
         >
           {loading ? (
-            <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
+            <p className="text-center text-gray-400 py-8 animate-pulse">Φόρτωση…</p>
           ) : entities.usersCount === 0 ? (
-            <p className="text-center text-gray-500 py-8">No users linked to this location yet.</p>
+            <p className="text-center text-gray-500 py-8">Δεν έχουν συνδεθεί ακόμη μέλη με την περιοχή.</p>
           ) : isAuthenticated ? (
             entities.users.length > 0 ? (
               <div className="space-y-1 border border-gray-200 rounded-md divide-y divide-gray-100">
@@ -324,24 +338,24 @@ export default function LocationTabs({
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-600">No visible users to display.</p>
+              <p className="text-sm text-gray-600">Δεν υπάρχουν ορατά μέλη.</p>
             )
           ) : (
             <div className="py-4">
               <p className="text-sm text-gray-600 mb-4">
-                Sign in or register to view {entities.usersCount} users from this location.
+                Συνδέσου για να δεις {entities.usersCount} μέλη από αυτή την περιοχή.
               </p>
               <div className="flex gap-3">
                 <LoginLink
                   className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                 >
-                  Log In
+                  Σύνδεση
                 </LoginLink>
                 <Link
                   href="/register"
                   className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
                 >
-                  Register
+                  Εγγραφή
                 </Link>
               </div>
             </div>
@@ -356,7 +370,7 @@ export default function LocationTabs({
           hidden={activeTab !== 'unclaimed'}
         >
           {loading ? (
-            <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
+            <p className="text-center text-gray-400 py-8 animate-pulse">Φόρτωση…</p>
           ) : entities.unclaimedCount === 0 ? (
             <p className="text-center text-gray-500 py-8">Δεν υπάρχουν αδιεκδίκητα πρόσωπα σε αυτή την τοποθεσία.</p>
           ) : isAuthenticated ? (
@@ -432,7 +446,7 @@ export default function LocationTabs({
           hidden={activeTab !== 'suggestions'}
         >
           {loading ? (
-            <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
+            <p className="text-center text-gray-400 py-8 animate-pulse">Φόρτωση…</p>
           ) : suggestions.length === 0 ? (
             <TabEmptyState
               title="Δεν υπάρχουν ακόμη προτάσεις"
@@ -442,7 +456,7 @@ export default function LocationTabs({
                   : 'Δεν έχει ανοίξει ακόμη κάποια οργανωμένη πρόταση για αυτή την περιοχή.'
               }
               actions={[
-                { href: '/suggestions/new', label: '+ Ξεκίνησε πρόταση' },
+                { href: suggestionHref, label: '+ Ξεκίνησε πρόταση' },
                 { href: `/locations/${locationIdentifier}?tab=polls#location-content`, label: 'Δες ψηφοφορίες', variant: 'secondary' },
               ]}
             />
@@ -456,18 +470,18 @@ export default function LocationTabs({
                   excerpt={suggestion.body}
                   badges={[
                     {
-                      label: suggestion.type?.replace('_', ' ') || 'suggestion',
+                      label: ({ idea: 'Ιδέα', problem: 'Πρόβλημα', problem_request: 'Ερώτημα κοινότητας', location_suggestion: 'Αίτημα τοποθεσίας' })[suggestion.type] || 'Πρόταση',
                       className: SUGGESTION_TYPE_BADGES[suggestion.type] || 'bg-indigo-50 text-indigo-700 border-indigo-200'
                     },
                     {
-                      label: suggestion.status?.replace('_', ' ') || 'open',
+                      label: ({ open: 'Ανοιχτή', accepted: 'Αποδεκτή', in_review: 'Υπό εξέταση', rejected: 'Απορρίφθηκε', closed: 'Ολοκληρωμένη' })[suggestion.status] || 'Πρόταση',
                       className: SUGGESTION_STATUS_BADGES[suggestion.status] || 'bg-gray-100 text-gray-700 border-gray-200'
                     },
                   ]}
                   metadata={[
                     (suggestion.hideCreator && !suggestion.author)
-                      ? 'by Anonymous'
-                      : (suggestion.author?.username ? `by ${suggestion.author.username}` : null),
+                      ? 'από Ανώνυμος'
+                      : (suggestion.author?.username ? `από ${suggestion.author.username}` : null),
                     formatMetaDate(suggestion.createdAt),
                   ].filter(Boolean)}
                 />

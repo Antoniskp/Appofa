@@ -717,62 +717,6 @@ describe('LocationChildrenExplorer', () => {
 
 // ── hideChildren prop — LocationHeader ────────────────────────────────────────
 
-describe('LocationHeader hideChildren prop', () => {
-  const baseProps = {
-    location: { id: 1, slug: 'greece', name: 'Greece', name_local: 'Ελλάδα', type: 'country', hasModerator: false },
-    sections: [],
-    activePolls: [],
-    newsArticles: [],
-    regularArticles: [],
-    suggestionsCount: 0,
-    entities: { usersCount: 0 },
-    imageError: false,
-    setImageError: jest.fn(),
-    canManageLocations: () => false,
-    onEdit: jest.fn(),
-  };
-  const childList = [
-    { id: 1, slug: 'attiki', name: 'Attica', name_local: 'Αττική' },
-    { id: 2, slug: 'kriti', name: 'Crete', name_local: 'Κρήτη' },
-  ];
-
-  test('renders child chips when hideChildren is false (default)', async () => {
-    const { container, root } = await renderComponent(LocationHeader, {
-      ...baseProps,
-      children: childList,
-      hideChildren: false,
-    });
-    // Should see "Νομοί / Περιφέρειες (2)"
-    expect(container.textContent).toContain('Νομοί / Περιφέρειες (2)');
-    await cleanup(root, container);
-  });
-
-  test('suppresses child chips when hideChildren is true', async () => {
-    const { container, root } = await renderComponent(LocationHeader, {
-      ...baseProps,
-      children: childList,
-      hideChildren: true,
-    });
-    // Child chips section should not appear
-    expect(container.textContent).not.toContain('Νομοί / Περιφέρειες (2)');
-    await cleanup(root, container);
-  });
-
-  test('uses denser desktop header column balance classes', async () => {
-    const { container, root } = await renderComponent(LocationHeader, {
-      ...baseProps,
-      children: childList,
-      hideChildren: true,
-    });
-    const desktopGrid = container.querySelector('.lg\\:grid-cols-12');
-    expect(desktopGrid).not.toBeNull();
-    expect(desktopGrid.classList.contains('gap-5')).toBe(true);
-    expect(container.querySelector('.lg\\:col-span-7')).not.toBeNull();
-    expect(container.querySelector('.lg\\:col-span-5')).not.toBeNull();
-    await cleanup(root, container);
-  });
-});
-
 // ── hideChildren prop — LocationRelatedLocations ──────────────────────────────
 
 describe('LocationRelatedLocations hideChildren prop', () => {

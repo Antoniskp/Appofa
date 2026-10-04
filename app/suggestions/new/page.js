@@ -50,6 +50,14 @@ export default function NewSuggestionPage() {
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const hasAutoFilledLocation = useRef(false);
 
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get('locationId');
+    if (requested && /^[1-9]\d*$/.test(requested) && Number.isSafeInteger(Number(requested))) {
+      hasAutoFilledLocation.current = true;
+      setForm(prev => ({ ...prev, locationId: Number(requested) }));
+    }
+  }, []);
+
   // Fetch existing tag suggestions for autocomplete
   useEffect(() => {
     tagAPI.getSuggestions({ entityType: 'suggestion' })

@@ -21,7 +21,7 @@ import LocationChildrenExplorer from '@/components/locations/LocationChildrenExp
 import CommentsThread from '@/components/comments/CommentsThread';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import LoginLink from '@/components/ui/LoginLink';
-import { VALID_TABS, ALWAYS_VISIBLE_TABS, DEFAULT_TAB, HEADER_SECTION_TYPES } from '@/lib/constants/locations';
+import { VALID_TABS, ALWAYS_VISIBLE_TABS, DEFAULT_TAB } from '@/lib/constants/locations';
 import { MAP_ISSUE_TYPES } from '@/lib/constants/mapIssues';
 
 const DEFAULT_MAP_ISSUE_FORM = {
@@ -574,9 +574,6 @@ export default function LocationDetailPage() {
     candidates: candidates.length,
   };
   const hasContent = entities.articles.length > 0 || entities.polls.length > 0 || suggestions.length > 0 || candidates.length > 0;
-  // True when the location has or is loading child locations.
-  // Controls LocationChildrenExplorer rendering and suppresses duplicate child chips in header/related.
-  const hasChildren = children.length > 0 || secondaryLoading;
   const showMainLocationMap = shouldShowMainLocationMap({ location, children, secondaryLoading });
 
   const TAB_LABELS = {
@@ -585,7 +582,7 @@ export default function LocationDetailPage() {
     articles: `Άρθρα${regularArticles.length ? ` (${regularArticles.length})` : ''}`,
     users: `Χρήστες${entities.usersCount ? ` (${entities.usersCount})` : ''}`,
     unclaimed: `Αδιεκδίκητα${entities.unclaimedCount ? ` (${entities.unclaimedCount})` : ''}`,
-    candidates: `Candidates${candidates.length ? ` (${candidates.length})` : ''}`,
+    candidates: `Υποψήφιοι${candidates.length ? ` (${candidates.length})` : ''}`,
     suggestions: `Προτάσεις${suggestions.length ? ` (${suggestions.length})` : ''}`,
     elections: '🗳️ Εκλογές',
   };
@@ -613,7 +610,7 @@ export default function LocationDetailPage() {
     ? activeTab
     : (visibleTabs[0] ?? DEFAULT_TAB);
 
-  const bodySections = sections.filter(s => s.isPublished && !HEADER_SECTION_TYPES.includes(s.type));
+  const bodySections = sections.filter(s => s.isPublished);
 
   // Merge all news_sources sections into a single one to prevent duplicate boxes
   const mergedBodySections = (() => {
@@ -636,16 +633,12 @@ export default function LocationDetailPage() {
   })();
   const canHaveChildHierarchy = !['municipality', 'electoral_district'].includes(location?.type);
   const showHierarchyNearTop = children.length > 0 || (secondaryLoading && canHaveChildHierarchy);
-  const hasExploreSection = showHierarchyNearTop || secondaryLoading || children.length > 0 || Boolean(location.parent || siblings.length > 0);
-  const hasLocalInfoSection = secondaryLoading || mergedBodySections.length > 0;
   const pageNavItems = [
+    { href: '#location-overview', label: 'Επισκόπηση' },
     { href: '#location-content', label: 'Συμμετοχή' },
-    { href: '#location-wall', label: 'Συζήτηση' },
     { href: '#location-roles', label: 'Εκπρόσωποι' },
-    hasLocalInfoSection ? { href: '#location-local-info', label: 'Πληροφορίες' } : null,
-    showMainLocationMap ? { href: '#location-map', label: 'Χάρτης' } : null,
-    hasExploreSection ? { href: '#location-children-explorer', label: 'Περιοχή' } : null,
-  ].filter(Boolean);
+    { href: '#location-local-info', label: 'Πληροφορίες' },
+  ];
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -654,7 +647,7 @@ export default function LocationDetailPage() {
         <LocationBreadcrumb breadcrumb={breadcrumb} homeBreadcrumb={homeBreadcrumb} />
 
         {/* Compact Location Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           {isEditing ? (
             <LocationEditForm
               location={location}
@@ -672,14 +665,6 @@ export default function LocationDetailPage() {
           ) : (
             <LocationHeader
               location={location}
-              sections={sections}
-              children={children}
-              hideChildren={hasChildren}
-              activePolls={activePolls}
-              newsArticles={newsArticles}
-              regularArticles={regularArticles}
-              suggestionsCount={suggestions.length}
-              entities={entities}
               imageError={imageError}
               setImageError={setImageError}
               canManageLocations={canManageLocations}
@@ -688,23 +673,12 @@ export default function LocationDetailPage() {
           )}
         </div>
 
-        {/* Location Sections (published, non-header types) — shown between header and tabs */}
+        {/* Location overview, participation, representatives and information. */}
         {!isEditing && (
           <>
             <LocationPageNav items={pageNavItems} />
 
-            <LocationActionSummary
-              counts={{
-                polls: activePolls.length,
-                suggestions: suggestions.length,
-                news: newsArticles.length,
-                articles: regularArticles.length,
-                users: entities.usersCount,
-              }}
-              loading={secondaryLoading}
-              isAuthenticated={isAuthenticated}
-              onTabSelect={handleTabChange}
-            />
+            <LocationActionSummary polls={activePolls} suggestions={suggestions} news={newsArticles} articles={regularArticles} loading={secondaryLoading} />
 
             {showHierarchyNearTop && (
               <LocationChildrenExplorer
@@ -716,11 +690,85 @@ export default function LocationDetailPage() {
               />
             )}
 
+            {/* Tabbed content — participation-first placement */}
+            <div id="location-content" className="mb-8 space-y-3 scroll-mt-36">
+              <h2 className="text-lg font-semibold text-gray-900">Συμμετοχή και δραστηριότητα</h2>
+              <LocationTabs
+                activeTab={resolvedActiveTab}
+                onTabChange={handleTabChange}
+                activePolls={activePolls}
+                newsArticles={newsArticles}
+                regularArticles={regularArticles}
+                entities={entities}
+                suggestions={suggestions}
+                candidates={candidates}
+                isAuthenticated={isAuthenticated}
+                locationIdentifier={location.slug || location.id}
+                locationId={location.id}
+                canManageLocations={canManageLocations()}
+                TAB_LABELS={TAB_LABELS}
+                visibleTabs={visibleTabs}
+                loading={secondaryLoading}
+                electionData={{
+                  locationId: location.id,
+                  locationType: location.type,
+                  isAuthenticated,
+                  currentUserId: user?.id ?? null,
+                }}
+              />
+            </div>
+
+            <div id="location-wall" className="mb-8 bg-white rounded-lg shadow-sm p-6">
+              <CommentsThread
+                entityType="location"
+                entityId={location.id}
+                title="Συζήτηση"
+                composerPlaceholder={`Γράψε για ${location.name_local || location.name}…`}
+                emptyMessage="Ξεκίνα μια συζήτηση για την περιοχή."
+              />
+            </div>
+
+            {/* Location Roles — assigned officials for this location */}
+            {location && (
+              <div id="location-roles" className="mb-8 space-y-3 scroll-mt-36">
+                <h2 className="text-lg font-semibold text-gray-900">Εκπρόσωποι και ρόλοι</h2>
+                <LocationRoles
+                  locationId={location.id}
+                  showEmptyState
+                  canManageLocations={canManageLocations()}
+                  onEdit={handleEdit}
+                />
+              </div>
+            )}
+
+            {(
+              <div id="location-local-info" className="mb-8 space-y-3 scroll-mt-36">
+                <h2 className="text-lg font-semibold text-gray-900">Τοπικές πληροφορίες</h2>
+                <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-600">
+                  {location.wikipedia_url && <a href={location.wikipedia_url} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">Wikipedia ↗</a>}
+                  <a href="#location-map" className="text-blue-700 hover:underline" hidden={!showMainLocationMap}>Χάρτης περιοχής</a>
+                  {!location.hasModerator && <Link href={'/locations/' + (location.slug || location.id) + '?apply=moderator'} className="text-blue-700 hover:underline">Γίνε συντονιστής</Link>}
+                  {location.hasModerator && <span>Συντονιστής: {location.moderatorPreview?.username || 'Διαθέσιμος'}</span>}
+                </div>
+                <details className="text-sm text-gray-500">
+                  <summary className="cursor-pointer py-2">Στοιχεία περιοχής</summary>
+                  {location.code && <p>Κωδικός: {location.code}</p>}
+                  {location.lat != null && location.lng != null && <p>Συντεταγμένες: {location.lat}, {location.lng}</p>}
+                  {location.wikipedia_data_updated_at && <p>Ενημέρωση στοιχείων: {new Date(location.wikipedia_data_updated_at).toLocaleDateString('el-GR')}</p>}
+                </details>
+                {secondaryLoading ? (
+                  <SkeletonLoader type="card" count={2} />
+                ) : (
+                  <LocationSections sections={mergedBodySections} />
+                )}
+              </div>
+            )}
+
             {/* Map: own geometry only when the hierarchy explorer will not render a map. */}
             {showMainLocationMap && (
-              <div id="location-map" className="mb-8">
+              <div id="location-map" className="mb-8 scroll-mt-36">
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">Χάρτης</h2>
-                <div className="overflow-hidden rounded-lg bg-white shadow-md lg:grid lg:grid-cols-[minmax(0,1fr)_360px]">
+                <div className="overflow-hidden rounded-lg bg-white shadow-sm lg:grid lg:grid-cols-[minmax(0,1fr)_360px]">
                   <LocationMap
                     location={location}
                     summaryCounts={mapSummaryCounts}
@@ -734,14 +782,14 @@ export default function LocationDetailPage() {
                     className="space-y-4 border-t border-gray-200 p-4 lg:border-l lg:border-t-0"
                   >
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Local issue</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Τοπικό ζήτημα</p>
                       <h3 className="mt-1 text-base font-semibold text-gray-900">
-                        {mapIssuePin ? 'Pin selected' : 'Add a map pin'}
+                        {mapIssuePin ? 'Το σημείο επιλέχθηκε' : 'Επίλεξε σημείο στον χάρτη'}
                       </h3>
                     </div>
 
                     <label className="block">
-                      <span className="text-sm font-medium text-gray-700">Type</span>
+                      <span className="text-sm font-medium text-gray-700">Τύπος</span>
                       <select
                         value={mapIssueForm.mapIssueType}
                         onChange={(event) => handleMapIssueTypeChange(event.target.value)}
@@ -750,31 +798,31 @@ export default function LocationDetailPage() {
                       >
                         {MAP_ISSUE_TYPES.map((issueType) => (
                           <option key={issueType.value} value={issueType.value}>
-                            {issueType.label}
+                            {({ pothole: 'Λακκούβα', neglected_building: 'Εγκαταλελειμμένο κτίριο', broken_lighting: 'Βλάβη φωτισμού', sidewalk_access: 'Πρόσβαση πεζοδρομίου', trash: 'Απορρίμματα', unsafe_crossing: 'Επικίνδυνη διάβαση', flooding: 'Πλημμύρα', illegal_dumping: 'Παράνομη απόρριψη', graffiti_vandalism: 'Βανδαλισμός', abandoned_vehicle: 'Εγκαταλελειμμένο όχημα', noise: 'Θόρυβος', other: 'Άλλο' })[issueType.value] || issueType.label}
                           </option>
                         ))}
                       </select>
                     </label>
 
                     <label className="block">
-                      <span className="text-sm font-medium text-gray-700">Title</span>
+                      <span className="text-sm font-medium text-gray-700">Τίτλος</span>
                       <input
                         type="text"
                         value={mapIssueForm.title}
                         onChange={(event) => setMapIssueForm((prev) => ({ ...prev, title: event.target.value }))}
-                        placeholder="Broken pavement on main street"
+                        placeholder="Σπασμένο πεζοδρόμιο στον κεντρικό δρόμο"
                         className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         disabled={!isAuthenticated || isSubmittingMapIssue}
                       />
                     </label>
 
                     <label className="block">
-                      <span className="text-sm font-medium text-gray-700">Details</span>
+                      <span className="text-sm font-medium text-gray-700">Περιγραφή</span>
                       <textarea
                         value={mapIssueForm.body}
                         onChange={(event) => setMapIssueForm((prev) => ({ ...prev, body: event.target.value }))}
                         rows={4}
-                        placeholder="Add what locals should know."
+                        placeholder="Πρόσθεσε όσα χρειάζεται να γνωρίζει η περιοχή."
                         className="mt-1 block w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         disabled={!isAuthenticated || isSubmittingMapIssue}
                       />
@@ -788,7 +836,7 @@ export default function LocationDetailPage() {
                         className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         disabled={!isAuthenticated || isSubmittingMapIssue}
                       />
-                      Post anonymously
+                      Ανώνυμη δημοσίευση
                     </label>
 
                     {mapIssuePin && (
@@ -804,7 +852,7 @@ export default function LocationDetailPage() {
                           disabled={isSubmittingMapIssue || !mapIssuePin}
                           className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                         >
-                          {isSubmittingMapIssue ? 'Posting...' : 'Post issue'}
+                          {isSubmittingMapIssue ? 'Δημοσίευση…' : 'Δημοσίευση ζητήματος'}
                         </button>
                         {mapIssuePin && (
                           <button
@@ -813,78 +861,17 @@ export default function LocationDetailPage() {
                             className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
                             disabled={isSubmittingMapIssue}
                           >
-                            Clear
+                            Καθαρισμός
                           </button>
                         )}
                       </div>
                     ) : (
                       <LoginLink className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
-                        Sign in to post
+                        Συνδέσου για δημοσίευση
                       </LoginLink>
                     )}
                   </form>
                 </div>
-              </div>
-            )}
-
-            {/* Tabbed content — participation-first placement */}
-            <div id="location-content" className="mb-8 space-y-3">
-              <h2 className="text-lg font-semibold text-gray-900">Συμμετοχή και δραστηριότητα</h2>
-              <LocationTabs
-                activeTab={resolvedActiveTab}
-                onTabChange={handleTabChange}
-                activePolls={activePolls}
-                newsArticles={newsArticles}
-                regularArticles={regularArticles}
-                entities={entities}
-                suggestions={suggestions}
-                candidates={candidates}
-                isAuthenticated={isAuthenticated}
-                locationIdentifier={location.slug || location.id}
-                canManageLocations={canManageLocations()}
-                TAB_LABELS={TAB_LABELS}
-                visibleTabs={visibleTabs}
-                loading={secondaryLoading}
-                electionData={{
-                  locationId: location.id,
-                  locationType: location.type,
-                  isAuthenticated,
-                  currentUserId: user?.id ?? null,
-                }}
-              />
-            </div>
-
-            <div id="location-wall" className="mb-8 bg-white rounded-lg shadow-md p-6">
-              <CommentsThread
-                entityType="location"
-                entityId={location.id}
-                title="Wall"
-                composerPlaceholder={`Post about ${location.name_local || location.name}...`}
-                emptyMessage="No wall posts yet."
-              />
-            </div>
-
-            {/* Location Roles — assigned officials for this location */}
-            {location && (
-              <div id="location-roles" className="mb-8 space-y-3">
-                <h2 className="text-lg font-semibold text-gray-900">Εκπρόσωποι και ρόλοι</h2>
-                <LocationRoles
-                  locationId={location.id}
-                  showEmptyState
-                  canManageLocations={canManageLocations()}
-                  onEdit={handleEdit}
-                />
-              </div>
-            )}
-
-            {(secondaryLoading || mergedBodySections.length > 0) && (
-              <div id="location-local-info" className="mb-8 space-y-3">
-                <h2 className="text-lg font-semibold text-gray-900">Τοπικές πληροφορίες</h2>
-                {secondaryLoading ? (
-                  <SkeletonLoader type="card" count={2} />
-                ) : (
-                  <LocationSections sections={mergedBodySections} />
-                )}
               </div>
             )}
 
