@@ -306,14 +306,14 @@ describe('Frontend smoke tests', () => {
     document.body.innerHTML = '';
   });
 
-  test('renders the participation journey and public progress links', async () => {
+  test('renders the participation journey and proposal entry points', async () => {
     useAuth.mockReturnValue(buildAuthState());
     const HomePage = require('../app/page').default;
     const { container, root } = await renderPage(HomePage);
 
-    expect(container.textContent).toContain('Ο τόπος σου. Οι προτάσεις σου. Ορατή πρόοδος.');
-    expect(container.textContent).toContain('Τι γίνεται μετά τη συμμετοχή;');
-    expect(container.querySelector('a[href="/progress"]')).toBeTruthy();
+    expect(container.textContent).toContain('Δες τι συμβαίνει. Πάρε θέση. Πρότεινε λύσεις.');
+    expect(container.textContent).toContain('Διάλεξε πώς θέλεις να συμμετέχεις');
+    expect(container.querySelector('a[href="/locations"]')).toBeTruthy();
     expect(container.querySelector('a[href="/suggestions/new"]')).toBeTruthy();
 
     await act(async () => {
@@ -321,15 +321,15 @@ describe('Frontend smoke tests', () => {
     });
   });
 
-  test('explains advisory participation and does not request a guest-only poll feed', async () => {
+  test('explains guest voting and keeps the homepage poll feed unrestricted', async () => {
     useAuth.mockReturnValue(buildAuthState({ user: null }));
     pollAPI.getAll.mockResolvedValue({ success: true, data: [] });
 
     const HomePage = require('../app/page').default;
     const { container, root } = await renderPage(HomePage);
 
-    expect(container.textContent).toContain('Τα αποτελέσματα είναι συμβουλευτικά.');
-    expect(container.textContent).not.toContain('Ψηφίστε χωρίς εγγραφή');
+    expect(container.textContent).toContain('Ορισμένες ψηφοφορίες είναι ανοιχτές χωρίς εγγραφή');
+    expect(container.querySelector('a[href="/polls?voteRestriction=anyone"]')).toBeTruthy();
     expect(pollAPI.getAll).not.toHaveBeenCalledWith(expect.objectContaining({
       voteRestriction: 'anyone',
     }));

@@ -84,10 +84,10 @@ describe('LanguageSwitcher Romanian option', () => {
       root.render(React.createElement(LanguageSwitcher));
     });
 
-    const roButton = container.querySelector('button[aria-label="Română"]');
-    expect(roButton).toBeTruthy();
-    expect(roButton.textContent).toContain('🇷🇴');
-    expect(roButton.textContent).toContain('RO');
+    const roOption = container.querySelector('select option[value="ro"]');
+    expect(roOption).toBeTruthy();
+    expect(roOption.textContent).toBe('Română');
+    expect(roOption.getAttribute('lang')).toBe('ro');
   });
 
   test('persists locale selection through NEXT_LOCALE cookie logic', () => {
