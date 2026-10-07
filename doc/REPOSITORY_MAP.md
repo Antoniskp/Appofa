@@ -12,9 +12,19 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-09-20
+> **Last updated**: 2026-10-07
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
+
+### Suggestions addressed to offices (2026-10-07)
+
+- `src/services/suggestionRecipientService.js`: location-aware recipient discovery and canonical address validation.
+- `Suggestion.recipientKey` / `Suggestion.recipient`: nullable office key and server-owned label snapshot; migration `20261007000000-add-suggestion-recipient.js` adds columns/index.
+- `GET /api/suggestions/recipients?locationId=…`; suggestion list filters `recipientKey` and `addressed=true`; create/edit accepts nullable `recipientKey`.
+- `components/suggestions/RecipientSelector.js`, `RecipientLabel.js`: shared create/edit selector and localized card/detail office labels linking to office feeds.
+- `app/suggestions/page.js`: addressed-proposals filter and office feed; new/edit forms clear recipients when location changes.
+- EL/EN/RO `suggestionRecipients` messages; API/UI coverage in `__tests__/suggestion-recipients.test.js` and `suggestion-recipient-selector.test.js`.
+- Behavior and migration notes: `doc/SUGGESTION_RECIPIENTS.md`.
 
 ### Democracy release additions (2026-09-20)
 

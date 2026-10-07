@@ -1,4 +1,25 @@
 {
+  "suggestionRecipients": {
+    "label": "Către o autoritate (opțional)",
+    "help": "Alegeți funcția publică căreia îi adresați propunerea.",
+    "addressed_to": "Către",
+    "mayor": "Primar",
+    "regional": "Autoritate regională / prefectură",
+    "choose_location": "Alegeți mai întâi o localitate",
+    "loading": "Se încarcă autoritățile…",
+    "community": "Comunitatea — fără o autoritate anume",
+    "unavailable": "Autoritatea selectată anterior",
+    "load_error": "Autoritățile nu au putut fi încărcate.",
+    "retry": "Încercați din nou",
+    "clear": "Eliminați destinatarul",
+    "empty": "Nu există încă autorități înregistrate pentru această localitate.",
+    "publication_note": "Propunerea este publicată pe Appofa. Alegerea unei autorități nu trimite un mesaj și nu confirmă că un oficial a citit-o.",
+    "heading": "Propuneri pentru comunitate și autorități",
+    "intro": "Propuneți o schimbare primarului, autorității regionale, unui ministru sau prim-ministrului. Discutați și adunați sprijinul comunității.",
+    "only_addressed": "Doar propuneri adresate autorităților publice",
+    "office_feed": "Propuneri adresate acestei autorități",
+    "all_suggestions": "Toate propunerile"
+  },
   "nav": {
     "news": "Știri",
     "articles": "Articole",

@@ -5,6 +5,7 @@ const badgeService = require('../services/badgeService');
 const { getAncestorLocationIds } = require('../utils/locationUtils');
 const { shouldHideSuggestionAuthor } = require('../utils/suggestionAuthorVisibility');
 const { syncTags, attachTags } = require('../utils/tagUtils');
+const { getRecipients, resolveRecipient, validRecipientKey } = require('../services/suggestionRecipientService');
 
 const SUGGESTION_TYPES = ['idea', 'problem', 'problem_request', 'location_suggestion'];
 const SUGGESTION_STATUSES = ['open', 'under_review', 'implemented', 'rejected'];
@@ -158,6 +159,16 @@ function sanitizeSuggestionAuthor(suggestion, user) {
 }
 
 const suggestionController = {
+  getRecipients: async (req, res) => {
+    try {
+      const result = await getRecipients(req.query.locationId);
+      if (result.error) return res.status(400).json({ success: false, message: result.error });
+      return res.json({ success: true, data: result.data });
+    } catch (error) {
+      console.error('Get suggestion recipients error:', error.message);
+      return res.status(500).json({ success: false, message: 'Error fetching recipients.' });
+    }
+  },
   /**
    * GET /api/suggestions
    * List suggestions with optional filters and sorting.
@@ -167,6 +178,11 @@ const suggestionController = {
       const { type, status, locationId, authorId, sort = 'newest', page = 1, limit = 12, category, search, tag } = req.query;
 
       const where = {};
+      if (req.query.recipientKey) {
+        if (!validRecipientKey(req.query.recipientKey)) return res.status(400).json({ success: false, message: 'Invalid recipient.' });
+        where.recipientKey = req.query.recipientKey;
+      }
+      if (req.query.addressed === 'true') where.recipientKey = where.recipientKey || { [Op.ne]: null };
       const user = req.user || null;
       if (type && SUGGESTION_TYPES.includes(type)) where.type = type;
       if (status && SUGGESTION_STATUSES.includes(status)) where.status = status;
@@ -409,7 +425,11 @@ const suggestionController = {
       const mapPinResult = normalizeMapPin(req.body, Boolean(parsedLocationId));
       if (mapPinResult.error) return res.status(400).json({ success: false, message: mapPinResult.error });
 
+      const recipientResult = await resolveRecipient(req.body.recipientKey, parsedLocationId);
+      if (recipientResult.error) return res.status(400).json({ success: false, message: recipientResult.error });
+
       const suggestion = await Suggestion.create({
+        ...recipientResult,
         title: titleResult.value,
         body: bodyResult.value,
         type: typeResult.value,
@@ -542,6 +562,15 @@ const suggestionController = {
       const nextVisibility = updates.visibility !== undefined ? updates.visibility : suggestion.visibility;
       const nextVoteRestriction = updates.voteRestriction !== undefined ? updates.voteRestriction : suggestion.voteRestriction;
       const nextLocationId = updates.locationId !== undefined ? updates.locationId : suggestion.locationId;
+      if (req.body.recipientKey !== undefined || updates.locationId !== undefined) {
+        const nextKey = req.body.recipientKey !== undefined ? req.body.recipientKey : suggestion.recipientKey;
+        // Preserve historical office labels when an edit does not change the address.
+        if (nextKey !== suggestion.recipientKey || nextLocationId !== suggestion.locationId) {
+          const recipientResult = await resolveRecipient(nextKey, nextLocationId);
+          if (recipientResult.error) return res.status(400).json({ success: false, message: recipientResult.error });
+          Object.assign(updates, recipientResult);
+        }
+      }
       if (requiresLocation(nextVisibility, nextVoteRestriction) && !nextLocationId) {
         return res.status(400).json({ success: false, message: 'Location is required for local-only suggestions.' });
       }
