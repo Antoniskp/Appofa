@@ -1,4 +1,25 @@
 {
+  "suggestionRecipients": {
+    "label": "Addressed to (optional)",
+    "help": "Choose the public office you want to consider your proposal.",
+    "addressed_to": "Addressed to",
+    "mayor": "Mayor",
+    "regional": "Regional / prefectural authority",
+    "choose_location": "Choose a location first",
+    "loading": "Loading offices…",
+    "community": "The community — no specific office",
+    "unavailable": "Previously selected office",
+    "load_error": "Could not load offices.",
+    "retry": "Try again",
+    "clear": "Remove recipient",
+    "empty": "No offices are listed for this location yet.",
+    "publication_note": "Published on Appofa. Selecting an office does not send a message or confirm that an official has read it.",
+    "heading": "Proposals for your community and public officials",
+    "intro": "Suggest a change to your mayor, regional authority, minister or prime minister. Discuss it and gather community support.",
+    "only_addressed": "Only proposals addressed to public offices",
+    "office_feed": "Proposals addressed to this office",
+    "all_suggestions": "All proposals"
+  },
   "nav": {
     "news": "News",
     "articles": "Articles",

@@ -7,6 +7,7 @@ import { TruncatedTextTooltip } from '@/components/ui/Tooltip';
 import InlineSuggestionVote from '@/components/InlineSuggestionVote';
 import UserAvatar from '@/components/user/UserAvatar';
 import OrgAvatar from '@/components/organization/OrgAvatar';
+import RecipientLabel from '@/components/suggestions/RecipientLabel';
 
 const TYPE_LABELS = {
   idea: 'Ιδέα',
@@ -61,6 +62,11 @@ export default function SuggestionCard({ suggestion }) {
           </TruncatedTextTooltip>
         </h3>
       </Link>
+      {suggestion.recipient && (
+        <Link href={`/suggestions?recipientKey=${encodeURIComponent(suggestion.recipientKey)}`} className="mb-3 text-sm font-medium text-blue-700 hover:underline">
+          <RecipientLabel recipient={suggestion.recipient} />
+        </Link>
+      )}
       <div className="mt-auto flex flex-wrap items-center justify-between text-sm text-gray-500 pt-2 border-t border-gray-100 gap-3">
         <div className="flex items-center gap-2">
           {organizationIdentity ? (

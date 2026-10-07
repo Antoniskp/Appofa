@@ -14,6 +14,7 @@ import FormSelect from '@/components/ui/FormSelect';
 import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
 import TagInput from '@/components/ui/TagInput';
 import articleCategories from '@/config/articleCategories.json';
+import RecipientSelector from '@/components/suggestions/RecipientSelector';
 
 const SUGGESTION_TYPES = [
   { value: 'idea', label: 'Ιδέα – Πρόταση βελτίωσης' },
@@ -40,6 +41,7 @@ export default function NewSuggestionPage() {
     body: '',
     type: 'idea',
     locationId: null,
+    recipientKey: null,
     voteRestriction: 'authenticated',
     hideCreator: false,
     category: '',
@@ -131,6 +133,7 @@ export default function NewSuggestionPage() {
     setForm((prev) => ({
       ...prev,
       locationId: locationId || null,
+      recipientKey: null,
     }));
     if (errors.locationId) {
       setErrors((prev) => ({ ...prev, locationId: '' }));
@@ -155,6 +158,7 @@ export default function NewSuggestionPage() {
         hideCreator: form.hideCreator,
         ...(form.category ? { category: form.category } : {}),
         tags: form.tags,
+        recipientKey: form.recipientKey,
       };
       const res = await suggestionAPI.create(payload);
       if (res.success) {
@@ -279,6 +283,9 @@ export default function NewSuggestionPage() {
                 allowClear
               />
             </div>
+
+            <RecipientSelector locationId={form.locationId} value={form.recipientKey}
+              onChange={(recipientKey) => setForm(prev => ({ ...prev, recipientKey }))} />
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">

@@ -19,6 +19,7 @@ import articleCategories from '@/config/articleCategories.json';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import SuggestionCard from '@/components/SuggestionCard';
 import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
+import RecipientLabel from '@/components/suggestions/RecipientLabel';
 
 const suggestionCategoryOptions = (articleCategories.suggestionCategories || []).map((cat) => ({
   value: cat,
@@ -27,10 +28,13 @@ const suggestionCategoryOptions = (articleCategories.suggestionCategories || [])
 
 function SuggestionsContent() {
   const tCommon = useTranslations('common');
+  const tRecipients = useTranslations('suggestionRecipients');
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const mine = searchParams.get('mine') === 'true';
   const initialTag = searchParams.get('tag') || '';
+  const recipientKey = searchParams.get('recipientKey') || '';
+  const [addressedOnly, setAddressedOnly] = useState(false);
   const {
     filters,
     handleFilterChange,
@@ -58,6 +62,8 @@ function SuggestionsContent() {
   const { items: suggestions, loading, initialLoading, error, hasMore, loadMore } = useInfiniteData(
     async (p, lim) => {
       const params = { page: p, limit: lim, ...filters };
+      if (recipientKey) params.recipientKey = recipientKey;
+      if (addressedOnly) params.addressed = 'true';
       if (mine && user?.id) params.authorId = user.id;
       Object.keys(params).forEach((k) => { if (!params[k]) delete params[k]; });
       const response = await suggestionAPI.getAll(params);
@@ -69,12 +75,24 @@ function SuggestionsContent() {
       };
     },
     12,
-    [filters, mine, user?.id]
+    [filters, mine, user?.id, recipientKey, addressedOnly]
   );
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
+        <div className="mb-5 rounded-xl border border-blue-100 bg-white p-4">
+          <h1 className="text-xl font-semibold text-gray-900">{tRecipients('heading')}</h1>
+          <p className="mt-1 text-sm text-gray-600">{tRecipients('intro')}</p>
+          <label className="mt-3 flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={addressedOnly} onChange={event => setAddressedOnly(event.target.checked)} />
+            {tRecipients('only_addressed')}
+          </label>
+          {recipientKey && <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-blue-800">
+            {suggestions[0]?.recipient ? <RecipientLabel recipient={suggestions[0].recipient} /> : <span>{tRecipients('office_feed')}</span>}
+            <Link href="/suggestions" className="underline">{tRecipients('all_suggestions')}</Link>
+          </div>}
+        </div>
         {/* Location Breadcrumb */}
         <LocationFilterBreadcrumb
           value={filters.locationId}
@@ -138,7 +156,7 @@ function SuggestionsContent() {
           actionsSlot={
             user && (
               <Link
-                href="/suggestions/new"
+                href={filters.locationId ? `/suggestions/new?locationId=${filters.locationId}` : '/suggestions/new'}
                 className="inline-flex min-w-0 max-w-full items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium md:justify-start md:whitespace-nowrap"
               >
                 <PlusCircleIcon className="h-5 w-5 shrink-0" />

@@ -1,4 +1,5 @@
 'use client';
+import RecipientLabel from '@/components/suggestions/RecipientLabel';
 
 import { useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -421,6 +422,11 @@ export default function SuggestionDetailPage() {
           </div>
 
           <h1 className="text-2xl font-bold text-gray-900 mb-3">{suggestion.title}</h1>
+          {suggestion.recipient && (
+            <Link href={`/suggestions?recipientKey=${encodeURIComponent(suggestion.recipientKey)}`} className="block mb-4 rounded-lg bg-blue-50 p-3 text-sm font-medium text-blue-800 hover:underline">
+              <RecipientLabel recipient={suggestion.recipient} />
+            </Link>
+          )}
           <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{suggestion.body}</p>
 
           {/* Footer row */}

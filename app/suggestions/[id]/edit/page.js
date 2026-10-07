@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import RecipientSelector from '@/components/suggestions/RecipientSelector';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { suggestionAPI, tagAPI } from '@/lib/api';
@@ -58,6 +59,8 @@ export default function EditSuggestionPage() {
         type: data.type,
         status: data.status,
         locationId: data.locationId || null,
+        recipientKey: data.recipientKey || null,
+        recipient: data.recipient || null,
         voteRestriction: data.voteRestriction || 'authenticated',
         hideCreator: Boolean(data.hideCreator),
         category: data.category || '',
@@ -154,6 +157,7 @@ export default function EditSuggestionPage() {
     setForm((prev) => ({
       ...prev,
       locationId: locationId || null,
+      recipientKey: null,
     }));
     if (errors.locationId) {
       setErrors((prev) => ({ ...prev, locationId: '' }));
@@ -178,6 +182,7 @@ export default function EditSuggestionPage() {
         hideCreator: form.hideCreator,
         category: form.category || null,
         tags: form.tags,
+        recipientKey: form.recipientKey,
       };
       if (isPrivileged) {
         payload.status = form.status;
@@ -303,6 +308,9 @@ export default function EditSuggestionPage() {
                 allowClear
               />
             </div>
+
+            <RecipientSelector locationId={form.locationId} value={form.recipientKey} currentRecipient={form.recipient}
+              onChange={(recipientKey) => setForm(prev => ({ ...prev, recipientKey }))} />
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">

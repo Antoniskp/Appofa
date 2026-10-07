@@ -11,6 +11,7 @@ const { apiLimiter, createLimiter, authVoteLimiter } = require('../middleware/ra
 router.get('/', optionalAuthMiddleware, apiLimiter, suggestionController.getSuggestions);
 router.get('/progress', apiLimiter, proposalProgressController.list);
 router.get('/category-counts', apiLimiter, suggestionController.getCategoryCounts);
+router.get('/recipients', apiLimiter, suggestionController.getRecipients);
 router.get('/:id', optionalAuthMiddleware, apiLimiter, suggestionController.getSuggestionById);
 router.get('/:id/solutions', optionalAuthMiddleware, apiLimiter, suggestionController.getSolutions);
 
