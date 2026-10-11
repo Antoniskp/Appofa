@@ -308,7 +308,7 @@ describe('Frontend smoke tests', () => {
 
   test('renders the participation journey and proposal entry points', async () => {
     useAuth.mockReturnValue(buildAuthState());
-    const HomePage = require('../app/page').default;
+    const HomePage = require('../components/home/HomePageClient').default;
     const { container, root } = await renderPage(HomePage);
 
     expect(container.textContent).toContain('Δες τι συμβαίνει. Πάρε θέση. Πρότεινε λύσεις.');
@@ -325,7 +325,7 @@ describe('Frontend smoke tests', () => {
     useAuth.mockReturnValue(buildAuthState({ user: null }));
     pollAPI.getAll.mockResolvedValue({ success: true, data: [] });
 
-    const HomePage = require('../app/page').default;
+    const HomePage = require('../components/home/HomePageClient').default;
     const { container, root } = await renderPage(HomePage);
 
     expect(container.textContent).toContain('Ορισμένες ψηφοφορίες είναι ανοιχτές χωρίς εγγραφή');
@@ -350,7 +350,7 @@ describe('Frontend smoke tests', () => {
       locations: [{ code: 'DE', name: 'Germany', name_local: 'Germany' }],
     });
 
-    const HomePage = require('../app/page').default;
+    const HomePage = require('../components/home/HomePageClient').default;
     const { container, root } = await renderPage(HomePage);
 
     expect(container.textContent).toContain('Θέλεις την τοπική έκδοση;');
@@ -370,7 +370,7 @@ describe('Frontend smoke tests', () => {
       data: { countryCode: 'DE', countryName: 'Germany' },
     });
 
-    const HomePage = require('../app/page').default;
+    const HomePage = require('../components/home/HomePageClient').default;
     const { container, root } = await renderPage(HomePage);
 
     expect(container.textContent).not.toContain('Θέλεις την τοπική έκδοση;');
@@ -391,7 +391,7 @@ describe('Frontend smoke tests', () => {
       locations: [{ code: 'DE', name: 'Germany', name_local: 'Germany' }],
     });
 
-    const HomePage = require('../app/page').default;
+    const HomePage = require('../components/home/HomePageClient').default;
     const { container, root } = await renderPage(HomePage);
 
     const stayButton = Array.from(container.querySelectorAll('button')).find((button) => (

@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -103,9 +103,10 @@ function RegisterForm() {
   const { config: oauthConfig } = useOAuthConfig();
   const nextDestination = getPendingAuthDestination(searchParams);
   const loginHref = buildAuthPath('/login', nextDestination);
+  const registrationOwnsRedirect = useRef(false);
 
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!authLoading && user && !registrationOwnsRedirect.current) {
       router.push(resolveAuthDestination(searchParams));
     }
   }, [user, authLoading, router, searchParams]);
@@ -252,6 +253,9 @@ function RegisterForm() {
     e.preventDefault();
     if (!validateAccount()) return;
 
+    // register() updates AuthProvider before this handler resumes. Keep the
+    // already-signed-in guard from overriding the new account's destination.
+    registrationOwnsRedirect.current = true;
     setLoading(true);
     try {
       await register(prepareRegistrationData(formData));
@@ -270,6 +274,7 @@ function RegisterForm() {
         router.push('/onboarding');
       }
     } catch (err) {
+      registrationOwnsRedirect.current = false;
       error(err.message || t('register_fail'));
     } finally {
       setLoading(false);

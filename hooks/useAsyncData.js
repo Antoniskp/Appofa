@@ -49,13 +49,13 @@ export function useAsyncData(
   const isMountedRef = useRef(true);
   const fetchGenRef = useRef(0);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (...args) => {
     const gen = ++fetchGenRef.current;
     setLoading(true);
     setError(null);
     
     try {
-      const response = await fetchFunction();
+      const response = await fetchFunction(...args);
       
       if (!isMountedRef.current) return;
       if (gen !== fetchGenRef.current) return;
@@ -86,14 +86,13 @@ export function useAsyncData(
   }, [...dependencies]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     fetchData();
-  }, [...dependencies]);
-
-  useEffect(() => {
     return () => {
       isMountedRef.current = false;
+      fetchGenRef.current++;
     };
-  }, []);
+  }, [fetchData]);
 
   const setDataAndInvalidateFetch = useCallback((value) => {
     fetchGenRef.current++;

@@ -10,6 +10,7 @@
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:ci": "jest --runInBand",
+    "test:e2e": "playwright test",
     "frontend": "next dev -p 3001",
     "frontend:build": "next build",
     "frontend:start": "node scripts/start-frontend.js",
@@ -96,6 +97,7 @@
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^16.2.10",
+    "@playwright/test": "^1.64.0",
     "eslint": "^9.39.3",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^16.5.0",

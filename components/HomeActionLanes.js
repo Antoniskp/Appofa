@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import {
   ArrowRightIcon,
   BuildingOffice2Icon,
@@ -18,123 +19,123 @@ import {
 } from '@heroicons/react/24/outline';
 import { saveReturnTo } from '@/lib/auth-redirect';
 
-const signedInActions = (user) => [
+const signedInActions = (user, t) => [
   {
-    title: 'Η περιοχή σου',
+    title: t('areaTitle'),
     description: user?.homeLocation
-      ? 'Δες ψηφοφορίες, προτάσεις, νέα και ρόλους που αφορούν τον τόπο σου.'
-      : 'Σύνδεσε την περιοχή σου για πιο σχετικές ψηφοφορίες, νέα και προτάσεις.',
+      ? t('areaLinkedDescription')
+      : t('areaChooseDescription'),
     href: user?.homeLocation?.slug ? `/locations/${user.homeLocation.slug}` : '/locations',
     icon: MapPinIcon,
     tone: 'blue',
-    label: user?.homeLocation ? 'Τοπικός πίνακας' : 'Βρες περιοχή',
+    label: user?.homeLocation ? t('areaDashboard') : t('areaChoose'),
   },
   {
-    title: 'Πάρε θέση',
-    description: 'Βρες ανοιχτές ψηφοφορίες και συμμετείχε στα θέματα που σε αφορούν.',
+    title: t('voteTitle'),
+    description: t('voteDescription'),
     href: '/polls',
     icon: ClipboardDocumentListIcon,
     tone: 'emerald',
-    label: 'Ψηφοφορίες',
+    label: t('polls'),
   },
   {
-    title: 'Πρότεινε λύση',
-    description: 'Κατέγραψε ένα πρόβλημα ή μια ιδέα και άνοιξέ τη στην κοινότητα.',
+    title: t('solutionTitle'),
+    description: t('solutionDescription'),
     href: '/suggestions/new',
     icon: LightBulbIcon,
     tone: 'amber',
-    label: 'Νέα πρόταση',
+    label: t('newProposal'),
   },
 ];
 
-const guestActions = [
+const guestActions = (t) => [
   {
-    title: 'Βρες την περιοχή σου',
-    description: 'Ξεκίνα από δήμο, περιφέρεια ή χώρα και δες τι συζητιέται εκεί πριν δημιουργήσεις προφίλ.',
+    title: t('guestAreaTitle'),
+    description: t('guestAreaDescription'),
     href: '/locations',
     icon: MapPinIcon,
     tone: 'blue',
-    label: 'Περιοχές',
+    label: t('areas'),
   },
   {
-    title: 'Ψήφισε χωρίς εγγραφή',
-    description: 'Πάρε μια πρώτη θέση σε ανοιχτές ψηφοφορίες και κράτησε ιστορικό όταν εγγραφείς.',
+    title: t('guestVoteTitle'),
+    description: t('guestVoteDescription'),
     href: '/polls?voteRestriction=anyone',
     icon: ClipboardDocumentListIcon,
     tone: 'emerald',
-    label: 'Χωρίς εγγραφή',
+    label: t('noRegistration'),
   },
   {
-    title: 'Δες προτάσεις πολιτών',
-    description: 'Βρες ιδέες και προβλήματα που αξίζουν στήριξη, μετά φτιάξε προφίλ για να τα ακολουθείς.',
+    title: t('guestProposalsTitle'),
+    description: t('guestProposalsDescription'),
     href: '/suggestions',
     icon: ChatBubbleLeftRightIcon,
     tone: 'amber',
-    label: 'Προτάσεις',
+    label: t('proposals'),
   },
 ];
 
-const secondaryLinks = [
-  { href: '/news', label: 'Ειδήσεις', icon: NewspaperIcon },
-  { href: '/civic-questions', label: 'Θέματα Βουλής', icon: ClipboardDocumentListIcon },
-  { href: '/organizations', label: 'Οργανισμοί', icon: ChatBubbleLeftRightIcon },
+const secondaryLinks = (t) => [
+  { href: '/news', label: t('news'), icon: NewspaperIcon },
+  { href: '/civic-questions', label: t('parliament'), icon: ClipboardDocumentListIcon },
+  { href: '/organizations', label: t('organizations'), icon: ChatBubbleLeftRightIcon },
 ];
 
-const civicPathActions = (user) => [
+const civicPathActions = (user, t) => [
   {
     href: user ? '/profile' : '/register',
-    title: user ? 'Ολοκλήρωσε το προφίλ σου' : 'Δημιούργησε προφίλ',
+    title: user ? t('completeProfile') : t('createProfile'),
     description: user
-      ? 'Κράτησε ενημερωμένη την περιοχή και τη δημόσια παρουσία σου.'
-      : 'Σύνδεσε την περιοχή σου και ξεκίνα με πιο σχετικό περιεχόμενο.',
+      ? t('profileDescription')
+      : t('guestProfileDescription'),
     icon: UserPlusIcon,
   },
   {
     href: '/polls/create',
-    title: 'Άνοιξε ψηφοφορία',
-    description: 'Ρώτησε την κοινότητα για θέματα που χρειάζονται καθαρή δημόσια γνώμη.',
+    title: t('createPoll'),
+    description: t('createPollDescription'),
     icon: ClipboardDocumentListIcon,
   },
   {
     href: '/independents',
-    title: 'Ανακάλυψε ανεξάρτητους υποψηφίους',
-    description: 'Βρες ανεξάρτητους υποψηφίους και δημόσια πρόσωπα στην πλατφόρμα.',
+    title: t('independents'),
+    description: t('independentsDescription'),
     icon: UserGroupIcon,
   },
   {
     href: '/organizations',
-    title: 'Εκπροσωπείς κόμμα ή οργάνωση;',
-    description: 'Δημιούργησε επίσημη παρουσία, δημοσίευσε θέσεις και συμμετείχε ανοιχτά στον δημόσιο διάλογο.',
+    title: t('organizationJoin'),
+    description: t('organizationJoinDescription'),
     icon: BuildingOffice2Icon,
   },
   {
     href: '/manifest-supporters',
-    title: 'Δες δημόσιες δεσμεύσεις',
-    description: 'Δες ποιοι αποδέχονται δημόσιες αρχές συμμετοχής και λογοδοσίας.',
+    title: t('commitments'),
+    description: t('commitmentsDescription'),
     icon: HandRaisedIcon,
   },
   {
     href: '/candidates',
-    title: 'Πρότεινε έναν υποψήφιο',
-    description: 'Μοιράσου και πρότεινε υποψηφίους που εμπιστεύεσαι.',
+    title: t('candidate'),
+    description: t('candidateDescription'),
     icon: MegaphoneIcon,
   },
   {
     href: '/become-moderator',
-    title: 'Γίνε συντονιστής της κοινότητας',
-    description: 'Κράτησε τις συζητήσεις χρήσιμες, καθαρές και κοντά στα πραγματικά θέματα.',
+    title: t('moderator'),
+    description: t('moderatorDescription'),
     icon: ShieldCheckIcon,
   },
   {
     href: '/suggestions/new',
-    title: 'Πρότεινε λύσεις',
-    description: 'Κατέθεσε ιδέες που μπορούν να βελτιώσουν την περιοχή σου.',
+    title: t('solutions'),
+    description: t('solutionsDescription'),
     icon: LightBulbIcon,
   },
   {
     href: '/suggestions',
-    title: 'Κατάγραψε ένα δημόσιο πρόβλημα',
-    description: 'Δώσε ορατότητα σε δημόσια θέματα και ψήφισε προτεραιότητες.',
+    title: t('problem'),
+    description: t('problemDescription'),
     icon: FlagIcon,
   },
 ];
@@ -146,10 +147,10 @@ const toneClasses = {
   indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200 group-hover:bg-indigo-100',
 };
 
-const guestRegistrationBenefits = [
-  'Ακολούθησε την περιοχή και τα θέματα που σε ενδιαφέρουν',
-  'Κράτησε τις ψήφους και τις προτάσεις σου συγκεντρωμένες',
-  'Δημιούργησε δημόσια παρουσία, μόνο αν το επιλέξεις',
+const guestRegistrationBenefits = (t) => [
+  t('benefitArea'),
+  t('benefitHistory'),
+  t('benefitPrivacy'),
 ];
 
 function ActionCard({ action }) {
@@ -175,6 +176,7 @@ function ActionCard({ action }) {
 }
 
 function GuestRegistrationBridge() {
+  const t = useTranslations('homeActions');
   const handleAuthClick = () => saveReturnTo();
 
   return (
@@ -182,13 +184,13 @@ function GuestRegistrationBridge() {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-            Κράτησε τη συμμετοχή σου
+            {t('keepParticipation')}
           </p>
           <h3 className="mt-1 text-lg font-bold leading-7">
-            Δημιούργησε προφίλ και συνέχισε από εκεί που σταμάτησες.
+            {t('registrationTitle')}
           </h3>
           <div className="mt-4 grid gap-3 text-sm text-gray-700 md:grid-cols-3">
-            {guestRegistrationBenefits.map((benefit) => (
+            {guestRegistrationBenefits(t).map((benefit) => (
               <div key={benefit} className="flex gap-2">
                 <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-500" />
                 <span>{benefit}</span>
@@ -202,14 +204,14 @@ function GuestRegistrationBridge() {
             onClick={handleAuthClick}
             className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
           >
-            Δημιούργησε δωρεάν προφίλ
+            {t('register')}
             <ArrowRightIcon className="h-4 w-4" />
           </Link>
           <Link
             href="/newsletter"
             className="inline-flex items-center justify-center rounded-md border border-blue-300 bg-white px-4 py-2.5 text-sm font-semibold text-blue-800 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
           >
-            Ενημερώσεις email
+            {t('newsletter')}
           </Link>
         </div>
       </div>
@@ -218,25 +220,58 @@ function GuestRegistrationBridge() {
 }
 
 export default function HomeActionLanes({ user }) {
-  const actions = user ? signedInActions(user) : guestActions;
-  const pathActions = civicPathActions(user);
+  const t = useTranslations('homeActions');
+  const actions = user ? signedInActions(user, t) : guestActions(t);
+  const pathActions = civicPathActions(user, t);
   const featuredPathActions = pathActions.slice(0, 4);
   const compactPathActions = pathActions.slice(4);
 
   return (
-    <section className="border-t border-gray-200 bg-white">
+    <section aria-labelledby="home-actions-title" className="border-t border-gray-200 bg-white">
       <div className="app-container py-12">
-        <div className="mb-12 border-y border-blue-100 bg-gradient-to-r from-blue-50 via-white to-blue-50 py-8 text-gray-900">
+
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">{t('start')}</p>
+            <h2 id="home-actions-title" className="mt-1 text-2xl font-bold text-gray-900">{t('title')}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
+              {user
+                ? t('memberIntro')
+                : t('guestIntro')}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2" aria-label={t("explore")}>
+            {secondaryLinks(t).map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                <Icon className="h-4 w-4 text-gray-500" />
+                {label}
+              </Link>
+            ))}
+          </div>
+        </div>
+        <div className="mt-7 grid gap-4 md:grid-cols-3">
+          {actions.map((action) => (
+            <ActionCard key={action.href} action={action} />
+          ))}
+        </div>
+        {!user && <GuestRegistrationBridge />}
+        <details className="mt-8 rounded-lg border border-gray-200 p-5">
+          <summary className="cursor-pointer rounded font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">{t('more')}</summary>
+        <div className="mt-6 border-y border-blue-100 bg-gradient-to-r from-blue-50 via-white to-blue-50 py-8 text-gray-900">
           <div className="grid gap-7 px-1 sm:px-2 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.45fr)] lg:items-start">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-                Διάλεξε πώς θέλεις να συμμετέχεις
+                {t('participationLabel')}
               </p>
               <h2 className="mt-2 text-2xl font-bold leading-tight md:text-3xl">
-                Μια μικρή συμμετοχή μπορεί να ξεκινήσει κάτι σημαντικό.
+                {t('participationTitle')}
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-700">
-                Ψήφισε σε ένα ανοιχτό θέμα, πρότεινε μια λύση, ανέδειξε ένα πρόβλημα ή βοήθησε την κοινότητα της περιοχής σου.
+                {t('participationDescription')}
               </p>
             </div>
 
@@ -275,35 +310,7 @@ export default function HomeActionLanes({ user }) {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Ξεκίνα εδώ</p>
-            <h2 className="mt-1 text-2xl font-bold text-gray-900">Τρεις απλές κινήσεις</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
-              {user
-                ? 'Άνοιξε την περιοχή σου, ψήφισε σε ενεργά θέματα ή κατέθεσε μια πρόταση.'
-                : 'Δεν χρειάζεται να μάθεις όλη την πλατφόρμα. Ξεκίνα με την περιοχή σου, μια ψηφοφορία ή μια πρόταση.'}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2" aria-label="Περισσότερες ενότητες">
-            {secondaryLinks.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                <Icon className="h-4 w-4 text-gray-500" />
-                {label}
-              </Link>
-            ))}
-          </div>
-        </div>
-        <div className="mt-7 grid gap-4 md:grid-cols-3">
-          {actions.map((action) => (
-            <ActionCard key={action.href} action={action} />
-          ))}
-        </div>
-        {!user && <GuestRegistrationBridge />}
+        </details>
       </div>
     </section>
   );

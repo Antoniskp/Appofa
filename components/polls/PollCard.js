@@ -503,6 +503,10 @@ export default function PollCard({ poll, variant = 'grid' }) {
   };
 
   // Render poll info
+  // Non-inline cards already have one enclosing link. Their visual action must
+  // not introduce a nested anchor (invalid HTML and a hydration failure).
+  const PollAction = isInlineVotable && !showResults ? Link : 'span';
+  const actionHref = isInlineVotable && !showResults ? pollHref : undefined;
   const pollInfoContent = (
     <div className="flex flex-col flex-1">
       <h3 className="headline hover:text-blue-600 mb-2">
@@ -550,28 +554,28 @@ export default function PollCard({ poll, variant = 'grid' }) {
           <div className="mt-4">
             {isPollActive ? (
               hasVoted ? (
-                <Link
-                  href={pollHref}
+                <PollAction
+                  href={actionHref}
                   className="inline-flex items-center gap-1.5 bg-charcoal text-white px-4 py-2 rounded-lg hover:bg-black transition text-sm font-medium"
                 >
                   <CheckCircleIcon className="h-4 w-4" />
                   Αλλαγή Ψήφου
-                </Link>
+                </PollAction>
               ) : (
-                <Link
-                  href={pollHref}
+                <PollAction
+                  href={actionHref}
                   className="inline-block bg-charcoal text-white px-4 py-2 rounded-lg hover:bg-black transition text-sm font-medium"
                 >
                   Ψηφοφορία Τώρα
-                </Link>
+                </PollAction>
               )
             ) : (
-              <Link
-                href={pollHref}
+              <PollAction
+                href={actionHref}
                 className="inline-block bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition text-sm font-medium"
               >
                 Προβολή Αποτελεσμάτων
-              </Link>
+              </PollAction>
             )}
           </div>
         )}

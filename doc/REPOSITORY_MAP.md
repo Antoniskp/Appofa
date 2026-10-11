@@ -12,9 +12,18 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-10-07
+> **Last updated**: 2026-10-11
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
+
+### Homepage reliability and browser journeys
+
+- `app/page.js`: server entry using `lib/api/homepage-server.js` to request only public articles, news, videos and locations, with a bounded timeout and no cookie forwarding or cache.
+- `components/home/HomePageClient.js`: client composition and section retry controls; `ManifestSupporters.js` owns supporter rendering.
+- `hooks/useHomepageData.js`: account-scoped state, partial response merging and cumulative retries; uses `useAsyncData` generation guards to ignore superseded requests.
+- `src/controllers/homepageController.js`: validates location/section parameters. `src/services/homepageService.js`: assembles partial responses and performs SQL tag aggregation. `config/homepageSections.json`: shared allowlist.
+- `messages/{el,en,ro}.json`: `homeActions` and `homeRecovery` translations for primary actions, expandable participation options and loading failures.
+- `playwright.config.js`, `e2e/server.cjs`, `e2e/participation.spec.js`: desktop/mobile browser journeys with real routes, sessions and CSRF, an in-memory database and stubbed email delivery. `npm run test:e2e` runs the suite; CI installs Chromium and uploads failure traces.
 
 ### Suggestions addressed to offices (2026-10-07)
 

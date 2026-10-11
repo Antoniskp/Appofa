@@ -13,6 +13,7 @@ export default function HomepageSection({
   linkHref,
   loading,
   error,
+  onRetry,
   items = [],
   emptyTitle,
   emptyDescription,
@@ -24,8 +25,9 @@ export default function HomepageSection({
   mapSlot,
 }) {
   const r = useTranslations('redesign');
+  const t = useTranslations('homeRecovery');
   return (
-    <section className={`${bgColor} border-t border-gray-200`}>
+    <section aria-label={title} aria-busy={Boolean(loading)} className={`${bgColor} border-t border-gray-200`}>
       <div className="app-container py-12 sm:py-16">
         <div className="mb-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0">
@@ -47,18 +49,20 @@ export default function HomepageSection({
           </div>
         </div>
         {mapSlot && !loading && <div className="mb-6">{mapSlot}</div>}
-        {loading && (
+        {loading && items.length === 0 && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             <SkeletonLoader type="card" count={skeletonCount} variant="grid" />
           </div>
         )}
-        {error && (
-          <EmptyState
-            type="error"
-            title="Σφάλμα φόρτωσης"
-            description={error}
-            action={{ text: 'Δοκιμάστε ξανά', onClick: () => window.location.reload() }}
-          />
+        {error && !loading && (
+          <div role="alert">
+            <EmptyState
+              type="error"
+              title={t('title')}
+              description={t('description')}
+              action={onRetry ? { text: t('retry'), onClick: onRetry } : undefined}
+            />
+          </div>
         )}
         {!loading && !error && items.length === 0 && emptyTitle && (
           <EmptyState

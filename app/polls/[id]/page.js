@@ -37,11 +37,12 @@ async function fetchPoll(id) {
 }
 
 export async function generateMetadata({ params }) {
-  const poll = await fetchPoll(params.id);
+  const { id } = await params;
+  const poll = await fetchPoll(id);
   if (!poll) {
     return {
       title: 'Δημοσκόπηση | Απόφαση',
-      alternates: { canonical: `${SITE_URL}/polls/${params.id}` },
+      alternates: { canonical: `${SITE_URL}/polls/${id}` },
     };
   }
 
@@ -73,7 +74,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function PollDetailPage({ params }) {
-  const poll = await fetchPoll(params.id);
+  const { id } = await params;
+  const poll = await fetchPoll(id);
   const canonicalUrl = poll ? `${SITE_URL}/polls/${idSlug(poll.id, poll.title)}` : null;
 
   const jsonLd = poll

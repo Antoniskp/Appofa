@@ -40,12 +40,17 @@ const makeRequest = ({
 };
 
 describe('country redirect middleware', () => {
+  const originalApiUrl = process.env.API_URL;
+  const originalPublicApiUrl = process.env.NEXT_PUBLIC_API_URL;
   const createNextResponse = () => ({
     type: 'next',
     cookies: { set: jest.fn() },
   });
 
   beforeEach(() => {
+    // next/jest loads the developer's .env; these assertions use a fixed test API.
+    process.env.API_URL = 'http://localhost:3000';
+    process.env.NEXT_PUBLIC_API_URL = 'http://localhost:3000';
     mockNext.mockReset();
     mockRedirect.mockReset();
     mockFetch.mockClear();
@@ -87,6 +92,13 @@ describe('country redirect middleware', () => {
       cookies: { set: jest.fn() },
     }));
     resetAccessRulesCacheForTests();
+  });
+
+  afterEach(() => {
+    if (originalApiUrl === undefined) delete process.env.API_URL;
+    else process.env.API_URL = originalApiUrl;
+    if (originalPublicApiUrl === undefined) delete process.env.NEXT_PUBLIC_API_URL;
+    else process.env.NEXT_PUBLIC_API_URL = originalPublicApiUrl;
   });
 
   test('skips configured paths', async () => {
