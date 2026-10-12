@@ -44,6 +44,8 @@ const tableRows = [
   { capability: 'Διαχείριση ιδίου περιεχομένου',    viewer: false, editor: true,  moderator: false, admin: true  },
   { capability: 'Έγκριση / απόρριψη ειδήσεων',      viewer: false, editor: false, moderator: true,  admin: true  },
   { capability: 'Διαχείριση τοποθεσιών',            viewer: false, editor: false, moderator: true,  admin: true  },
+  { capability: 'Πρόταση βελτίωσης σελίδας τοποθεσίας', viewer: true, editor: true, moderator: true, admin: true },
+  { capability: 'Έλεγχος βελτιώσεων (moderator εντός ανατεθειμένης περιοχής)', viewer: false, editor: false, moderator: true, admin: true },
   { capability: 'Πρόσβαση στο admin dashboard',      viewer: false, editor: false, moderator: true,  admin: true  },
   { capability: 'Επαλήθευση χρηστών (εντός scope)', viewer: false, editor: false, moderator: true,  admin: true  },
   { capability: 'Ανάθεση/αφαίρεση moderator (child scope)', viewer: false, editor: false, moderator: true, admin: true },

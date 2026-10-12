@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { PencilIcon } from '@heroicons/react/24/outline';
 
 const TYPE_LABELS = { country: 'Χώρα', prefecture: 'Νομός / Περιφέρεια', municipality: 'Δήμος', electoral_district: 'Εκλογική περιφέρεια', international: 'Διεθνές' };
 
 export default function LocationHeader({ location, imageError, setImageError, canManageLocations, onEdit }) {
+  const t = useTranslations('locationImprovements');
   const [shareState, setShareState] = useState('');
   const name = location.name_local || location.name;
   const population = location.population_override ?? location.population;
@@ -20,7 +22,7 @@ export default function LocationHeader({ location, imageError, setImageError, ca
     } catch (error) { if (error.name !== 'AbortError') setShareState('Αδυναμία κοινοποίησης'); }
   };
   return (
-    <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <div className="flex items-center gap-4 min-w-0">
         {image && !imageError && <img src={image} alt={name} className="h-16 w-16 rounded-lg object-cover shrink-0" onError={() => setImageError(true)} />}
         <div className="min-w-0">
@@ -32,6 +34,7 @@ export default function LocationHeader({ location, imageError, setImageError, ca
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-4 shrink-0">
+        <Link href={`/locations/${location.slug || location.id}/improve`} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"><PencilIcon className="h-4 w-4" aria-hidden="true" />{t('improve')}</Link>
         <Link href={'/suggestions/new?locationId=' + location.id} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Κάνε πρόταση</Link>
         <button type="button" onClick={share} className="text-sm text-gray-600 hover:text-gray-950">Κοινοποίηση</button>
         {shareState && <span role="status" className="text-xs text-gray-500">{shareState}</span>}

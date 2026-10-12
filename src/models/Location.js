@@ -2,6 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const Location = sequelize.define('Location', {
+  description: { type: DataTypes.TEXT, allowNull: true },
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,

@@ -172,6 +172,10 @@ export default function ProductionRulesPage() {
       </section>
 
       {/* Content Quality */}
+      <section className="rounded-xl border border-blue-100 bg-blue-50 p-6">
+        <h2 className="text-lg font-semibold text-blue-900 mb-3">Βελτιώσεις σελίδων από την κοινότητα</h2>
+        <p className="text-sm text-gray-700">Κάθε συνδεδεμένος χρήστης μπορεί να προτείνει πληροφορίες, διορθώσεις και πηγές σε σελίδες τοποθεσιών. Δημοσιεύονται μετά από έγκριση διαχειριστή ή συντονιστή με ανάθεση στην περιοχή ή σε ανώτερη περιοχή. Ο έλεγχος μπορεί να ζητήσει διευκρινίσεις ή να απορρίψει με αιτιολογία. Οι εγκεκριμένες αλλαγές διατηρούν δημόσιο ιστορικό με πηγή και όνομα συνεισφέροντος.</p>
+      </section>
       <section>
         <div className="rounded-xl border border-blue-100 bg-blue-50 p-6">
           <h2 className="text-lg font-semibold text-blue-900 mb-3">

@@ -124,6 +124,31 @@ const renderPage = async (Component) => {
 };
 
 describe('Auth pages redirect behavior', () => {
+  test('OAuth callback owns the redirect when auth state is already populated', async () => {
+    mockSearchParams.get.mockImplementation(key => ({ oauth: '1', new: '1' }[key] || null));
+    useAuth.mockReturnValue(buildAuthState({ user: { id: 1 } }));
+    const LoginPage = require('../app/login/page').default;
+    const { root } = await renderPage(LoginPage);
+    expect(mockRouter.push).toHaveBeenCalledTimes(1);
+    expect(mockRouter.push).toHaveBeenCalledWith('/onboarding');
+    await act(async () => root.unmount());
+  });
+  test('password login and auth-state update redirect only once to the saved draft', async () => {
+    localStorage.setItem('returnTo', '/locations/athens/improve');
+    const login = jest.fn().mockResolvedValue(undefined);
+    useAuth.mockReturnValue(buildAuthState({ login }));
+    const LoginPage = require('../app/login/page').default;
+    const { container, root } = await renderPage(LoginPage);
+    await act(async () => {
+      container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      await flushMicrotaskQueue();
+    });
+    useAuth.mockReturnValue(buildAuthState({ login, user: { id: 1 } }));
+    await act(async () => root.render(React.createElement(LoginPage)));
+    expect(mockRouter.push).toHaveBeenCalledTimes(1);
+    expect(mockRouter.push).toHaveBeenCalledWith('/locations/athens/improve');
+    await act(async () => root.unmount());
+  });
   afterEach(() => {
     useAuth.mockReset();
     authAPI.checkUsernameAvailability.mockReset();

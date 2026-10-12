@@ -143,6 +143,7 @@ const domainMatrix = [
   { domain: 'Έγκριση ειδήσεων',              viewer: '—', editor: 'Υποβάλλει', moderator: 'Εγκρίνει', admin: 'Εγκρίνει' },
   { domain: 'Ποιότητα άρθρων',               viewer: '—', editor: 'Owner', moderator: 'Εποπτεύει', admin: 'Override' },
   { domain: 'Διαχείριση τοποθεσιών',         viewer: '—', editor: '—', moderator: 'Owner (τοπικά)', admin: 'Owner' },
+  { domain: 'Βελτιώσεις σελίδων τοποθεσιών', viewer: 'Υποβάλλει', editor: 'Υποβάλλει', moderator: 'Ελέγχει εντός ανάθεσης', admin: 'Ελέγχει' },
   { domain: 'Επαλήθευση χρηστών',            viewer: '—', editor: '—', moderator: 'Scope-limited', admin: 'Owner' },
   { domain: 'Αναθέσεις moderator ρόλου',     viewer: '—', editor: '—', moderator: 'Child scope',   admin: 'Owner' },
   { domain: 'Πλήρης διαχείριση χρηστών',     viewer: '—', editor: '—', moderator: '—',             admin: 'Owner' },

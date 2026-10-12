@@ -13,6 +13,7 @@ import LocationRoles from '@/components/LocationRoles';
 import LocationActionSummary from '@/components/locations/LocationActionSummary';
 import LocationBreadcrumb from '@/components/locations/LocationBreadcrumb';
 import LocationHeader from '@/components/locations/LocationHeader';
+import LocationContributionPrompt from '@/components/locations/LocationContributionPrompt';
 import LocationEditForm from '@/components/locations/LocationEditForm';
 import LocationTabs from '@/components/locations/LocationTabs';
 import CountryFundingBanner from '@/components/locations/CountryFundingBanner';
@@ -744,6 +745,7 @@ export default function LocationDetailPage() {
             {(
               <div id="location-local-info" className="mb-8 space-y-3 scroll-mt-36">
                 <h2 className="text-lg font-semibold text-gray-900">Τοπικές πληροφορίες</h2>
+                <LocationContributionPrompt location={location} />
                 <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-600">
                   {location.wikipedia_url && <a href={location.wikipedia_url} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">Wikipedia ↗</a>}
                   <a href="#location-map" className="text-blue-700 hover:underline" hidden={!showMainLocationMap}>Χάρτης περιοχής</a>

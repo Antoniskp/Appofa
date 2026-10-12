@@ -6,6 +6,7 @@ const GovernmentPositionSuggestion = require('./GovernmentPositionSuggestion');
 const DreamTeamVote = require('./DreamTeamVote');
 const Article = require('./Article');
 const Location = require('./Location');
+const LocationImprovement = require('./LocationImprovement');
 const LocationLink = require('./LocationLink');
 const LocationRequest = require('./LocationRequest');
 const LocationSection = require('./LocationSection');
@@ -65,6 +66,9 @@ const MediaAsset = require('./MediaAsset');
 const VideoPin = require('./VideoPin');
 
 // Define associations
+LocationImprovement.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
+LocationImprovement.belongsTo(User, { foreignKey: 'authorId', as: 'author' });
+LocationImprovement.belongsTo(User, { foreignKey: 'reviewerId', as: 'reviewer' });
 User.hasMany(Article, {
   foreignKey: 'authorId',
   as: 'articles'
@@ -573,6 +577,7 @@ module.exports = {
   User,
   Article,
   Location,
+  LocationImprovement,
   LocationLink,
   LocationRequest,
   LocationSection,

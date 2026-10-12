@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -32,6 +32,14 @@ function LoginForm() {
   const { config: oauthConfig } = useOAuthConfig();
   const nextDestination = getPendingAuthDestination(searchParams);
   const registerHref = buildAuthPath('/register', nextDestination);
+  const redirectStarted = useRef(false);
+  const redirectAfterLogin = useCallback((destination) => {
+    // Both the login promise and the auth-state effect may finish together.
+    // Consume the saved destination only once, or the second redirect goes home.
+    if (redirectStarted.current) return;
+    redirectStarted.current = true;
+    router.push(destination || resolveAuthDestination(searchParams));
+  }, [router, searchParams]);
 
   useEffect(() => {
     // Handle OAuth callback
@@ -48,9 +56,9 @@ function LoginForm() {
             const isNewOAuthUser = searchParams.get('new') === '1';
             const explicitNext = getAuthDestinationFromSearchParams(searchParams);
             if (isNewOAuthUser && !explicitNext) {
-              router.push('/onboarding');
+              redirectAfterLogin('/onboarding');
             } else {
-              router.push(resolveAuthDestination(searchParams));
+              redirectAfterLogin();
             }
           }
         })
@@ -69,13 +77,13 @@ function LoginForm() {
       };
       error(errorMessages[errorParam] || tAuth('oauth_failed'));
     }
-  }, [searchParams, router, success, error, tAuth]);
+  }, [searchParams, redirectAfterLogin, success, error, tAuth]);
 
   useEffect(() => {
-    if (!authLoading && user) {
-      router.push(resolveAuthDestination(searchParams));
+    if (!authLoading && user && !searchParams.get('oauth')) {
+      redirectAfterLogin();
     }
-  }, [user, authLoading, router, searchParams]);
+  }, [user, authLoading, searchParams, redirectAfterLogin]);
 
   const handleChange = (e) => {
     setInlineError('');
@@ -92,7 +100,7 @@ function LoginForm() {
     try {
       await login(formData);
       success(tAuth('welcome_redirect'));
-      router.push(resolveAuthDestination(searchParams));
+      redirectAfterLogin();
     } catch (err) {
       const message = err.message || tAuth('invalid_credentials');
       setInlineError(message);

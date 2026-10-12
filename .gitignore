@@ -9,6 +9,7 @@ coverage/
 .next-security-review/
 .next-e2e/
 .next-homepage-review/
+.next-contributions/
 playwright-report/
 test-results/
 out/

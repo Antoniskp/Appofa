@@ -1,5 +1,15 @@
 # Repository Map — Appofa
 
+## Location contributions (2026-10-12)
+
+- Model: `src/models/LocationImprovement.js`; associated with location, author, reviewer. `Location.description` holds the community description.
+- Migration: `src/migrations/20261012000000-create-location-improvements.js` (description column, contributions table and indexes).
+- API: `src/controllers/locationImprovementController.js`, routes in `locationRoutes.js`: GET/POST `/:locationId/improvements`, PATCH `/:locationId/improvements/:id` (author resubmission), PATCH `/:locationId/improvements/:id/review` (scoped review).
+- UI: `app/locations/[slug]/improve/page.js`, `components/locations/LocationImprovements.js`, `LocationContributionPrompt.js`, header action, `lib/api/location-improvements.js`.
+- Messages: `locationImprovements` in EL/EN/RO. Tests: `__tests__/location-improvements.test.js`, `e2e/location-improvements.spec.js`.
+- Shared auth: `app/login/page.js` consumes the saved return destination once across password/auth-state callbacks, preserving the return to a contribution draft. Regression coverage in `__tests__/auth-pages-redirect.test.js`.
+- See [Location improvements](LOCATION_IMPROVEMENTS.md) for visibility, moderation and deployment details.
+
 <!-- AI UPDATE RULES
 This file is the living source of truth for the codebase structure.
 After completing ANY task that:

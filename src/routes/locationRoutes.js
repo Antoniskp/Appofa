@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const locationController = require('../controllers/locationController');
+const improvements = require('../controllers/locationImprovementController');
 const locationSectionController = require('../controllers/locationSectionController');
 const locationRoleController = require('../controllers/locationRoleController');
 const locationPlatformRoleController = require('../controllers/locationPlatformRoleController');
@@ -9,11 +10,15 @@ const electoralDistrictController = require('../controllers/electoralDistrictCon
 const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const checkRole = require('../middleware/checkRole');
-const { apiLimiter, uploadLimiter } = require('../middleware/rateLimiter');
+const { apiLimiter, uploadLimiter, createLimiter } = require('../middleware/rateLimiter');
 const { locationImageUpload } = require('../middleware/upload');
 const csrfProtection = require('../middleware/csrfProtection');
 
 // Public routes
+router.get('/:locationId/improvements', optionalAuthMiddleware, apiLimiter, improvements.list);
+router.post('/:locationId/improvements', createLimiter, authMiddleware, csrfProtection, improvements.create);
+router.patch('/:locationId/improvements/:id', apiLimiter, authMiddleware, csrfProtection, improvements.revise);
+router.patch('/:locationId/improvements/:id/review', apiLimiter, authMiddleware, csrfProtection, improvements.review);
 router.get('/', locationController.getLocations);
 router.get('/cameras', apiLimiter, locationSectionController.getAllCameras);
 router.put('/cameras/:sectionId/:index/status', apiLimiter, authMiddleware, locationSectionController.updateCameraStatus);
