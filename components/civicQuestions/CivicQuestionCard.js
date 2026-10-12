@@ -2,14 +2,16 @@
 
 import Link from 'next/link';
 import Badge from '@/components/ui/Badge';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { getCivicQuestionLifecycleStatus, getCivicQuestionStatusBadgeVariant } from './statusUtils';
 
 export default function CivicQuestionCard({ civicQuestion }) {
   const t = useTranslations('civicQuestions');
-  const createdAt = new Date(civicQuestion.createdAt).toLocaleDateString('el-GR');
+  const locale = useLocale();
+  const createdAt = new Date(civicQuestion.dateAsked || civicQuestion.createdAt).toLocaleDateString(locale);
   const lifecycleStatus = getCivicQuestionLifecycleStatus(civicQuestion);
-  const deadlineDate = civicQuestion.deadline ? new Date(civicQuestion.deadline).toLocaleDateString('el-GR') : null;
+  const deadlineDate = civicQuestion.deadline ? new Date(civicQuestion.deadline).toLocaleDateString(locale) : null;
+  const locationName = locale === 'el' ? (civicQuestion.location?.name_local || civicQuestion.location?.name) : civicQuestion.location?.name;
 
   return (
     <Link
@@ -23,17 +25,19 @@ export default function CivicQuestionCard({ civicQuestion }) {
           <Badge variant="danger">{t('status.archived')}</Badge>
         )}
         {civicQuestion.visibility === 'locals_only' && <Badge variant="orange">{t('local_badge')}</Badge>}
-        {civicQuestion.category && <Badge variant="purple">{civicQuestion.category}</Badge>}
       </div>
-      <h3 className="text-lg font-semibold text-gray-900 line-clamp-3">{civicQuestion.title}</h3>
+      <h2 className="text-lg font-semibold text-gray-900 leading-snug">{civicQuestion.title}</h2>
       {civicQuestion.simplified && (
         <p className="text-sm text-gray-600 mt-2 line-clamp-2">{civicQuestion.simplified}</p>
       )}
-      <div className="mt-4 text-sm text-gray-500 flex flex-wrap gap-3">
-        <span>{civicQuestion.totalVotes || 0} {t('votes_label')}</span>
-        {civicQuestion.location?.name && <span>📍 {civicQuestion.location.name}</span>}
+      {civicQuestion.category && <p className="mt-3 text-xs text-gray-500">{civicQuestion.category}</p>}
+      {civicQuestion.sourceStatus && <p className="mt-2 text-sm text-gray-600">{t('detail.source_status')}: {civicQuestion.sourceStatus}</p>}
+      <div className="mt-4 text-sm text-gray-600 flex flex-wrap gap-3">
+        <span>{t('participation_count', { count: civicQuestion.totalVotes || 0 })}</span>
+        {locationName && <span>📍 {locationName}</span>}
         {deadlineDate && <span>⏱ {t('card.deadline')}: {deadlineDate}</span>}
-        <span>{createdAt}</span>
+        {!deadlineDate && lifecycleStatus === 'open' && <span>{t('card.no_deadline')}</span>}
+        <span>{t(civicQuestion.dateAsked ? 'detail.date_asked' : 'card.published')}: {createdAt}</span>
       </div>
     </Link>
   );

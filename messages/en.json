@@ -2046,11 +2046,15 @@
     "results_unavailable": "Results are not available yet.",
     "total_votes": "Total votes",
     "card": {
-      "deadline": "Deadline"
+      "deadline": "Participation closes",
+      "no_deadline": "No participation deadline set",
+      "published": "Published"
     },
     "results": {
       "leading": "Leading",
-      "participation_of_population": "of the location population has voted."
+      "participation_of_population": "of the location population has voted.",
+      "sample_note": "Percentages describe participating accounts only. This is not a representative population survey.",
+      "small_sample": "There are few participants so far; each new vote can change the percentages substantially."
     },
     "form": {
       "basic_information": "Basic Information",
@@ -2067,7 +2071,7 @@
       "cons_help": "Summarize the main arguments against.",
       "settings": "Settings",
       "date_asked": "Date Asked",
-      "deadline": "Deadline",
+      "deadline": "Participation closes",
       "deadline_help": "If set, users can vote until this date/time.",
       "location": "Location",
       "visibility": "Visibility",
@@ -2087,7 +2091,10 @@
       "delete": "Delete",
       "commission_requirement": "European Commission Requirement",
       "commission_requirement_placeholder": "e.g. RED III Directive",
-      "commission_requirement_help": "Fill in if the bill is required by EU (e.g. RED III Directive). Leave blank if not applicable."
+      "commission_requirement_help": "Fill in if the bill is required by EU (e.g. RED III Directive). Leave blank if not applicable.",
+      "officialTitle": "Full official title",
+      "sourceStatus": "Stage at source",
+      "sourceCheckedAt": "Source checked"
     },
     "visibility": {
       "public": "Public",
@@ -2117,8 +2124,19 @@
       "new_civic_question": "New Civic Question",
       "error_title": "Failed to load civic questions",
       "empty_title": "No civic questions found",
-      "empty_description": "Create the first civic question for your community.",
-      "create_action": "Create Civic Question"
+      "empty_description": "Try another search or remove some filters.",
+      "create_action": "Create Civic Question",
+      "title": "Civic questions",
+      "intro": "Understand public decisions, compare arguments and share your view.",
+      "advisory": "Participation is advisory. Results reflect participants and do not bind Parliament or any other authority.",
+      "all": "All",
+      "open": "Open",
+      "my_area": "My area",
+      "quick_filters": "Quick filters",
+      "filters": "Filters",
+      "result_count": "{count, plural, one {# question} other {# questions}}",
+      "remove_filter": "Remove filter: {label}",
+      "clear": "Clear filters"
     },
     "create": {
       "title": "Create Civic Question",
@@ -2139,8 +2157,8 @@
       "location": "Location",
       "no_location": "No specific location",
       "status": "Status",
-      "date_asked": "Date asked",
-      "deadline": "Deadline",
+      "date_asked": "Date at source",
+      "deadline": "Participation closes",
       "simplified": "Simplified explanation",
       "pros": "Pros",
       "cons": "Cons",
@@ -2151,7 +2169,15 @@
       "share_text": "View this civic question on Appofa! 🗳️",
       "vote": "Vote",
       "results": "Results",
-      "commission_requirement": "EU Requirement"
+      "commission_requirement": "EU Requirement",
+      "source_status": "Stage at source",
+      "source_checked": "Source checked",
+      "official_title": "Full official title",
+      "read_source": "Read the official source",
+      "participation_status": "Platform participation",
+      "status_help": "Participation on this platform is separate from the stage of the official process.",
+      "editorial_note": "Summaries and arguments are written on this platform and are not an official position of Parliament. Consult the source for the full text; possible effects are not established outcomes.",
+      "login_vote": "Log in to participate"
     },
     "edit": {
       "forbidden": "You are not allowed to edit this civic question.",
@@ -2162,7 +2188,9 @@
       "cannot_edit_description": "This civic question could not be loaded.",
       "title": "Edit Civic Question",
       "description": "Update civic question details and settings."
-    }
+    },
+    "participation_count": "{count, plural, one {# participant} other {# participants}}",
+    "vote_count": "{count, plural, one {# vote} other {# votes}}"
   },
   "candidates": {
     "page_title": "Candidates",
@@ -2667,5 +2695,30 @@
       "review": "There are no contributions waiting for review."
     },
     "addPopulation": "Add population information"
+  },
+  "commentThread": {
+    "title": "Comments",
+    "placeholder": "Write a comment...",
+    "reply_placeholder": "Write a reply...",
+    "unknown": "Unknown",
+    "hidden": "Hidden",
+    "deleted": "This comment has been deleted.",
+    "hidden_body": "This comment is hidden.",
+    "cancel": "Cancel",
+    "reply": "Reply",
+    "unhide": "Unhide",
+    "hide": "Hide",
+    "delete": "Delete",
+    "loading": "Loading comments...",
+    "empty": "No comments yet.",
+    "empty_invite": "No comments yet. Be the first to comment!",
+    "login": "Log in",
+    "login_suffix": "to post a comment.",
+    "disabled": "Comments are disabled for this content.",
+    "locked": "Comments are locked. No new comments can be added.",
+    "load_error": "Failed to load comments.",
+    "post_error": "Failed to post comment.",
+    "posting": "Posting...",
+    "post": "Post"
   }
 }

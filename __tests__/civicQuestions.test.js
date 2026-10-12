@@ -291,6 +291,53 @@ describe('Civic Questions API', () => {
     expect(response.body.data[0].totalVotes).toBeGreaterThan(response.body.data[1].totalVotes);
   });
 
+  test('open and closing-soon filters exclude expired and undated questions appropriately', async () => {
+    const now = Date.now();
+    const category = 'lifecycle-filter-regression';
+    const rows = await CivicQuestion.bulkCreate([
+      { title: 'Expired participation', creatorId: creator.id, category, deadline: new Date(now - 3600000) },
+      { title: 'Closing tomorrow', creatorId: creator.id, category, deadline: new Date(now + 86400000) },
+      { title: 'Open without deadline', creatorId: creator.id, category },
+      { title: 'Closing next month', creatorId: creator.id, category, deadline: new Date(now + 30 * 86400000) },
+    ]);
+    const open = await request(app).get('/api/civic-questions').query({ status: 'open', category });
+    expect(open.status).toBe(200);
+    expect(open.body.data.map(q => q.id)).not.toContain(rows[0].id);
+    expect(open.body.pagination.total).toBe(3);
+    const soon = await request(app).get('/api/civic-questions').query({ closingSoon: 'true', category });
+    expect(soon.body.data.map(q => q.id)).toEqual([rows[1].id]);
+    const closed = await request(app).get('/api/civic-questions').query({ status: 'closed', category });
+    expect(closed.body.data.map(q => q.id)).toEqual([rows[0].id]);
+  });
+
+  test('my-area filter includes ancestors and still respects visibility', async () => {
+    const parent = await Location.create({ name: 'Parent Region', slug: 'civic-parent-region', type: 'prefecture' });
+    await localLocation.update({ parent_id: parent.id });
+    const category = 'my-area-regression';
+    const shared = await CivicQuestion.create({ title: 'Regional public question', creatorId: creator.id, category, locationId: parent.id });
+    await CivicQuestion.create({ title: 'Unrelated local question', creatorId: creator.id, category, locationId: null, visibility: 'private' });
+    const response = await request(app).get('/api/civic-questions').set('Authorization', `Bearer ${voter.token}`).query({ myArea: 'true', category });
+    expect(response.status).toBe(200);
+    expect(response.body.data.map(q => q.id)).toEqual([shared.id]);
+    const anonymous = await request(app).get('/api/civic-questions').query({ myArea: 'true', category });
+    expect(anonymous.status).toBe(400);
+  });
+
+  test('round-trips official context and rejects invalid source dates', async () => {
+    const csrf = 'csrf-source-context';
+    const headers = csrfHeadersFor(csrf, creator.id);
+    const sendUpdate = payload => request(app).put(`/api/civic-questions/${testQuestionId}`)
+      .set('Authorization', `Bearer ${creator.token}`)
+      .set('Cookie', [`auth_token=${creator.token}`, ...headers.Cookie])
+      .set('x-csrf-token', csrf).send(payload);
+    const response = await sendUpdate({ officialTitle: 'Full official title for the record', sourceStatus: 'In committee', sourceCheckedAt: '2026-10-12' });
+    expect(response.status).toBe(200);
+    expect(response.body.data.officialTitle).toBe('Full official title for the record');
+    expect(response.body.data.sourceStatus).toBe('In committee');
+    expect(response.body.data.sourceCheckedAt).toContain('2026-10-12');
+    expect((await sendUpdate({ sourceCheckedAt: 'not-a-date' })).status).toBe(400);
+  });
+
   test('rejects invalid sort parameter', async () => {
     const response = await request(app)
       .get('/api/civic-questions')

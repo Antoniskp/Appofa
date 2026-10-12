@@ -5,6 +5,8 @@ import { commentAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import CommentForm from './CommentForm';
 import { formatDistanceToNow } from 'date-fns';
+import { el, ro, enUS } from 'date-fns/locale';
+import { useLocale, useTranslations } from 'next-intl';
 import ReportButton from '@/components/ReportButton';
 import LoginLink from '@/components/ui/LoginLink';
 
@@ -42,6 +44,8 @@ function CommentItem({
   onCommentAdded,
   onCommentUpdated,
 }) {
+  const t = useTranslations('commentThread');
+  const locale = useLocale();
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [moderating, setModerating] = useState(false);
 
@@ -99,18 +103,19 @@ function CommentItem({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-sm text-gray-800">
-            {comment.author?.username || 'Unknown'}
+            {comment.author?.username || t('unknown')}
           </span>
           <span className="text-xs text-gray-400">
             {comment.createdAt
               ? formatDistanceToNow(new Date(comment.createdAt), {
                   addSuffix: true,
+                  locale: ({ el, ro, en: enUS })[locale] || enUS,
                 })
               : ''}
           </span>
           {isHidden && (
             <span className="text-xs bg-yellow-100 text-yellow-800 px-1 rounded">
-              Hidden
+              {t('hidden')}
             </span>
           )}
         </div>
@@ -120,9 +125,9 @@ function CommentItem({
           }`}
         >
           {isDeleted ? (
-            <em className="text-gray-400">This comment has been deleted.</em>
+            <em className="text-gray-400">{t('deleted')}</em>
           ) : isHidden && !isAdminOrMod ? (
-            <em>This comment is hidden.</em>
+            <em>{t('hidden_body')}</em>
           ) : (
             comment.body
           )}
@@ -134,7 +139,7 @@ function CommentItem({
                 className="text-xs text-blue-500 hover:underline"
                 onClick={() => setShowReplyForm((v) => !v)}
               >
-                {showReplyForm ? 'Cancel' : 'Reply'}
+                {showReplyForm ? t('cancel') : t('reply')}
               </button>
             )}
             {showModerationControls && (
@@ -145,7 +150,7 @@ function CommentItem({
                     onClick={handleHide}
                     disabled={moderating}
                   >
-                    {comment.status === 'hidden' ? 'Unhide' : 'Hide'}
+                    {comment.status === 'hidden' ? t('unhide') : t('hide')}
                   </button>
                 )}
                 {canDelete && (
@@ -154,7 +159,7 @@ function CommentItem({
                     onClick={handleDelete}
                     disabled={moderating}
                   >
-                    Delete
+                    {t('delete')}
                   </button>
                 )}
               </>
@@ -168,7 +173,7 @@ function CommentItem({
               entityType={entityType}
               entityId={entityId}
               parentId={comment.id}
-              placeholder="Write a reply..."
+              placeholder={t('reply_placeholder')}
               onSuccess={(newComment) => {
                 setShowReplyForm(false);
                 if (onCommentAdded) onCommentAdded(newComment);
@@ -219,10 +224,11 @@ export default function CommentsThread({
   entityId,
   commentsEnabled = true,
   commentsLocked = false,
-  title = 'Comments',
-  composerPlaceholder = 'Write a comment...',
+  title,
+  composerPlaceholder,
   emptyMessage,
 }) {
+  const t = useTranslations('commentThread');
   const { user } = useAuth();
   const [comments, setComments] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -237,11 +243,11 @@ export default function CommentsThread({
       setTotalCount(flat.length);
       setComments(buildTree(flat));
     } catch (err) {
-      setError(err.message || 'Failed to load comments.');
+      setError(err.message || t('load_error'));
     } finally {
       setLoading(false);
     }
-  }, [entityType, entityId]);
+  }, [entityType, entityId, t]);
 
   useEffect(() => {
     fetchComments();
@@ -269,7 +275,7 @@ export default function CommentsThread({
   return (
     <div className="mt-8 border-t border-gray-200 pt-6">
       <h2 className="text-lg font-semibold mb-4">
-        {title}{' '}
+        {title || t('title')}{' '}
         {totalCount > 0 && (
           <span className="text-gray-400 text-base font-normal">
             ({totalCount})
@@ -278,18 +284,18 @@ export default function CommentsThread({
       </h2>
 
       {!commentsEnabled ? (
-        <p className="text-sm text-gray-500 italic">Comments are disabled.</p>
+        <p className="text-sm text-gray-500 italic">{t('disabled')}</p>
       ) : commentsLocked ? (
         <>
           <p className="text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded p-2 mb-4">
-            Comments are locked. No new comments can be posted.
+            {t('locked')}
           </p>
           {loading ? (
-            <p className="text-sm text-gray-400">Loading comments...</p>
+            <p className="text-sm text-gray-400">{t('loading')}</p>
           ) : error ? (
             <p className="text-sm text-red-500">{error}</p>
           ) : comments.length === 0 ? (
-            <p className="text-sm text-gray-400">No comments yet.</p>
+            <p className="text-sm text-gray-400">{t('empty')}</p>
           ) : (
             <div className="space-y-4">
               {comments.map((comment) => (
@@ -314,26 +320,26 @@ export default function CommentsThread({
               <CommentForm
                 entityType={entityType}
                 entityId={entityId}
-                placeholder={composerPlaceholder}
+                placeholder={composerPlaceholder || t('placeholder')}
                 onSuccess={handleCommentAdded}
               />
             ) : (
               <p className="text-sm text-gray-500 italic">
-                Please{' '}
+
                 <LoginLink className="text-blue-600 hover:underline">
-                  log in
+                  {t('login')}
                 </LoginLink>{' '}
-                to post a comment.
+                {t('login_suffix')}
               </p>
             )}
           </div>
           {loading ? (
-            <p className="text-sm text-gray-400">Loading comments...</p>
+            <p className="text-sm text-gray-400">{t('loading')}</p>
           ) : error ? (
             <p className="text-sm text-red-500">{error}</p>
           ) : comments.length === 0 ? (
             <p className="text-sm text-gray-400">
-              {emptyMessage || (user ? 'No comments yet. Be the first to comment!' : 'No comments yet.')}
+              {emptyMessage || (user ? t('empty_invite') : t('empty'))}
             </p>
           ) : (
             <div className="space-y-4">

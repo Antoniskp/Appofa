@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { commentAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import Button from '@/components/ui/Button';
@@ -12,8 +13,9 @@ export default function CommentForm({
   parentId = null,
   onSuccess,
   onCancel,
-  placeholder = 'Write a comment...',
+  placeholder,
 }) {
+  const t = useTranslations('commentThread');
   const { user } = useAuth();
   const [body, setBody] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -22,11 +24,11 @@ export default function CommentForm({
   if (!user) {
     return (
       <p className="text-sm text-gray-500 italic">
-        Please{' '}
+
         <LoginLink className="text-blue-600 hover:underline">
-          log in
+          {t('login')}
         </LoginLink>{' '}
-        to comment.
+        {t('login_suffix')}
       </p>
     );
   }
@@ -46,7 +48,7 @@ export default function CommentForm({
       setBody('');
       if (onSuccess) onSuccess(result.data?.comment);
     } catch (err) {
-      setError(err.message || 'Failed to post comment.');
+      setError(err.message || t('post_error'));
     } finally {
       setSubmitting(false);
     }
@@ -57,7 +59,8 @@ export default function CommentForm({
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        placeholder={placeholder}
+        placeholder={placeholder || t('placeholder')}
+        aria-label={placeholder || t('placeholder')}
         rows={parentId ? 2 : 3}
         maxLength={10000}
         className="w-full border border-gray-300 rounded-md p-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -71,11 +74,11 @@ export default function CommentForm({
           size="sm"
           disabled={submitting || !body.trim()}
         >
-          {submitting ? 'Posting...' : 'Post'}
+          {submitting ? t('posting') : t('post')}
         </Button>
         {onCancel && (
           <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
-            Cancel
+            {t('cancel')}
           </Button>
         )}
       </div>

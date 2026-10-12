@@ -22,11 +22,12 @@ async function fetchCivicQuestion(id) {
 }
 
 export async function generateMetadata({ params }) {
-  const civicQuestion = await fetchCivicQuestion(params.id);
+  const { id } = await params;
+  const civicQuestion = await fetchCivicQuestion(id);
   if (!civicQuestion) {
     return {
-      title: 'Civic Question | Απόφαση',
-      alternates: { canonical: `${SITE_URL}/civic-questions/${params.id}` },
+      title: 'Πολιτική ερώτηση',
+      alternates: { canonical: `${SITE_URL}/civic-questions/${id}` },
     };
   }
 

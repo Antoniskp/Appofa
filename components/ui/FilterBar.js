@@ -22,6 +22,8 @@ export default function FilterBar({
   className = '',
   isOpen: controlledIsOpen,
   onToggle,
+  defaultValues = {},
+  toggleLabel = 'Φίλτρα',
 }) {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
 
@@ -34,7 +36,7 @@ export default function FilterBar({
 
   const filterNames = new Set(filterConfig.map((config) => config.name));
   const activeFilterCount = Object.entries(filters).filter(
-    ([key, value]) => filterNames.has(key) && value && value !== '',
+    ([key, value]) => filterNames.has(key) && value && value !== '' && value !== defaultValues[key],
   ).length;
 
   return (
@@ -45,9 +47,10 @@ export default function FilterBar({
         onClick={handleToggle}
         className="inline-flex h-10 min-w-10 items-center justify-center gap-1 px-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors self-start shrink-0"
         aria-expanded={isOpen}
-        aria-label="Φίλτρα"
+        aria-label={toggleLabel}
       >
         <FunnelIcon className="h-5 w-5 text-gray-600 shrink-0" />
+        <span className="text-sm">{toggleLabel}</span>
         {activeFilterCount > 0 && (
           <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold text-blue-600 bg-blue-100 rounded-full">
             {activeFilterCount}

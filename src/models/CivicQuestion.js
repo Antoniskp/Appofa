@@ -18,6 +18,9 @@ const CivicQuestion = sequelize.define('CivicQuestion', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  officialTitle: { type: DataTypes.TEXT, allowNull: true },
+  sourceStatus: { type: DataTypes.STRING, allowNull: true },
+  sourceCheckedAt: { type: DataTypes.DATE, allowNull: true },
   sourceType: {
     type: DataTypes.ENUM('parliament', 'european_commission', 'municipal_council', 'regional_council', 'other'),
     allowNull: false,

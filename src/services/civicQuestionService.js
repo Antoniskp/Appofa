@@ -185,7 +185,25 @@ const canViewResults = async (question, user) => {
   return false;
 };
 
+const validateSourceContext = (payload) => {
+  const value = {};
+  for (const [key, maxLength] of [['officialTitle', 3000], ['sourceStatus', 255]]) {
+    if (payload[key] === undefined) continue;
+    const result = normalizeOptionalText(payload[key], key, 2, maxLength);
+    if (result.error) return result;
+    value[key] = result.value;
+  }
+  if (payload.sourceCheckedAt !== undefined) {
+    const result = normalizeDate(payload.sourceCheckedAt, 'Source checked at');
+    if (result.error) return result;
+    value.sourceCheckedAt = result.value;
+  }
+  return { value };
+};
+
 const validateCreatePayload = async (payload) => {
+  const sourceContext = validateSourceContext(payload);
+  if (sourceContext.error) return sourceContext;
   const titleResult = normalizeRequiredText(payload.title, 'Title', 5, 200);
   if (titleResult.error) return titleResult;
 
@@ -249,6 +267,7 @@ const validateCreatePayload = async (payload) => {
 
   return {
     value: {
+      ...sourceContext.value,
       title: titleResult.value,
       originalLink: originalLinkResult.value,
       sourceType: sourceTypeResult.value,
@@ -273,7 +292,9 @@ const validateCreatePayload = async (payload) => {
 };
 
 const validateUpdatePayload = async (payload) => {
-  const updates = {};
+  const sourceContext = validateSourceContext(payload);
+  if (sourceContext.error) return sourceContext;
+  const updates = { ...sourceContext.value };
 
   if (payload.title !== undefined) {
     const result = normalizeRequiredText(payload.title, 'Title', 5, 200);
@@ -403,6 +424,22 @@ const listCivicQuestions = async (query, user) => {
     const statusFilter = normalizeEnum(query.status, CIVIC_QUESTION_STATUSES, 'Status');
     if (statusFilter.error) return { success: false, status: 400, message: statusFilter.error };
     if (statusFilter.value) where.status = statusFilter.value;
+    const now = new Date();
+    if (statusFilter.value === 'open') {
+      where[Op.and] = [{ [Op.or]: [{ deadline: null }, { deadline: { [Op.gt]: now } }] }];
+    } else if (statusFilter.value === 'closed') {
+      delete where.status;
+      where[Op.and] = [{ [Op.or]: [{ status: 'closed' }, { status: 'open', deadline: { [Op.lte]: now } }] }];
+    }
+    if (query.closingSoon === 'true') {
+      where.status = 'open';
+      where.deadline = { [Op.gt]: now, [Op.lte]: new Date(now.getTime() + 72 * 60 * 60 * 1000) };
+    }
+    if (query.myArea === 'true') {
+      const record = await getUserRecord(user);
+      if (!record?.homeLocationId) return { success: false, status: 400, message: 'Set your home location to browse your area.' };
+      where.locationId = { [Op.in]: await getAncestorLocationIds(record.homeLocationId, true) };
+    }
 
     const sourceTypeFilter = normalizeEnum(query.sourceType, SOURCE_TYPES, 'Source type');
     if (sourceTypeFilter.error) return { success: false, status: 400, message: sourceTypeFilter.error };
@@ -430,6 +467,7 @@ const listCivicQuestions = async (query, user) => {
       if (search) {
         where[Op.or] = [
           { title: { [Op.like]: `%${search}%` } },
+          { officialTitle: { [Op.like]: `%${search}%` } },
           { simplified: { [Op.like]: `%${search}%` } },
           { sourceName: { [Op.like]: `%${search}%` } },
         ];
@@ -438,7 +476,7 @@ const listCivicQuestions = async (query, user) => {
 
     const include = [
       { model: User, as: 'creator', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
-      { model: Location, as: 'location', attributes: ['id', 'name', 'slug', 'population', 'population_override'], required: false },
+      { model: Location, as: 'location', attributes: ['id', 'name', 'name_local', 'slug', 'population', 'population_override'], required: false },
     ];
 
     if (query.location) {
@@ -452,7 +490,7 @@ const listCivicQuestions = async (query, user) => {
     }
 
     const visibilityWhere = await buildVisibilityWhere(user);
-    const fullWhere = Object.keys(visibilityWhere).length > 0
+    const fullWhere = Reflect.ownKeys(visibilityWhere).length > 0
       ? { [Op.and]: [where, visibilityWhere] }
       : where;
 
@@ -495,7 +533,11 @@ const listCivicQuestions = async (query, user) => {
           ['deadline', 'ASC'],
           ['createdAt', 'DESC'],
         ]
-      : [['createdAt', 'DESC']];
+      : [
+          [sequelize.fn('COALESCE', sequelize.col('CivicQuestion.dateAsked'), sequelize.col('CivicQuestion.createdAt')), 'DESC'],
+          ['createdAt', 'DESC'],
+          ['id', 'DESC'],
+        ];
 
     const { rows, count } = await CivicQuestion.findAndCountAll({
       where: fullWhere,
@@ -537,7 +579,7 @@ const getCivicQuestionById = async (id, user) => {
     const question = await CivicQuestion.findByPk(questionId, {
       include: [
         { model: User, as: 'creator', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
-        { model: Location, as: 'location', attributes: ['id', 'name', 'slug', 'population', 'population_override'], required: false },
+        { model: Location, as: 'location', attributes: ['id', 'name', 'name_local', 'slug', 'population', 'population_override'], required: false },
       ],
     });
 
@@ -584,7 +626,7 @@ const createCivicQuestion = async (userId, payload) => {
     const withIncludes = await CivicQuestion.findByPk(created.id, {
       include: [
         { model: User, as: 'creator', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
-        { model: Location, as: 'location', attributes: ['id', 'name', 'slug', 'population', 'population_override'], required: false },
+        { model: Location, as: 'location', attributes: ['id', 'name', 'name_local', 'slug', 'population', 'population_override'], required: false },
       ],
     });
 
@@ -637,7 +679,7 @@ const updateCivicQuestion = async (id, userId, userRole, payload) => {
     const withIncludes = await CivicQuestion.findByPk(question.id, {
       include: [
         { model: User, as: 'creator', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
-        { model: Location, as: 'location', attributes: ['id', 'name', 'slug', 'population', 'population_override'], required: false },
+        { model: Location, as: 'location', attributes: ['id', 'name', 'name_local', 'slug', 'population', 'population_override'], required: false },
       ],
     });
 
@@ -733,7 +775,7 @@ const voteCivicQuestion = async (id, user, payload) => {
     const refreshed = await CivicQuestion.findByPk(question.id, {
       include: [
         { model: User, as: 'creator', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
-        { model: Location, as: 'location', attributes: ['id', 'name', 'slug', 'population', 'population_override'], required: false },
+        { model: Location, as: 'location', attributes: ['id', 'name', 'name_local', 'slug', 'population', 'population_override'], required: false },
       ],
     });
 
@@ -758,7 +800,7 @@ const getCivicQuestionResults = async (id, user) => {
     const question = await CivicQuestion.findByPk(questionId, {
       include: [
         { model: User, as: 'creator', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
-        { model: Location, as: 'location', attributes: ['id', 'name', 'slug', 'population', 'population_override'], required: false },
+        { model: Location, as: 'location', attributes: ['id', 'name', 'name_local', 'slug', 'population', 'population_override'], required: false },
       ],
     });
 

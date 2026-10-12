@@ -20,28 +20,22 @@ export default function CivicQuestionResults({ civicQuestion }) {
 
   const totalVotes = civicQuestion.totalVotes || 0;
   const choices = ['agree', 'disagree', 'present'];
-  const leadingVotes = Math.max(...choices.map((choice) => civicQuestion.voteCounts[choice] || 0), 0);
-  const isTie = leadingVotes > 0
-    && choices.filter((choice) => (civicQuestion.voteCounts[choice] || 0) === leadingVotes).length > 1;
-  const effectivePopulation = civicQuestion.location?.population_override ?? civicQuestion.location?.population;
-  const participationPct = effectivePopulation > 0 && totalVotes > 0
-    ? Math.round((totalVotes / effectivePopulation) * 100)
-    : null;
 
   return (
     <div className="space-y-4">
+      <p className="text-lg font-semibold text-gray-900">{t('participation_count', { count: totalVotes })}</p>
+      <p className="text-sm text-gray-600">{t('results.sample_note')}</p>
+      {totalVotes > 0 && totalVotes < 30 && <p className="text-sm text-gray-600">{t('results.small_sample')}</p>}
       {choices.map((choice) => {
         const percent = civicQuestion.percentages[choice] || 0;
         const count = civicQuestion.voteCounts[choice] || 0;
-        const isLeading = leadingVotes > 0 && count === leadingVotes && !isTie;
         return (
-          <div key={choice} className={`rounded-lg border p-3 ${isLeading ? 'border-blue-300 bg-blue-50' : 'border-transparent bg-gray-50'}`}>
+          <div key={choice} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
             <div className="flex items-center justify-between text-sm mb-1">
               <span className="font-medium text-gray-700">
                 {t(`choices.${choice}`)}
-                {isLeading && <span className="ml-2 text-xs text-blue-700 font-semibold">{t('results.leading')}</span>}
               </span>
-              <span className="text-gray-700 font-medium">{percent}% ({count})</span>
+              <span className="text-gray-700 font-medium">{t('vote_count', { count })} <span className="text-gray-500">({percent}%)</span></span>
             </div>
             <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
               <div className={`h-full ${COLORS[choice]}`} style={{ width: `${percent}%` }} />
@@ -49,12 +43,6 @@ export default function CivicQuestionResults({ civicQuestion }) {
           </div>
         );
       })}
-      <div className="text-sm text-gray-600 pt-1">{t('total_votes')}: <strong>{totalVotes}</strong></div>
-      {participationPct !== null && (
-        <p className="text-sm text-gray-600 border-t border-gray-200 pt-2">
-          <span className="font-semibold text-gray-800">{participationPct}%</span> {t('results.participation_of_population')}
-        </p>
-      )}
     </div>
   );
 }

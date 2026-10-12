@@ -24,6 +24,9 @@ export default function CivicQuestionForm({
   const [validationError, setValidationError] = useState('');
   const [formData, setFormData] = useState({
     title: '',
+    officialTitle: '',
+    sourceStatus: '',
+    sourceCheckedAt: '',
     originalLink: '',
     sourceType: 'other',
     sourceName: '',
@@ -48,6 +51,9 @@ export default function CivicQuestionForm({
     if (!civicQuestion) return;
     setFormData({
       title: civicQuestion.title || '',
+      officialTitle: civicQuestion.officialTitle || '',
+      sourceStatus: civicQuestion.sourceStatus || '',
+      sourceCheckedAt: civicQuestion.sourceCheckedAt ? new Date(civicQuestion.sourceCheckedAt).toISOString().slice(0, 10) : '',
       originalLink: civicQuestion.originalLink || '',
       sourceType: civicQuestion.sourceType || 'other',
       sourceName: civicQuestion.sourceName || '',
@@ -104,6 +110,7 @@ export default function CivicQuestionForm({
 
     onSubmit({
       ...formData,
+      sourceCheckedAt: formData.sourceCheckedAt || null,
       dateAsked: formData.dateAsked || null,
       deadline: formData.deadline || null,
       locationId: formData.locationId || null,
@@ -130,6 +137,12 @@ export default function CivicQuestionForm({
           <input id="civic-question-title" name="title" required maxLength={200} value={formData.title} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2" />
         </div>
 
+        {['officialTitle', 'sourceStatus', 'sourceCheckedAt'].map((field) => (
+          <div key={field}>
+            <label htmlFor={field} className="block text-sm font-medium text-gray-700">{t(`form.${field}`)}</label>
+            <input id={field} name={field} type={field === 'sourceCheckedAt' ? 'date' : 'text'} maxLength={field === 'officialTitle' ? 3000 : 255} value={formData[field]} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2" />
+          </div>
+        ))}
         <div>
           <label htmlFor="civic-question-original-link" className="block text-sm font-medium text-gray-700">{t('form.original_link')}</label>
           <input id="civic-question-original-link" name="originalLink" type="url" value={formData.originalLink} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2" />

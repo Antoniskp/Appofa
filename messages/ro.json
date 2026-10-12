@@ -2046,11 +2046,15 @@
     "results_unavailable": "Results are not available yet.",
     "total_votes": "Total votes",
     "card": {
-      "deadline": "Deadline"
+      "deadline": "Încheierea participării",
+      "no_deadline": "Nu a fost stabilit un termen de participare",
+      "published": "Publicat"
     },
     "results": {
       "leading": "Leading",
-      "participation_of_population": "of the location population has voted."
+      "participation_of_population": "of the location population has voted.",
+      "sample_note": "Procentele descriu doar conturile participante. Acesta nu este un sondaj reprezentativ al populației.",
+      "small_sample": "Numărul participanților este încă mic; fiecare vot nou poate schimba semnificativ procentele."
     },
     "form": {
       "basic_information": "Basic Information",
@@ -2067,7 +2071,7 @@
       "cons_help": "Summarize the main arguments against.",
       "settings": "Settings",
       "date_asked": "Date Asked",
-      "deadline": "Deadline",
+      "deadline": "Încheierea participării",
       "deadline_help": "If set, users can vote until this date/time.",
       "location": "Location",
       "visibility": "Visibility",
@@ -2087,7 +2091,10 @@
       "delete": "Delete",
       "commission_requirement": "European Commission Requirement",
       "commission_requirement_placeholder": "e.g. RED III Directive",
-      "commission_requirement_help": "Fill in if the bill is required by EU (e.g. RED III Directive). Leave blank if not applicable."
+      "commission_requirement_help": "Fill in if the bill is required by EU (e.g. RED III Directive). Leave blank if not applicable.",
+      "officialTitle": "Titlul oficial complet",
+      "sourceStatus": "Etapa la sursă",
+      "sourceCheckedAt": "Sursă verificată"
     },
     "visibility": {
       "public": "Public",
@@ -2117,8 +2124,19 @@
       "new_civic_question": "New Civic Question",
       "error_title": "Failed to load civic questions",
       "empty_title": "No civic questions found",
-      "empty_description": "Create the first civic question for your community.",
-      "create_action": "Create Civic Question"
+      "empty_description": "Încearcă altă căutare sau elimină filtrele.",
+      "create_action": "Create Civic Question",
+      "title": "Întrebări civice",
+      "intro": "Informează-te despre deciziile publice, compară argumentele și exprimă-ți opinia.",
+      "advisory": "Participarea este consultativă. Rezultatele reflectă opiniile participanților și nu obligă Parlamentul sau alte autorități.",
+      "all": "Toate",
+      "open": "Deschise",
+      "my_area": "În zona mea",
+      "quick_filters": "Filtre rapide",
+      "filters": "Filtre",
+      "result_count": "{count, plural, one {# întrebare} few {# întrebări} other {# de întrebări}}",
+      "remove_filter": "Elimină filtrul: {label}",
+      "clear": "Șterge filtrele"
     },
     "create": {
       "title": "Create Civic Question",
@@ -2139,8 +2157,8 @@
       "location": "Location",
       "no_location": "No specific location",
       "status": "Status",
-      "date_asked": "Date asked",
-      "deadline": "Deadline",
+      "date_asked": "Data la sursă",
+      "deadline": "Încheierea participării",
       "simplified": "Simplified explanation",
       "pros": "Pros",
       "cons": "Cons",
@@ -2151,7 +2169,15 @@
       "share_text": "View this civic question on Appofa! 🗳️",
       "vote": "Vote",
       "results": "Results",
-      "commission_requirement": "EU Requirement"
+      "commission_requirement": "EU Requirement",
+      "source_status": "Etapa la sursă",
+      "source_checked": "Sursă verificată",
+      "official_title": "Titlul oficial complet",
+      "read_source": "Consultă sursa oficială",
+      "participation_status": "Participarea pe platformă",
+      "status_help": "Participarea pe platformă este separată de etapa procedurii oficiale.",
+      "editorial_note": "Rezumatele și argumentele sunt redactate pe platformă și nu reprezintă poziția oficială a Parlamentului. Consultă sursa pentru textul integral; efectele posibile nu sunt rezultate certe.",
+      "login_vote": "Autentifică-te pentru a participa"
     },
     "edit": {
       "forbidden": "You are not allowed to edit this civic question.",
@@ -2162,7 +2188,9 @@
       "cannot_edit_description": "This civic question could not be loaded.",
       "title": "Edit Civic Question",
       "description": "Update civic question details and settings."
-    }
+    },
+    "participation_count": "{count, plural, one {# participant} few {# participanți} other {# de participanți}}",
+    "vote_count": "{count, plural, one {# vot} few {# voturi} other {# de voturi}}"
   },
   "candidates": {
     "page_title": "Candidați",
@@ -2667,5 +2695,30 @@
       "review": "Nu există contribuții care așteaptă verificarea."
     },
     "addPopulation": "Adaugă informații despre populație"
+  },
+  "commentThread": {
+    "title": "Comentarii",
+    "placeholder": "Scrie un comentariu...",
+    "reply_placeholder": "Scrie un răspuns...",
+    "unknown": "Necunoscut",
+    "hidden": "Ascuns",
+    "deleted": "Acest comentariu a fost șters.",
+    "hidden_body": "Acest comentariu este ascuns.",
+    "cancel": "Anulează",
+    "reply": "Răspunde",
+    "unhide": "Afișează",
+    "hide": "Ascunde",
+    "delete": "Șterge",
+    "loading": "Se încarcă comentariile...",
+    "empty": "Nu există încă niciun comentariu.",
+    "empty_invite": "Nu există încă niciun comentariu. Scrie primul!",
+    "login": "Autentifică-te",
+    "login_suffix": "pentru a publica un comentariu.",
+    "disabled": "Comentariile sunt dezactivate.",
+    "locked": "Comentariile sunt blocate. Nu se pot adăuga comentarii noi.",
+    "load_error": "Comentariile nu au putut fi încărcate.",
+    "post_error": "Comentariul nu a putut fi publicat.",
+    "posting": "Se publică...",
+    "post": "Publică"
   }
 }

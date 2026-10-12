@@ -29,9 +29,13 @@ export default function CivicQuestionsPage() {
     prevPage,
     goToPage,
     updateFilter,
-  } = useFilters({ status: '', sourceType: '', category: '', location: '', sortBy: 'newest', search: '' });
+    updateFilters,
+    resetFilters,
+  } = useFilters({ status: '', sourceType: '', category: '', location: '', sortBy: 'newest', search: '', myArea: '', closingSoon: '' });
 
   const [filterBarOpen, setFilterBarOpen] = useState(false);
+  const [total, setTotal] = useState(0);
+  const activeFilters = Object.entries(filters).filter(([key, value]) => value && !(key === 'sortBy' && value === 'newest'));
 
   const { data: civicQuestions, loading, error } = useAsyncData(
     async () => {
@@ -48,6 +52,7 @@ export default function CivicQuestionsPage() {
       initialData: [],
       transform: (response) => {
         setTotalPages(response.pagination?.totalPages || 1);
+        setTotal(response.pagination?.total || 0);
         return response.data || [];
       },
     }
@@ -56,6 +61,24 @@ export default function CivicQuestionsPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
+        <header className="mb-6 max-w-3xl">
+          <h1 className="text-3xl font-bold text-gray-900">{t('list.title')}</h1>
+          <p className="mt-3 text-gray-700">{t('list.intro')}</p>
+          <p className="mt-2 text-sm text-gray-600">{t('list.advisory')}</p>
+        </header>
+        <div className="flex flex-wrap gap-2 mb-5" aria-label={t('list.quick_filters')}>
+          {[
+            { label: t('list.all'), selected: !filters.status && !filters.closingSoon && !filters.myArea, values: { status: '', closingSoon: '', myArea: '', sortBy: 'newest' } },
+            { label: t('list.open'), selected: filters.status === 'open' && !filters.closingSoon, values: { status: 'open', closingSoon: '', sortBy: 'newest' } },
+            { label: t('list.sort_closing_soon'), selected: Boolean(filters.closingSoon), values: { status: 'open', closingSoon: 'true', sortBy: 'closing_soon' } },
+            ...(user?.homeLocationId ? [{ label: t('list.my_area'), selected: Boolean(filters.myArea), values: { myArea: filters.myArea ? '' : 'true', location: '' } }] : []),
+          ].map(({ label, selected, values }) => (
+            <button key={label} type="button" aria-pressed={selected} onClick={() => updateFilters(values)}
+              className={`rounded-full border px-4 py-2 text-sm font-medium ${selected ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-100'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
         <ListPageToolbar
           searchSlot={
             <SearchInput
@@ -69,7 +92,12 @@ export default function CivicQuestionsPage() {
           filtersSlot={
             <FilterBar
               filters={filters}
-              onChange={handleFilterChange}
+              onChange={(event) => {
+                if (event.target.name === 'status') updateFilters({ status: event.target.value, closingSoon: '' });
+                else handleFilterChange(event);
+              }}
+              defaultValues={{ sortBy: 'newest' }}
+              toggleLabel={t('list.filters')}
               isOpen={filterBarOpen}
               onToggle={() => setFilterBarOpen((prev) => !prev)}
               filterConfig={[
@@ -112,6 +140,7 @@ export default function CivicQuestionsPage() {
                 {
                   name: 'sortBy',
                   label: t('list.sort'),
+                  placeholder: t('list.sort_newest'),
                   type: 'select',
                   options: [
                     { value: 'newest', label: t('list.sort_newest') },
@@ -126,7 +155,7 @@ export default function CivicQuestionsPage() {
             user && (
               <Link
                 href="/civic-questions/create"
-                className="inline-flex min-w-0 max-w-full items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium md:justify-start md:whitespace-nowrap"
+                className="inline-flex min-w-0 max-w-full items-center justify-center gap-2 border border-gray-300 bg-white text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium md:justify-start md:whitespace-nowrap"
               >
                 <PlusCircleIcon className="h-5 w-5 shrink-0" />
                 <span className="truncate">{t('list.new_civic_question')}</span>
@@ -134,6 +163,19 @@ export default function CivicQuestionsPage() {
             )
           }
         />
+        <div className="mb-5 flex flex-wrap items-center gap-2 text-sm" aria-live="polite">
+          {!loading && !error && <span className="font-medium text-gray-700">{t('list.result_count', { count: total })}</span>}
+          {activeFilters.map(([key, value]) => {
+            const label = key === 'status' ? t(`status.${value}`)
+              : key === 'sourceType' ? t(`source_types.${value}`)
+                : key === 'myArea' ? t('list.my_area')
+                  : key === 'closingSoon' ? t('list.sort_closing_soon')
+                    : key === 'sortBy' ? t(`list.sort_${value}`) : value;
+            return <button key={key} type="button" className="rounded-full bg-gray-100 px-3 py-1 text-gray-700" aria-label={t('list.remove_filter', { label })}
+              onClick={() => key === 'status' ? updateFilters({ status: '', closingSoon: '' }) : updateFilter(key, key === 'sortBy' ? 'newest' : '')}>{label} ×</button>;
+          })}
+          {activeFilters.length > 0 && <button type="button" onClick={resetFilters} className="text-blue-700 underline">{t('list.clear')}</button>}
+        </div>
 
         {loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
