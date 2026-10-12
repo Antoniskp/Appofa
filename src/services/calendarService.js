@@ -11,15 +11,17 @@ async function listEntries(query, user) {
   const offset = (query.page - 1) * PAGE_SIZE;
   const combined = selected.length > 1;
   const results = await Promise.all(selected.map(source => sources[source].list({
-    ...query, limit: combined ? offset + PAGE_SIZE : PAGE_SIZE, offset: combined ? 0 : offset,
+    ...query, limit: query.complete ? undefined : combined ? offset + PAGE_SIZE : PAGE_SIZE,
+    offset: query.complete || combined ? 0 : offset,
   }, user)));
   const total = results.reduce((sum, result) => sum + result.total, 0);
+  const direction = query.period === 'past' ? -1 : 1;
   const entries = results.flatMap(result => result.data).sort((a, b) =>
-    new Date(a.start) - new Date(b.start) || a.id.localeCompare(b.id, 'en', { numeric: true }));
+    direction * (new Date(a.start) - new Date(b.start) || a.id.localeCompare(b.id, 'en', { numeric: true })));
   return {
-    data: combined ? entries.slice(offset, offset + PAGE_SIZE) : entries,
+    data: combined && !query.complete ? entries.slice(offset, offset + PAGE_SIZE) : entries,
     canManage: results.some(result => result.canManage),
-    pagination: { page: query.page, totalPages: Math.ceil(total / PAGE_SIZE), total },
+    pagination: { page: query.complete ? 1 : query.page, totalPages: query.complete ? (total ? 1 : 0) : Math.ceil(total / PAGE_SIZE), total },
   };
 }
 

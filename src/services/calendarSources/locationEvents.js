@@ -13,8 +13,11 @@ function toEntry(event) {
   };
 }
 
-async function list({ start, end, locationId, descendants, view, category, limit, offset }, user) {
+async function list({ start, end, locationId, descendants, view, category, limit, offset, period }, user) {
   const where = { start: { [Op.lt]: end }, end: { [Op.gt]: start } };
+  // Expand around the cutoff for floating all-day dates, then compare those
+  // against today's date in the event's own zone before counting/pagination.
+  if (period === 'upcoming') where.end = { [Op.gt]: new Date(start.getTime() - 86400000) };
   let allowed = false;
   if (locationId) {
     if (!await Location.findByPk(locationId)) fail(404, 'Location not found.');
@@ -30,11 +33,26 @@ async function list({ start, end, locationId, descendants, view, category, limit
     if (!allowed) fail(403, 'Select a location you moderate.');
     where.status = 'pending';
   }
-  const { rows, count } = await LocationEvent.findAndCountAll({
+  const options = {
     where,
+    attributes: { exclude: ['description', 'reviewNote', 'venue', 'organizer', 'sourceUrl'] },
     include: [{ model: Location, as: 'location', attributes: ['id', 'name', 'name_local', 'slug'] }],
-    order: [['start', 'ASC'], ['id', 'ASC']], limit, offset,
-  });
+    order: [['start', period === 'past' ? 'DESC' : 'ASC'], ['id', period === 'past' ? 'DESC' : 'ASC']],
+  };
+  if (period) {
+    const cutoff = period === 'upcoming' ? start : end;
+    const rows = (await LocationEvent.findAll(options)).filter(event => {
+      if (!event.allDay) return period === 'upcoming' ? event.end > cutoff : event.end <= cutoff;
+      const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+        timeZone: event.timezone, year: 'numeric', month: '2-digit', day: '2-digit',
+      }).formatToParts(cutoff).map(part => [part.type, part.value]));
+      const today = `${parts.year}-${parts.month}-${parts.day}`;
+      const ended = event.end.toISOString().slice(0, 10) <= today;
+      return period === 'past' ? ended : !ended;
+    });
+    return { data: rows.slice(offset, limit == null ? undefined : offset + limit).map(toEntry), total: rows.length, canManage: allowed };
+  }
+  const { rows, count } = await LocationEvent.findAndCountAll({ ...options, limit, offset });
   return { data: rows.map(toEntry), total: count, canManage: allowed };
 }
 

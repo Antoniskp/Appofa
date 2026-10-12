@@ -23,11 +23,20 @@ Polls and elections should project their existing dates rather than create event
 
 Timed events store UTC instants and an IANA timezone. The form converts local
 date/time in the selected zone, rejecting nonexistent/ambiguous DST times.
-Calendar dates and times display in each event's zone. All-day events use UTC
+Calendar dates and times display in each event's zone and the selected language. All-day events use UTC
 midnight as a floating date encoding, with an exclusive end. The form accepts
 an inclusive final day and converts it. Queries use interval overlap, so
 multi-day events appear on every relevant calendar day. The client requests a
 one-day buffer at month edges for timezones and filters by the displayed dates.
+Month requests use `complete=true`, restricted to a maximum 34-day window,
+and return all matching entries. There is no 100-entry truncation in month views.
+The mobile grid displays day counts and opens a full agenda for the selected day.
+The default list shows upcoming/ongoing events in the next 12 months, with
+separate past (newest first) and selected-month views. Lists retain pagination.
+All-day events are checked against the cutoff date in their own timezone before
+counting and paginating upcoming/past results. Those bounded queries currently
+filter lightweight candidate records in memory; consider a database projection
+if very large annual datasets become common.
 
 ## Publishing
 
@@ -38,13 +47,21 @@ by the author or authorized moderator; cancelled events remain publicly visible.
 Updates use revisions to reject stale edits. Pending/rejected detail pages are
 restricted to the author and authorized moderators. Calendar responses are not
 publicly cached. `.ics` exports carry stable IDs and revision numbers.
+Rejection requires feedback. The review note is visible only to the author and
+authorized moderators and clears on resubmission. Successful moderator approval,
+rejection, or cancellation notifies the author using the existing notification
+service (respecting preferences, without self-notifications). The notification
+links to the event; private feedback is not included in push payloads. Delivery
+is best-effort after commit and failures are logged without undoing the decision.
 
 ## Rollout and verification
 
 Run the normal migration command (`npm run migrate:up`) against the intended
 database before restarting/deploying the backend and frontend. Migration
 `20261012100000-create-location-events.js` creates the event table and indexes.
-No existing events need backfilling. Do not roll back after accepting submissions
+For installations that already deployed events, the additive migration
+`20261012200000-add-event-review-note.js` adds an empty review note to existing
+records. Run it before the updated backend starts. No existing events need backfilling. Do not roll back the creation migration after accepting submissions
 without preserving the table first; the down migration drops it.
 
 Tests: `npx jest __tests__/calendar.test.js __tests__/calendar-dates.test.js
@@ -52,6 +69,7 @@ __tests__/calendar-ical.test.js --runInBand` and
 `npx playwright test e2e/calendar.spec.js` (disposable database, desktop/mobile).
 
 Recurring events, attendance, reminder delivery, external calendar subscriptions,
-and additional sources are future work. The current UI is in Greek, consistent
-with the existing location tabs. Calendar results are paginated at 100 entries;
-the UI explicitly labels the page when more results are available.
+and additional sources are future work. Calendar messages live in
+`messages/calendar/{en,el,ro}.json` and are merged into the app's next-intl messages.
+The timezone picker searches the runtime's supported IANA zones and preserves
+the event's existing zone. Upcoming/past lists use pages of 100 entries.

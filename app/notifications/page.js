@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { BellIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/lib/auth-context';
+import { useTranslations } from 'next-intl';
 import { notificationAPI } from '@/lib/api';
 import Pagination from '@/components/ui/Pagination';
 import NotificationPreferences from '@/components/notifications/NotificationPreferences';
@@ -27,6 +28,7 @@ const TYPE_ICONS = {
 };
 
 export default function NotificationsPage() {
+  const tCalendar = useTranslations('calendar');
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState([]);
@@ -178,7 +180,7 @@ export default function NotificationsPage() {
               </span>
               <div className="flex-1 min-w-0">
                 <p className={`text-sm ${!n.isRead ? 'font-semibold text-blue-900' : 'text-gray-800'}`}>
-                  {n.title}
+                  {n.metadata?.kind === 'calendar_review' && tCalendar.has(`notifications.${n.metadata.status}`) ? tCalendar(`notifications.${n.metadata.status}`) : n.title}
                 </p>
                 {n.body && <p className="text-xs text-gray-500 truncate">{n.body}</p>}
                 <p className="text-xs text-gray-400 mt-0.5">{relativeTime(n.createdAt)}</p>

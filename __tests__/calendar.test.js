@@ -1,7 +1,8 @@
 const express = require('express');
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
-const { sequelize, User, Location, UserLocationRole, LocationEvent } = require('../src/models');
+const { sequelize, User, Location, UserLocationRole, LocationEvent, Notification } = require('../src/models');
+jest.mock('../src/services/pushService', () => ({ getUnreadCount: jest.fn().mockResolvedValue(1), sendPushToUser: jest.fn().mockResolvedValue({}) }));
 const { storeCsrfToken } = require('../src/utils/csrf');
 const app = express();
 app.use(express.json());
@@ -25,7 +26,10 @@ beforeAll(async () => {
   outsider = await User.create({ username: 'cal-other', email: 'cal-other@example.test', password: 'Password123!', role: 'moderator', isVerified: true, homeLocationId: town.id });
   await UserLocationRole.create({ userId: moderator.id, locationId: parent.id, roleKey: 'moderator' });
 });
-beforeEach(() => LocationEvent.destroy({ where: {} }));
+beforeEach(async () => {
+  await Notification.destroy({ where: {} });
+  await LocationEvent.destroy({ where: {} });
+});
 afterAll(() => sequelize.close());
 
 test('mutations require authentication and CSRF', async () => {
@@ -76,4 +80,53 @@ test('invalid dates, zones, links and excessive ranges fail validation', async (
   }
   expect((await create(author, { allDay: true, start: '2026-10-20T00:00:00Z', end: '2026-10-21T00:00:00Z' })).status).toBe(201);
   expect((await request(app).get('/api/calendar?start=2020-01-01T00:00:00Z&end=2026-01-01T00:00:00Z')).status).toBe(400);
+});
+
+test('complete month returns more than 100 events, without exposing pending entries', async () => {
+  await LocationEvent.bulkCreate(Array.from({ length: 125 }, (_, i) => ({
+    ...payload, locationId: town.id, authorId: author.id, title: `Event ${i}`, status: 'published',
+  })));
+  await create();
+  const page = await request(app).get(`/api/calendar?${range}`);
+  expect(page.body.data).toHaveLength(100);
+  const month = await request(app).get(`/api/calendar?${range}&complete=true`);
+  expect(month.status).toBe(200);
+  expect(month.body.data).toHaveLength(125);
+  expect(month.body.pagination).toEqual({ page: 1, totalPages: 1, total: 125 });
+  expect((await request(app).get('/api/calendar?start=2026-01-01T00:00:00Z&end=2026-04-01T00:00:00Z&complete=true')).status).toBe(400);
+});
+
+test('upcoming includes ongoing events and respects the local end of all-day events', async () => {
+  await create(moderator, { title: 'Ended', start: '2026-10-20T00:00:00Z', end: '2026-10-20T01:00:00Z' });
+  await create(moderator, { title: 'Ongoing', start: '2026-10-20T00:00:00Z', end: '2026-10-21T04:00:00Z' });
+  await create(moderator, { title: 'Still today in LA', allDay: true, timezone: 'America/Los_Angeles', start: '2026-10-20T00:00:00Z', end: '2026-10-21T00:00:00Z' });
+  await create(moderator, { title: 'Ended in Athens', allDay: true, timezone: 'Europe/Athens', start: '2026-10-20T00:00:00Z', end: '2026-10-21T00:00:00Z' });
+  const upcoming = await request(app).get('/api/calendar?start=2026-10-21T02:00:00Z&end=2026-11-01T00:00:00Z&period=upcoming');
+  expect(upcoming.body.data.map(e => e.title).sort()).toEqual(['Ongoing', 'Still today in LA']);
+  const past = await request(app).get('/api/calendar?start=2026-10-01T00:00:00Z&end=2026-10-21T02:00:00Z&period=past');
+  expect(past.body.data.map(e => e.title).sort()).toEqual(['Ended', 'Ended in Athens']);
+});
+
+test('rejection requires private feedback and sends one author notification after successful review', async () => {
+  const { body } = await create();
+  const id = body.data.id;
+  expect((await update(id, moderator, { action: 'reject', revision: 0 })).status).toBe(400);
+  expect(await Notification.count()).toBe(0);
+  const rejected = await update(id, moderator, { action: 'reject', revision: 0, reviewNote: 'Please confirm the venue.' });
+  expect(rejected.body.data.reviewNote).toBe('Please confirm the venue.');
+  const notice = await Notification.findOne();
+  expect(notice.userId).toBe(author.id);
+  expect(notice.actionUrl).toBe(`/events/${id}`);
+  expect(notice.metadata).toMatchObject({ kind: 'calendar_review', status: 'rejected' });
+  expect((await update(id, moderator, { action: 'reject', revision: 0, reviewNote: 'Duplicate' })).status).toBe(409);
+  expect(await Notification.count()).toBe(1);
+  expect((await request(app).get(`/api/calendar/events/${id}`).set(headers(author))).body.data.reviewNote).toBe('Please confirm the venue.');
+  expect((await request(app).get(`/api/calendar/events/${id}`).set(headers(outsider))).status).toBe(404);
+  const revised = await update(id, author, { ...payload, revision: 1 });
+  expect(revised.body.data).toMatchObject({ status: 'pending', reviewNote: '' });
+  await update(id, moderator, { action: 'publish', revision: 2 });
+  expect((await request(app).get(`/api/calendar/events/${id}`)).body.data.reviewNote).toBeUndefined();
+  expect(await Notification.count()).toBe(2);
+  await update(id, author, { action: 'cancel', revision: 3 });
+  expect(await Notification.count()).toBe(2);
 });

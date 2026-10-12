@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { locationAPI } from '@/lib/api';
 
-const LOCATION_TYPES = ['international', 'country', 'prefecture', 'municipality'];
+const LOCATION_TYPES = ['international', 'country', 'prefecture', 'electoral_district', 'municipality'];
 
 export default function LocationSelector({ 
   value, 
@@ -12,7 +12,8 @@ export default function LocationSelector({
   className = '',
   allowClear = true,
   filterType = null,
-  filterParentId = null 
+  filterParentId = null,
+  labels = {},
 }) {
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -124,7 +125,7 @@ export default function LocationSelector({
                 type="button"
                 onClick={handleClear}
                 className="text-gray-400 hover:text-gray-600"
-                aria-label="Clear selection"
+                aria-label={labels.clear || 'Clear selection'}
               >
                 ✕
               </button>
@@ -147,18 +148,18 @@ export default function LocationSelector({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search locations..."
+                placeholder={labels.search || 'Search locations...'}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
 
             {loading ? (
-              <div className="p-4 text-center text-gray-500">Loading locations...</div>
+              <div className="p-4 text-center text-gray-500">{labels.loading || 'Loading locations...'}</div>
             ) : error ? (
               <div className="p-4 text-center text-red-500">{error}</div>
             ) : filteredLocations.length === 0 ? (
-              <div className="p-4 text-center text-gray-500">No locations found</div>
+              <div className="p-4 text-center text-gray-500">{labels.empty || 'No locations found'}</div>
             ) : (
               <div>
                 {LOCATION_TYPES.map(type => {
@@ -168,7 +169,7 @@ export default function LocationSelector({
                   return (
                     <div key={type}>
                       <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase bg-gray-50">
-                        {type}
+                        {labels.types?.[type] || type}
                       </div>
                       {typeLocations.map(location => (
                         <button

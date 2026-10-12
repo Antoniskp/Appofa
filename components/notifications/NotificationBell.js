@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { BellIcon } from '@heroicons/react/24/outline';
 import { notificationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { useTranslations } from 'next-intl';
 
 // Simple relative time helper (Greek locale)
 function relativeTime(dateString) {
@@ -37,6 +38,7 @@ function typeIcon(type) {
 }
 
 export default function NotificationBell() {
+  const tCalendar = useTranslations('calendar');
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -206,7 +208,7 @@ export default function NotificationBell() {
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className={`text-sm truncate ${!n.isRead ? 'font-semibold text-blue-900' : 'text-gray-800'}`}>
-                      {n.title}
+                      {n.metadata?.kind === 'calendar_review' && tCalendar.has(`notifications.${n.metadata.status}`) ? tCalendar(`notifications.${n.metadata.status}`) : n.title}
                     </p>
                     {n.body && (
                       <p className="text-xs text-gray-500 truncate">{n.body}</p>

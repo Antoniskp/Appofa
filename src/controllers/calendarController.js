@@ -1,6 +1,7 @@
 const { sequelize, LocationEvent, Location } = require('../models');
 const { canManage } = require('../services/locationEventPermissions');
 const { listEntries } = require('../services/calendarService');
+const notificationService = require('../services/notificationService');
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 const idOf = value => {
   if (!/^\d+$/.test(String(value)) || !Number.isSafeInteger(Number(value)) || Number(value) < 1) fail(400, 'Invalid ID.');
@@ -40,11 +41,14 @@ const handle = fn => async (req, res) => {
 exports.list = handle(async (req, res) => {
   const start = date(req.query.start), end = date(req.query.end);
   if (end <= start || end - start > 370 * 86400000) fail(400, 'Choose a date range of up to one year.');
+  const complete = req.query.complete === 'true';
+  if (complete && end - start > 34 * 86400000) fail(400, 'Complete calendar queries are limited to 34 days.');
+  if (req.query.period && !['upcoming', 'past'].includes(req.query.period)) fail(400, 'Invalid period.');
   const view = req.query.view || 'public';
   if (!['public', 'mine', 'review'].includes(view)) fail(400, 'Invalid view.');
   if (req.query.category && !['community', 'meeting', 'culture', 'action', 'other'].includes(req.query.category)) fail(400, 'Invalid category.');
   const page = Math.max(1, Math.min(100, parseInt(req.query.page, 10) || 1));
-  const result = await listEntries({ start, end, view, page, source: req.query.source, category: req.query.category,
+  const result = await listEntries({ start, end, view, page, complete, period: req.query.period, source: req.query.source, category: req.query.category,
     locationId: req.query.locationId ? idOf(req.query.locationId) : null, descendants: req.query.descendants === 'true' }, req.user);
   res.json({ success: true, ...result });
 });
@@ -60,7 +64,9 @@ exports.detail = handle(async (req, res) => {
   if (!data) fail(404, 'Event not found.');
   const allowed = await canManage(req.user, data.locationId);
   if (!['published', 'cancelled'].includes(data.status) && data.authorId !== req.user?.id && !allowed) fail(404, 'Event not found.');
-  res.json({ success: true, data, canManage: allowed, canEdit: allowed || data.authorId === req.user?.id });
+  const output = data.toJSON();
+  if (!allowed && data.authorId !== req.user?.id) delete output.reviewNote;
+  res.json({ success: true, data: output, canManage: allowed, canEdit: allowed || data.authorId === req.user?.id });
 });
 exports.update = handle(async (req, res) => {
   const data = await sequelize.transaction(async transaction => {
@@ -75,9 +81,22 @@ exports.update = handle(async (req, res) => {
       if (req.body.action !== 'cancel' && !allowed) fail(403, 'Moderator approval required.');
       if (req.body.action !== 'cancel' && event.status !== 'pending') fail(409, 'Only pending events can be reviewed.');
       if (req.body.action === 'cancel' && event.status !== 'published') fail(409, 'Only published events can be cancelled.');
-      values = { status: { publish: 'published', reject: 'rejected', cancel: 'cancelled' }[req.body.action] };
-    } else { values = { ...validate(req.body), status: allowed ? 'published' : 'pending' }; }
+      values = {
+        status: { publish: 'published', reject: 'rejected', cancel: 'cancelled' }[req.body.action],
+        reviewNote: text(req.body.reviewNote, 2000, req.body.action === 'reject'),
+      };
+    } else { values = { ...validate(req.body), reviewNote: '', status: allowed ? 'published' : 'pending' }; }
     return event.update({ ...values, revision: event.revision + 1 }, { transaction });
   });
+  if (req.body.action && data.authorId && data.authorId !== req.user.id) {
+    // Notify only after the event transaction commits; delivery failure must not
+    // turn a successful review into a failed request that could be retried.
+    await notificationService.createNotification({
+      userId: data.authorId, actorId: req.user.id, type: 'system_announcement',
+      title: { publish: 'Your event was approved', reject: 'Your event needs changes', cancel: 'Your event was cancelled' }[req.body.action],
+      body: data.title, actionUrl: `/events/${data.id}`,
+      metadata: { kind: 'calendar_review', status: data.status, eventId: data.id },
+    }).catch(error => console.error('Event notification failed:', error.message));
+  }
   res.json({ success: true, data });
 });

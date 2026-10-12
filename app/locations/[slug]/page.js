@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { locationAPI, locationSectionAPI, suggestionAPI, geoAPI, candidateRegistrationAPI } from '@/lib/api';
@@ -111,6 +112,7 @@ function LocationPageNav({ items }) {
 }
 
 export default function LocationDetailPage() {
+  const tCalendar = useTranslations('calendar');
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -578,7 +580,7 @@ export default function LocationDetailPage() {
   const showMainLocationMap = shouldShowMainLocationMap({ location, children, secondaryLoading });
 
   const TAB_LABELS = {
-    events: 'Εκδηλώσεις',
+    events: tCalendar('events'),
     polls: `Ψηφοφορίες${activePolls.length ? ` (${activePolls.length})` : ''}`,
     news: `Ειδήσεις${newsArticles.length ? ` (${newsArticles.length})` : ''}`,
     articles: `Άρθρα${regularArticles.length ? ` (${regularArticles.length})` : ''}`,

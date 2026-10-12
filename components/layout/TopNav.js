@@ -36,6 +36,7 @@ import NotificationBell from '@/components/notifications/NotificationBell';
 
 export default function TopNav() {
   const tNav = useTranslations('nav');
+  const tCalendar = useTranslations('calendar');
   const tDemocracy = useTranslations('democracy');
   const { user, loading, logout } = useAuth();
   const { canAccessAdmin } = usePermissions();
@@ -165,7 +166,7 @@ export default function TopNav() {
           mobileIcon: <MapPinIcon className="h-5 w-5" />
         },
         {
-          id: 'calendar', label: 'Ημερολόγιο', href: '/calendar',
+          id: 'calendar', label: tCalendar('title'), href: '/calendar',
           icon: <CalendarDaysIcon className="h-4 w-4" />,
           mobileIcon: <CalendarDaysIcon className="h-5 w-5" />
         },
@@ -345,7 +346,7 @@ export default function TopNav() {
       mobileIcon: <UsersIcon className="h-5 w-5" />,
     },
     {
-      id: 'calendar', label: 'Ημερολόγιο', href: '/calendar',
+      id: 'calendar', label: tCalendar('title'), href: '/calendar',
       icon: <CalendarDaysIcon className="h-4 w-4" />,
       mobileIcon: <CalendarDaysIcon className="h-5 w-5" />
     },

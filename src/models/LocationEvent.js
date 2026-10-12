@@ -17,4 +17,5 @@ module.exports = sequelize.define('LocationEvent', {
   category: { type: S.STRING(30), allowNull: false, defaultValue: 'community' },
   status: { type: S.STRING(20), allowNull: false, defaultValue: 'pending' },
   revision: { type: S.INTEGER, allowNull: false, defaultValue: 0 },
+  reviewNote: { type: S.TEXT, allowNull: false, defaultValue: '' },
 }, { indexes: [{ fields: ['locationId', 'status', 'start'] }, { fields: ['status', 'start'] }] });
