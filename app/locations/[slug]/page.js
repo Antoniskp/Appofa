@@ -578,6 +578,7 @@ export default function LocationDetailPage() {
   const showMainLocationMap = shouldShowMainLocationMap({ location, children, secondaryLoading });
 
   const TAB_LABELS = {
+    events: 'Εκδηλώσεις',
     polls: `Ψηφοφορίες${activePolls.length ? ` (${activePolls.length})` : ''}`,
     news: `Ειδήσεις${newsArticles.length ? ` (${newsArticles.length})` : ''}`,
     articles: `Άρθρα${regularArticles.length ? ` (${regularArticles.length})` : ''}`,

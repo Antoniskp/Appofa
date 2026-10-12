@@ -44,6 +44,7 @@ geoRoutes.use(geoAccessPublicRoutes);
 geoRoutes.use(geoDetectRoutes);
 
 const routes = [
+  { prefix: '/api/calendar', router: require('./calendarRoutes') },
   { prefix: '/api/auth', router: authRoutes },
   { prefix: '/api/articles', router: articleRoutes },
   { prefix: '/api/admin', router: adminRoutes },

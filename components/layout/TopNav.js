@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   AcademicCapIcon,
+  CalendarDaysIcon,
   ArrowLeftOnRectangleIcon,
   ArrowRightOnRectangleIcon,
   ChatBubbleLeftRightIcon,
@@ -162,6 +163,11 @@ export default function TopNav() {
           href: '/locations',
           icon: <MapPinIcon className="h-4 w-4" />,
           mobileIcon: <MapPinIcon className="h-5 w-5" />
+        },
+        {
+          id: 'calendar', label: 'Ημερολόγιο', href: '/calendar',
+          icon: <CalendarDaysIcon className="h-4 w-4" />,
+          mobileIcon: <CalendarDaysIcon className="h-5 w-5" />
         },
         {
           id: 'cameras',
@@ -337,6 +343,11 @@ export default function TopNav() {
       href: '/users',
       icon: <UsersIcon className="h-4 w-4" />,
       mobileIcon: <UsersIcon className="h-5 w-5" />,
+    },
+    {
+      id: 'calendar', label: 'Ημερολόγιο', href: '/calendar',
+      icon: <CalendarDaysIcon className="h-4 w-4" />,
+      mobileIcon: <CalendarDaysIcon className="h-5 w-5" />
     },
     {
       id: 'cameras',

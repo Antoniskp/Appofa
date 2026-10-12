@@ -1,0 +1,11 @@
+const router = require('express').Router();
+const controller = require('../controllers/calendarController');
+const auth = require('../middleware/auth');
+const optionalAuth = require('../middleware/optionalAuth');
+const csrf = require('../middleware/csrfProtection');
+const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
+router.get('/', apiLimiter, optionalAuth, controller.list);
+router.post('/events', createLimiter, auth, csrf, controller.create);
+router.get('/events/:id', apiLimiter, optionalAuth, controller.detail);
+router.patch('/events/:id', apiLimiter, auth, csrf, controller.update);
+module.exports = router;

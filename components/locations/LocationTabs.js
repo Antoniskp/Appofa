@@ -1,3 +1,4 @@
+import CalendarView from '@/components/calendar/CalendarView';
 import Link from 'next/link';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { idSlug } from '@/lib/utils/slugify';
@@ -128,7 +129,7 @@ export default function LocationTabs({
   const groups = [
     { label: 'Προτάσεις και ψηφοφορίες', tabs: ['suggestions', 'polls'] },
     { label: 'Ενημέρωση', tabs: ['news', 'articles'] },
-    { label: 'Κοινότητα και εκλογές', tabs: ['users', 'unclaimed', 'candidates', 'elections'] },
+    { label: 'Κοινότητα και εκλογές', tabs: ['events', 'users', 'unclaimed', 'candidates', 'elections'] },
   ].map(group => ({ ...group, tabs: group.tabs.filter(tab => tabs.includes(tab)) })).filter(group => group.tabs.length);
   const selectedGroup = groups.find(group => group.tabs.includes(activeTab)) || groups[0];
   const groupTabs = selectedGroup?.tabs || tabs;
@@ -490,7 +491,7 @@ export default function LocationTabs({
           )}
         </div>
 
-        {/* Elections tab */}
+        {activeTab === 'events' && <div id="tabpanel-events" role="tabpanel" aria-labelledby="tab-events"><CalendarView locationId={locationId} /></div>}{/* Elections tab */}
         <div
           id="tabpanel-elections"
           role="tabpanel"
