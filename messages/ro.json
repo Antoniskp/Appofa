@@ -55,7 +55,7 @@
     "notifications": "Notificări",
     "home_aria": "Acasă Appofasi",
     "brand_alt": "Appofasi",
-    "civic_questions": "Întrebări civice",
+    "civic_questions": "Subiecte publice",
     "civic_polls": "Sondaje civice",
     "information": "Informații",
     "participation": "Participare",
@@ -2112,7 +2112,7 @@
       "after_deadline": "After deadline"
     },
     "list": {
-      "search_placeholder": "Search civic questions...",
+      "search_placeholder": "Caută subiecte publice...",
       "all_statuses": "All statuses",
       "source": "Source",
       "all_sources": "All sources",
@@ -2122,20 +2122,20 @@
       "sort_newest": "Newest",
       "sort_closing_soon": "Closing soon",
       "sort_most_voted": "Most voted",
-      "new_civic_question": "New Civic Question",
-      "error_title": "Failed to load civic questions",
-      "empty_title": "No civic questions found",
+      "new_civic_question": "Subiect public nou",
+      "error_title": "Subiectele publice nu au putut fi încărcate",
+      "empty_title": "Nu s-au găsit subiecte publice",
       "empty_description": "Încearcă altă căutare sau elimină filtrele.",
-      "create_action": "Create Civic Question",
-      "title": "Întrebări civice",
-      "intro": "Explorează subiecte publice din Parlament, Comisia Europeană, consilii locale și regionale sau alte surse. Citește subiectul și argumentele disponibile, apoi exprimă-ți poziția pe Appofasi.",
+      "create_action": "Adaugă un subiect public",
+      "title": "Subiecte publice",
+      "intro": "Subiecte din Parlament, consiliile locale și Europa. Informează-te, descoperă argumentele și spune-ți părerea.",
       "advisory": "Participarea este consultativă. Rezultatele reflectă opiniile participanților și nu obligă Parlamentul sau alte autorități.",
       "all": "Toate",
       "open": "Deschise",
       "my_area": "În zona mea",
       "quick_filters": "Filtre rapide",
       "filters": "Filtre",
-      "result_count": "{count, plural, one {# întrebare} few {# întrebări} other {# de întrebări}}",
+      "result_count": "{count, plural, one {# subiect} few {# subiecte} other {# de subiecte}}",
       "remove_filter": "Elimină filtrul: {label}",
       "clear": "Șterge filtrele"
     },
@@ -2211,6 +2211,12 @@
       "visibility_answer": "În funcție de setările fiecărei întrebări, rezultatele sunt vizibile imediat, după ce votezi sau după termenul-limită.",
       "browse_title": "Găsește un subiect care te interesează",
       "browse_description": "Alege Deschise pentru întrebări la care poți participa sau caută un subiect. Folosește filtrele pentru a restrânge lista după sursă, categorie sau locație."
+    },
+    "featured": {
+      "title": "În prim-plan",
+      "reason": "Subiectul deschis cu cei mai mulți participanți noi în ultimele 7 zile.",
+      "action": "Vezi subiectul",
+      "participants": "{count, plural, one {# participant în ultimele 7 zile} few {# participanți în ultimele 7 zile} other {# de participanți în ultimele 7 zile}}"
     }
   },
   "candidates": {
@@ -2531,7 +2537,7 @@
     "allProgress": "Toate actualizările",
     "resources": "Înțelege contextul",
     "news": "Știri",
-    "civicQuestions": "Probleme publice",
+    "civicQuestions": "Subiecte publice",
     "organizations": "Organizații",
     "commitments": "Angajamente publice",
     "platform": "Cum funcționează platforma"

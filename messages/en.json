@@ -55,7 +55,7 @@
     "notifications": "Notifications",
     "home_aria": "Appofasi home",
     "brand_alt": "Appofasi",
-    "civic_questions": "Civic Questions",
+    "civic_questions": "Public issues",
     "civic_polls": "Civic Polls",
     "information": "Information",
     "participation": "Participation",
@@ -2112,7 +2112,7 @@
       "after_deadline": "After deadline"
     },
     "list": {
-      "search_placeholder": "Search civic questions...",
+      "search_placeholder": "Search public issues...",
       "all_statuses": "All statuses",
       "source": "Source",
       "all_sources": "All sources",
@@ -2122,20 +2122,20 @@
       "sort_newest": "Newest",
       "sort_closing_soon": "Closing soon",
       "sort_most_voted": "Most voted",
-      "new_civic_question": "New Civic Question",
-      "error_title": "Failed to load civic questions",
-      "empty_title": "No civic questions found",
+      "new_civic_question": "New public issue",
+      "error_title": "Failed to load public issues",
+      "empty_title": "No public issues found",
       "empty_description": "Try another search or remove some filters.",
-      "create_action": "Create Civic Question",
-      "title": "Civic questions",
-      "intro": "Explore public issues from Parliament, the European Commission, municipal and regional councils, or other sources. Read the issue and available arguments, then share your position on Appofasi.",
+      "create_action": "Add a public issue",
+      "title": "Public issues",
+      "intro": "Issues from Parliament, local councils and Europe. Get informed, explore the arguments and share your view.",
       "advisory": "Participation is advisory. Results reflect participants and do not bind Parliament or any other authority.",
       "all": "All",
       "open": "Open",
       "my_area": "My area",
       "quick_filters": "Quick filters",
       "filters": "Filters",
-      "result_count": "{count, plural, one {# question} other {# questions}}",
+      "result_count": "{count, plural, one {# issue} other {# issues}}",
       "remove_filter": "Remove filter: {label}",
       "clear": "Clear filters"
     },
@@ -2211,6 +2211,12 @@
       "visibility_answer": "Depending on each question’s settings, results are visible immediately, after you vote, or after the deadline.",
       "browse_title": "Find an issue you care about",
       "browse_description": "Choose Open to find questions accepting participation, or search for a topic. Use the filters to narrow the list by source, category or location."
+    },
+    "featured": {
+      "title": "In focus",
+      "reason": "The open issue with the most new participants over the last 7 days.",
+      "action": "Explore the issue",
+      "participants": "{count, plural, one {# participant in the last 7 days} other {# participants in the last 7 days}}"
     }
   },
   "candidates": {

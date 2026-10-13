@@ -35,6 +35,11 @@ export default function CivicQuestionsPage() {
 
   const [filterBarOpen, setFilterBarOpen] = useState(false);
   const [total, setTotal] = useState(0);
+  const { data: featured, loading: featuredLoading, error: featuredError } = useAsyncData(
+    () => civicQuestionAPI.getFeatured(),
+    [user?.id, user?.homeLocationId, user?.role],
+    { transform: (response) => response.success ? response.data : null }
+  );
   const activeFilters = Object.entries(filters).filter(([key, value]) => value && !(key === 'sortBy' && value === 'newest'));
 
   const { data: civicQuestions, loading, error } = useAsyncData(
@@ -66,6 +71,18 @@ export default function CivicQuestionsPage() {
           <p className="mt-3 text-gray-700">{t('list.intro')}</p>
           <p className="mt-2 text-sm text-gray-600">{t('list.advisory')}</p>
         </header>
+        {!featuredLoading && !featuredError && featured && (
+          <section aria-labelledby="featured-issue" className="mb-8 rounded-xl border border-blue-200 bg-blue-50 p-5 sm:p-8">
+            <h2 id="featured-issue" className="text-sm font-bold uppercase tracking-wide text-blue-800">{t('featured.title')}</h2>
+            <p className="mt-2 text-sm text-blue-800">{t('featured.reason')}</p>
+            <h3 className="mt-4 max-w-4xl text-2xl font-bold leading-snug text-gray-900">{featured.title}</h3>
+            {featured.simplified && <p className="mt-3 max-w-3xl line-clamp-3 leading-relaxed text-gray-700">{featured.simplified}</p>}
+            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
+              <Link href={`/civic-questions/${featured.id}`} className="inline-flex rounded-lg bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700">{t('featured.action')}</Link>
+              <p className="text-sm text-gray-700">{t('featured.participants', { count: featured.recentParticipants })}</p>
+            </div>
+          </section>
+        )}
         <section aria-labelledby="participation-guide" className="mb-8 rounded-xl border border-blue-100 bg-white p-5 sm:p-6">
           <h2 id="participation-guide" className="text-xl font-semibold text-gray-900">{t('guide.title')}</h2>
           <ol className="mt-5 grid gap-5 md:grid-cols-3">

@@ -569,6 +569,40 @@ const listCivicQuestions = async (query, user) => {
   }
 };
 
+const getFeaturedCivicQuestion = async (user) => {
+  try {
+    const now = new Date();
+    const since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const visibilityWhere = await buildVisibilityWhere(user);
+    // Count first participation, not edits: changing a vote cannot boost an issue.
+    const ranked = await CivicQuestionVote.findAll({
+      attributes: ['civicQuestionId', [sequelize.fn('COUNT', sequelize.col('CivicQuestionVote.id')), 'recentParticipants']],
+      where: { createdAt: { [Op.gte]: since, [Op.lte]: now } },
+      include: [{
+        model: CivicQuestion,
+        as: 'civicQuestion',
+        attributes: [],
+        required: true,
+        where: { [Op.and]: [visibilityWhere, { status: 'open' }, { [Op.or]: [{ deadline: null }, { deadline: { [Op.gt]: now } }] }] },
+      }],
+      group: ['CivicQuestionVote.civicQuestionId'],
+      order: [[sequelize.fn('COUNT', sequelize.col('CivicQuestionVote.id')), 'DESC'], ['civicQuestionId', 'DESC']],
+      limit: 1,
+      raw: true,
+    });
+    if (!ranked.length) return { success: true, status: 200, data: null };
+    const question = await CivicQuestion.findByPk(ranked[0].civicQuestionId, {
+      attributes: ['id', 'title', 'simplified', 'sourceType'],
+    });
+    return { success: true, status: 200, data: question ? {
+      ...question.toJSON(), recentParticipants: Number(ranked[0].recentParticipants),
+    } : null };
+  } catch (error) {
+    console.error('Featured civic question error:', error);
+    return { success: false, status: 500, message: 'Error fetching featured civic question.' };
+  }
+};
+
 const getCivicQuestionById = async (id, user) => {
   try {
     const questionId = parsePositiveInteger(id);
@@ -838,6 +872,7 @@ module.exports = {
   CIVIC_QUESTION_RESULTS_VISIBILITIES,
   CIVIC_QUESTION_CHOICES,
   listCivicQuestions,
+  getFeaturedCivicQuestion,
   getCivicQuestionById,
   createCivicQuestion,
   updateCivicQuestion,

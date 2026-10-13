@@ -93,6 +93,59 @@ describe('Civic Questions API', () => {
     expect(response.body.success).toBe(false);
   });
 
+  test('features recent participation across issues, excluding expired and inaccessible issues', async () => {
+    const createdIds = [];
+    const makeQuestion = async (overrides = {}) => {
+      const question = await CivicQuestion.create({ title: 'Featured issue test', creatorId: creator.id, sourceType: 'parliament', ...overrides });
+      createdIds.push(question.id);
+      return question;
+    };
+    const vote = (question, userId, daysAgo = 0) => CivicQuestionVote.create({
+      civicQuestionId: question.id, userId, choice: 'agree',
+      createdAt: new Date(Date.now() - daysAgo * 86400000),
+    });
+    try {
+      const old = await makeQuestion();
+      await vote(old, creator.id, 8);
+      await vote(old, voter.id, 8);
+      await vote(old, outsider.id, 8);
+      // Updating an old vote must not count as a new participation.
+      await CivicQuestionVote.update({ choice: 'disagree' }, { where: { civicQuestionId: old.id } });
+      expect((await request(app).get('/api/civic-questions/featured')).body.data).toBeNull();
+
+      const winner = await makeQuestion({ resultsVisibility: 'after_vote' });
+      await vote(winner, creator.id);
+      await vote(winner, voter.id);
+      const runnerUp = await makeQuestion();
+      await vote(runnerUp, creator.id);
+      for (const overrides of [
+        { status: 'closed' }, { status: 'archived' },
+        { deadline: new Date(Date.now() - 1000) },
+        { visibility: 'private' },
+        { visibility: 'locals_only', locationId: localLocation.id },
+      ]) {
+        const excluded = await makeQuestion(overrides);
+        for (const userId of [creator.id, voter.id, outsider.id]) await vote(excluded, userId);
+      }
+      const response = await request(app).get('/api/civic-questions/featured');
+      expect(response.status).toBe(200);
+      expect(response.body.data.id).toBe(winner.id);
+      expect(response.body.data.recentParticipants).toBe(2);
+      expect(response.body.data.voteCounts).toBeUndefined();
+      expect(response.body.data.percentages).toBeUndefined();
+
+      // Ties are resolved consistently by newest issue ID.
+      await vote(runnerUp, voter.id);
+      expect((await request(app).get('/api/civic-questions/featured')).body.data.id).toBe(runnerUp.id);
+      const localResponse = await request(app).get('/api/civic-questions/featured').set('Authorization', `Bearer ${voter.token}`);
+      expect(localResponse.body.data.id).toBe(createdIds[createdIds.length - 1]);
+      const outsiderResponse = await request(app).get('/api/civic-questions/featured').set('Authorization', `Bearer ${outsider.token}`);
+      expect(outsiderResponse.body.data.id).toBe(createdIds[createdIds.length - 2]);
+    } finally {
+      await CivicQuestion.destroy({ where: { id: createdIds } });
+    }
+  });
+
   test('creates civic question with authenticated user', async () => {
     const headers = csrfHeadersFor(creatorCsrf, creator.id);
 

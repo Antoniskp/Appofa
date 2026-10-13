@@ -8,6 +8,7 @@ const csrfProtection = require('../middleware/csrfProtection');
 const { apiLimiter, createLimiter, authVoteLimiter } = require('../middleware/rateLimiter');
 
 router.get('/', optionalAuthMiddleware, apiLimiter, civicQuestionController.listCivicQuestions);
+router.get('/featured', optionalAuthMiddleware, apiLimiter, civicQuestionController.getFeaturedCivicQuestion);
 router.get('/:id', optionalAuthMiddleware, apiLimiter, civicQuestionController.getCivicQuestionById);
 router.get('/:id/results', optionalAuthMiddleware, apiLimiter, civicQuestionController.getCivicQuestionResults);
 

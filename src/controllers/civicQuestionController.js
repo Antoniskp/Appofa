@@ -5,6 +5,11 @@ const civicQuestionService = require('../services/civicQuestionService');
 const toUserObj = (reqUser) => (reqUser ? { id: reqUser.id, role: reqUser.role } : null);
 
 const civicQuestionController = {
+  getFeaturedCivicQuestion: async (req, res) => {
+    const result = await civicQuestionService.getFeaturedCivicQuestion(toUserObj(req.user));
+    if (!result.success) return res.status(result.status).json({ success: false, message: result.message });
+    return res.status(200).json({ success: true, data: result.data });
+  },
   listCivicQuestions: async (req, res) => {
     const result = await civicQuestionService.listCivicQuestions(req.query, toUserObj(req.user));
     if (!result.success) {
