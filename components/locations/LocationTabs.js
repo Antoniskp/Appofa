@@ -1,3 +1,4 @@
+import LocationActionSummary from '@/components/locations/LocationActionSummary';
 import CalendarView from '@/components/calendar/CalendarView';
 import Link from 'next/link';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
@@ -126,13 +127,6 @@ export default function LocationTabs({
   // Fall back to all tabs if visibleTabs not provided (e.g. during initial load)
   const tabs = visibleTabs && visibleTabs.length > 0 ? visibleTabs : VALID_TABS;
 
-  const groups = [
-    { label: 'Προτάσεις και ψηφοφορίες', tabs: ['suggestions', 'polls'] },
-    { label: 'Ενημέρωση', tabs: ['news', 'articles'] },
-    { label: 'Κοινότητα και εκλογές', tabs: ['events', 'users', 'unclaimed', 'candidates', 'elections'] },
-  ].map(group => ({ ...group, tabs: group.tabs.filter(tab => tabs.includes(tab)) })).filter(group => group.tabs.length);
-  const selectedGroup = groups.find(group => group.tabs.includes(activeTab)) || groups[0];
-  const groupTabs = selectedGroup?.tabs || tabs;
   const suggestionHref = locationId ? '/suggestions/new?locationId=' + locationId : '/suggestions/new';
 
   // If no tabs have content (and we're not loading), show an empty state
@@ -146,16 +140,13 @@ export default function LocationTabs({
 
   return (
     <div className="bg-white rounded-lg shadow-sm">
-      <div className="flex flex-wrap gap-2 px-4 pt-4" role="group" aria-label="Κατηγορίες περιεχομένου">
-        {groups.map(group => <button key={group.label} type="button" aria-pressed={group === selectedGroup} onClick={() => onTabChange(group.tabs[0])} className={'rounded-lg px-3 py-2 text-sm font-medium ' + (group === selectedGroup ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100')}>{group.label}</button>)}
-      </div>
       {/* Tab bar */}
       <div
         className="flex border-b border-gray-200 overflow-x-auto"
         role="tablist"
-        aria-label="Location content tabs"
+        aria-label="Δραστηριότητα περιοχής"
       >
-        {groupTabs.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab}
             role="tab"
@@ -170,12 +161,12 @@ export default function LocationTabs({
                 onTabChange(tab);
               }
               if (e.key === 'ArrowRight') {
-                const next = groupTabs[(groupTabs.indexOf(tab) + 1) % groupTabs.length];
+                const next = tabs[(tabs.indexOf(tab) + 1) % tabs.length];
                 onTabChange(next);
                 document.getElementById(`tab-${next}`)?.focus();
               }
               if (e.key === 'ArrowLeft') {
-                const prev = groupTabs[(groupTabs.indexOf(tab) - 1 + groupTabs.length) % groupTabs.length];
+                const prev = tabs[(tabs.indexOf(tab) - 1 + tabs.length) % tabs.length];
                 onTabChange(prev);
                 document.getElementById(`tab-${prev}`)?.focus();
               }
@@ -192,7 +183,12 @@ export default function LocationTabs({
       </div>
 
       {/* Tab panels */}
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
+        {activeTab === 'recent' && (
+          <div id="tabpanel-recent" role="tabpanel" aria-labelledby="tab-recent">
+            <LocationActionSummary polls={activePolls} suggestions={suggestions} news={newsArticles} articles={regularArticles} loading={loading} embedded />
+          </div>
+        )}
         {/* Polls tab */}
         <div
           id="tabpanel-polls"

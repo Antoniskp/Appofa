@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { idSlug } from '@/lib/utils/slugify';
 
-export default function LocationActionSummary({ polls = [], suggestions = [], news = [], articles = [], loading }) {
+export default function LocationActionSummary({ polls = [], suggestions = [], news = [], articles = [], loading, embedded = false }) {
   const recent = (a, b) => (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0);
   const votes = polls.filter(p => p.status === 'active').sort(recent).slice(0, 2).map(p => ({ ...p, kind: 'Ανοιχτή ψηφοφορία', href: '/polls/' + idSlug(p.id, p.title), excerpt: p.description }));
   const updates = [
@@ -11,8 +11,8 @@ export default function LocationActionSummary({ polls = [], suggestions = [], ne
   ].sort(recent);
   const items = [...votes, ...updates].slice(0, 4);
   return (
-    <section id="location-overview" className="mb-8 scroll-mt-36">
-      <h2 className="text-lg font-semibold text-gray-950">Τι συμβαίνει εδώ;</h2>
+    <section id={embedded ? undefined : "location-overview"} className={embedded ? undefined : "mb-8 scroll-mt-36"}>
+      {!embedded && <h2 className="text-lg font-semibold text-gray-950">Τι συμβαίνει εδώ;</h2>}
       {loading ? <p role="status" className="py-6 text-sm text-gray-500">Φόρτωση δραστηριότητας…</p> : items.length ? (
         <div className="mt-3 divide-y divide-gray-200">
           {items.map(item => <Link key={item.href} href={item.href} className="block py-4 group">

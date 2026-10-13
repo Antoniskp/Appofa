@@ -11,7 +11,6 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { usePermissions } from '@/hooks/usePermissions';
 import LocationSections from '@/components/LocationSections';
 import LocationRoles from '@/components/LocationRoles';
-import LocationActionSummary from '@/components/locations/LocationActionSummary';
 import LocationBreadcrumb from '@/components/locations/LocationBreadcrumb';
 import LocationHeader from '@/components/locations/LocationHeader';
 import LocationContributionPrompt from '@/components/locations/LocationContributionPrompt';
@@ -580,6 +579,7 @@ export default function LocationDetailPage() {
   const showMainLocationMap = shouldShowMainLocationMap({ location, children, secondaryLoading });
 
   const TAB_LABELS = {
+    recent: 'Πρόσφατη δραστηριότητα',
     events: tCalendar('events'),
     polls: `Ψηφοφορίες${activePolls.length ? ` (${activePolls.length})` : ''}`,
     news: `Ειδήσεις${newsArticles.length ? ` (${newsArticles.length})` : ''}`,
@@ -638,10 +638,10 @@ export default function LocationDetailPage() {
   const canHaveChildHierarchy = !['municipality', 'electoral_district'].includes(location?.type);
   const showHierarchyNearTop = children.length > 0 || (secondaryLoading && canHaveChildHierarchy);
   const pageNavItems = [
-    { href: '#location-overview', label: 'Επισκόπηση' },
-    { href: '#location-content', label: 'Συμμετοχή' },
+    { href: '#location-content', label: 'Δραστηριότητα' },
     { href: '#location-roles', label: 'Εκπρόσωποι' },
-    { href: '#location-local-info', label: 'Πληροφορίες' },
+    { href: '#location-local-info', label: 'Για την περιοχή' },
+    { href: '#location-wall', label: 'Συζήτηση' },
   ];
 
   return (
@@ -651,7 +651,7 @@ export default function LocationDetailPage() {
         <LocationBreadcrumb breadcrumb={breadcrumb} homeBreadcrumb={homeBreadcrumb} />
 
         {/* Compact Location Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+        <div id="location-overview" className="bg-white rounded-lg shadow-sm p-6 mb-8 scroll-mt-36">
           {isEditing ? (
             <LocationEditForm
               location={location}
@@ -681,8 +681,6 @@ export default function LocationDetailPage() {
         {!isEditing && (
           <>
             <LocationPageNav items={pageNavItems} />
-
-            <LocationActionSummary polls={activePolls} suggestions={suggestions} news={newsArticles} articles={regularArticles} loading={secondaryLoading} />
 
             {showHierarchyNearTop && (
               <LocationChildrenExplorer
@@ -722,7 +720,7 @@ export default function LocationDetailPage() {
               />
             </div>
 
-            <div id="location-wall" className="mb-8 bg-white rounded-lg shadow-sm p-6">
+            <div id="location-wall" className="mb-8 scroll-mt-36 bg-white rounded-lg shadow-sm p-6">
               <CommentsThread
                 entityType="location"
                 entityId={location.id}

@@ -22,6 +22,7 @@ export default function LocationHeader({ location, imageError, setImageError, ca
     } catch (error) { if (error.name !== 'AbortError') setShareState('Αδυναμία κοινοποίησης'); }
   };
   return (
+    <>
     <div className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <div className="flex items-center gap-4 min-w-0">
         {image && !imageError && <img src={image} alt={name} className="h-16 w-16 rounded-lg object-cover shrink-0" onError={() => setImageError(true)} />}
@@ -40,5 +41,9 @@ export default function LocationHeader({ location, imageError, setImageError, ca
         {shareState && <span role="status" className="text-xs text-gray-500">{shareState}</span>}
       </div>
     </div>
+    {location.description && (
+      <p className="mt-5 max-w-3xl whitespace-pre-wrap break-words text-sm leading-7 text-gray-700">{location.description}</p>
+    )}
+    </>
   );
 }

@@ -66,6 +66,33 @@ export default function CivicQuestionsPage() {
           <p className="mt-3 text-gray-700">{t('list.intro')}</p>
           <p className="mt-2 text-sm text-gray-600">{t('list.advisory')}</p>
         </header>
+        <section aria-labelledby="participation-guide" className="mb-8 rounded-xl border border-blue-100 bg-white p-5 sm:p-6">
+          <h2 id="participation-guide" className="text-xl font-semibold text-gray-900">{t('guide.title')}</h2>
+          <ol className="mt-5 grid gap-5 md:grid-cols-3">
+            {['read', 'participate', 'results'].map((step, index) => (
+              <li key={step} className="flex items-start gap-3">
+                <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-800">{index + 1}</span>
+                <div>
+                  <h3 className="font-semibold text-gray-900">{t(`guide.${step}_title`)}</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-gray-600">{t(`guide.${step}_description`)}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <details className="mt-5 border-t border-gray-200 pt-4">
+            <summary className="cursor-pointer font-medium text-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">{t('guide.faq_title')}</summary>
+            <dl className="mt-4 grid gap-5 text-sm md:grid-cols-2">
+              {['eligibility', 'statuses', 'source', 'visibility'].map((topic) => (
+                <div key={topic}>
+                  <dt className="font-semibold text-gray-900">{t(`guide.${topic}_question`)}</dt>
+                  <dd className="mt-1 leading-relaxed text-gray-600">{t(`guide.${topic}_answer`)}</dd>
+                </div>
+              ))}
+            </dl>
+          </details>
+        </section>
+        <h2 className="text-xl font-semibold text-gray-900">{t('guide.browse_title')}</h2>
+        <p className="mb-4 mt-2 text-sm text-gray-600">{t('guide.browse_description')}</p>
         <div className="flex flex-wrap gap-2 mb-5" aria-label={t('list.quick_filters')}>
           {[
             { label: t('list.all'), selected: !filters.status && !filters.closingSoon && !filters.myArea, values: { status: '', closingSoon: '', myArea: '', sortBy: 'newest' } },

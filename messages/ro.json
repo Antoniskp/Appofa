@@ -2048,7 +2048,8 @@
     "card": {
       "deadline": "Încheierea participării",
       "no_deadline": "Nu a fost stabilit un termen de participare",
-      "published": "Publicat"
+      "published": "Publicat",
+      "read_question": "Citește subiectul și vezi opțiunile de participare"
     },
     "results": {
       "leading": "Leading",
@@ -2127,7 +2128,7 @@
       "empty_description": "Încearcă altă căutare sau elimină filtrele.",
       "create_action": "Create Civic Question",
       "title": "Întrebări civice",
-      "intro": "Informează-te despre deciziile publice, compară argumentele și exprimă-ți opinia.",
+      "intro": "Explorează subiecte publice din Parlament, Comisia Europeană, consilii locale și regionale sau alte surse. Citește subiectul și argumentele disponibile, apoi exprimă-ți poziția pe Appofasi.",
       "advisory": "Participarea este consultativă. Rezultatele reflectă opiniile participanților și nu obligă Parlamentul sau alte autorități.",
       "all": "Toate",
       "open": "Deschise",
@@ -2190,7 +2191,27 @@
       "description": "Update civic question details and settings."
     },
     "participation_count": "{count, plural, one {# participant} few {# participanți} other {# de participanți}}",
-    "vote_count": "{count, plural, one {# vot} few {# voturi} other {# de voturi}}"
+    "vote_count": "{count, plural, one {# vot} few {# voturi} other {# de voturi}}",
+    "guide": {
+      "title": "Cum funcționează?",
+      "read_title": "Înțelege subiectul",
+      "read_description": "Deschide un card pentru a citi descrierea, argumentele disponibile pro și contra și, dacă există, linkul către sursa originală.",
+      "participate_title": "Spune-ți părerea",
+      "participate_description": "Autentifică-te și alege De acord, Împotrivă sau Prezent / Neutru la o întrebare deschisă. Îți poți schimba votul cât timp participarea rămâne deschisă.",
+      "results_title": "Vezi opiniile participanților",
+      "results_description": "Rezultatele arată alegerile celor care au participat pe platformă. Nu reprezintă un sondaj reprezentativ sau un vot oficial al autorității competente.",
+      "faq_title": "Ce trebuie să știu înainte de a participa?",
+      "eligibility_question": "Cine poate vota?",
+      "eligibility_answer": "Trebuie să te autentifici. Unele întrebări permit votul doar utilizatorilor din zona respectivă, pe baza locației din profil. Condițiile de participare apar în fiecare întrebare.",
+      "statuses_question": "Ce înseamnă etichetele de stare?",
+      "statuses_answer": "Deschisă înseamnă că participarea este disponibilă. Se închide curând înseamnă că au rămas cel mult 72 de ore. Întrebările închise sau arhivate nu mai acceptă voturi. Termenul de participare se referă la această platformă.",
+      "source_question": "Este o procedură oficială a Parlamentului sau a consiliului?",
+      "source_answer": "Sursa indică de unde provine subiectul. Participarea aici are loc pe Appofasi și este consultativă. Când este disponibil, stadiul la sursă descrie evoluția în instituția de origine, separat de starea participării de aici.",
+      "visibility_question": "Când pot vedea rezultatele?",
+      "visibility_answer": "În funcție de setările fiecărei întrebări, rezultatele sunt vizibile imediat, după ce votezi sau după termenul-limită.",
+      "browse_title": "Găsește un subiect care te interesează",
+      "browse_description": "Alege Deschise pentru întrebări la care poți participa sau caută un subiect. Folosește filtrele pentru a restrânge lista după sursă, categorie sau locație."
+    }
   },
   "candidates": {
     "page_title": "Candidați",

@@ -2048,7 +2048,8 @@
     "card": {
       "deadline": "Participation closes",
       "no_deadline": "No participation deadline set",
-      "published": "Published"
+      "published": "Published",
+      "read_question": "Read the issue and see participation options"
     },
     "results": {
       "leading": "Leading",
@@ -2127,7 +2128,7 @@
       "empty_description": "Try another search or remove some filters.",
       "create_action": "Create Civic Question",
       "title": "Civic questions",
-      "intro": "Understand public decisions, compare arguments and share your view.",
+      "intro": "Explore public issues from Parliament, the European Commission, municipal and regional councils, or other sources. Read the issue and available arguments, then share your position on Appofasi.",
       "advisory": "Participation is advisory. Results reflect participants and do not bind Parliament or any other authority.",
       "all": "All",
       "open": "Open",
@@ -2190,7 +2191,27 @@
       "description": "Update civic question details and settings."
     },
     "participation_count": "{count, plural, one {# participant} other {# participants}}",
-    "vote_count": "{count, plural, one {# vote} other {# votes}}"
+    "vote_count": "{count, plural, one {# vote} other {# votes}}",
+    "guide": {
+      "title": "How does it work?",
+      "read_title": "Understand the issue",
+      "read_description": "Open a card to read the description, available arguments for and against, and a link to the original source where provided.",
+      "participate_title": "Share your view",
+      "participate_description": "Sign in to an open question and choose Agree, Disagree or Present / Neutral. You can change your vote while participation remains open.",
+      "results_title": "See participants’ views",
+      "results_description": "Results show the choices of people who participated on this platform. They are neither a representative opinion poll nor an official vote by the relevant authority.",
+      "faq_title": "What should I know before participating?",
+      "eligibility_question": "Who can vote?",
+      "eligibility_answer": "You need to sign in. Some questions limit voting to users in the relevant area, based on their profile location. Participation requirements appear within each question.",
+      "statuses_question": "What do the status labels mean?",
+      "statuses_answer": "Open means participation is available. Closing soon means the deadline is within 72 hours. Closed or Archived questions no longer accept votes. The participation deadline applies to this platform.",
+      "source_question": "Is this an official parliamentary or council process?",
+      "source_answer": "The source identifies where the issue comes from. Participation here takes place on Appofasi and is advisory. When provided, the source stage describes progress at the original institution, separately from participation status here.",
+      "visibility_question": "When can I see results?",
+      "visibility_answer": "Depending on each question’s settings, results are visible immediately, after you vote, or after the deadline.",
+      "browse_title": "Find an issue you care about",
+      "browse_description": "Choose Open to find questions accepting participation, or search for a topic. Use the filters to narrow the list by source, category or location."
+    }
   },
   "candidates": {
     "page_title": "Candidates",

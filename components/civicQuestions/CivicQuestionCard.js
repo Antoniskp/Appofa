@@ -39,6 +39,7 @@ export default function CivicQuestionCard({ civicQuestion }) {
         {!deadlineDate && lifecycleStatus === 'open' && <span>{t('card.no_deadline')}</span>}
         <span>{t(civicQuestion.dateAsked ? 'detail.date_asked' : 'card.published')}: {createdAt}</span>
       </div>
+      <p className="mt-4 text-sm font-semibold text-blue-700">{t('card.read_question')} <span aria-hidden="true">→</span></p>
     </Link>
   );
 }
