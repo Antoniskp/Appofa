@@ -313,7 +313,7 @@ export default function HomeHero({ featuredPoll = null, featuredPollLoading = fa
                   className="h-11 w-11 rounded-lg border border-white/25 bg-white/90 p-1 shadow-lg"
                 />
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sand">Appofa</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sand">Appofasi</p>
                   <p className="text-sm text-white/75">Δημόσιος χώρος για καθαρές αποφάσεις</p>
                 </div>
               </div>
