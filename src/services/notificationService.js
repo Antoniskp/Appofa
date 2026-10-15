@@ -344,8 +344,7 @@ async function updateNotificationPreferences(userId, preferences) {
  * @returns {number} count of notifications created
  */
 async function broadcastNotification(payload, targetRole = null) {
-  const where = { claimStatus: null };
-  if (targetRole) where.role = targetRole;
+  const where = broadcastAudienceWhere(targetRole);
 
   const users = await User.findAll({ where, attributes: ['id'] });
   const userIds = users.map(u => u.id);
@@ -376,7 +375,16 @@ async function broadcastNotification(payload, targetRole = null) {
   return userIds.length;
 }
 
+function broadcastAudienceWhere(targetRole) {
+  return { claimStatus: null, ...(targetRole ? { role: targetRole } : {}) };
+}
+
+async function countBroadcastRecipients(targetRole = null) {
+  return User.count({ where: broadcastAudienceWhere(targetRole) });
+}
+
 module.exports = {
+  countBroadcastRecipients,
   createNotification,
   notifyMany,
   notifyArticleApproved,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -8,10 +8,13 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '@/lib/auth-context';
-import { adminSummaryAPI } from '@/lib/api';
+import { useTranslations } from 'next-intl';
+import { useAdminQueues } from '@/hooks/useAdminQueues';
 import { getVisibleAdminNavSections } from './adminNav';
 
 function AdminQueueBadge({ count }) {
+  const t = useTranslations('adminWorkspace');
+  if (count === null) return <span className="ml-auto text-amber-700" title={t('unavailable')}>!</span>;
   if (!count || count < 1) return null;
 
   const label = count > 99 ? '99+' : String(count);
@@ -19,8 +22,8 @@ function AdminQueueBadge({ count }) {
   return (
     <span
       className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-red-100 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-red-700"
-      aria-label={`${count} pending`}
-      title={`${count} pending`}
+      aria-label={t('pendingCount', { count })}
+      title={t('pendingCount', { count })}
     >
       {label}
     </span>
@@ -31,46 +34,25 @@ export default function AdminSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [queueCounts, setQueueCounts] = useState({});
+  const t = useTranslations('adminWorkspace');
+  const { data: queueCounts } = useAdminQueues(user?.role);
   const navSections = getVisibleAdminNavSections(user?.role);
 
-  useEffect(() => {
-    if (!['admin', 'moderator'].includes(user?.role)) {
-      setQueueCounts({});
-      return undefined;
-    }
-
-    let cancelled = false;
-
-    adminSummaryAPI.getQueueCounts()
-      .then((counts) => {
-        if (!cancelled) setQueueCounts(counts || {});
-      })
-      .catch(() => {
-        if (!cancelled) setQueueCounts({});
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.role]);
-
-  const isActive = (href) => {
-    if (href === '/admin') return pathname === '/admin';
-    return pathname === href || pathname.startsWith(href + '/');
-  };
+  const activeHref = navSections.flatMap((section) => section.items)
+    .filter(({ href }) => pathname === href || (href !== '/admin' && pathname.startsWith(href + '/')))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   const navContent = (
-    <nav className="flex flex-col gap-4 p-3" aria-label="Admin navigation">
+    <nav className="flex flex-col gap-4 p-3" aria-label={t('navigation')}>
       {navSections.map((section) => {
         return (
-          <div key={section.label}>
+          <div key={t(`nav.${section.label.replace(/[^a-zA-Z]/g, '')}`)}>
             <div className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-              {section.label}
+              {t(`nav.${section.label.replace(/[^a-zA-Z]/g, '')}`)}
             </div>
             <div className="flex flex-col gap-1">
               {section.items.map((item) => {
-                const active = isActive(item.href);
+                const active = activeHref === item.href;
                 return (
                   <Link
                     key={item.href}
@@ -84,7 +66,7 @@ export default function AdminSidebar() {
                     }`}
                   >
                     <item.icon className={`h-5 w-5 flex-shrink-0 ${active ? 'text-blue-600' : 'text-gray-400'}`} />
-                    <span className="truncate">{item.label}</span>
+                    <span className="truncate">{t(`nav.${item.label.replace(/[^a-zA-Z]/g, '')}`)}</span>
                     <AdminQueueBadge count={queueCounts[item.href]} />
                   </Link>
                 );
@@ -102,7 +84,7 @@ export default function AdminSidebar() {
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
           className="p-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50"
-          aria-label="Toggle admin navigation"
+          aria-label={t('toggleNavigation')} aria-expanded={mobileOpen}
         >
           {mobileOpen ? <XMarkIcon className="h-5 w-5" /> : <Bars3Icon className="h-5 w-5" />}
         </button>
@@ -124,7 +106,7 @@ export default function AdminSidebar() {
       `}>
         <div className="p-4 border-b border-gray-200">
           <Link href="/admin" className="text-lg font-bold text-gray-900" onClick={() => setMobileOpen(false)}>
-            Admin
+            {t('admin')}
           </Link>
         </div>
         {navContent}

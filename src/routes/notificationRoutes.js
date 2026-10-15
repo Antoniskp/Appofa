@@ -18,6 +18,7 @@ router.get('/preferences',  ctrl.getPreferences);
 router.put('/preferences',  csrfProtection, ctrl.updatePreferences);
 
 // Admin broadcast (must be before /:id routes)
+router.get('/broadcast/preview', checkRole('admin'), ctrl.previewBroadcast);
 router.post('/broadcast', csrfProtection, checkRole('admin'), ctrl.adminBroadcast);
 
 router.put('/:id/read',     csrfProtection, ctrl.markAsRead);

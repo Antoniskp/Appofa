@@ -1,5 +1,7 @@
 'use client';
 
+import { useAdminQueryState } from '@/hooks/useAdminQueryState';
+
 import { useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -15,8 +17,8 @@ const STATUS_COLORS = {
 };
 
 function RemovalRequestsContent() {
-  const [statusFilter, setStatusFilter] = useState('');
-  const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useAdminQueryState('status', '');
+  const [page, setPage] = useAdminQueryState('page', 1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [adminNotes, setAdminNotes] = useState('');

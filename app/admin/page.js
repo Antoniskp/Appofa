@@ -9,11 +9,14 @@ import { authAPI, notificationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import Card, { StatsCard } from '@/components/ui/Card';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import AdminQueues from '@/components/admin/AdminQueues';
+import Modal from '@/components/ui/Modal';
 import AdminHeader from '@/components/admin/AdminHeader';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { getVisibleAdminNavItems } from '@/components/admin/adminNav';
 
 function AdminDashboardContent() {
+  const t = useTranslations('adminWorkspace');
   const tAdmin = useTranslations('admin');
   const tCommon = useTranslations('common');
   const { user } = useAuth();
@@ -30,24 +33,40 @@ function AdminDashboardContent() {
   });
 
   // Broadcast state
-  const [broadcastForm, setBroadcastForm] = useState({ title: '', body: '', actionUrl: '', targetRole: '' });
+  const [broadcastForm, setBroadcastForm] = useState({ title: '', body: '', actionUrl: '', targetRole: 'select' });
   const [broadcastLoading, setBroadcastLoading] = useState(false);
   const [broadcastResult, setBroadcastResult] = useState(null); // { success, message }
 
-  const handleBroadcast = async (e) => {
+  const [broadcastPreview, setBroadcastPreview] = useState(null);
+  const previewBroadcast = async (e) => {
     e.preventDefault();
+    if (broadcastForm.targetRole === 'select') return;
+    setBroadcastLoading(true);
+    setBroadcastResult(null);
+    try {
+      const response = await notificationAPI.previewBroadcast(broadcastForm.targetRole);
+      if (!response.success) throw new Error(t('unavailable'));
+      setBroadcastPreview({ ...broadcastForm, count: response.data.count });
+    } catch {
+      setBroadcastResult({ success: false, message: t('previewFailed') });
+    } finally { setBroadcastLoading(false); }
+  };
+  const handleBroadcast = async () => {
+    if (!broadcastPreview || broadcastLoading) return;
     if (!broadcastForm.title.trim()) return;
     setBroadcastLoading(true);
     setBroadcastResult(null);
     try {
       const res = await notificationAPI.broadcast({
-        title: broadcastForm.title,
-        body: broadcastForm.body || undefined,
-        actionUrl: broadcastForm.actionUrl || undefined,
-        targetRole: broadcastForm.targetRole || undefined,
+        title: broadcastPreview.title,
+        body: broadcastPreview.body || undefined,
+        actionUrl: broadcastPreview.actionUrl || undefined,
+        targetRole: broadcastPreview.targetRole || undefined,
       });
+      if (!res.success) throw new Error(tAdmin('broadcast_failed'));
+      setBroadcastPreview(null);
       setBroadcastResult({ success: true, message: res.data?.message || tAdmin('broadcast_sent_count', { count: res.data?.count ?? 0 }) });
-      setBroadcastForm({ title: '', body: '', actionUrl: '', targetRole: '' });
+      setBroadcastForm({ title: '', body: '', actionUrl: '', targetRole: 'select' });
       setTimeout(() => setBroadcastResult(null), 5000);
     } catch (err) {
       setBroadcastResult({ success: false, message: err.message || tAdmin('broadcast_failed') });
@@ -56,13 +75,13 @@ function AdminDashboardContent() {
     }
   };
 
-  useAsyncData(
+  const { loading: statsLoading, error: statsError, refetch: retryStats } = useAsyncData(
     async () => {
       const response = await authAPI.getAdminUsers({ page: 1, limit: 1 });
       if (response.success && response.data?.stats) {
         return response.data.stats;
       }
-      return null;
+      throw new Error(t('unavailable'));
     },
     [],
     {
@@ -91,32 +110,36 @@ function AdminDashboardContent() {
             </p>
           </Card>
 
+          <AdminQueues />
+
           {/* User Statistics Cards — linked to /admin/users */}
+          {statsError && <p role="alert" className="mb-3 text-red-700">{t('unavailable')} <button onClick={retryStats} className="underline">{t('retry')}</button></p>}
+          {statsLoading && <p role="status">{t('loading')}</p>}
           <Link href="/admin/users" className="block mb-8 group">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
               <StatsCard
                 title={tAdmin('total_users')}
-                value={userStats.total}
+                value={statsLoading || statsError ? '—' : userStats.total}
                 icon={UserGroupIcon}
               />
               <StatsCard
                 title={tAdmin('admins')}
-                value={userStats.byRole.admin}
+                value={statsLoading || statsError ? '—' : userStats.byRole.admin}
                 icon={ShieldCheckIcon}
               />
               <StatsCard
                 title={tAdmin('moderators')}
-                value={userStats.byRole.moderator}
+                value={statsLoading || statsError ? '—' : userStats.byRole.moderator}
                 icon={UserIcon}
               />
               <StatsCard
                 title={tAdmin('editors')}
-                value={userStats.byRole.editor}
+                value={statsLoading || statsError ? '—' : userStats.byRole.editor}
                 icon={UserIcon}
               />
               <StatsCard
                 title={tAdmin('viewers')}
-                value={userStats.byRole.viewer}
+                value={statsLoading || statsError ? '—' : userStats.byRole.viewer}
                 icon={UserIcon}
               />
             </div>
@@ -127,7 +150,7 @@ function AdminDashboardContent() {
             <h2 className="text-xl font-semibold mb-4">{tAdmin('quick_actions')}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {quickActions.map((action) => {
-                const label = action.translationKey ? tAdmin(action.translationKey) : action.label;
+                const label = t(`nav.${action.label.replace(/[^a-zA-Z]/g, '')}`);
                 const description = action.descriptionKey ? tAdmin(action.descriptionKey) : action.description;
 
                 return (
@@ -150,7 +173,7 @@ function AdminDashboardContent() {
           {/* Broadcast panel — admin only */}
           {user?.role === 'admin' && (
             <Card className="mt-8" header={<h2 className="text-xl font-semibold flex items-center gap-2">{tAdmin('announcements')}</h2>}>
-              <form onSubmit={handleBroadcast} className="space-y-4 max-w-xl">
+              <form onSubmit={previewBroadcast} className="space-y-4 max-w-xl">
                 <div>
                   <label htmlFor="broadcastTitle" className="block text-sm font-medium text-gray-700 mb-1">
                     {tAdmin('announcement_title')} <span className="text-red-500">*</span>
@@ -205,6 +228,7 @@ function AdminDashboardContent() {
                     onChange={(e) => setBroadcastForm((f) => ({ ...f, targetRole: e.target.value }))}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
+                    <option value="select" disabled>{t('chooseAudience')}</option>
                     <option value="">{tAdmin('audience_all')}</option>
                     <option value="citizen">{tAdmin('audience_citizens')}</option>
                     <option value="candidate">{tAdmin('audience_candidates')}</option>
@@ -215,10 +239,10 @@ function AdminDashboardContent() {
                 <div className="flex items-center gap-3 pt-2">
                   <button
                     type="submit"
-                    disabled={broadcastLoading || !broadcastForm.title.trim()}
+                    disabled={broadcastLoading || !broadcastForm.title.trim() || broadcastForm.targetRole === 'select'}
                     className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
                   >
-                    {broadcastLoading ? tCommon('sending') : tAdmin('send_announcement')}
+                    {broadcastLoading ? t('loading') : t('preview')}
                   </button>
                   {broadcastResult && (
                     <span className={`text-sm ${broadcastResult.success ? 'text-green-600' : 'text-red-600'}`}>
@@ -231,6 +255,18 @@ function AdminDashboardContent() {
           )}
         </div>
       </div>
+      <Modal isOpen={Boolean(broadcastPreview)} onClose={() => !broadcastLoading && setBroadcastPreview(null)} title={t('preview')}>
+        {broadcastPreview && <div className="space-y-4">
+          <p className="font-semibold">{t('recipientCount', { count: broadcastPreview.count })}</p>
+          <p>{tAdmin('audience')}: {broadcastPreview.targetRole || tAdmin('audience_all')}</p>
+          <h3 className="font-bold break-words">{broadcastPreview.title}</h3>
+          <p className="whitespace-pre-wrap break-words">{broadcastPreview.body}</p>
+          {broadcastPreview.actionUrl && <p className="break-all">{tAdmin('action_url')}: {broadcastPreview.actionUrl}</p>}
+          <p className="text-sm text-gray-600">{t('audienceEstimate')}</p>
+          {broadcastResult && !broadcastResult.success && <p role="alert" className="text-red-700">{broadcastResult.message}</p>}
+          <button disabled={broadcastLoading || broadcastPreview.count === 0} onClick={handleBroadcast} className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">{broadcastLoading ? tCommon('sending') : t('confirmSend')}</button>
+        </div>}
+      </Modal>
     </AdminLayout>
   );
 }

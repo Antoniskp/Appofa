@@ -1,5 +1,7 @@
 'use client';
 
+import { useAdminQueryState } from '@/hooks/useAdminQueryState';
+
 import { useState } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -72,8 +74,8 @@ function CandidateOnboardingContext({ userId }) {
 
 function AdminCandidatesContent() {
   const { success: toastSuccess, error: toastError } = useToast();
-  const [status, setStatus] = useState('submitted');
-  const [page, setPage] = useState(1);
+  const [status, setStatus] = useAdminQueryState('status', 'submitted');
+  const [page, setPage] = useAdminQueryState('page', 1);
   const [totalPages, setTotalPages] = useState(1);
   const [selected, setSelected] = useState(null);
   const [processingId, setProcessingId] = useState(null);

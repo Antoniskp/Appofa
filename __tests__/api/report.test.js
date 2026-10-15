@@ -33,6 +33,23 @@ describe('Report API', () => {
 
   const publicCsrfHeaders = () => ({});
 
+  it('supports oldest-first ordering for the pending review queue', async () => {
+    const created = await Report.bulkCreate([
+      { contentType: 'article', contentId: 901, category: 'spam', status: 'pending', createdAt: new Date('2020-01-01') },
+      { contentType: 'article', contentId: 902, category: 'spam', status: 'pending', createdAt: new Date('2010-01-01') },
+    ]);
+    try {
+      const res = await request(app).get('/api/reports?status=pending&order=asc&limit=100')
+        .set('Cookie', [`auth_token=${adminToken}`]);
+      expect(res.status).toBe(200);
+      const dates = res.body.data.reports.map((report) => new Date(report.createdAt).getTime());
+      expect(dates).toEqual([...dates].sort((a, b) => a - b));
+      expect(res.body.data.reports[0].contentId).toBe(902);
+    } finally {
+      await Report.destroy({ where: { id: created.map((report) => report.id) } });
+    }
+  });
+
   beforeAll(async () => {
     await sequelize.authenticate();
     await sequelize.sync({ force: true });

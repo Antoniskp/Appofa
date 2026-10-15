@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useAdminQueryState } from '@/hooks/useAdminQueryState';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { TrashIcon, ShieldCheckIcon, UserGroupIcon, ShieldExclamationIcon, UserIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -24,12 +26,13 @@ function AdminUsersContent() {
   const { addToast } = useToast();
 
   // Filters
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchInput, setSearchInput] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
-  const [verifiedFilter, setVerifiedFilter] = useState('');
-  const [placeholderFilter, setPlaceholderFilter] = useState('false');
-  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useAdminQueryState('search', '');
+  const [searchInput, setSearchInput] = useState(searchQuery);
+  useEffect(() => setSearchInput(searchQuery), [searchQuery]);
+  const [roleFilter, setRoleFilter] = useAdminQueryState('role', '');
+  const [verifiedFilter, setVerifiedFilter] = useAdminQueryState('verified', '');
+  const [placeholderFilter, setPlaceholderFilter] = useAdminQueryState('placeholder', 'false');
+  const [page, setPage] = useAdminQueryState('page', 1);
 
   // Dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

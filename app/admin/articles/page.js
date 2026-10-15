@@ -1,5 +1,7 @@
 'use client';
 
+import { useAdminQueryState } from '@/hooks/useAdminQueryState';
+
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -35,11 +37,11 @@ function AdminArticlesContent() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState(null);
-  const [sortBy, setSortBy] = useState('lastModified'); // 'lastModified' | 'title' | 'createdAt'
-  const [sortOrder, setSortOrder] = useState('desc'); // 'asc' | 'desc'
-  const [statusFilter, setStatusFilter] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useAdminQueryState('sort', 'lastModified'); // 'lastModified' | 'title' | 'createdAt'
+  const [sortOrder, setSortOrder] = useAdminQueryState('order', 'desc'); // 'asc' | 'desc'
+  const [statusFilter, setStatusFilter] = useAdminQueryState('status', '');
+  const [categoryFilter, setCategoryFilter] = useAdminQueryState('category', '');
+  const [page, setPage] = useAdminQueryState('page', 1);
   const [totalPages, setTotalPages] = useState(1);
   const articlesTableRef = useRef(null);
 

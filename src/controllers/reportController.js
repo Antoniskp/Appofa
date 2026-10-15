@@ -104,7 +104,7 @@ const reportController = {
       ],
       limit,
       offset,
-      order: [['createdAt', 'DESC']]
+      order: [['createdAt', req.query.order === 'asc' ? 'ASC' : 'DESC'], ['id', 'ASC']]
     });
 
     return res.status(200).json({

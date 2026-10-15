@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+
 export const metadata = {
   robots: {
     index: false,
@@ -6,5 +8,5 @@ export const metadata = {
 };
 
 export default function AdminLayout({ children }) {
-  return children;
+  return <Suspense fallback={<div className="p-6" role="status">...</div>}>{children}</Suspense>;
 }

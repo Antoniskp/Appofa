@@ -1,4 +1,18 @@
 const notificationService = require('../services/notificationService');
+const BROADCAST_ROLES = ['admin', 'moderator', 'candidate', 'citizen', 'editor', 'viewer'];
+
+exports.previewBroadcast = async (req, res) => {
+  const { targetRole } = req.query;
+  if (targetRole && !BROADCAST_ROLES.includes(targetRole)) {
+    return res.status(400).json({ success: false, message: 'Invalid audience.' });
+  }
+  try {
+    const count = await notificationService.countBroadcastRecipients(targetRole || null);
+    return res.json({ success: true, data: { count } });
+  } catch {
+    return res.status(500).json({ success: false, message: 'Unable to preview audience.' });
+  }
+};
 
 exports.getNotifications = async (req, res) => {
   try {
@@ -98,7 +112,7 @@ exports.adminBroadcast = async (req, res) => {
     if (title.length > 200) {
       return res.status(400).json({ success: false, message: 'title must be 200 chars or fewer.' });
     }
-    const VALID_ROLES = ['admin', 'moderator', 'candidate', 'citizen', 'editor', 'viewer'];
+    const VALID_ROLES = BROADCAST_ROLES;
     if (targetRole && !VALID_ROLES.includes(targetRole)) {
       return res.status(400).json({ success: false, message: `targetRole must be one of: ${VALID_ROLES.join(', ')}.` });
     }

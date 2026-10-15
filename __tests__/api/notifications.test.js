@@ -59,6 +59,25 @@ describe('Notification System Tests', () => {
     await sequelize.close();
   });
 
+  describe('broadcast audience preview', () => {
+    it('requires an administrator and never creates notifications', async () => {
+      const denied = await request(app).get('/api/notifications/broadcast/preview')
+        .set('Cookie', [`auth_token=${userAToken}`]);
+      expect(denied.status).toBe(403);
+      await User.update({ role: 'admin' }, { where: { id: userAId } });
+      try {
+        const before = await Notification.count();
+        const res = await request(app).get('/api/notifications/broadcast/preview?targetRole=admin')
+          .set('Cookie', [`auth_token=${userAToken}`]);
+        expect(res.status).toBe(200);
+        expect(res.body.data.count).toBe(await User.count({ where: { claimStatus: null, role: 'admin' } }));
+        expect(await Notification.count()).toBe(before);
+      } finally {
+        await User.update({ role: 'viewer' }, { where: { id: userAId } });
+      }
+    });
+  });
+
   // ── GET /api/notifications ───────────────────────────────────────────────
 
   describe('GET /api/notifications', () => {
