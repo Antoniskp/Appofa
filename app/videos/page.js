@@ -10,7 +10,6 @@ import articleCategories from '@/config/articleCategories.json';
 import VideoThumbnailCard from '@/components/articles/VideoThumbnailCard';
 import EmptyState from '@/components/ui/EmptyState';
 import SearchInput from '@/components/ui/SearchInput';
-import CategoryPills from '@/components/ui/CategoryPills';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import { useAuth } from '@/lib/auth-context';
 
@@ -30,7 +29,6 @@ function VideoGridSkeleton() {
 }
 
 function VideosContent() {
-  const tCommon = useTranslations('common');
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get('search') || '';
@@ -38,13 +36,15 @@ function VideosContent() {
   // Filter state
   const [search, setSearch] = useState(initialSearch);
   const [category, setCategory] = useState('');
+  const [videoKind, setVideoKind] = useState('');
+  const tVideos = useTranslations('videos');
   const [locationId, setLocationId] = useState(null);
   const [categoryCounts, setCategoryCounts] = useState({});
   const [countsLoaded, setCountsLoaded] = useState(false);
 
   // Feed state
   const [videos, setVideos] = useState([]);
-  const [page, setPage] = useState(1);
+  const pageRef = useRef(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -54,16 +54,18 @@ function VideosContent() {
   const sentinelRef = useRef(null);
   // Track in-flight request to avoid duplicate fetches
   const fetchingRef = useRef(false);
+  const requestRef = useRef(0);
   // Track current filters so we can reset feed when they change
-  const filtersRef = useRef({ search, category, locationId });
+  const filtersRef = useRef({ search, category, locationId, videoKind });
 
   const videoCategoryOptions = (articleCategories.articleTypes?.video?.categories ?? []).map(
     (cat) => (typeof cat === 'string' ? { value: cat, label: cat } : cat)
   );
 
   /** Fetch one page of videos and append (or replace on reset) */
-  const fetchPage = useCallback(async (pageNum, currentSearch, currentCategory, currentLocationId, replace = false) => {
-    if (fetchingRef.current) return;
+  const fetchPage = useCallback(async (pageNum, currentSearch, currentCategory, currentLocationId, currentVideoKind, replace = false) => {
+    if (fetchingRef.current && !replace) return;
+    const requestId = ++requestRef.current;
     fetchingRef.current = true;
 
     if (replace) {
@@ -80,11 +82,13 @@ function VideosContent() {
         type: 'video',
         status: 'published',
       };
+      if (currentVideoKind) params.videoKind = currentVideoKind;
       if (currentSearch) params.search = currentSearch;
       if (currentCategory) params.category = currentCategory;
       if (currentLocationId) params.locationId = currentLocationId;
 
       const response = await articleAPI.getAll(params);
+      if (requestId !== requestRef.current) return;
       const articles = response?.data?.articles || [];
       const totalPages = response?.data?.pagination?.totalPages || 1;
 
@@ -93,32 +97,40 @@ function VideosContent() {
       } else {
         setVideos((prev) => [...prev, ...articles]);
       }
+      pageRef.current = pageNum;
       setHasMore(pageNum < totalPages);
     } catch (err) {
+      if (requestId !== requestRef.current) return;
       setError(err?.message || 'Σφάλμα κατά τη φόρτωση βίντεο. Δοκιμάστε ξανά.');
     } finally {
-      setLoading(false);
-      setInitialLoading(false);
-      fetchingRef.current = false;
+      if (requestId === requestRef.current) {
+        setLoading(false);
+        setInitialLoading(false);
+        fetchingRef.current = false;
+      }
     }
   }, []);
 
   /** Initial load — runs when search or category filter changes */
   useEffect(() => {
-    filtersRef.current = { search, category, locationId };
-    setPage(1);
+    filtersRef.current = { search, category, locationId, videoKind };
+    pageRef.current = 1;
     setHasMore(true);
     // fetchPage is a stable useCallback — safe to include in deps
-    fetchPage(1, search, category, locationId, true);
-  }, [search, category, locationId, fetchPage]);
+    fetchPage(1, search, category, locationId, videoKind, true);
+  }, [search, category, locationId, videoKind, fetchPage]);
 
-  /** Fetch category counts once on mount */
+  /** Refresh topic counts for the selected video kind. */
   useEffect(() => {
-    articleAPI.getCategoryCounts({ type: 'video', status: 'published' })
-      .then((res) => { if (res?.success) setCategoryCounts(res.data.counts); })
+    let active = true;
+    setCountsLoaded(false);
+    setCategoryCounts({});
+    articleAPI.getCategoryCounts({ type: 'video', status: 'published', videoKind })
+      .then((res) => { if (active && res?.success) setCategoryCounts(res.data.counts); })
       .catch((err) => console.error('Failed to fetch video category counts:', err))
-      .finally(() => setCountsLoaded(true));
-  }, []);
+      .finally(() => { if (active) setCountsLoaded(true); });
+    return () => { active = false; };
+  }, [videoKind]);
 
   /** Load next page when sentinel enters viewport */
   useEffect(() => {
@@ -128,11 +140,7 @@ function VideosContent() {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && hasMore && !fetchingRef.current) {
-          setPage((prev) => {
-            const next = prev + 1;
-            fetchPage(next, filtersRef.current.search, filtersRef.current.category, filtersRef.current.locationId, false);
-            return next;
-          });
+          fetchPage(pageRef.current + 1, filtersRef.current.search, filtersRef.current.category, filtersRef.current.locationId, filtersRef.current.videoKind, false);
         }
       },
       { rootMargin: '300px 0px', threshold: 0 }
@@ -142,11 +150,23 @@ function VideosContent() {
   }, [hasMore, fetchPage]);
 
   const handleSearchChange = (e) => setSearch(e.target.value);
-  const handleCategorySelect = (cat) => setCategory(cat);
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
+        <header className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">{tVideos('title')}</h1>
+          <p className="mt-2 text-gray-600">{tVideos('subtitle')}</p>
+        </header>
+        <div className="mb-6 flex flex-wrap gap-2" aria-label={tVideos('kind_label')}>
+          {['', 'educational', 'news'].map((kind) => (
+            <button key={kind} type="button" aria-pressed={videoKind === kind}
+              onClick={() => { setVideoKind(kind); setCategory(''); }}
+              className={`rounded-xl border px-5 py-3 text-sm font-semibold transition-colors ${videoKind === kind ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-200 bg-white text-gray-700 hover:bg-blue-50'}`}>
+              {tVideos(kind || 'all')}
+            </button>
+          ))}
+        </div>
         {/* Location Breadcrumb */}
         <LocationFilterBreadcrumb
           value={locationId}
@@ -173,14 +193,18 @@ function VideosContent() {
               </Link>
             )}
           </div>
-          <CategoryPills
-            categories={videoCategoryOptions}
-            selected={category}
-            onSelect={handleCategorySelect}
-            counts={categoryCounts}
-            countsLoaded={countsLoaded}
-            allLabel={tCommon('all_categories')}
-          />
+          <div>
+            <p className="mb-2 text-sm font-semibold text-gray-700">{tVideos('topics')}</p>
+            <div className="flex flex-wrap gap-2">
+              {[{ value: '', label: tVideos('all_topics') }, ...videoCategoryOptions].map((topic) => (
+                <button key={topic.value} type="button" aria-pressed={category === topic.value}
+                  onClick={() => setCategory(topic.value)}
+                  className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${category === topic.value ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 bg-white text-gray-600 hover:border-blue-300'}`}>
+                  {topic.label}{countsLoaded && categoryCounts[topic.value] > 0 && <span className="ml-1 text-xs opacity-70">({categoryCounts[topic.value]})</span>}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Initial loading skeletons */}
@@ -205,7 +229,7 @@ function VideosContent() {
               text: 'Δοκιμάστε Ξανά',
               onClick: () => {
                 setError(null);
-                fetchPage(1, search, category, locationId, true);
+                fetchPage(1, search, category, locationId, videoKind, true);
               },
             }}
           />

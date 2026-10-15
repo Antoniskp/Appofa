@@ -171,7 +171,7 @@
     "live_cameras_badge": "Imagine live",
     "camera_badge": "Cameră",
     "map_title": "Harta camerelor",
-    "map_subtitle": "Filtrează camere, videoclipuri live și pinuri TikTok pe aceeași hartă.",
+    "map_subtitle": "Găsește camerele pe hartă și deschide imaginile lor live.",
     "map_load_error_title": "Harta nu este disponibilă",
     "list_title": "Camere live",
     "camera_results_count": "{shown} din {total} camere",
@@ -2772,5 +2772,16 @@
     "post_error": "Comentariul nu a putut fi publicat.",
     "posting": "Se publică...",
     "post": "Publică"
+  },
+  "videos": {
+    "title": "Videoclipuri",
+    "subtitle": "Explorează videoclipuri educaționale și știri după subiect.",
+    "all": "Toate videoclipurile",
+    "educational": "Educaționale",
+    "news": "Știri",
+    "kind_label": "Tipul videoclipului",
+    "choose_kind": "Alege un tip",
+    "topics": "Subiecte",
+    "all_topics": "Toate subiectele"
   }
 }

@@ -171,7 +171,7 @@
     "live_cameras_badge": "Ζωντανή εικόνα",
     "camera_badge": "Κάμερα",
     "map_title": "Χάρτης καμερών",
-    "map_subtitle": "Φιλτράρεις κάμερες, live videos και TikTok pins πάνω στον ίδιο χάρτη.",
+    "map_subtitle": "Εντοπίστε τις κάμερες στον χάρτη και ανοίξτε τη ζωντανή εικόνα τους.",
     "map_load_error_title": "Ο χάρτης δεν είναι διαθέσιμος",
     "list_title": "Live κάμερες",
     "camera_results_count": "{shown} από {total} κάμερες",
@@ -2890,5 +2890,16 @@
       "inappropriate_content": "Ακατάλληλο περιεχόμενο",
       "other": "Άλλο"
     }
+  },
+  "videos": {
+    "title": "Βίντεο",
+    "subtitle": "Εξερευνήστε εκπαιδευτικά βίντεο και ειδήσεις ανά θέμα.",
+    "all": "Όλα τα βίντεο",
+    "educational": "Εκπαιδευτικά",
+    "news": "Ειδήσεις",
+    "kind_label": "Είδος βίντεο",
+    "choose_kind": "Επιλέξτε είδος",
+    "topics": "Θεματολογία",
+    "all_topics": "Όλα τα θέματα"
   }
 }

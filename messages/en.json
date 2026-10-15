@@ -171,7 +171,7 @@
     "live_cameras_badge": "Live view",
     "camera_badge": "Camera",
     "map_title": "Camera map",
-    "map_subtitle": "Filter cameras, live videos, and TikTok pins on the same map.",
+    "map_subtitle": "Find cameras on the map and open their live views.",
     "map_load_error_title": "Map is unavailable",
     "list_title": "Live cameras",
     "camera_results_count": "{shown} of {total} cameras",
@@ -2890,5 +2890,16 @@
       "inappropriate_content": "Inappropriate content",
       "other": "Other"
     }
+  },
+  "videos": {
+    "title": "Videos",
+    "subtitle": "Explore educational videos and news by topic.",
+    "all": "All videos",
+    "educational": "Educational",
+    "news": "News",
+    "kind_label": "Video kind",
+    "choose_kind": "Choose a kind",
+    "topics": "Topics",
+    "all_topics": "All topics"
   }
 }

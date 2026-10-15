@@ -29,6 +29,8 @@ export default function VideoPostForm() {
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
   const [category, setCategory] = useState('');
+  const [videoKind, setVideoKind] = useState('');
+  const tVideos = useTranslations('videos');
   const [linkedLocationId, setLinkedLocationId] = useState(null);
   const [previewData, setPreviewData] = useState(null);
 
@@ -102,6 +104,7 @@ export default function VideoPostForm() {
         sourceUrl: previewData.url,
         sourceProvider: previewData.provider,
         sourceMeta: {
+          videoKind,
           title: previewData.title,
           authorName: previewData.authorName,
           thumbnailUrl: previewData.thumbnailUrl,
@@ -209,6 +212,16 @@ export default function VideoPostForm() {
           placeholder={tArticles('video_description_placeholder')}
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
         />
+      </div>
+
+      <div>
+        <label htmlFor="video-kind" className="block text-sm font-medium text-gray-700 mb-1">{tVideos('kind_label')}</label>
+        <select id="video-kind" value={videoKind} onChange={(e) => setVideoKind(e.target.value)} required
+          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+          <option value="">{tVideos('choose_kind')}</option>
+          <option value="educational">{tVideos('educational')}</option>
+          <option value="news">{tVideos('news')}</option>
+        </select>
       </div>
 
       {/* 4 ── Category ───────────────────────────────────────────── */}

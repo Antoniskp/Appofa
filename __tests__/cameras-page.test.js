@@ -375,7 +375,7 @@ describe('CamerasPageClient', () => {
     );
   });
 
-  test('renders video pins as colored map markers and opens the source video', async () => {
+  test('shows only cameras even when video pins exist', async () => {
     mockPageData(
       [
         {
@@ -409,25 +409,12 @@ describe('CamerasPageClient', () => {
       root.render(React.createElement(CamerasPageClient));
     });
 
-    expect(container.textContent).toContain('Harbour TikTok update');
-    expect(container.textContent).toContain('@creator');
+    expect(container.textContent).not.toContain('Harbour TikTok update');
+    const mapProps = baseMapRenderSpy.mock.calls.at(-1)[0];
+    expect(mapProps.markers.map((marker) => marker.id)).toEqual(['1:0']);
+    expect(useAsyncData).toHaveBeenCalledTimes(1);
+    expect(videoPinAPI.getAll).not.toHaveBeenCalled();
 
-    const mapProps = baseMapRenderSpy.mock.calls[baseMapRenderSpy.mock.calls.length - 1][0];
-    expect(mapProps.markers).toHaveLength(2);
-    const videoMarker = mapProps.markers.find((marker) => marker.id === 'video-pin:12');
-    expect(videoMarker).toBeDefined();
-    expect(videoMarker.iconColor).toBe('#2563eb');
-
-    await act(async () => {
-      const marker = container.querySelector('[data-testid="marker-video-pin:12"]');
-      marker.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    });
-
-    expect(windowOpenSpy).toHaveBeenCalledWith(
-      'https://www.tiktok.com/@creator/video/123',
-      '_blank',
-      'noopener,noreferrer'
-    );
   });
 
   test('hover on camera card does not change the bounds prop (avoids map zoom reset)', async () => {

@@ -5,37 +5,21 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import {
   ArrowTopRightOnSquareIcon,
-  ClockIcon,
   FunnelIcon,
   MagnifyingGlassIcon,
   MapPinIcon,
-  PlusIcon,
   SignalIcon,
-  VideoCameraIcon,
 } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
-import { locationSectionAPI, videoPinAPI } from '@/lib/api';
+import { locationSectionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import EmptyState from '@/components/ui/EmptyState';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
-import Modal from '@/components/ui/Modal';
-import Button from '@/components/ui/Button';
-import VideoEmbedField from '@/components/articles/VideoEmbedField';
-import {
-  VIDEO_PIN_CATEGORY_STYLES,
-  buildVideoPinMarkers,
-  getVideoPinCategoryStyle,
-  getVideoPinWatchUrl,
-} from '@/lib/utils/videoPinMarkers';
-
 const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false });
-const LocationPickerMap = dynamic(() => import('@/components/map/LocationPickerMap'), { ssr: false });
 
 const GREECE_CENTER = [38.5, 23.8];
 const GREECE_ZOOM = 6;
-const VIDEO_PIN_CATEGORIES = Object.keys(VIDEO_PIN_CATEGORY_STYLES);
-const LIVE_EXPIRY_OPTIONS = [2, 6, 24, 72];
 const CAMERA_STATUS_FILTERS = ['all', 'working', 'unavailable'];
 
 function isValidCoord(value, min, max) {
@@ -333,428 +317,6 @@ function CameraLocationGroup({
   );
 }
 
-function getVideoPinTitle(pin) {
-  return cleanDisplayText(pin?.title || pin?.sourceMeta?.title, 'Video');
-}
-
-function getVideoPinCreator(pin) {
-  return pin?.creatorHandle || pin?.creatorName || '';
-}
-
-function getVideoPinLocationLabel(pin) {
-  return getLocationLabel(pin?.location);
-}
-
-function getTranslatedCategoryLabel(category, t) {
-  const key = `video_category_${String(category || 'other').replace(/-/g, '_')}`;
-  const translated = t(key);
-  return translated === key ? getVideoPinCategoryStyle(category).label : translated;
-}
-
-function getTranslatedContentTypeLabel(contentType, t) {
-  return contentType === 'live' ? t('content_type_live') : t('content_type_viral');
-}
-
-function getVideoPinSourceLabel(pin, t) {
-  const source = String(pin?.canonicalUrl || pin?.sourceUrl || '').toLowerCase();
-  if (source.includes('tiktok.com')) return t('source_tiktok');
-  if (source.includes('youtube.com') || source.includes('youtu.be')) return t('source_youtube');
-  return t('source_video');
-}
-
-function formatExpiry(expiresAt) {
-  if (!expiresAt) return '';
-  try {
-    return new Date(expiresAt).toLocaleString();
-  } catch {
-    return '';
-  }
-}
-
-function LayerToggle({ active, onClick, children }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={`inline-flex h-9 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-colors ${active ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function VideoPinMedia({ pin }) {
-  const [failed, setFailed] = useState(false);
-
-  if (pin.thumbnailUrl && !failed) {
-    return (
-      <img
-        src={pin.thumbnailUrl}
-        alt=""
-        className="h-36 w-full bg-slate-900 object-cover"
-        loading="lazy"
-        onError={() => setFailed(true)}
-      />
-    );
-  }
-
-  return null;
-}
-
-function VideoPinCard({ pin, t, isHighlighted, onHoverChange }) {
-  const markerId = `video-pin:${pin.id}`;
-  const safeWatchUrl = getVideoPinWatchUrl(pin);
-  const title = getVideoPinTitle(pin);
-  const creator = getVideoPinCreator(pin);
-  const locationLabel = getVideoPinLocationLabel(pin);
-  const categoryStyle = getVideoPinCategoryStyle(pin.category);
-  const expiry = pin.contentType === 'live' ? formatExpiry(pin.expiresAt) : '';
-  const sourceLabel = getVideoPinSourceLabel(pin, t);
-
-  return (
-    <article
-      className={`overflow-hidden rounded-lg border bg-white shadow-sm transition ${isHighlighted ? 'border-blue-300 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300'}`}
-      onMouseEnter={() => onHoverChange(markerId)}
-      onMouseLeave={() => onHoverChange(null)}
-    >
-      <VideoPinMedia pin={pin} />
-      <div className="space-y-3 p-3">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="inline-flex items-center rounded-full bg-slate-900 px-2 py-0.5 text-xs font-semibold text-white">
-            {getTranslatedContentTypeLabel(pin.contentType, t)}
-          </span>
-          <span
-            className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold text-white"
-            style={{ backgroundColor: categoryStyle.color }}
-          >
-            {getTranslatedCategoryLabel(pin.category, t)}
-          </span>
-          <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-700">
-            {sourceLabel}
-          </span>
-        </div>
-
-        <div>
-          <h3 className="line-clamp-2 text-sm font-semibold leading-5 text-gray-900">{title}</h3>
-          {(creator || locationLabel) && (
-            <p className="mt-1 truncate text-xs text-gray-500">
-              {[creator, locationLabel].filter(Boolean).join(' - ')}
-            </p>
-          )}
-        </div>
-
-        {expiry && (
-          <p className="inline-flex items-center gap-1.5 text-xs text-amber-700">
-            <ClockIcon className="h-4 w-4" />
-            {t('expires_at', { time: expiry })}
-          </p>
-        )}
-
-        {safeWatchUrl && (
-          <a
-            href={safeWatchUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900"
-          >
-            <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-            {pin.contentType === 'live' ? t('open_live_video') : t('open_tiktok_video')}
-          </a>
-        )}
-      </div>
-    </article>
-  );
-}
-
-function VideoPinSection({
-  title,
-  subtitle,
-  pins,
-  loading,
-  error,
-  emptyTitle,
-  emptyDescription,
-  onRetry,
-  t,
-  highlightedMarkerId,
-  onHoverChange,
-}) {
-  return (
-    <section className="space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-        <p className="mt-1 text-sm leading-6 text-gray-600">{subtitle}</p>
-      </div>
-
-      {loading ? (
-        <SkeletonLoader type="card" count={2} variant="grid" />
-      ) : error ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-          <h3 className="text-sm font-semibold text-red-800">{t('video_load_error_title')}</h3>
-          <p className="mt-1 text-sm text-red-700">{error}</p>
-          <button
-            type="button"
-            onClick={onRetry}
-            className="mt-3 text-sm font-semibold text-red-800 hover:text-red-950"
-          >
-            {t('retry')}
-          </button>
-        </div>
-      ) : pins.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600">
-          <h3 className="font-semibold text-gray-900">{emptyTitle}</h3>
-          <p className="mt-1 leading-6">{emptyDescription}</p>
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {pins.map((pin) => (
-            <VideoPinCard
-              key={pin.id}
-              pin={pin}
-              t={t}
-              isHighlighted={highlightedMarkerId === `video-pin:${pin.id}`}
-              onHoverChange={onHoverChange}
-            />
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function VideoPinSubmissionModal({ isOpen, onClose, onSubmitted, t }) {
-  const [form, setForm] = useState({
-    sourceUrl: '',
-    title: '',
-    contentType: 'viral',
-    category: 'local-news',
-    expiresInHours: 24,
-    lat: '',
-    lng: '',
-  });
-  const [isTitleDirty, setIsTitleDirty] = useState(false);
-  const [submitError, setSubmitError] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const hasValidCoords = isValidCoord(form.lat, -90, 90) && isValidCoord(form.lng, -180, 180);
-  const canSubmit = Boolean(form.sourceUrl) && hasValidCoords && !isSubmitting;
-
-  function resetForm() {
-    setForm({
-      sourceUrl: '',
-      title: '',
-      contentType: 'viral',
-      category: 'local-news',
-      expiresInHours: 24,
-      lat: '',
-      lng: '',
-    });
-    setIsTitleDirty(false);
-    setSubmitError(null);
-  }
-
-  function handleClose() {
-    if (isSubmitting) return;
-    resetForm();
-    onClose();
-  }
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    if (!canSubmit) {
-      setSubmitError(t('video_form_missing_fields'));
-      return;
-    }
-
-    setIsSubmitting(true);
-    setSubmitError(null);
-
-    try {
-      const response = await videoPinAPI.create({
-        sourceUrl: form.sourceUrl,
-        title: form.title || undefined,
-        contentType: form.contentType,
-        category: form.category,
-        lat: Number(form.lat),
-        lng: Number(form.lng),
-        expiresInHours: form.contentType === 'live' ? Number(form.expiresInHours) : undefined,
-      });
-
-      if (!response?.success) {
-        throw new Error(response?.message || t('submit_error'));
-      }
-
-      resetForm();
-      await onSubmitted?.(response.data?.videoPin);
-      onClose();
-    } catch (err) {
-      setSubmitError(err?.message || t('submit_error'));
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title={t('video_submit_title')}
-      size="xl"
-      footer={(
-        <>
-          <Button variant="secondary" onClick={handleClose} disabled={isSubmitting}>
-            {t('cancel')}
-          </Button>
-          <Button
-            type="submit"
-            form="video-pin-submission-form"
-            loading={isSubmitting}
-            disabled={!canSubmit}
-            icon={<PlusIcon className="h-4 w-4" />}
-          >
-            {t('submit_video_pin')}
-          </Button>
-        </>
-      )}
-    >
-      <form id="video-pin-submission-form" className="space-y-5" onSubmit={handleSubmit}>
-        <p className="text-sm text-gray-600">{t('video_submit_description')}</p>
-
-        <VideoEmbedField
-          value={form.sourceUrl}
-          onChange={(preview) => {
-            setForm((current) => ({
-              ...current,
-              sourceUrl: preview?.url || '',
-            }));
-          }}
-          onTitleSuggest={(title) => {
-            if (isTitleDirty) return;
-            setForm((current) => ({ ...current, title }));
-          }}
-          isTitleDirty={isTitleDirty}
-        />
-
-        <div>
-          <label htmlFor="video-pin-title" className="block text-sm font-medium text-gray-700">
-            {t('video_title')}
-          </label>
-          <input
-            id="video-pin-title"
-            type="text"
-            value={form.title}
-            onChange={(event) => {
-              setIsTitleDirty(true);
-              setForm((current) => ({ ...current, title: event.target.value }));
-            }}
-            maxLength={200}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div>
-            <label htmlFor="video-pin-type" className="block text-sm font-medium text-gray-700">
-              {t('content_type')}
-            </label>
-            <select
-              id="video-pin-type"
-              value={form.contentType}
-              onChange={(event) => setForm((current) => ({ ...current, contentType: event.target.value }))}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="viral">{t('content_type_viral')}</option>
-              <option value="live">{t('content_type_live')}</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="video-pin-category" className="block text-sm font-medium text-gray-700">
-              {t('category')}
-            </label>
-            <select
-              id="video-pin-category"
-              value={form.category}
-              onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              {VIDEO_PIN_CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {getTranslatedCategoryLabel(category, t)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="video-pin-expiry" className="block text-sm font-medium text-gray-700">
-              {t('expires_in')}
-            </label>
-            <select
-              id="video-pin-expiry"
-              value={form.expiresInHours}
-              onChange={(event) => setForm((current) => ({ ...current, expiresInHours: Number(event.target.value) }))}
-              disabled={form.contentType !== 'live'}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm disabled:bg-gray-100 disabled:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              {LIVE_EXPIRY_OPTIONS.map((hours) => (
-                <option key={hours} value={hours}>
-                  {t(`expires_${hours}`)}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-sm font-semibold text-gray-900">{t('map_pick_title')}</h3>
-          <div className="mt-2 overflow-hidden rounded-lg border border-gray-200">
-            <LocationPickerMap
-              lat={form.lat}
-              lng={form.lng}
-              onChange={({ lat, lng }) => setForm((current) => ({
-                ...current,
-                lat: Number(lat).toFixed(6),
-                lng: Number(lng).toFixed(6),
-              }))}
-              className="h-72 w-full"
-            />
-          </div>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <label className="block text-sm font-medium text-gray-700">
-              {t('lat')}
-              <input
-                type="number"
-                step="0.000001"
-                value={form.lat}
-                onChange={(event) => setForm((current) => ({ ...current, lat: event.target.value }))}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </label>
-            <label className="block text-sm font-medium text-gray-700">
-              {t('lng')}
-              <input
-                type="number"
-                step="0.000001"
-                value={form.lng}
-                onChange={(event) => setForm((current) => ({ ...current, lng: event.target.value }))}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </label>
-          </div>
-        </div>
-
-        {submitError && (
-          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
-            {submitError}
-          </p>
-        )}
-      </form>
-    </Modal>
-  );
-}
-
 export default function CamerasPageClient() {
   const t = useTranslations('cameras');
   const { user } = useAuth();
@@ -763,11 +325,8 @@ export default function CamerasPageClient() {
   const [statusOverrides, setStatusOverrides] = useState({});
   const [updatingStatusIds, setUpdatingStatusIds] = useState(() => new Set());
   const [statusError, setStatusError] = useState(null);
-  const [visibleLayers, setVisibleLayers] = useState({ cameras: true, live: true, viral: true });
   const [cameraSearch, setCameraSearch] = useState('');
   const [cameraStatusFilter, setCameraStatusFilter] = useState('all');
-  const [isSubmissionOpen, setIsSubmissionOpen] = useState(false);
-  const [submissionNotice, setSubmissionNotice] = useState(null);
   const {
     data: cameras,
     loading,
@@ -784,25 +343,6 @@ export default function CamerasPageClient() {
     [],
     { initialData: [] }
   );
-  const {
-    data: videoPins,
-    loading: videoPinsLoading,
-    error: videoPinsError,
-    refetch: refetchVideoPins,
-  } = useAsyncData(
-    async () => {
-      const response = await videoPinAPI.getAll({
-        contentType: 'all',
-      });
-      if (!response?.success) {
-        throw new Error(response?.message || t('video_load_error_description'));
-      }
-      return response.data?.videoPins || [];
-    },
-    ['videoPins'],
-    { initialData: [] }
-  );
-
   const allCameras = useMemo(
     () => (cameras || []).map((camera) => (
       Object.prototype.hasOwnProperty.call(statusOverrides, camera.id)
@@ -833,51 +373,23 @@ export default function CamerasPageClient() {
     () => groupCamerasByLocation(filteredCameras, t),
     [filteredCameras, t]
   );
-  const allVideoPins = useMemo(() => videoPins || [], [videoPins]);
-  const liveVideoPins = useMemo(
-    () => allVideoPins.filter((pin) => pin.contentType === 'live'),
-    [allVideoPins]
-  );
-  const viralVideoPins = useMemo(
-    () => allVideoPins.filter((pin) => pin.contentType !== 'live'),
-    [allVideoPins]
-  );
-  const visibleCameras = useMemo(
-    () => (visibleLayers.cameras ? filteredCameras : []),
-    [filteredCameras, visibleLayers.cameras]
-  );
-  const visibleVideoPins = useMemo(
-    () => allVideoPins.filter((pin) => visibleLayers[pin.contentType] !== false),
-    [allVideoPins, visibleLayers]
-  );
-
   const highlightedMarkerId = hoveredCardId || hoveredMarkerId || null;
   const cameraMarkers = useMemo(
-    () => buildCameraMarkers(visibleCameras, highlightedMarkerId),
-    [visibleCameras, highlightedMarkerId]
+    () => buildCameraMarkers(filteredCameras, highlightedMarkerId),
+    [filteredCameras, highlightedMarkerId]
   );
-  const videoMarkers = useMemo(
-    () => buildVideoPinMarkers(visibleVideoPins, highlightedMarkerId),
-    [visibleVideoPins, highlightedMarkerId]
-  );
-  const markers = useMemo(
-    () => [...cameraMarkers, ...videoMarkers],
-    [cameraMarkers, videoMarkers]
-  );
+  const markers = cameraMarkers;
   // Stable bounds and center: derived from camera coordinates only so that
   // BaseMap.fitBounds is NOT re-triggered when hover/focus state changes (which only
   // affect marker icon variant, not the viewport).  fitBounds fires only when the
   // marker coordinate data actually changes.
   const mapPoints = useMemo(
     () => [
-      ...visibleCameras
+      ...filteredCameras
         .filter(hasMapLocation)
         .map((c) => ({ lat: Number(c.mapLocation.lat), lng: Number(c.mapLocation.lng) })),
-      ...visibleVideoPins
-        .filter((pin) => isValidCoord(pin.lat, -90, 90) && isValidCoord(pin.lng, -180, 180))
-        .map((pin) => ({ lat: Number(pin.lat), lng: Number(pin.lng) })),
     ],
-    [visibleCameras, visibleVideoPins]
+    [filteredCameras]
   );
   const bounds = useMemo(() => {
     return getMapBounds(mapPoints);
@@ -890,16 +402,6 @@ export default function CamerasPageClient() {
   const mappedCount = allCameras.filter(hasMapLocation).length;
   const unavailableCount = allCameras.filter((camera) => !isCameraWorking(camera)).length;
   const workingCount = allCameras.length - unavailableCount;
-  const liveVideoCount = liveVideoPins.length;
-  const viralVideoCount = viralVideoPins.length;
-
-  function handleLayerToggle(layer) {
-    setVisibleLayers((current) => ({
-      ...current,
-      [layer]: !current[layer],
-    }));
-  }
-
   function handleFocusCameraOnMap(cameraId) {
     setHoveredCardId(cameraId);
     setHoveredMarkerId(cameraId);
@@ -909,26 +411,11 @@ export default function CamerasPageClient() {
   }
 
   function handleMarkerClick(markerId) {
-    if (String(markerId).startsWith('video-pin:')) {
-      const pinId = String(markerId).slice('video-pin:'.length);
-      const pin = allVideoPins.find((item) => String(item.id) === pinId);
-      const safeUrl = pin ? getVideoPinWatchUrl(pin) : null;
-      if (safeUrl && typeof window !== 'undefined') {
-        window.open(safeUrl, '_blank', 'noopener,noreferrer');
-      }
-      return;
-    }
-
     const camera = allCameras.find((c) => c.id === markerId);
     const safeUrl = camera ? getSafeCameraUrl(camera.url) : null;
     if (safeUrl && typeof window !== 'undefined') {
       window.open(safeUrl, '_blank', 'noopener,noreferrer');
     }
-  }
-
-  async function handleVideoPinSubmitted() {
-    setSubmissionNotice(t('submitted_for_review'));
-    await refetchVideoPins();
   }
 
   async function handleToggleStatus(camera) {
@@ -1035,12 +522,6 @@ export default function CamerasPageClient() {
                 {statusError}
               </p>
             )}
-            {submissionNotice && (
-              <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
-                {submissionNotice}
-              </p>
-            )}
-
             {loading ? (
               <div className="space-y-4">
                 <SkeletonLoader type="card" count={4} variant="grid" />
@@ -1090,21 +571,6 @@ export default function CamerasPageClient() {
                 <p className="mt-1 text-sm leading-6 text-gray-600">{t('map_subtitle')}</p>
               </div>
 
-              <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-slate-50 p-3">
-                <LayerToggle active={visibleLayers.cameras} onClick={() => handleLayerToggle('cameras')}>
-                  <VideoCameraIcon className="h-4 w-4" />
-                  {t('layer_cameras')}
-                </LayerToggle>
-                <LayerToggle active={visibleLayers.live} onClick={() => handleLayerToggle('live')}>
-                  <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-                  {t('layer_live_videos')}
-                </LayerToggle>
-                <LayerToggle active={visibleLayers.viral} onClick={() => handleLayerToggle('viral')}>
-                  <span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
-                  {t('layer_tiktok_videos')}
-                </LayerToggle>
-              </div>
-
               {loading ? (
                 <SkeletonLoader type="card" count={1} />
               ) : error ? (
@@ -1139,78 +605,10 @@ export default function CamerasPageClient() {
               )}
             </section>
 
-            <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
-              {user ? (
-                <Button
-                  size="sm"
-                  onClick={() => setIsSubmissionOpen(true)}
-                  icon={<PlusIcon className="h-4 w-4" />}
-                  className="w-full"
-                >
-                  {t('add_video_pin')}
-                </Button>
-              ) : (
-                <Link
-                  href="/login"
-                  className="inline-flex h-10 w-full items-center justify-center rounded-md border border-blue-600 bg-white px-3 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50"
-                >
-                  {t('login_to_submit')}
-                </Link>
-              )}
-            </div>
           </aside>
         </div>
 
-        {videoPinsError ? (
-          <section className="rounded-lg border border-red-200 bg-red-50 p-4">
-            <h2 className="text-sm font-semibold text-red-800">{t('video_load_error_title')}</h2>
-            <p className="mt-1 text-sm text-red-700">{videoPinsError}</p>
-            <button
-              type="button"
-              onClick={refetchVideoPins}
-              className="mt-3 text-sm font-semibold text-red-800 hover:text-red-950"
-            >
-              {t('retry')}
-            </button>
-          </section>
-        ) : (
-          <section className="grid gap-6 lg:grid-cols-2">
-            <VideoPinSection
-              title={t('live_videos_title')}
-              subtitle={t('live_videos_subtitle', { count: liveVideoCount })}
-              pins={liveVideoPins}
-              loading={videoPinsLoading}
-              error={null}
-              emptyTitle={allVideoPins.length === 0 ? t('no_video_pins_title') : t('no_live_videos_title')}
-              emptyDescription={allVideoPins.length === 0 ? t('no_video_pins_description') : t('no_live_videos_description')}
-              onRetry={refetchVideoPins}
-              t={t}
-              highlightedMarkerId={highlightedMarkerId}
-              onHoverChange={setHoveredCardId}
-            />
-
-            <VideoPinSection
-              title={t('tiktok_videos_title')}
-              subtitle={t('tiktok_videos_subtitle', { count: viralVideoCount })}
-              pins={viralVideoPins}
-              loading={videoPinsLoading}
-              error={null}
-              emptyTitle={allVideoPins.length === 0 ? t('no_video_pins_title') : t('no_tiktok_videos_title')}
-              emptyDescription={allVideoPins.length === 0 ? t('no_video_pins_description') : t('no_tiktok_videos_description')}
-              onRetry={refetchVideoPins}
-              t={t}
-              highlightedMarkerId={highlightedMarkerId}
-              onHoverChange={setHoveredCardId}
-            />
-          </section>
-        )}
       </div>
-      <VideoPinSubmissionModal
-        isOpen={isSubmissionOpen}
-        onClose={() => setIsSubmissionOpen(false)}
-        onSubmitted={handleVideoPinSubmitted}
-        t={t}
-      />
     </div>
   );
 }

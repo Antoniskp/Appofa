@@ -181,6 +181,10 @@ const createArticle = async (userId, userRole, articleData) => {
     const { title, content, summary, category, status, type, tags, bannerImageUrl, coverImageId, bannerImageAltText, bannerImageCaption, bannerImageCredit, hideAuthor, newsApproved,
       sourceUrl, sourceProvider, sourceMeta, embedUrl, embedHtml } = articleData;
 
+    if (sourceMeta?.videoKind !== undefined && !['educational', 'news'].includes(sourceMeta.videoKind)) {
+      return { success: false, status: 400, message: 'Invalid video kind.' };
+    }
+
     // Validate sourceUrl if provided
     let resolvedSourceUrl = null;
     let resolvedSourceProvider = null;
@@ -333,7 +337,7 @@ const createArticle = async (userId, userRole, articleData) => {
  */
 const getAllArticles = async (queryParams, user) => {
   try {
-    const { status, category, page = 1, limit = 10, authorId, type, tag, orderBy, order, isNews, newsApproved, search, locationId } = queryParams;
+    const { status, category, page = 1, limit = 10, authorId, type, tag, orderBy, order, isNews, newsApproved, search, locationId, videoKind } = queryParams;
 
     const parsedPage = Number(page);
     const parsedLimit = Number(limit);
@@ -408,6 +412,14 @@ const getAllArticles = async (queryParams, user) => {
           ...(user ? [{ authorId: user.id }] : [])
         ]
       }]);
+    }
+
+    if (videoKind) {
+      if (!['educational', 'news'].includes(videoKind)) {
+        return { success: false, status: 400, message: 'Invalid video kind.' };
+      }
+      where.type = 'video';
+      where['sourceMeta.videoKind'] = videoKind;
     }
 
     const offset = (parsedPage - 1) * parsedLimit;
@@ -581,6 +593,10 @@ const updateArticle = async (articleId, user, updateData) => {
   try {
     const { title, content, summary, category, status, type, tags, bannerImageUrl, coverImageId, bannerImageAltText, bannerImageCaption, bannerImageCredit, hideAuthor, newsApproved,
       sourceUrl, sourceProvider, sourceMeta, embedUrl, embedHtml } = updateData;
+
+    if (sourceMeta?.videoKind !== undefined && !['educational', 'news'].includes(sourceMeta.videoKind)) {
+      return { success: false, status: 400, message: 'Invalid video kind.' };
+    }
 
     const article = await Article.findByPk(articleId);
 
@@ -855,11 +871,19 @@ const approveNews = async (articleId, user) => {
  */
 const getCategoryCounts = async (queryParams = {}) => {
   try {
-    const { type, status = 'published' } = queryParams;
+    const { type, status = 'published', videoKind } = queryParams;
 
     const where = { category: { [Op.ne]: null } };
     if (type) where.type = type;
     if (status) where.status = status;
+
+    if (videoKind) {
+      if (!['educational', 'news'].includes(videoKind)) {
+        return { success: false, status: 400, message: 'Invalid video kind.' };
+      }
+      where.type = 'video';
+      where['sourceMeta.videoKind'] = videoKind;
+    }
 
     const rows = await Article.findAll({
       attributes: [

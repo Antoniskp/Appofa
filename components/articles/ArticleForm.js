@@ -28,6 +28,7 @@ export default function ArticleForm({
 }) {
   const tArticles = useTranslations('articles');
   const tCommon = useTranslations('common');
+  const tVideos = useTranslations('videos');
   const { user } = useAuth();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const isAdminOrModerator = user?.role === 'admin' || user?.role === 'moderator';
@@ -213,7 +214,7 @@ export default function ArticleForm({
           ...prev,
           sourceUrl: previewData.url || '',
           sourceProvider: previewData.provider || '',
-          sourceMeta: previewData,
+          sourceMeta: { ...previewData, ...(prev.sourceMeta?.videoKind ? { videoKind: prev.sourceMeta.videoKind } : {}) },
           embedUrl: previewData.embedUrl || '',
           embedHtml: previewData.embedHtml || ''
         };
@@ -733,6 +734,25 @@ export default function ArticleForm({
             helpText={articleCategories.articleTypes[formData.type]?.description}
           />
         </div>
+
+        {formData.type === 'video' && (
+          <FormSelect
+            name="videoKind"
+            label={tVideos('kind_label')}
+            value={formData.sourceMeta?.videoKind || ''}
+            onChange={(event) => {
+              const videoKind = event.target.value;
+              setFormData((prev) => {
+                const sourceMeta = { ...prev.sourceMeta };
+                if (videoKind) sourceMeta.videoKind = videoKind;
+                else delete sourceMeta.videoKind;
+                return { ...prev, sourceMeta };
+              });
+            }}
+            options={['educational', 'news'].map((value) => ({ value, label: tVideos(value) }))}
+            placeholder={tVideos('choose_kind')}
+          />
+        )}
 
         {articleCategories.articleTypes[formData.type]?.categories.length > 0 ? (
           <FormSelect
