@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Op } = require('sequelize');
 const { sequelize, CivicQuestion, User, Location } = require('../models');
-const snapshot = require('../data/parliament-2026-10-12.json');
+const snapshot = require('../data/parliament-2026-10-16.json');
 
 const SOURCE_BASE = 'https://www.hellenicparliament.gr/Nomothetiko-Ergo/Anazitisi-Nomothetikou-Ergou?law_id=';
 
