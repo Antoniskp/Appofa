@@ -33,7 +33,7 @@ export default function ProfileHomeLocationSection({
   return (
     <div
       className={`rounded-md border border-gray-200 bg-gray-50 overflow-hidden transition-all duration-800 ease-in-out ${
-        isOpen ? 'max-h-[520px]' : 'max-h-11'
+        isOpen ? '' : 'max-h-11'
       }`}
     >
       <button
@@ -54,8 +54,9 @@ export default function ProfileHomeLocationSection({
 
       <div
         id="home-location-panel"
-        aria-hidden={!isOpen}
-        className={`px-4 pb-4 pt-2 transition-opacity duration-800 ease-in-out ${
+        hidden={!isOpen}
+        tabIndex={-1}
+        className={`scroll-mt-20 px-4 pb-4 pt-2 transition-opacity duration-800 ease-in-out ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       >

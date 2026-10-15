@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Card from '@/components/ui/Card';
+import ProfileCompleteness from '@/components/profile/ProfileCompleteness';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { useProfileForm } from '@/hooks/useProfileForm';
 import ProfileTab from '@/app/profile/tabs/ProfileTab';
@@ -41,19 +42,6 @@ function ProfileContent() {
     }
   }, []);
 
-  const handleNavigateToSection = useCallback((tabId, sectionId) => {
-    if (!PROFILE_TAB_IDS.has(tabId)) return;
-    selectTab(tabId);
-
-    window.setTimeout(() => {
-      const target = document.getElementById(sectionId);
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        target.focus?.({ preventScroll: true });
-      }
-    }, 80);
-  }, [selectTab]);
-
   useEffect(() => {
     const handleHashChange = () => {
       const tab = getTabFromHash(window.location.hash);
@@ -79,6 +67,8 @@ function ProfileContent() {
     savingDisplayBadge,
     interactionSettings,
     savingInteraction,
+    setupPreferences,
+    updateSetupPreferences,
     newsletterPreference,
     passwordData,
     showPasswordFields,
@@ -126,6 +116,20 @@ function ProfileContent() {
     handleRemoveInterest,
   } = useProfileForm();
 
+  const handleNavigateToSection = useCallback((tabId, sectionId) => {
+    if (!PROFILE_TAB_IDS.has(tabId)) return;
+    selectTab(tabId);
+    if (sectionId === 'home-location-panel') setShowHomeLocation(true);
+
+    window.setTimeout(() => {
+      const target = document.getElementById(sectionId);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        target.focus?.({ preventScroll: true });
+      }
+    }, 80);
+  }, [selectTab, setShowHomeLocation]);
+
   if (loading) {
     return (
       <div className="bg-gray-50 min-h-screen py-10">
@@ -167,6 +171,17 @@ function ProfileContent() {
           </div>
         </div>
 
+        <Card className="mb-8">
+          <ProfileCompleteness
+            key={user?.id}
+            user={user}
+            savedProfileData={savedProfileData}
+            preferences={setupPreferences}
+            onPreferencesChange={updateSetupPreferences}
+            onNavigateToSection={handleNavigateToSection}
+          />
+        </Card>
+
         {activeTab === 'profile' && (
           <ProfileTab
             user={user}
@@ -176,7 +191,6 @@ function ProfileContent() {
             followingCount={followingCount}
             displayBadge={displayBadge}
             interactionSettings={interactionSettings}
-            onNavigateToSection={handleNavigateToSection}
             handleProfileChange={handleProfileChange}
             handleAvatarUpload={handleAvatarUpload}
             handleSocialLinkChange={handleSocialLinkChange}

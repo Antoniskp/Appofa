@@ -52,7 +52,7 @@ export default function SkillsTab({
       </Card>
 
       <Card>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">{tProfile('interests')}</h2>
+        <h2 id="profile-interests-heading" tabIndex={-1} className="scroll-mt-20 text-lg font-semibold text-gray-900 mb-4">{tProfile('interests')}</h2>
         <ProfileInterestsSection
           interests={profileData.interests}
           picker={intPicker}

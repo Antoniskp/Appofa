@@ -7,6 +7,7 @@ import { authAPI, locationAPI, commentAPI, badgeAPI, manifestAPI, newsletterAPI 
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import { useProfileSetup } from '@/hooks/useProfileSetup';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 
 const INITIAL_PROFILE_DATA = {
@@ -85,6 +86,7 @@ export function useProfileForm() {
   const tProfile = useTranslations('profile');
   const tCommon = useTranslations('common');
   const { user, updateProfile, deleteAccount } = useAuth();
+  const { preferences: setupPreferences, updatePreferences: updateSetupPreferences } = useProfileSetup(user?.id);
   const { success, error } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -589,6 +591,7 @@ export function useProfileForm() {
     setSavingInteraction(true);
     try {
       await commentAPI.updateUserProfileCommentSettings(user.id, interactionSettings);
+      updateSetupPreferences({ privacyReviewed: true });
       success(tProfile('settings_saved'));
     } catch (err) {
       error(err.message || tProfile('settings_save_failed'));
@@ -679,6 +682,8 @@ export function useProfileForm() {
 
   return {
     loading,
+    setupPreferences,
+    updateSetupPreferences,
     user,
     oauthConfig,
     profileData,

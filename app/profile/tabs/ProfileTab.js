@@ -3,7 +3,6 @@
 import { useTranslations } from 'next-intl';
 import Card from '@/components/ui/Card';
 import ProfileHeader from '@/components/profile/ProfileHeader';
-import ProfileCompleteness from '@/components/profile/ProfileCompleteness';
 import ProfilePublicPreview from '@/components/profile/ProfilePublicPreview';
 import ProfileBasicInfoForm from '@/components/profile/ProfileBasicInfoForm';
 import ProfileBioSection from '@/components/profile/ProfileBioSection';
@@ -18,7 +17,6 @@ export default function ProfileTab({
   followingCount,
   displayBadge,
   interactionSettings,
-  onNavigateToSection,
   handleProfileChange,
   handleAvatarUpload,
   handleSocialLinkChange,
@@ -40,16 +38,6 @@ export default function ProfileTab({
           avatarColor={profileData.avatarColor}
           followersCount={followersCount}
           followingCount={followingCount}
-        />
-      </Card>
-
-      <Card>
-        <ProfileCompleteness
-          user={user}
-          profileData={profileData}
-          displayBadge={displayBadge}
-          interactionSettings={interactionSettings}
-          onNavigateToSection={onNavigateToSection}
         />
       </Card>
 
