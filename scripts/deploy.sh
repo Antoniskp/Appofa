@@ -23,6 +23,16 @@ fi
 # Navigate to application directory
 cd "$APP_DIR"
 
+# Keep the article type compatible before starting the new application code.
+# Use the application's database owner; no migration or article seed file is needed.
+node <<'NODE'
+const db = require('./src/config/database');
+db.query(`ALTER TYPE "enum_Articles_type" ADD VALUE IF NOT EXISTS 'analysis'`)
+  .then(() => console.log('Analysis article type is available.'))
+  .catch((error) => { console.error(error.message); process.exitCode = 1; })
+  .finally(() => db.close());
+NODE
+
 echo "📦 Stopping running services..."
 if command -v pm2 >/dev/null 2>&1; then
 	pm2 stop newsapp-backend newsapp-frontend || true

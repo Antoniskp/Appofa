@@ -98,6 +98,13 @@ export default function TopNav() {
           mobileIcon: <NewspaperIcon className="h-5 w-5" />
         },
         {
+          id: 'analyses',
+          label: tNav('analyses'),
+          href: '/analyses',
+          icon: <DocumentTextIcon className="h-4 w-4" />,
+          mobileIcon: <DocumentTextIcon className="h-5 w-5" />
+        },
+        {
           id: 'videos',
           label: tNav('videos'),
           href: '/videos',
@@ -303,6 +310,13 @@ export default function TopNav() {
   ];
 
   const guestMoreItems = [
+    {
+      id: 'analyses',
+      label: tNav('analyses'),
+      href: '/analyses',
+      icon: <DocumentTextIcon className="h-4 w-4" />,
+      mobileIcon: <DocumentTextIcon className="h-5 w-5" />,
+    },
     {
       id: 'articles',
       label: tNav('articles'),

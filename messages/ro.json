@@ -21,6 +21,7 @@
     "all_suggestions": "Toate propunerile"
   },
   "nav": {
+    "analyses": "Analize",
     "news": "Știri",
     "articles": "Articole",
     "login": "Conectare",
@@ -455,6 +456,8 @@
     "gdpr_consent_error": "Trebuie să accepți termenii pentru a te înregistra."
   },
   "articles": {
+    "analyses_title": "Analize",
+    "analyses_description": "Analize despre economie și probleme publice, cu surse și posibile soluții.",
     "title": "Articole",
     "category": "Categorie",
     "all_categories": "Toate categoriile",

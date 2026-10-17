@@ -18,14 +18,14 @@ import { useAuth } from '@/lib/auth-context';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
 
-function ArticlesContent() {
+function ArticlesContent({ defaultType = 'articles' }) {
   const tArticles = useTranslations('articles');
   const tCommon = useTranslations('common');
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const initialTag = searchParams.get('tag') || '';
   const initialCategory = searchParams.get('category') || '';
-  const initialType = searchParams.get('type') || 'articles';
+  const initialType = defaultType === 'analysis' ? 'analysis' : searchParams.get('type') || defaultType;
   const {
     filters,
     updateFilter,
@@ -42,7 +42,8 @@ function ArticlesContent() {
   const [topTags, setTopTags] = useState([]);
 
   useEffect(() => {
-    articleAPI.getCategoryCounts({ type: 'articles', status: 'published' })
+    setCountsLoaded(false);
+    articleAPI.getCategoryCounts({ type: filters.type, status: 'published' })
       .then((res) => { if (res?.success) setCategoryCounts(res.data.counts); })
       .catch((err) => console.error('Failed to fetch article category counts:', err))
       .finally(() => setCountsLoaded(true));
@@ -52,7 +53,7 @@ function ArticlesContent() {
         setTopTags(tags.slice(0, 5).map((t) => t?.name || t).filter(Boolean));
       })
       .catch(() => {});
-  }, []);
+  }, [filters.type]);
 
   // For search input
   const handleSearchChange = (e) => {
@@ -65,7 +66,7 @@ function ArticlesContent() {
   };
 
   // Convert categories to array of { value, label }
-  const articleCategoryOptions = (articleCategories.articleTypes?.articles?.categories ?? []).map(cat =>
+  const articleCategoryOptions = (articleCategories.articleTypes?.[filters.type]?.categories ?? []).map(cat =>
     typeof cat === 'string' ? { value: cat, label: cat } : cat
   );
 
@@ -96,6 +97,12 @@ function ArticlesContent() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
+        {defaultType === 'analysis' && (
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold">{tArticles('analyses_title')}</h1>
+            <p className="mt-2 text-gray-600">{tArticles('analyses_description')}</p>
+          </div>
+        )}
         {/* Location Breadcrumb */}
         <LocationFilterBreadcrumb
           value={filters.locationId}
@@ -187,7 +194,7 @@ function ArticlesContent() {
   );
 }
 
-export default function ArticlesPage() {
+export default function ArticlesPage({ defaultType = 'articles' }) {
   const tCommon = useTranslations('common');
   return (
     <Suspense fallback={
@@ -195,7 +202,7 @@ export default function ArticlesPage() {
          <p className="text-gray-600">{tCommon('loading')}</p>
       </div>
     }>
-      <ArticlesContent />
+      <ArticlesContent key={defaultType} defaultType={defaultType} />
     </Suspense>
   );
 }

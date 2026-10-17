@@ -61,7 +61,7 @@ const Article = sequelize.define('Article', {
     allowNull: true
   },
   type: {
-    type: DataTypes.ENUM('personal', 'articles', 'news', 'video'),
+    type: DataTypes.ENUM('personal', 'articles', 'news', 'video', 'analysis'),
     defaultValue: 'personal',
     allowNull: false
   },

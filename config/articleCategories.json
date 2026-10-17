@@ -1,5 +1,13 @@
 {
   "articleTypes": {
+    "analysis": {
+      "value": "analysis",
+      "label": "Analysis",
+      "labelEl": "Ανάλυση",
+      "description": "Evidence-based analysis of the economy and public issues, with sources and possible solutions",
+      "categoryRequired": false,
+      "categories": ["Οικονομία", "Ενέργεια", "Στέγαση", "Δημόσιες Υπηρεσίες", "Υποδομές & Μεταφορές", "Περιβάλλον", "Πολιτική & Κοινωνία"]
+    },
     "personal": {
       "value": "personal",
       "label": "Personal",

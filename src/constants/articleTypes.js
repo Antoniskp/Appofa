@@ -3,7 +3,7 @@
  */
 
 // Valid article types that match the database ENUM
-const ARTICLE_TYPES = ['personal', 'articles', 'news', 'video'];
+const ARTICLE_TYPES = ['personal', 'articles', 'news', 'video', 'analysis'];
 
 module.exports = {
   ARTICLE_TYPES

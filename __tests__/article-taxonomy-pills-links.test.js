@@ -14,6 +14,14 @@ const {
 } = require('../lib/utils/taxonomyLinks');
 
 describe('Article taxonomy pill links', () => {
+  test('links analysis badges and categories to the dedicated listing', () => {
+    const html = renderToStaticMarkup(React.createElement(ArticleTaxonomyPills, {
+      article: { type: 'analysis', category: 'Economy' },
+    }));
+    expect(html).toContain('href="/analyses"');
+    expect(html).toContain('href="/analyses?category=Economy"');
+    expect(html).toContain('Ανάλυση');
+  });
   test('renders type, category, and tag pills as anchors with expected hrefs', () => {
     const html = renderToStaticMarkup(
       React.createElement(ArticleTaxonomyPills, {

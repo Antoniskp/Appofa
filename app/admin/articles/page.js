@@ -123,6 +123,7 @@ function AdminArticlesContent() {
   const allCategories = [...new Set([
     ...articleCategories.articleTypes.articles.categories,
     ...articleCategories.articleTypes.news.categories,
+    ...articleCategories.articleTypes.analysis.categories,
   ])];
 
   useEffect(() => {

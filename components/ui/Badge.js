@@ -138,6 +138,7 @@ export function StatusBadge({ status, size = 'sm', className = '' }) {
  */
 export function TypeBadge({ type, size = 'sm', className = '' }) {
   const typeMap = {
+    analysis: { variant: 'info', label: 'Ανάλυση' },
     news: { variant: 'success', label: 'Νέα' },
     articles: { variant: 'purple', label: 'Άρθρα' },
     personal: { variant: 'default', label: 'Προσωπικό' }

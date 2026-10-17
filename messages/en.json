@@ -21,6 +21,7 @@
     "all_suggestions": "All proposals"
   },
   "nav": {
+    "analyses": "Analyses",
     "news": "News",
     "articles": "Articles",
     "login": "Login",
@@ -455,6 +456,8 @@
     "gdpr_consent_error": "You must accept the terms to register."
   },
   "articles": {
+    "analyses_title": "Analyses",
+    "analyses_description": "Evidence-based analysis of the economy and public issues, with sources and possible solutions.",
     "title": "Articles",
     "category": "Category",
     "all_categories": "All categories",
