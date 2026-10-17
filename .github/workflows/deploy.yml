@@ -82,4 +82,4 @@ jobs:
             -o BatchMode=yes \
             -o ConnectTimeout=20 \
             "$VPS_USER@$VPS_HOST" \
-            'cd /var/www/Appofa && ./scripts/deploy.sh'
+            'cd /var/www/Appofa && git pull --ff-only origin main && SKIP_GIT_PULL=1 ./scripts/deploy.sh'
