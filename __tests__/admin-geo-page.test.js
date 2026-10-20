@@ -212,6 +212,9 @@ describe('Admin geo page traffic tables', () => {
     });
 
     expect(container.textContent).toContain('Known crawlers');
+    expect(container.textContent).toContain('Καταγεγραμμένες προβολές');
+    expect(container.textContent).toContain('Εμφανίζονται 1 από τις 2');
+    expect(container.textContent).toContain('έως 100');
     expect(container.textContent).toContain('Google');
     expect(container.textContent).toContain('Top IP groups');
     expect(container.textContent).toContain('66.249.66.1');
@@ -224,6 +227,7 @@ describe('Admin geo page traffic tables', () => {
     });
 
     expect(container.textContent).toContain('/robots.txt');
+    expect(crawlersButton.getAttribute('aria-pressed')).toBe('true');
   });
 
   test('also truncates long redirect paths in access rules and keeps access-rule dates on one line', async () => {

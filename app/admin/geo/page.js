@@ -20,7 +20,7 @@ const PERIODS = [
 ];
 const LOG_RETENTION_OPTIONS = [1, 30, 90, 180];
 const TRAFFIC_FILTERS = [
-  { key: 'human', label: 'Real traffic' },
+  { key: 'human', label: 'Άνθρωποι / άγνωστο' },
   { key: 'crawler', label: 'Crawlers' },
   { key: 'all', label: 'All' },
 ];
@@ -521,6 +521,7 @@ function GeoAdminContent() {
                   <button
                     key={item.key}
                     onClick={() => setPeriod(item.key)}
+                    aria-pressed={period === item.key}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       period === item.key
                         ? 'bg-blue-600 text-white'
@@ -531,6 +532,14 @@ function GeoAdminContent() {
                   </button>
                 ))}
               </div>
+              <button
+                type="button"
+                onClick={refetchVisits}
+                disabled={visitsLoading}
+                className="px-3 py-2 rounded-lg text-sm font-medium border border-gray-300 bg-white disabled:opacity-50"
+              >
+                {visitsLoading ? 'Φόρτωση...' : 'Ανανέωση'}
+              </button>
               <div className="ml-auto flex items-center gap-2">
                 <label htmlFor="clear-old-logs-days" className="text-sm text-gray-600">Καθαρισμός logs:</label>
                 <select
@@ -562,16 +571,23 @@ function GeoAdminContent() {
               </div>
             </div>
 
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 space-y-2">
+              <p className="font-semibold">Τι μετρά αυτή η σελίδα</p>
+              <p>Καταγεγραμμένες προβολές σελίδων, όχι μοναδικούς επισκέπτες ή συνεδρίες. Η περίοδος εφαρμόζεται σε όλα τα σύνολα της καρτέλας.</p>
+              <p>Η καταγραφή Geo λειτουργεί ανεξάρτητα από τη συγκατάθεση για Google Analytics. Επισκέψεις χωρίς JavaScript ή με αποτυχημένη αποστολή δεν εμφανίζονται εδώ.</p>
+              <p>Η κατηγορία «Άνθρωποι / άγνωστο» σημαίνει ότι δεν αναγνωρίστηκε crawler από το user agent· δεν επιβεβαιώνει ότι ο επισκέπτης είναι άνθρωπος. Διαγραμμένα logs δεν περιλαμβάνονται ούτε στο «Όλο το ιστορικό».</p>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: 'Συνολικές Επισκέψεις', value: summary.totalVisits },
-                { label: 'Real traffic', value: summary.realTraffic },
+                { label: 'Καταγεγραμμένες προβολές', value: summary.totalVisits },
+                { label: 'Άνθρωποι / άγνωστο', value: summary.realTraffic },
                 { label: 'Known crawlers', value: summary.crawlerTraffic },
                 { label: 'Μοναδικές Χώρες', value: summary.uniqueCountries },
               ].map((card) => (
                 <div key={card.label} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                   <p className="text-sm text-gray-500">{card.label}</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{card.value}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{visitsLoading ? '…' : card.value.toLocaleString('el-GR')}</p>
                 </div>
               ))}
             </div>
@@ -727,13 +743,20 @@ function GeoAdminContent() {
 
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
-                    <div className="font-semibold">Πρόσφατες Επισκέψεις</div>
+                    <div>
+                      <div className="font-semibold">Πρόσφατες προβολές</div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Εμφανίζονται {filteredRecentVisits.length} από τις {(visits?.recentVisits || []).length} πιο πρόσφατες εγγραφές (έως 100).
+                        {' '}Το φίλτρο τύπου αφορά μόνο αυτόν τον πίνακα, όχι τα σύνολα παραπάνω.
+                      </p>
+                    </div>
                     <div className="flex flex-wrap gap-2" aria-label="Traffic filter">
                       {TRAFFIC_FILTERS.map((option) => (
                         <button
                           key={option.key}
                           type="button"
                           onClick={() => setTrafficFilter(option.key)}
+                          aria-pressed={trafficFilter === option.key}
                           className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
                             trafficFilter === option.key
                               ? 'border-blue-600 bg-blue-50 text-blue-700'

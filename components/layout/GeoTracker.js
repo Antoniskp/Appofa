@@ -3,7 +3,6 @@
 import { useEffect, Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import { geoAdminAPI } from '@/lib/api/geoAdmin';
-import { geoAPI } from '@/lib/api/geo';
 
 const readCookie = (name) => {
   const row = document.cookie
@@ -26,23 +25,15 @@ function GeoTrackerInner() {
     if (!pathname) return;
 
     const run = async () => {
-      let countryCode = null;
-      try {
-        const geo = await geoAPI.detect();
-        countryCode = geo?.data?.countryCode || null;
-      } catch {
-        // Country detection failed; proceed without country code.
-      }
-
       try {
         const fallbackLocale = navigator.language?.split('-')[0] || null;
         const locale = readCookie('NEXT_LOCALE') || (['el', 'en', 'ro'].includes(fallbackLocale) ? fallbackLocale : null);
 
         // auth_token is HttpOnly — the browser sends it automatically as a cookie.
-        // The backend reads it server-side from the request; do not pass it in the body.
+        // The backend reads it and resolves the country server-side.
+        // Do not delay recording with a redundant client-side country lookup.
         await geoAdminAPI.trackVisit({
           path: pathname,
-          countryCode,
           locale,
         });
       } catch {
