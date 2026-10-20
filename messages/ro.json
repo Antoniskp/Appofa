@@ -1,4 +1,33 @@
 {
+  "pollTopics": {
+    "title": "Găsește sondaje care te interesează",
+    "description": "Alege un subiect pentru a vedea toate sondajele sale.",
+    "popularTags": "Subiecte populare în sondaje:",
+    "education": {
+      "title": "Studenți și educație",
+      "description": "Universitate, studii și viața de student"
+    },
+    "economy": {
+      "title": "Bani și economie",
+      "description": "Prețuri, muncă și afaceri"
+    },
+    "society": {
+      "title": "Politică și societate",
+      "description": "Decizii publice și probleme cotidiene"
+    },
+    "technology": {
+      "title": "Tehnologie",
+      "description": "AI, viață digitală și inovație"
+    },
+    "culture": {
+      "title": "Cultură și divertisment",
+      "description": "Muzică, film și interese comune"
+    },
+    "environment": {
+      "title": "Mediu",
+      "description": "Climă, natură și viață sustenabilă"
+    }
+  },
   "suggestionRecipients": {
     "label": "Către o autoritate (opțional)",
     "help": "Alegeți funcția publică căreia îi adresați propunerea.",

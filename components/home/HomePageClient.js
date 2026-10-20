@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import ManifestSupporters from '@/components/home/ManifestSupporters';
+import PollTopics from '@/components/home/PollTopics';
 import { useTranslations } from 'next-intl';
 import { useHomepageData } from '@/hooks/useHomepageData';
 import { useAuth } from '@/lib/auth-context';
@@ -91,7 +92,7 @@ export default function HomePageClient({ initialPayload = null }) {
         skeletonCount={3}
         bgColor="bg-white"
         renderItem={(poll) => <PollCard key={poll.id} poll={poll} variant="grid" />}
-        topTags={pollTags}
+        introSlot={<PollTopics tags={pollTags} />}
       />
 
       <HomepageSection

@@ -23,6 +23,7 @@ export default function HomepageSection({
   topTags = [],
   tagLinkPrefix,
   mapSlot,
+  introSlot,
 }) {
   const r = useTranslations('redesign');
   const t = useTranslations('homeRecovery');
@@ -48,6 +49,7 @@ export default function HomepageSection({
             </Link>
           </div>
         </div>
+        {introSlot}
         {mapSlot && !loading && <div className="mb-6">{mapSlot}</div>}
         {loading && items.length === 0 && (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">

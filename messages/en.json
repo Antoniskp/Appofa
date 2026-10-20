@@ -1,4 +1,33 @@
 {
+  "pollTopics": {
+    "title": "Find polls that interest you",
+    "description": "Choose a topic to explore all its polls.",
+    "popularTags": "Popular poll topics:",
+    "education": {
+      "title": "Students & education",
+      "description": "University, studying and student life"
+    },
+    "economy": {
+      "title": "Money & economy",
+      "description": "Prices, work and business"
+    },
+    "society": {
+      "title": "Politics & society",
+      "description": "Public decisions and everyday concerns"
+    },
+    "technology": {
+      "title": "Technology",
+      "description": "AI, digital life and innovation"
+    },
+    "culture": {
+      "title": "Culture & entertainment",
+      "description": "Music, film and shared interests"
+    },
+    "environment": {
+      "title": "Environment",
+      "description": "Climate, nature and sustainable living"
+    }
+  },
   "suggestionRecipients": {
     "label": "Addressed to (optional)",
     "help": "Choose the public office you want to consider your proposal.",
