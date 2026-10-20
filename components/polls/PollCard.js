@@ -13,7 +13,6 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { idSlug } from '@/lib/utils/slugify';
 import { pollAPI } from '@/lib/api';
 import UserAvatar from '@/components/user/UserAvatar';
-import ParticipationNotice from '@/components/ParticipationNotice';
 import OrgAvatar from '@/components/organization/OrgAvatar';
 
 /**
@@ -520,7 +519,6 @@ export default function PollCard({ poll, variant = 'grid' }) {
       </p>
       
       {poll.deadline && <p className="mb-3 text-sm font-semibold text-copper">{r('deadline', { date: new Date(poll.deadline).toLocaleDateString(locale) })}</p>}
-      <ParticipationNotice restriction={poll.voteRestriction} compact />
       <div className="mt-auto">
         <div className="flex justify-between items-center text-sm text-gray-500">
           <span>

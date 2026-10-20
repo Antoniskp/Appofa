@@ -2483,6 +2483,11 @@
     "status_suggestions_rejected": "Απορρίφθηκε"
   },
   "democracy": {
+    "participationLink": "Πώς λειτουργεί η συμμετοχή",
+    "participationTitle": "Συμμετοχή και ιδιωτικότητα στις ψηφοφορίες",
+    "eligibilityTitle": "Ποιος μπορεί να συμμετέχει",
+    "privacyTitle": "Τι σημαίνει απόκρυψη ονόματος",
+    "backToPolls": "← Ψηφοφορίες",
     "identity": "Ταυτότητα ψήφου",
     "hiddenName": "Απόκρυψη ονόματος από άλλους χρήστες",
     "publicName": "Εμφάνιση ονόματος",

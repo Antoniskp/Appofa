@@ -2483,6 +2483,11 @@
     "status_suggestions_rejected": "Rejected"
   },
   "democracy": {
+    "participationLink": "How participation works",
+    "participationTitle": "Participation and privacy in polls",
+    "eligibilityTitle": "Who can participate",
+    "privacyTitle": "What hiding your name means",
+    "backToPolls": "← Polls",
     "identity": "Vote identity",
     "hiddenName": "Hide my name from other users",
     "publicName": "Show my name",

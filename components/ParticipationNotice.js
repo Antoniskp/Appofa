@@ -1,13 +1,14 @@
 'use client';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
-export default function ParticipationNotice({ restriction = 'authenticated', compact = false }) {
+export default function ParticipationNotice() {
   const t = useTranslations('democracy');
   return (
-    <aside className="my-3 rounded-lg border border-teal-200 bg-teal-50 p-3 text-xs leading-relaxed text-teal-950">
-      <strong>{t('advisory')}</strong>
-      <p>{t(restriction === 'anyone' ? 'guestEligibility' : restriction === 'locals_only' ? 'localEligibility' : 'accountEligibility')}</p>
-      <p className="mt-1">{!compact && t('meaning')} {t('privacy')}</p>
-    </aside>
+    <p className="my-3 text-xs text-gray-600">
+      <Link href="/platform/participation" className="underline underline-offset-4 hover:text-teal-800">
+        {t('participationLink')}
+      </Link>
+    </p>
   );
 }
