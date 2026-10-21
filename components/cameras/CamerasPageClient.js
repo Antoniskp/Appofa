@@ -209,12 +209,21 @@ function CameraRow({
 
   return (
     <article
-      className={`flex flex-col gap-3 border-t px-4 py-3 transition first:border-t-0 sm:flex-row sm:items-center sm:justify-between ${isHighlighted ? 'border-blue-200 bg-blue-50' : 'border-gray-100 hover:bg-slate-50'}`}
+      className={`grid min-w-0 gap-3 border-t px-4 py-4 transition first:border-t-0 ${isHighlighted ? 'border-blue-200 bg-blue-50' : 'border-gray-100 hover:bg-slate-50'}`}
       onMouseEnter={() => onHoverChange(camera.id)}
       onMouseLeave={() => onHoverChange(null)}
     >
       <div className="min-w-0">
-        <h3 className="text-base font-semibold text-gray-900 break-words">{cameraLabel}</h3>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <h3 className="min-w-0 flex-1 text-base font-semibold leading-6 text-gray-900 break-words">{cameraLabel}</h3>
+          <CameraStatusControl
+            camera={camera}
+            t={t}
+            canToggle={canToggleStatus}
+            isUpdating={isUpdatingStatus}
+            onToggle={onToggleStatus}
+          />
+        </div>
         <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
           <span className="inline-flex min-w-0 items-center gap-1.5">
             <MapPinIcon className="h-4 w-4 shrink-0" />
@@ -224,14 +233,7 @@ function CameraRow({
         </p>
       </div>
 
-      <div className="flex shrink-0 flex-wrap items-center gap-2 sm:max-w-xs">
-        <CameraStatusControl
-          camera={camera}
-          t={t}
-          canToggle={canToggleStatus}
-          isUpdating={isUpdatingStatus}
-          onToggle={onToggleStatus}
-        />
+      <div className="flex min-w-0 items-stretch gap-2 sm:justify-end">
         {safeCameraUrl && (
           <a
             href={safeCameraUrl}
@@ -239,10 +241,10 @@ function CameraRow({
             rel="noopener noreferrer"
             aria-label={t('open_camera_new_tab_aria', { label: cameraLabel })}
             title={getEmbedTypeLabel(camera, t)}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-blue-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+            className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:flex-none sm:px-4 sm:text-sm"
           >
-            <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-            {t('open_camera')}
+            <ArrowTopRightOnSquareIcon className="h-4 w-4 shrink-0" />
+            <span>{t('open_camera')}</span>
           </a>
         )}
         {hasValidMapLocation && (
@@ -251,10 +253,10 @@ function CameraRow({
             onClick={() => onFocusMap(camera.id)}
             aria-label={t('show_camera_on_map_aria', { label: cameraLabel })}
             title={t('show_on_map')}
-            className="inline-flex min-h-11 items-center justify-center gap-1.5 px-3 rounded-md border border-gray-300 bg-white text-gray-700 transition-colors hover:bg-gray-50"
+            className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:flex-none sm:px-4 sm:text-sm"
           >
-            <MapPinIcon className="h-4 w-4" />
-            {t('map_action')}
+            <MapPinIcon className="h-4 w-4 shrink-0" />
+            <span>{t('map_action')}</span>
           </button>
         )}
       </div>
@@ -273,10 +275,10 @@ function CameraLocationGroup({
   onToggleStatus,
 }) {
   return (
-    <section className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-slate-50 px-4 py-3">
-        <div className="min-w-0">
-          <h2 className="truncate text-base font-semibold text-gray-900">{group.label}</h2>
+    <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <header className="flex items-center justify-between gap-3 border-b border-gray-100 bg-slate-50 px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="break-words text-base font-semibold text-gray-900">{group.label}</h2>
           <p className="mt-0.5 text-xs font-medium text-gray-500">{t('summary_total', { count: group.cameras.length })}</p>
         </div>
 
@@ -284,9 +286,9 @@ function CameraLocationGroup({
           <Link
             href={`/locations/${group.slug}`}
             aria-label={t('view_location_aria', { location: group.label })}
-            className="inline-flex h-9 items-center gap-2 rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="inline-flex min-h-11 max-w-[45%] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 sm:px-3 sm:text-sm"
           >
-            <MapPinIcon className="h-4 w-4" />
+            <MapPinIcon className="h-4 w-4 shrink-0" />
             {t('view_location')}
           </Link>
         )}
