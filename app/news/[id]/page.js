@@ -1,9 +1,8 @@
+import { SITE_URL, DEFAULT_OG_IMAGE, serializeJsonLd } from '@/lib/seo';
 import NewsDetailClient from './NewsDetailClient';
 import { idSlug } from '@/lib/utils/slugify';
 
-const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const DEFAULT_OG_IMAGE = `${SITE_URL}/images/branding/news default.png`;
 
 function absoluteImageUrl(url) {
   if (!url) return DEFAULT_OG_IMAGE;
@@ -30,7 +29,8 @@ async function fetchArticle(id) {
 }
 
 export async function generateMetadata({ params }) {
-  const article = await fetchArticle(params.id);
+  const { id } = await params;
+  const article = await fetchArticle(id);
   if (!article) {
     return { title: 'Είδηση | Απόφαση' };
   }
@@ -63,7 +63,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function NewsDetailPage({ params }) {
-  const article = await fetchArticle(params.id);
+  const { id } = await params;
+  const article = await fetchArticle(id);
 
   const jsonLd = article
     ? {
@@ -90,7 +91,7 @@ export default async function NewsDetailPage({ params }) {
       {jsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
       )}
       <NewsDetailClient />

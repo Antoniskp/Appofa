@@ -96,5 +96,17 @@
     "published": "Evenimentul tău a fost aprobat",
     "rejected": "Evenimentul tău necesită modificări",
     "cancelled": "Evenimentul tău a fost anulat"
-  }
+  },
+  "intro": "Întâlniri, acțiuni și evenimente în comunitatea ta.",
+  "filters": "Filtre",
+  "myArea": "Zona mea",
+  "today": "Astăzi",
+  "ongoing": "În desfășurare",
+  "emptyUpcoming": "Nu există încă evenimente viitoare",
+  "emptyFiltered": "Niciun eveniment nu corespunde filtrelor",
+  "emptyFilteredHint": "Încearcă altă localitate sau șterge filtrele.",
+  "emptyHint": "Organizează o întâlnire sau propune o activitate comunității.",
+  "suggestEvent": "+ Propune un eveniment",
+  "browsePast": "Vezi evenimentele trecute",
+  "clearFilters": "Șterge filtrele"
 }

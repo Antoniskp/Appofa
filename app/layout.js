@@ -1,3 +1,4 @@
+import { SITE_URL, DEFAULT_OG_IMAGE } from '@/lib/seo';
 import { AuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/components/ToastProvider';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
@@ -17,8 +18,6 @@ const notoSans = localFont({
   display: 'swap',
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'https://appofasi.gr';
-const DEFAULT_OG_IMAGE = `${SITE_URL}/images/branding/news default.png`;
 const APP_ICON = '/images/branding/appofa-app-icon.png';
 
 export const metadata = {
@@ -54,14 +53,6 @@ export const metadata = {
     title: 'Απόφαση',
     description: 'Προτάσεις πολιτών, δημόσιες διαβουλεύσεις και παρακολούθηση της υλοποίησης στην κοινότητά σας',
     images: [DEFAULT_OG_IMAGE],
-  },
-  alternates: {
-    canonical: SITE_URL,
-    languages: {
-      el: SITE_URL,
-      en: SITE_URL,
-      ro: SITE_URL,
-    },
   },
 };
 

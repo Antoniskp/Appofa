@@ -1,8 +1,7 @@
+import { SITE_URL, DEFAULT_OG_IMAGE, serializeJsonLd } from '@/lib/seo';
 import SuggestionDetailClient from './SuggestionDetailClient';
 
-const SITE_URL = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://appofasi.gr';
 const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const DEFAULT_OG_IMAGE = `${SITE_URL}/images/branding/news default.png`;
 
 async function fetchSuggestion(id) {
   try {
@@ -22,11 +21,12 @@ async function fetchSuggestion(id) {
 }
 
 export async function generateMetadata({ params }) {
-  const suggestion = await fetchSuggestion(params.id);
+  const { id } = await params;
+  const suggestion = await fetchSuggestion(id);
   if (!suggestion) {
     return {
       title: 'Πρόταση | Απόφαση',
-      alternates: { canonical: `${SITE_URL}/suggestions/${params.id}` },
+      alternates: { canonical: `${SITE_URL}/suggestions/${id}` },
     };
   }
 
@@ -56,7 +56,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function SuggestionDetailPage({ params }) {
-  const suggestion = await fetchSuggestion(params.id);
+  const { id } = await params;
+  const suggestion = await fetchSuggestion(id);
   const canonicalUrl = suggestion ? `${SITE_URL}/suggestions/${suggestion.id}` : null;
 
   const jsonLd = suggestion
@@ -81,7 +82,7 @@ export default async function SuggestionDetailPage({ params }) {
       {jsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
       )}
       <SuggestionDetailClient />

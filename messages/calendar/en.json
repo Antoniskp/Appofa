@@ -96,5 +96,17 @@
     "published": "Your event was approved",
     "rejected": "Your event needs changes",
     "cancelled": "Your event was cancelled"
-  }
+  },
+  "intro": "Meetings, activities and events in your community.",
+  "filters": "Filters",
+  "myArea": "My area",
+  "today": "Today",
+  "ongoing": "Ongoing",
+  "emptyUpcoming": "No upcoming events yet",
+  "emptyFiltered": "No events match your filters",
+  "emptyFilteredHint": "Try another location or clear your filters.",
+  "emptyHint": "Organize a meeting or share an activity with your community.",
+  "suggestEvent": "+ Suggest an event",
+  "browsePast": "Browse past events",
+  "clearFilters": "Clear filters"
 }

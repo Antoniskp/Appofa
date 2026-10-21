@@ -73,3 +73,11 @@ and additional sources are future work. Calendar messages live in
 `messages/calendar/{en,el,ro}.json` and are merged into the app's next-intl messages.
 The timezone picker searches the runtime's supported IANA zones and preserves
 the event's existing zone. Upcoming/past lists use pages of 100 entries.
+
+The shared calendar keeps its browsing context in the URL (`mode`, `period`,
+`month`, `location`, `category`, `view`, `descendants`, `day`, and `page`). Native
+history updates preserve refresh, sharing, and Back/Forward navigation. Embedded
+location calendars keep their controls local so they do not overwrite location
+page query parameters. The My area shortcut uses the signed-in member's saved
+home location, and includes sublocations explicitly. Advanced filters are
+collapsible; the agenda groups entries by their start date in the event timezone.

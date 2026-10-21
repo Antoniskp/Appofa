@@ -1,6 +1,8 @@
 import { idSlug } from '@/lib/utils/slugify';
 
-const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
+import { SITE_URL } from '@/lib/seo';
+
+export const revalidate = 3600;
 const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 const STATIC_ROUTES = [
@@ -8,6 +10,7 @@ const STATIC_ROUTES = [
   { url: '/news', priority: 0.9, changeFrequency: 'hourly' },
   { url: '/articles', priority: 0.8, changeFrequency: 'daily' },
   { url: '/polls', priority: 0.7, changeFrequency: 'daily' },
+  ...['suggestions', 'civic-questions', 'analyses', 'organizations', 'locations', 'topics', 'calendar', 'videos', 'platform'].map((route) => ({ url: '/' + route, priority: 0.7, changeFrequency: 'daily' })),
   // Static info pages
   { url: '/about', priority: 0.5, changeFrequency: 'monthly' },
   { url: '/mission', priority: 0.5, changeFrequency: 'monthly' },
@@ -38,103 +41,52 @@ const STATIC_ROUTES = [
   { url: '/contact', priority: 0.4, changeFrequency: 'yearly' },
 ];
 
-async function fetchPublishedArticles() {
-  try {
-    const res = await fetch(
-      `${API_URL}/api/articles?status=published&limit=1000&page=1`,
-      { next: { revalidate: 3600 } }
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    return json?.data?.articles || [];
-  } catch {
-    return [];
+// Public endpoints enforce visibility. Follow pagination rather than assuming
+// that a large limit bypasses each endpoint's page-size cap.
+async function fetchPages(path, selectItems) {
+  const items = new Map();
+  for (let page = 1; page <= 100; page += 1) {
+    const url = new URL(path, API_URL);
+    url.searchParams.set('limit', '50');
+    url.searchParams.set('page', String(page));
+    url.searchParams.set('offset', String((page - 1) * 50));
+    try {
+      const res = await fetch(url.toString(), { next: { revalidate: 3600 }, signal: AbortSignal.timeout(10000) });
+      if (!res.ok) break;
+      const json = await res.json();
+      const batch = selectItems(json);
+      if (!Array.isArray(batch) || !batch.length) break;
+      const previousSize = items.size;
+      for (const item of batch) items.set(item.id ?? item.slug, item);
+      const pagination = json.pagination || json.data?.pagination;
+      const totalPages = pagination?.totalPages ?? Math.ceil(pagination?.total / 50);
+      if (items.size === previousSize || !Number.isFinite(totalPages) || page >= totalPages) break;
+    } catch {
+      break;
+    }
   }
+  // At most 5,000 entries per collection, keeping this sitemap below 50,000 URLs.
+  return [...items.values()];
 }
 
-async function fetchPublicPolls() {
-  try {
-    const res = await fetch(
-      `${API_URL}/api/polls?limit=1000&page=1`,
-      { next: { revalidate: 3600 } }
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    return Array.isArray(json?.data) ? json.data : [];
-  } catch {
-    return [];
-  }
-}
-
-async function fetchPublicSuggestions() {
-  try {
-    const res = await fetch(
-      `${API_URL}/api/suggestions?limit=1000&page=1`,
-      { next: { revalidate: 3600 } }
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    return Array.isArray(json?.data) ? json.data : [];
-  } catch {
-    return [];
-  }
-}
-
-async function fetchPublicOrganizations() {
-  try {
-    const res = await fetch(
-      `${API_URL}/api/organizations?limit=1000&page=1`,
-      { next: { revalidate: 3600 } }
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    return Array.isArray(json?.data?.organizations) ? json.data.organizations : [];
-  } catch {
-    return [];
-  }
-}
-
-async function fetchPublicPersons() {
-  try {
-    const res = await fetch(
-      `${API_URL}/api/persons?limit=1000&page=1`,
-      { next: { revalidate: 3600 } }
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    return Array.isArray(json?.data?.profiles) ? json.data.profiles : [];
-  } catch {
-    return [];
-  }
-}
-
-async function fetchPublicLocations() {
-  try {
-    const res = await fetch(
-      `${API_URL}/api/locations?limit=1000`,
-      { next: { revalidate: 3600 } }
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
-    return Array.isArray(json?.locations) ? json.locations : [];
-  } catch {
-    return [];
-  }
+function lastModified(item) {
+  const value = item.updatedAt || item.createdAt;
+  const date = value ? new Date(value) : null;
+  return date && Number.isFinite(date.getTime()) ? { lastModified: date } : {};
 }
 
 export default async function sitemap() {
   const [articles, polls, suggestions, organizations, persons, locations] = await Promise.all([
-    fetchPublishedArticles(),
-    fetchPublicPolls(),
-    fetchPublicSuggestions(),
-    fetchPublicOrganizations(),
-    fetchPublicPersons(),
-    fetchPublicLocations(),
+    fetchPages('/api/articles?status=published', (json) => json?.data?.articles),
+    fetchPages('/api/polls', (json) => json?.data),
+    fetchPages('/api/suggestions', (json) => json?.data),
+    fetchPages('/api/organizations', (json) => json?.data?.organizations),
+    fetchPages('/api/persons', (json) => json?.data?.profiles),
+    fetchPages('/api/locations', (json) => json?.locations),
   ]);
 
   const staticEntries = STATIC_ROUTES.map(({ url, priority, changeFrequency }) => ({
     url: `${SITE_URL}${url}`,
-    lastModified: new Date(),
     changeFrequency,
     priority,
   }));
@@ -144,7 +96,7 @@ export default async function sitemap() {
     const slug = idSlug(article.id, article.title);
     return {
       url: `${SITE_URL}${basePath}/${slug}`,
-      lastModified: new Date(article.updatedAt || article.createdAt),
+      ...lastModified(article),
       changeFrequency: 'weekly',
       priority: 0.6,
     };
@@ -152,14 +104,14 @@ export default async function sitemap() {
 
   const pollEntries = polls.map((poll) => ({
     url: `${SITE_URL}/polls/${idSlug(poll.id, poll.title)}`,
-    lastModified: new Date(poll.updatedAt || poll.createdAt),
+    ...lastModified(poll),
     changeFrequency: poll.status === 'active' ? 'daily' : 'weekly',
     priority: 0.6,
   }));
 
   const suggestionEntries = suggestions.map((suggestion) => ({
     url: `${SITE_URL}/suggestions/${suggestion.id}`,
-    lastModified: new Date(suggestion.updatedAt || suggestion.createdAt),
+    ...lastModified(suggestion),
     changeFrequency: suggestion.status === 'open' ? 'daily' : 'weekly',
     priority: 0.5,
   }));
@@ -168,7 +120,7 @@ export default async function sitemap() {
     .filter((organization) => organization.slug)
     .map((organization) => ({
       url: `${SITE_URL}/organizations/${organization.slug}`,
-      lastModified: new Date(organization.updatedAt || organization.createdAt),
+      ...lastModified(organization),
       changeFrequency: 'weekly',
       priority: 0.5,
     }));
@@ -177,7 +129,7 @@ export default async function sitemap() {
     .filter((profile) => profile.slug)
     .map((profile) => ({
       url: `${SITE_URL}/persons/${profile.slug}`,
-      lastModified: new Date(profile.updatedAt || profile.createdAt),
+      ...lastModified(profile),
       changeFrequency: 'weekly',
       priority: 0.5,
     }));
@@ -186,7 +138,7 @@ export default async function sitemap() {
     .filter((location) => location.slug)
     .map((location) => ({
       url: `${SITE_URL}/locations/${location.slug}`,
-      lastModified: new Date(location.updatedAt || location.createdAt),
+      ...lastModified(location),
       changeFrequency: 'weekly',
       priority: location.type === 'country' ? 0.7 : 0.5,
     }));

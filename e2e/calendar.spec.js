@@ -38,7 +38,7 @@ test('create a location event, display in both calendar views, export and cancel
   await page.getByLabel(t.period, { exact: true }).selectOption('month');
   await page.getByLabel(t.month, { exact: true }).fill('2026-10');
   await expect(page.getByRole('link').filter({ hasText: title })).toBeVisible();
-  await page.getByLabel(t.view).selectOption('month');
+  await page.getByRole('button', { name: t.month, exact: true }).click();
   await page.getByRole('button', { name: /^October 20, 2026:/ }).click();
   await expect(page.getByRole('link').filter({ hasText: title }).last()).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -59,7 +59,7 @@ test('calendar follows the selected language', async ({ page, context }) => {
     await page.goto('/calendar');
     await expect(page.getByRole('heading', { name: messages.title, exact: true })).toBeVisible();
     await expect(page.getByLabel(messages.period, { exact: true })).toHaveValue('upcoming');
-    await page.getByLabel(messages.view, { exact: true }).selectOption('month');
+    await page.getByRole('button', { name: messages.month, exact: true }).click();
     await expect(page.getByRole('button', { name: messages.nextMonth, exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
@@ -103,4 +103,22 @@ test('moderator rejection supplies private feedback and notifies the author', as
     await expect(page.getByText(t.notifications.rejected, { exact: true }).first()).toBeVisible();
     await expect(page.getByText(title, { exact: true }).first()).toBeVisible();
   } finally { await adminContext.close(); }
+});
+
+test('calendar filters survive refresh and browser history', async ({ page }) => {
+  await page.goto('/calendar?category=culture&month=2026-10&mode=month');
+  await expect(page.getByRole('button', { name: t.month, exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: /^Filters/ }).click();
+  await expect(page.getByLabel(t.category, { exact: true })).toHaveValue('culture');
+  await page.getByLabel(t.category, { exact: true }).selectOption('meeting');
+  await expect(page).toHaveURL(/category=meeting/);
+  await page.reload();
+  await page.getByRole('button', { name: /^Filters/ }).click();
+  await expect(page.getByLabel(t.category, { exact: true })).toHaveValue('meeting');
+  await page.goBack();
+  await expect(page.getByLabel(t.category, { exact: true })).toHaveValue('culture');
+  await page.getByRole('button', { name: t.clearFilters, exact: true }).click();
+  await expect(page).not.toHaveURL(/category=/);
+  await expect(page.getByRole('button', { name: t.month, exact: true })).toHaveAttribute('aria-pressed', 'true');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

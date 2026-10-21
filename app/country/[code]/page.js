@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import HomePage from '@/app/page';
+import HomePage from '@/components/home/HomePageClient';
 import { useTranslations } from 'next-intl';
 import { isValidCountryCode, saveUserCountry } from '@/lib/geo/countryResolver';
 
