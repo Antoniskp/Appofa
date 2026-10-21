@@ -8,7 +8,6 @@ import {
   FunnelIcon,
   MagnifyingGlassIcon,
   MapPinIcon,
-  SignalIcon,
 } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
 import { locationSectionAPI } from '@/lib/api';
@@ -92,11 +91,6 @@ function getCameraGroupLocation(camera) {
 function getCameraLocationText(camera, t) {
   const location = getCameraGroupLocation(camera);
   return getLocationLabel(location) || t('map_unavailable');
-}
-
-function getCameraMapSourceLabel(camera, t) {
-  if (!hasMapLocation(camera)) return t('map_unavailable');
-  return camera.mapLocationSource === 'camera' ? t('pin_source_exact') : t('pin_source_source');
 }
 
 function groupCamerasByLocation(cameras, t) {
@@ -210,7 +204,7 @@ function CameraRow({
   const safeCameraUrl = getSafeCameraUrl(camera.url);
   const cameraLabel = cleanDisplayText(camera.label);
   const locationLabel = getCameraLocationText(camera, t);
-  const mapSourceLabel = getCameraMapSourceLabel(camera, t);
+  const provider = safeCameraUrl ? new URL(safeCameraUrl).hostname.replace(/^www\./, '') : null;
   const hasValidMapLocation = hasMapLocation(camera);
 
   return (
@@ -220,18 +214,17 @@ function CameraRow({
       onMouseLeave={() => onHoverChange(null)}
     >
       <div className="min-w-0">
-        <h3 className="truncate text-sm font-semibold text-gray-900">{cameraLabel}</h3>
+        <h3 className="text-base font-semibold text-gray-900 break-words">{cameraLabel}</h3>
         <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
           <span className="inline-flex min-w-0 items-center gap-1.5">
             <MapPinIcon className="h-4 w-4 shrink-0" />
             <span className="truncate">{locationLabel}</span>
           </span>
-          <span>{getEmbedTypeLabel(camera, t)}</span>
-          <span>{mapSourceLabel}</span>
+          {provider && <span className="break-all">{provider}</span>}
         </p>
       </div>
 
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 sm:max-w-xs">
         <CameraStatusControl
           camera={camera}
           t={t}
@@ -246,7 +239,7 @@ function CameraRow({
             rel="noopener noreferrer"
             aria-label={t('open_camera_new_tab_aria', { label: cameraLabel })}
             title={getEmbedTypeLabel(camera, t)}
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-blue-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-blue-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
           >
             <ArrowTopRightOnSquareIcon className="h-4 w-4" />
             {t('open_camera')}
@@ -258,9 +251,10 @@ function CameraRow({
             onClick={() => onFocusMap(camera.id)}
             aria-label={t('show_camera_on_map_aria', { label: cameraLabel })}
             title={t('show_on_map')}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 transition-colors hover:bg-gray-50"
+            className="inline-flex min-h-11 items-center justify-center gap-1.5 px-3 rounded-md border border-gray-300 bg-white text-gray-700 transition-colors hover:bg-gray-50"
           >
             <MapPinIcon className="h-4 w-4" />
+            {t('map_action')}
           </button>
         )}
       </div>
@@ -320,6 +314,8 @@ function CameraLocationGroup({
 export default function CamerasPageClient() {
   const t = useTranslations('cameras');
   const { user } = useAuth();
+  const [view, setView] = useState('list');
+  const [focusTarget, setFocusTarget] = useState(null);
   const [hoveredMarkerId, setHoveredMarkerId] = useState(null);
   const [hoveredCardId, setHoveredCardId] = useState(null);
   const [statusOverrides, setStatusOverrides] = useState({});
@@ -399,14 +395,17 @@ export default function CamerasPageClient() {
     return first ? [first.lat, first.lng] : GREECE_CENTER;
   }, [mapPoints]);
   const unmappedCount = filteredCameras.length - filteredCameras.filter(hasMapLocation).length;
-  const mappedCount = allCameras.filter(hasMapLocation).length;
   const unavailableCount = allCameras.filter((camera) => !isCameraWorking(camera)).length;
   const workingCount = allCameras.length - unavailableCount;
   function handleFocusCameraOnMap(cameraId) {
+    const camera = filteredCameras.find((item) => item.id === cameraId);
+    if (!hasMapLocation(camera)) return;
+    setView('map');
+    setFocusTarget({ lat: Number(camera.mapLocation.lat), lng: Number(camera.mapLocation.lng), zoom: 15 });
     setHoveredCardId(cameraId);
     setHoveredMarkerId(cameraId);
     if (typeof document !== 'undefined') {
-      document.getElementById('camera-map')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      requestAnimationFrame(() => document.getElementById('camera-map')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }));
     }
   }
 
@@ -448,41 +447,12 @@ export default function CamerasPageClient() {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="app-container space-y-6 py-6 sm:py-8">
-        <section className="rounded-lg border border-blue-100 bg-white px-5 py-6 shadow-sm sm:px-6">
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-            <div>
-              <p className="mb-3 inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase text-blue-700">
-                <SignalIcon className="mr-2 h-4 w-4" />
-                {t('live_cameras_badge')}
-              </p>
-              <h1 className="text-3xl font-bold tracking-tight text-gray-950 sm:text-4xl">{t('title')}</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600 sm:text-base">{t('subtitle')}</p>
-            </div>
-
-            {!loading && !error && (
-              <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold text-gray-600 lg:justify-end">
-                <span>{t('summary_total', { count: allCameras.length })}</span>
-                <span>{t('summary_working', { count: workingCount })}</span>
-                <span>{t('summary_unavailable', { count: unavailableCount })}</span>
-                <span>{t('summary_mapped', { count: mappedCount })}</span>
-              </div>
-            )}
+        <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl">{t('title')}</h1>
+            {!loading && !error && <p className="text-sm text-gray-600" aria-live="polite">{t('camera_results_count', { shown: filteredCameras.length, total: allCameras.length })}</p>}
           </div>
-        </section>
-
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_430px]">
-          <section id="live-cameras" className="space-y-5">
-            <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <h2 className="text-2xl font-semibold text-gray-900">{t('list_title')}</h2>
-                  {!loading && !error && (
-                    <p className="mt-1 text-sm text-gray-600">{t('camera_results_count', { shown: filteredCameras.length, total: allCameras.length })}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
+              <div className="mt-4 grid gap-3 grid-cols-[minmax(0,1fr)_130px] sm:grid-cols-[minmax(0,1fr)_220px]">
                 <label className="block text-sm font-medium text-gray-700">
                   <span className="inline-flex items-center gap-1.5">
                     <MagnifyingGlassIcon className="h-4 w-4" />
@@ -491,7 +461,7 @@ export default function CamerasPageClient() {
                   <input
                     type="search"
                     value={cameraSearch}
-                    onChange={(event) => setCameraSearch(event.target.value)}
+                    onChange={(event) => { setCameraSearch(event.target.value); setFocusTarget(null); }}
                     placeholder={t('camera_search_placeholder')}
                     className="mt-1 h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   />
@@ -504,7 +474,7 @@ export default function CamerasPageClient() {
                   </span>
                   <select
                     value={cameraStatusFilter}
-                    onChange={(event) => setCameraStatusFilter(event.target.value)}
+                    onChange={(event) => { setCameraStatusFilter(event.target.value); setFocusTarget(null); }}
                     className="mt-1 h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
                     {CAMERA_STATUS_FILTERS.map((statusKey) => (
@@ -515,8 +485,16 @@ export default function CamerasPageClient() {
                   </select>
                 </label>
               </div>
-            </div>
 
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-gray-600">{!loading && !error && `${t('summary_working', { count: workingCount })} · ${t('summary_unavailable', { count: unavailableCount })}`}</p>
+            <div className="flex rounded-lg bg-slate-100 p-1 xl:hidden" role="group" aria-label={t('view_label')}>
+              {['list', 'map'].map((mode) => <button key={mode} type="button" aria-pressed={view === mode} aria-controls={mode === 'list' ? 'live-cameras' : 'camera-map'} onClick={() => setView(mode)} className={`min-h-11 rounded-md px-3 text-sm font-semibold ${view === mode ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600'}`}>{t(`view_${mode}`)}</button>)}
+            </div>
+          </div>
+        </section>
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_430px]">
+          <section id="live-cameras" aria-label={t('list_title')} className={`${view === 'list' ? 'block' : 'hidden'} space-y-5 xl:block`}>
             {statusError && (
               <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
                 {statusError}
@@ -564,7 +542,7 @@ export default function CamerasPageClient() {
             )}
           </section>
 
-          <aside id="camera-map" className="space-y-5 xl:sticky xl:top-24 xl:self-start">
+          <aside id="camera-map" className={`${view === 'map' ? 'block' : 'hidden'} scroll-mt-24 space-y-5 xl:block xl:sticky xl:top-24 xl:self-start`}>
             <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
               <div className="mb-4">
                 <h2 className="text-xl font-semibold text-gray-900">{t('map_title')}</h2>
@@ -580,6 +558,8 @@ export default function CamerasPageClient() {
                 </div>
               ) : markers.length > 0 ? (
                 <BaseMap
+                  focusTarget={focusTarget}
+                  resizeKey={view}
                   center={mapCenter}
                   zoom={GREECE_ZOOM}
                   bounds={bounds}

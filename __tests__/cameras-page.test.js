@@ -246,6 +246,28 @@ describe('CamerasPageClient', () => {
     expect(showOnMapButton).toBeTruthy();
   });
 
+  test('map action selects mobile map view and focuses exact coordinates without opening a stream', async () => {
+    mockPageData([{
+      id: '1:0', label: 'Harbour camera', url: 'https://cam.example.com/live',
+      sourceLocation: { id: 1, name: 'Port town' },
+      mapLocation: { lat: 37.91, lng: 23.71 }, mapLocationSource: 'camera',
+    }]);
+    await act(async () => { root.render(React.createElement(CamerasPageClient)); });
+    expect(container.querySelectorAll('h1')).toHaveLength(1);
+    expect(container.textContent).toContain('cam.example.com');
+    await act(async () => {
+      container.querySelector('button[title="Εστίαση στον χάρτη"]').click();
+    });
+    expect(baseMapRenderSpy.mock.calls.at(-1)[0].focusTarget).toEqual({ lat: 37.91, lng: 23.71, zoom: 15 });
+    expect(container.querySelector('button[aria-controls="camera-map"]').getAttribute('aria-pressed')).toBe('true');
+    expect(container.querySelector('#camera-map').className).not.toMatch(/^hidden/);
+    expect(windowOpenSpy).not.toHaveBeenCalled();
+    await act(async () => {
+      container.querySelector('button[aria-controls="live-cameras"]').click();
+    });
+    expect(container.querySelector('#live-cameras').className).not.toMatch(/^hidden/);
+  });
+
   test('lets authenticated users toggle one camera status', async () => {
     mockAuthState = { user: { id: 7, username: 'registered' }, loading: false };
     locationSectionAPI.updateCameraStatus.mockResolvedValue({

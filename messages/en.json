@@ -191,9 +191,13 @@
     }
   },
   "cameras": {
+    "map_action": "On map",
+    "view_label": "Camera view",
+    "view_map": "Map",
+    "view_list": "List",
     "title": "Live cameras",
     "subtitle": "Find available cameras quickly, check their status, and open the live view directly.",
-    "summary_total": "{count} cameras",
+    "summary_total": "{count, plural, one {# camera} other {# cameras}}",
     "summary_working": "{count} active",
     "summary_mapped": "{count} with map points",
     "summary_unavailable": "{count} temporarily unavailable",

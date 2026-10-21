@@ -191,9 +191,13 @@
     }
   },
   "cameras": {
+    "map_action": "Στον χάρτη",
+    "view_label": "Προβολή καμερών",
+    "view_map": "Χάρτης",
+    "view_list": "Λίστα",
     "title": "Live κάμερες",
     "subtitle": "Βρες γρήγορα διαθέσιμες κάμερες, έλεγξε την κατάστασή τους και άνοιξε απευθείας τη ζωντανή εικόνα.",
-    "summary_total": "{count} κάμερες",
+    "summary_total": "{count, plural, one {# κάμερα} other {# κάμερες}}",
     "summary_working": "{count} ενεργές",
     "summary_mapped": "{count} με σημείο στον χάρτη",
     "summary_unavailable": "{count} προσωρινά εκτός",

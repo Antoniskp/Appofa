@@ -42,6 +42,29 @@ describe('Voting intention entry points', () => {
     expect(container.querySelector('[role="img"]')).toBeNull();
   });
 
+  test.each([[1, 1, 2], [1, 1, 1], [4, 0, 0], [0, 0, 0]])('homepage ring covers each vote share without overlapping or repeating: %j', async (...counts) => {
+    await render(Summary, { poll: {
+      id: 44, status: 'active', resultsVisibility: 'always',
+      options: counts.map((voteCount, id) => ({ id, text: `Option ${id}`, voteCount })),
+    } });
+    const total = counts.reduce((sum, count) => sum + count, 0);
+    const slices = [...container.querySelectorAll('circle[stroke-dasharray]')];
+    const positiveCounts = counts.filter(count => count > 0);
+    expect(slices).toHaveLength(positiveCounts.length);
+    let covered = 0;
+    slices.forEach((slice, index) => {
+      const circumference = 2 * Math.PI * Number(slice.getAttribute('r'));
+      const [dash, gap] = slice.getAttribute('stroke-dasharray').split(' ').map(Number);
+      expect(slice.hasAttribute('pathLength')).toBe(false);
+      expect(dash / circumference).toBeCloseTo(positiveCounts[index] / total);
+      expect(dash + gap).toBeCloseTo(circumference);
+      expect(Number(slice.getAttribute('stroke-dashoffset'))).toBeCloseTo(-covered);
+      expect(gap).toBeGreaterThanOrEqual(0);
+      covered += dash;
+    });
+    if (total > 0) expect(covered).toBeCloseTo(2 * Math.PI * 40);
+  });
+
   test('guest login returns to this ballot; linked accounts see no linking prompt', async () => {
     const poll = { id: 12, purpose: 'voting_intention' };
     await render(Notice, { poll });

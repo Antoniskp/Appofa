@@ -2,6 +2,9 @@ import Link from 'next/link';
 import PollOptionLogo from './PollOptionLogo';
 import { getPollOptionColor } from '@/lib/poll-chart-colors';
 
+const CHART_RADIUS = 40;
+const CHART_CIRCUMFERENCE = 2 * Math.PI * CHART_RADIUS;
+
 export default function VotingIntentionSummary({ poll }) {
   const options = (poll.options || []).map((option, index) => ({ ...option, color: getPollOptionColor(poll, option, index) }));
   const total = options.reduce((sum, option) => sum + (option.voteCount || 0), 0);
@@ -23,9 +26,15 @@ export default function VotingIntentionSummary({ poll }) {
       {visibleResults && (
         <>
           <div className="relative mx-auto my-5 h-44 w-44" role="img" aria-label={`Αποτελέσματα: ${total} ψήφοι. ${segments.map(option => `${option.text}: ${option.percentage.toFixed(1)}%`).join(', ')}`}>
-            <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90" aria-hidden="true">
-              <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="15" />
-              {segments.map(option => <circle key={option.id} cx="50" cy="50" r="40" fill="none" stroke={option.color} strokeWidth="15" pathLength="100" strokeDasharray={`${option.percentage} ${100 - option.percentage}`} strokeDashoffset={-option.offset} />)}
+            <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" className="block h-full w-full" aria-hidden="true">
+              <circle cx="50" cy="50" r={CHART_RADIUS} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="15" />
+              {/* Use native SVG units for both dashes and rotation, without pathLength normalization. */}
+              <g transform="rotate(-90 50 50)">
+                {segments.map(option => {
+                  const length = option.percentage / 100 * CHART_CIRCUMFERENCE;
+                  return <circle key={option.id} cx="50" cy="50" r={CHART_RADIUS} fill="none" stroke={option.color} strokeWidth="15" strokeDasharray={`${length} ${Math.max(0, CHART_CIRCUMFERENCE - length)}`} strokeDashoffset={-option.offset / 100 * CHART_CIRCUMFERENCE} />;
+                })}
+              </g>
             </svg>
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center" aria-hidden="true">
               <strong className="text-3xl">{total.toLocaleString('el-GR')}</strong>

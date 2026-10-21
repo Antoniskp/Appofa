@@ -308,6 +308,8 @@ export default function BaseMap({
   onMarkerHover,
   onMarkerClick,
   onMarkersReady,
+  focusTarget,
+  resizeKey,
 }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -390,7 +392,7 @@ export default function BaseMap({
       map.invalidateSize?.();
     }, 40);
     return () => clearTimeout(timeout);
-  }, [isExpanded]);
+  }, [isExpanded, resizeKey]);
 
   // Sync bounds / center / zoom whenever they change
   useEffect(() => {
@@ -403,6 +405,14 @@ export default function BaseMap({
       map.setView(center, zoom);
     }
   }, [bounds, center, zoom]);
+
+  // Explicit camera selection is separate from hover and overall bounds.
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !focusTarget) return;
+    map.invalidateSize?.();
+    map.setView([focusTarget.lat, focusTarget.lng], focusTarget.zoom ?? 15);
+  }, [focusTarget]);
 
   // Sync markers whenever the markers array changes
   useEffect(() => {

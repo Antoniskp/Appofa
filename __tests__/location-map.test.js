@@ -74,6 +74,18 @@ describe('LocationMap', () => {
     document.body.innerHTML = '';
   });
 
+  test('explicit camera focus overrides overview bounds without resetting on rerender', async () => {
+    const BaseMap = require('../components/map/BaseMap').default;
+    const props = { center: [38, 23], bounds: { north: 40, south: 35, east: 27, west: 19 } };
+    await act(async () => { root.render(React.createElement(BaseMap, props)); });
+    const focused = { ...props, focusTarget: { lat: 37.91, lng: 23.71, zoom: 15 } };
+    await act(async () => { root.render(React.createElement(BaseMap, focused)); });
+    expect(mockMapInstance.setView).toHaveBeenLastCalledWith([37.91, 23.71], 15);
+    const calls = mockMapInstance.setView.mock.calls.length;
+    await act(async () => { root.render(React.createElement(BaseMap, { ...focused, resizeKey: 'map' })); });
+    expect(mockMapInstance.setView).toHaveBeenCalledTimes(calls);
+  });
+
   test('renders map container when location has valid lat and lng', async () => {
     const location = { id: 1, name: 'Athens', name_local: 'Αθήνα', lat: 37.9838, lng: 23.7275, bounding_box: null };
     await act(async () => {

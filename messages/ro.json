@@ -191,9 +191,13 @@
     }
   },
   "cameras": {
+    "map_action": "Pe hartă",
+    "view_label": "Vizualizare camere",
+    "view_map": "Hartă",
+    "view_list": "Listă",
     "title": "Camere live",
     "subtitle": "Găsește rapid camere disponibile, verifică starea lor și deschide direct imaginea live.",
-    "summary_total": "{count} camere",
+    "summary_total": "{count, plural, one {# cameră} few {# camere} other {# de camere}}",
     "summary_working": "{count} active",
     "summary_mapped": "{count} cu puncte pe hartă",
     "summary_unavailable": "{count} temporar indisponibile",
