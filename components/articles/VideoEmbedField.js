@@ -18,6 +18,7 @@ export default function VideoEmbedField({
   isTitleDirty = false,
 }) {
   const tArticles = useTranslations('articles');
+  const tCommon = useTranslations('common');
   const [inputValue, setInputValue] = useState(value || '');
   const [status, setStatus] = useState('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -93,7 +94,7 @@ export default function VideoEmbedField({
         onChangeRef.current?.(null);
       }
     } catch (err) {
-      if (err?.name === 'AbortError') return;
+      if (controller.signal.aborted || err?.name === 'AbortError') return;
 
       setStatus('error');
       setErrorMessage(err?.message || tArticles('preview_network_error'));
@@ -232,6 +233,15 @@ export default function VideoEmbedField({
           </div>
 
           {renderEmbedPlayer()}
+        </div>
+      )}
+
+      {(status === 'error' || (status === 'success' && !preview?.title)) && (
+        <div className="text-xs text-amber-700" role="status">
+          {status === 'success' && <p>{tArticles('video_metadata_unavailable')}</p>}
+          <button type="button" onClick={() => fetchPreview(inputValue)} className="mt-1 underline">
+            {tCommon('retry')}
+          </button>
         </div>
       )}
 

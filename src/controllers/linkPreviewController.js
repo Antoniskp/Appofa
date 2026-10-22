@@ -52,6 +52,7 @@ const TIKTOK_HOSTS = new Set([
   'tiktok.com',
   'www.tiktok.com',
   'vm.tiktok.com',
+  'vt.tiktok.com',
   'm.tiktok.com',
   't.tiktok.com'
 ]);
@@ -473,7 +474,7 @@ const getLinkPreview = async (req, res) => {
         }
       }
 
-      if (cached.provider === 'tiktok' && !resolvedEmbedUrl) {
+      if (!cached.title || (cached.provider === 'tiktok' && !resolvedEmbedUrl)) {
         await LinkPreviewCache.destroy({
           where: { normalizedUrl: cacheKey }
         });
@@ -501,7 +502,8 @@ const getLinkPreview = async (req, res) => {
 
     // Upsert into cache
     const expiresAt = new Date(Date.now() + CACHE_TTL_MS);
-    await LinkPreviewCache.upsert({
+    // A provider failure must not suppress autofill for the full cache TTL.
+    if (preview.title) await LinkPreviewCache.upsert({
       normalizedUrl: cacheKey,
       provider: preview.provider,
       title: preview.title,

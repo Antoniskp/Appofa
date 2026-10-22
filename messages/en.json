@@ -640,6 +640,7 @@
     "preview_load_error": "Could not load preview.",
     "preview_network_error": "Network error while fetching preview.",
     "preview_load_error_help": "Could not load preview. Please check the URL.",
+    "video_metadata_unavailable": "Video details could not be retrieved. Try again or enter the title and description yourself.",
     "youtube_video": "YouTube video",
     "tiktok_video": "TikTok video",
     "tiktok_video_thumbnail": "TikTok video thumbnail",

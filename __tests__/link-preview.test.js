@@ -92,6 +92,7 @@ describe('validateAndParseUrl', () => {
       'https://www.tiktok.com/@user/video/1234567890',
       'https://tiktok.com/@user/video/1234567890',
       'https://vm.tiktok.com/abcdef/',
+      'https://vt.tiktok.com/abcdef/',
       'https://m.tiktok.com/@user/video/1234567890',
       'https://t.tiktok.com/ZSxxxxxxx/'
     ];
@@ -463,6 +464,45 @@ describe('POST /api/link-preview', () => {
       // title may be null since oEmbed failed
     } finally {
       https.get = originalGet;
+    }
+  });
+
+  test('does not cache empty metadata and refreshes existing empty cache entries', async () => {
+    const https = require('https');
+    let title = null;
+    const get = jest.spyOn(https, 'get').mockImplementation((_url, _opts, callback) => {
+      const response = {
+        statusCode: 200,
+        headers: {},
+        on(event, handler) {
+          if (event === 'data') handler(JSON.stringify({ title }));
+          if (event === 'end') handler();
+          return response;
+        }
+      };
+      callback(response);
+      return { on() {} };
+    });
+    const url = 'https://www.tiktok.com/@user/video/1234567890123';
+    try {
+      const first = await request(app).post('/api/link-preview').send({ url }).expect(200);
+      expect(first.body.data.title).toBeNull();
+      expect(first.body.data.embedUrl).toBeTruthy();
+      expect(await LinkPreviewCache.findOne({ where: { normalizedUrl: url } })).toBeNull();
+      await LinkPreviewCache.create({
+        normalizedUrl: url, provider: 'tiktok', title: null,
+        embedUrl: first.body.data.embedUrl,
+        expiresAt: new Date(Date.now() + 86400000)
+      });
+      title = 'Recovered title';
+      const second = await request(app).post('/api/link-preview').send({ url }).expect(200);
+      expect(second.body.data.title).toBe(title);
+      expect(second.body.data.cached).toBe(false);
+      const third = await request(app).post('/api/link-preview').send({ url }).expect(200);
+      expect(third.body.data.cached).toBe(true);
+      expect(get).toHaveBeenCalledTimes(2);
+    } finally {
+      get.mockRestore();
     }
   });
 

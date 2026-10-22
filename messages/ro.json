@@ -640,6 +640,7 @@
     "preview_load_error": "Previzualizarea nu a putut fi încărcată.",
     "preview_network_error": "Eroare de rețea la încărcarea previzualizării.",
     "preview_load_error_help": "Previzualizarea nu a putut fi încărcată. Verifică URL-ul.",
+    "video_metadata_unavailable": "Detaliile videoclipului nu au putut fi preluate. Încearcă din nou sau introdu manual titlul și descrierea.",
     "youtube_video": "Videoclip YouTube",
     "tiktok_video": "Videoclip TikTok",
     "tiktok_video_thumbnail": "Miniatură video TikTok",

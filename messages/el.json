@@ -640,6 +640,7 @@
     "preview_load_error": "Δεν ήταν δυνατή η φόρτωση προεπισκόπησης.",
     "preview_network_error": "Σφάλμα δικτύου κατά την ανάκτηση προεπισκόπησης.",
     "preview_load_error_help": "Δεν ήταν δυνατή η φόρτωση προεπισκόπησης. Ελέγξτε το URL.",
+    "video_metadata_unavailable": "Δεν ήταν δυνατή η ανάκτηση των στοιχείων του βίντεο. Δοκιμάστε ξανά ή συμπληρώστε τον τίτλο και την περιγραφή χειροκίνητα.",
     "youtube_video": "Βίντεο YouTube",
     "tiktok_video": "Βίντεο TikTok",
     "tiktok_video_thumbnail": "Μικρογραφία βίντεο TikTok",
