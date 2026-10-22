@@ -136,6 +136,44 @@ describe('Poll API Tests', () => {
     await sequelize.close();
   });
 
+  test('personal queues match home ancestors, exclude expired and answered polls before pagination', async () => {
+    const parent = await Location.create({ name: 'Queue region', slug: 'queue-region', type: 'country' });
+    const home = await Location.create({ name: 'Queue home', slug: 'queue-home', type: 'municipality', parent_id: parent.id });
+    const other = await Location.create({ name: 'Queue other', slug: 'queue-other', type: 'country' });
+    await User.update({ homeLocationId: home.id }, { where: { id: regularUserId } });
+    const base = { title: 'Personal queue test', creatorId: adminUserId, locationId: parent.id };
+    const open = await Poll.create(base);
+    const answered = await Poll.create(base);
+    const expired = await Poll.create({ ...base, deadline: new Date(Date.now() - 60000) });
+    const unrelated = await Poll.create({ ...base, locationId: other.id });
+    const linked = await Poll.create({ ...base, locationId: null });
+    await LocationLink.create({ entity_type: 'poll', entity_id: linked.id, location_id: home.id });
+    const option = await PollOption.create({ pollId: answered.id, text: 'Yes', order: 0 });
+    await PollVote.create({ pollId: answered.id, optionId: option.id, userId: regularUserId, isAuthenticated: true });
+    try {
+      const fetchQueue = personal => request(app).get('/api/polls').query({ personal, limit: 1 }).set('Cookie', [`auth_token=${userToken}`]);
+      const pending = await fetchQueue('unanswered');
+      expect(pending.status).toBe(200);
+      expect(pending.body.pagination.totalItems).toBe(2);
+      expect([open.id, linked.id]).toContain(pending.body.data[0].id);
+      const done = await fetchQueue('answered');
+      expect(done.body.pagination.totalItems).toBe(1);
+      expect(done.body.data[0].id).toBe(answered.id);
+      expect(done.body.data[0].userVote.optionId).toBe(option.id);
+      const guest = await request(app).get('/api/polls?personal=unanswered');
+      expect(guest.status).toBe(401);
+      await User.update({ homeLocationId: null }, { where: { id: regularUserId } });
+      expect((await fetchQueue('unanswered')).body.pagination.totalItems).toBe(0);
+    } finally {
+      await User.update({ homeLocationId: null }, { where: { id: regularUserId } });
+      await LocationLink.destroy({ where: { entity_type: 'poll', entity_id: linked.id } });
+      await Poll.destroy({ where: { id: [open.id, answered.id, expired.id, unrelated.id, linked.id] } });
+      await home.destroy();
+      await parent.destroy();
+      await other.destroy();
+    }
+  });
+
   describe('POST /api/polls - Create Poll', () => {
     test('should create a simple poll with valid data (authenticated)', async () => {
       const csrfToken = 'test-csrf-token-create-poll';

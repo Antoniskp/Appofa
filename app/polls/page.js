@@ -23,11 +23,13 @@ import articleCategories from '@/config/articleCategories.json';
 function PollsContent() {
   const tPolls = useTranslations('polls');
   const tCommon = useTranslations('common');
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const initialTag = searchParams.get('tag') || '';
   const initialCategory = searchParams.get('category') || '';
   const initialVoteRestriction = searchParams.get('voteRestriction') || '';
+  const [selectedView, setSelectedView] = useState(null);
+  const view = selectedView || (user && !searchParams.toString() ? 'unanswered' : 'all');
   const {
     filters,
     page,
@@ -65,12 +67,14 @@ function PollsContent() {
       .catch(() => {});
   }, []);
 
-  const { data: polls, loading, error } = useAsyncData(
+  const { data: polls, loading, error, refetch } = useAsyncData(
     async () => {
+      if (authLoading) return { data: [] };
       const params = {
         page,
         limit: 12,
         ...filters,
+        ...(user && view !== 'all' ? { personal: view } : {}),
       };
       
       // Remove empty filters
@@ -84,7 +88,7 @@ function PollsContent() {
       }
       return { data: [], pagination: { totalPages: 1 } };
     },
-    [page, filters],
+    [page, filters, view, user?.id, authLoading],
     {
       initialData: [],
       transform: (response) => {
@@ -97,6 +101,26 @@ function PollsContent() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
+        <section className="mb-6 rounded-xl border border-gray-200 bg-white p-5">
+          <h1 className="text-2xl font-bold text-gray-900">{tPolls('hub_title')}</h1>
+          <p className="mt-2 text-sm text-gray-600">{tPolls('hub_description')}</p>
+          {user ? (
+            <>
+              <div className="mt-4 flex flex-wrap gap-2" aria-label={tPolls('hub_title')}>
+                {['unanswered', 'answered', 'all'].map(value => (
+                  <button key={value} type="button" aria-pressed={view === value}
+                    onClick={() => { setSelectedView(value); goToPage(1); }}
+                    className={`rounded-lg px-4 py-2 text-sm font-medium ${view === value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                    {tPolls(`hub_${value}`)}
+                  </button>
+                ))}
+              </div>
+              {!user.homeLocationId && view !== 'all' && (
+                <Link href="/profile" className="mt-4 inline-block text-sm font-medium text-blue-700 underline">{tPolls('hub_set_location')}</Link>
+              )}
+            </>
+          ) : !authLoading && <Link href="/login" className="mt-4 inline-block text-blue-700 underline">{tPolls('hub_sign_in')}</Link>}
+        </section>
         {/* Location Breadcrumb */}
         <LocationFilterBreadcrumb
           value={filters.locationId}
@@ -195,9 +219,9 @@ function PollsContent() {
         {!loading && !error && polls.length === 0 && (
           <EmptyState
             type="empty"
-            title={tPolls('not_found_title')}
-            description={tPolls('not_found_description')}
-            action={user ? {
+            title={tPolls(view === 'unanswered' ? 'hub_empty' : 'not_found_title')}
+            description={tPolls(view === 'unanswered' ? 'hub_empty_description' : 'not_found_description')}
+            action={user && view === 'all' ? {
               text: tPolls('create_one'),
               onClick: () => window.location.href = '/polls/create'
             } : undefined}
@@ -208,7 +232,8 @@ function PollsContent() {
         {!loading && !error && polls.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {polls.map((poll) => (
-              <PollCard key={poll.id} poll={poll} variant="grid" />
+              <PollCard key={`${user?.id || 'guest'}-${poll.id}`} poll={poll} variant="grid"
+                onVoted={view !== 'all' ? () => { if (page > 1) goToPage(1); else refetch(); } : undefined} />
             ))}
           </div>
         )}

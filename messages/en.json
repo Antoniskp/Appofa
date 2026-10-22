@@ -1139,6 +1139,17 @@
     "create_first": "Create your first article!"
   },
   "polls": {
+    "hub_title": "Polls for you",
+    "hub_description": "Find polls for your home area and its wider regions. Start with the ones you have not answered.",
+    "hub_unanswered": "Unanswered in my areas",
+    "hub_answered": "Answered in my areas",
+    "hub_all": "Browse all polls",
+    "hub_set_location": "Set your home location in your profile",
+    "hub_sign_in": "Sign in to find polls for your areas",
+    "hub_empty": "No unanswered polls found",
+    "hub_empty_description": "There are no open polls matching your areas and current filters. Check back later or browse all polls.",
+    "hub_answered_badge": "Answered",
+    "hub_unanswered_badge": "Unanswered",
     "title": "Polls",
     "vote": "Vote",
     "results": "Results",

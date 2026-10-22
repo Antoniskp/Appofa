@@ -1139,6 +1139,17 @@
     "create_first": "Creează primul tău articol!"
   },
   "polls": {
+    "hub_title": "Sondaje pentru tine",
+    "hub_description": "Găsește sondaje pentru localitatea ta și regiunile din care face parte. Începe cu cele la care nu ai răspuns.",
+    "hub_unanswered": "Fără răspuns în zonele mele",
+    "hub_answered": "Cu răspuns în zonele mele",
+    "hub_all": "Toate sondajele",
+    "hub_set_location": "Setează localitatea de domiciliu în profil",
+    "hub_sign_in": "Autentifică-te pentru sondajele din zonele tale",
+    "hub_empty": "Nu există sondaje fără răspuns",
+    "hub_empty_description": "Nu există sondaje deschise pentru zonele și filtrele tale. Revino mai târziu sau consultă toate sondajele.",
+    "hub_answered_badge": "Cu răspuns",
+    "hub_unanswered_badge": "Fără răspuns",
     "title": "Sondaje",
     "vote": "Votează",
     "results": "Rezultate",

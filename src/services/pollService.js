@@ -736,6 +736,39 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
       where.id = { [Op.in]: linkedIds.length > 0 ? linkedIds : [-1] };
     }
 
+    // Personal queues are filtered before pagination, using the same home-area
+    // hierarchy as voting permissions (including for administrators).
+    if (filters.personal) {
+      if (!user) return { success: false, status: 401, message: 'Authentication required.' };
+      if (!['unanswered', 'answered'].includes(filters.personal)) {
+        return { success: false, status: 400, message: 'Invalid personal poll filter.' };
+      }
+      const account = await User.findByPk(user.id, { attributes: ['homeLocationId', 'googleId'] });
+      const areaIds = account?.homeLocationId ? await getAncestorLocationIds(account.homeLocationId, true) : [];
+      const links = await LocationLink.findAll({
+        where: { location_id: { [Op.in]: areaIds }, entity_type: 'poll' },
+        attributes: ['entity_id'], raw: true
+      });
+      const memberships = await OrganizationMember.findAll({
+        where: { userId: user.id, status: 'active' }, attributes: ['organizationId'], raw: true
+      });
+      const votes = await PollVote.findAll({ where: { userId: user.id }, attributes: ['pollId'], raw: true });
+      where[Op.and] = [
+        ...(where[Op.and] || []),
+        { [Op.or]: [{ locationId: { [Op.in]: areaIds } }, { id: { [Op.in]: links.map(link => link.entity_id) } }] },
+        { [Op.or]: [{ organizationId: null }, { organizationId: { [Op.in]: memberships.map(member => member.organizationId) } }] },
+        { [Op.or]: [{ voteRestriction: { [Op.ne]: 'locals_only' } }, { locationId: { [Op.in]: areaIds } }] },
+        { id: { [filters.personal === 'answered' ? Op.in : Op.notIn]: votes.map(vote => vote.pollId) } }
+      ];
+      if (filters.personal === 'unanswered') {
+        where.status = 'active';
+        where[Op.and].push({ [Op.or]: [{ deadline: null }, { deadline: { [Op.gt]: new Date() } }] });
+        if (!account?.googleId) where[Op.and].push({ [Op.or]: [{ purpose: null }, { purpose: { [Op.ne]: 'voting_intention' } }] });
+      } else if (!status) {
+        delete where.status;
+      }
+    }
+
     const { count, rows: polls } = await Poll.findAndCountAll({
       where,
       distinct: true,

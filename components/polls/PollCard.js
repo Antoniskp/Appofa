@@ -20,7 +20,8 @@ import OrgAvatar from '@/components/organization/OrgAvatar';
  * @param {Object} poll - Poll object with title, description, type, status, etc.
  * @param {string} variant - 'grid' for grid layout (compact) or 'list' for list layout (detailed)
  */
-export default function PollCard({ poll, variant = 'grid' }) {
+export default function PollCard({ poll, variant = 'grid', onVoted }) {
+  const tPolls = useTranslations('polls');
   const { user } = useAuth();
   const { isAdmin } = usePermissions();
   
@@ -93,9 +94,11 @@ export default function PollCard({ poll, variant = 'grid' }) {
 
     try {
       const res = await pollAPI.vote(poll.id, optionId);
+      if (!res.success) throw new Error(res.message || 'Vote failed');
       if (res.success && res.data?.voteCounts) {
         setInlineVoteCounts(res.data.voteCounts);
       }
+      onVoted?.();
     } catch {
       // Rollback to the previous vote on error
       setInlineVotedId(prevVotedId);
@@ -377,6 +380,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
   // Render badges
   const badgesContent = (
     <div className="flex flex-wrap gap-2 mb-2">
+      {user && <Badge variant={hasVoted ? 'success' : 'primary'}>{tPolls(hasVoted ? 'hub_answered_badge' : 'hub_unanswered_badge')}</Badge>}
       {getTypeBadge(poll.type)}
       {getStatusBadge(poll.status, isPollActive)}
       {poll.category && (
