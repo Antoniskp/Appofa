@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { PencilIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, PencilIcon } from '@heroicons/react/24/outline';
 
 const TYPE_LABELS = { country: 'Χώρα', prefecture: 'Νομός / Περιφέρεια', municipality: 'Δήμος', electoral_district: 'Εκλογική περιφέρεια', international: 'Διεθνές' };
 
@@ -25,10 +25,12 @@ export default function LocationHeader({ location, imageError, setImageError, ca
     <>
     <div className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <div className="flex items-center gap-4 min-w-0">
-        {image && !imageError && <img src={image} alt={name} className="h-16 w-16 rounded-lg object-cover shrink-0" onError={() => setImageError(true)} />}
+        {image && !imageError && <img src={image} alt={name} className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl object-cover shrink-0" onError={() => setImageError(true)} />}
+        {(!image || imageError) && <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-blue-100/70 text-blue-700"><MapPinIcon className="h-9 w-9" aria-hidden="true" /></div>}
         <div className="min-w-0">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-blue-700">Η τοπική σου κοινότητα</p>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-950 break-words">{name}</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold text-gray-950 break-words">{name}</h1>
             {canManageLocations() && <button type="button" onClick={onEdit} aria-label="Επεξεργασία τοποθεσίας" className="p-2 text-gray-500 hover:text-gray-900"><PencilIcon className="h-4 w-4" /></button>}
           </div>
           <p className="mt-2 text-sm text-gray-500">{TYPE_LABELS[location.type] || 'Περιοχή'}{population != null && ' · ' + new Intl.NumberFormat('el-GR').format(population) + ' κάτοικοι'}</p>
@@ -42,7 +44,7 @@ export default function LocationHeader({ location, imageError, setImageError, ca
       </div>
     </div>
     {location.description && (
-      <p className="mt-5 max-w-3xl whitespace-pre-wrap break-words text-sm leading-7 text-gray-700">{location.description}</p>
+      <details className="mt-5 border-t border-blue-100 pt-3"><summary className="cursor-pointer py-2 text-sm font-medium text-gray-600">Γνώρισε την περιοχή</summary><p className="mt-5 max-w-3xl whitespace-pre-wrap break-words text-sm leading-7 text-gray-700">{location.description}</p></details>
     )}
     </>
   );

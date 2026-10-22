@@ -63,6 +63,7 @@ test('guest draft survives sign-in, is reviewed, and appears on the location pag
   } finally { await adminContext.close(); }
 
   await page.goto('/locations/test-municipality');
+  await page.getByText('Γνώρισε την περιοχή', { exact: true }).click();
   await expect(page.getByText(description, { exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('location-contribution.png'), fullPage: true });
 });

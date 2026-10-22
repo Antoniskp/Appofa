@@ -139,7 +139,7 @@ export default function LocationTabs({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       {/* Tab bar */}
       <div
         className="flex border-b border-gray-200 overflow-x-auto"

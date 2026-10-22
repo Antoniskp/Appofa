@@ -13,6 +13,7 @@ import LocationSections from '@/components/LocationSections';
 import LocationRoles from '@/components/LocationRoles';
 import LocationBreadcrumb from '@/components/locations/LocationBreadcrumb';
 import LocationHeader from '@/components/locations/LocationHeader';
+import LocationDashboard from '@/components/locations/LocationDashboard';
 import LocationContributionPrompt from '@/components/locations/LocationContributionPrompt';
 import LocationEditForm from '@/components/locations/LocationEditForm';
 import LocationTabs from '@/components/locations/LocationTabs';
@@ -602,7 +603,7 @@ export default function LocationDetailPage() {
     suggestions: suggestions.length,
     elections: 1,
   };
-  const preferredAlwaysVisibleTabs = ['polls', 'suggestions', ...ALWAYS_VISIBLE_TABS];
+  const preferredAlwaysVisibleTabs = ['polls', 'suggestions', 'users', ...ALWAYS_VISIBLE_TABS];
   const visibleTabs = secondaryLoading
     ? VALID_TABS
     : [
@@ -651,7 +652,7 @@ export default function LocationDetailPage() {
         <LocationBreadcrumb breadcrumb={breadcrumb} homeBreadcrumb={homeBreadcrumb} />
 
         {/* Compact Location Header */}
-        <div id="location-overview" className="bg-white rounded-lg shadow-sm p-6 mb-8 scroll-mt-36">
+        <div id="location-overview" className="rounded-3xl border border-blue-100 bg-gradient-to-br from-white via-white to-blue-50 p-6 sm:p-8 mb-6 scroll-mt-36">
           {isEditing ? (
             <LocationEditForm
               location={location}
@@ -682,15 +683,14 @@ export default function LocationDetailPage() {
           <>
             <LocationPageNav items={pageNavItems} />
 
-            {showHierarchyNearTop && (
-              <LocationChildrenExplorer
-                location={location}
-                parent={location.parent}
-                siblings={siblings}
-                children={children}
-                loading={secondaryLoading}
-              />
-            )}
+            <LocationDashboard
+              key={location.id}
+              location={location}
+              polls={activePolls}
+              usersCount={entities.usersCount}
+              sections={sections}
+              loading={secondaryLoading}
+            />
 
             {/* Tabbed content — participation-first placement */}
             <div id="location-content" className="mb-8 space-y-3 scroll-mt-36">
@@ -762,7 +762,14 @@ export default function LocationDetailPage() {
                 {secondaryLoading ? (
                   <SkeletonLoader type="card" count={2} />
                 ) : (
-                  <LocationSections sections={mergedBodySections} />
+                  <>
+                    {mergedBodySections.some(section => section.type === 'webcams') && (
+                      <div id="location-cameras" className="scroll-mt-36">
+                        <LocationSections sections={mergedBodySections.filter(section => section.type === 'webcams')} />
+                      </div>
+                    )}
+                    <LocationSections sections={mergedBodySections.filter(section => section.type !== 'webcams')} />
+                  </>
                 )}
               </div>
             )}
@@ -886,6 +893,16 @@ export default function LocationDetailPage() {
                   hasContent={hasContent}
                 />
               </div>
+            )}
+
+            {showHierarchyNearTop && (
+              <LocationChildrenExplorer
+                location={location}
+                parent={location.parent}
+                siblings={siblings}
+                children={children}
+                loading={secondaryLoading}
+              />
             )}
 
             {!showHierarchyNearTop && (
