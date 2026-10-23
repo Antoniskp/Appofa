@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { reportAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -15,7 +16,8 @@ const CATEGORIES = [
   { value: 'other', label: 'Other' },
 ];
 
-export default function ReportButton({ contentType, contentId, label = 'Report' }) {
+export default function ReportButton({ contentType, contentId, label }) {
+  const t = useTranslations('reportContent');
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({ category: '', message: '', reporterName: '', reporterEmail: '' });
@@ -32,9 +34,9 @@ export default function ReportButton({ contentType, contentId, label = 'Report' 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.category) { setError('Please select a category.'); return; }
+    if (!formData.category) { setError(t('choose')); return; }
     if (!user && (!formData.reporterName || !formData.reporterEmail)) {
-      setError('Name and email are required.'); return;
+      setError(t('required')); return;
     }
     setLoading(true);
     setError('');
@@ -50,10 +52,10 @@ export default function ReportButton({ contentType, contentId, label = 'Report' 
       if (res.success) {
         setSuccess(true);
       } else {
-        setError(res.message || 'Failed to submit report.');
+        setError(res.message || t('failed'));
       }
     } catch {
-      setError('Failed to submit report.');
+      setError(t('failed'));
     } finally {
       setLoading(false);
     }
@@ -65,18 +67,18 @@ export default function ReportButton({ contentType, contentId, label = 'Report' 
         type="button"
         onClick={() => setIsOpen(true)}
         className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600 transition-colors"
-        aria-label={`Report this ${contentType}`}
+        aria-label={t('report')}
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
         </svg>
-        {label}
+        {label || t('report')}
       </button>
 
       <Modal
         isOpen={isOpen}
         onClose={handleClose}
-        title="Report Content"
+        title={t('title')}
         size="sm"
         footer={
           !success && (
@@ -86,7 +88,7 @@ export default function ReportButton({ contentType, contentId, label = 'Report' 
                 onClick={handleClose}
                 className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 type="submit"
@@ -94,7 +96,7 @@ export default function ReportButton({ contentType, contentId, label = 'Report' 
                 disabled={loading}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               >
-                {loading ? 'Submitting...' : 'Submit Report'}
+                {loading ? t('submitting') : t('submit')}
               </button>
             </>
           )
@@ -107,10 +109,10 @@ export default function ReportButton({ contentType, contentId, label = 'Report' 
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <p className="text-gray-900 font-medium">Report submitted</p>
-            <p className="text-sm text-gray-500 mt-1">Thank you. Our team will review your report.</p>
+            <p className="text-gray-900 font-medium">{t('success')}</p>
+            <p className="text-sm text-gray-500 mt-1">{t('thanks')}</p>
             <button onClick={handleClose} className="mt-4 bg-gray-100 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-200 transition-colors">
-              Close
+              {t('close')}
             </button>
           </div>
         ) : (
@@ -123,7 +125,7 @@ export default function ReportButton({ contentType, contentId, label = 'Report' 
 
             <div className="mb-3">
               <label htmlFor="report-category" className="block text-sm font-medium text-gray-700 mb-1">
-                Category <span className="text-red-500">*</span>
+                {t('category')} <span className="text-red-500">*</span>
               </label>
               <select
                 id="report-category"
@@ -132,16 +134,16 @@ export default function ReportButton({ contentType, contentId, label = 'Report' 
                 aria-required="true"
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Select a reason...</option>
+                <option value="">{t('reason')}</option>
                 {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
+                  <option key={c.value} value={c.value}>{t(c.value)}</option>
                 ))}
               </select>
             </div>
 
             <div className="mb-3">
               <label htmlFor="report-message" className="block text-sm font-medium text-gray-700 mb-1">
-                Additional Details (optional)
+                {t('details')}
               </label>
               <textarea
                 id="report-message"
@@ -149,7 +151,7 @@ export default function ReportButton({ contentType, contentId, label = 'Report' 
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Describe the issue..."
+                placeholder={t('describe')}
               />
             </div>
 
@@ -157,7 +159,7 @@ export default function ReportButton({ contentType, contentId, label = 'Report' 
               <>
                 <div className="mb-3">
                   <label htmlFor="report-name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Your Name <span className="text-red-500">*</span>
+                    {t('name')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -166,12 +168,12 @@ export default function ReportButton({ contentType, contentId, label = 'Report' 
                     onChange={(e) => setFormData({ ...formData, reporterName: e.target.value })}
                     aria-required="true"
                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Your name"
+                    placeholder={t('name')}
                   />
                 </div>
                 <div className="mb-3">
                   <label htmlFor="report-email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Your Email <span className="text-red-500">*</span>
+                    {t('email')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="email"

@@ -18,6 +18,7 @@ import { pollAPI, bookmarkAPI } from '@/lib/api';
 import CommentsThread from '@/components/comments/CommentsThread';
 import { useAuth } from '@/lib/auth-context';
 import { usePermissions } from '@/hooks/usePermissions';
+import IssueFollowButton from '@/components/IssueFollowButton';
 import PollVoting from '@/components/polls/PollVoting';
 import PollResults from '@/components/polls/PollResults';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -252,9 +253,10 @@ export default function PollDetailPage() {
             <h1 className="text-3xl font-bold text-gray-900 mb-4">{poll.title}</h1>
             
             {poll.description && poll.purpose !== 'voting_intention' && (
-              <p className="text-gray-700 text-lg mb-4 whitespace-pre-wrap">
-                {poll.description}
-              </p>
+              <div className="mb-4 text-gray-700">
+                <p className="text-base leading-7">{poll.description.split(/\n\s*\n/)[0].slice(0, 280)}{poll.description.split(/\n\s*\n/)[0].length > 280 ? '…' : ''}</p>
+                <details className="mt-3"><summary className="cursor-pointer min-h-11 py-2 font-semibold text-blue-700">Διάβασε όλο το πλαίσιο πριν ψηφίσεις</summary><p className="mt-3 whitespace-pre-wrap leading-7">{poll.description}</p></details>
+              </div>
             )}
             
             {/* Meta Information with Share/Bookmark/Print */}
@@ -322,28 +324,18 @@ export default function PollDetailPage() {
           </div>
         </div>
 
-        {/* Results lead the page; opening the ballot does not cast a vote. */}
-        {isPollActive && showResults && (
-          <button type="button" className="mb-4 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700" onClick={() => {
-            setBallotOpen(true);
-            requestAnimationFrame(() => {
-              const ballot = document.getElementById('poll-ballot');
-              ballot?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              ballot?.focus({ preventScroll: true });
-            });
-          }}>{poll.userVote ? 'Άλλαξε ψήφο' : 'Ψήφισε'}</button>
+        {poll.visibility === 'public' && !poll.organizationId && (<div className="mb-5"><IssueFollowButton entityType="poll" entityId={poll.id} /></div>)}
+        {isPollActive && (
+          <details id="poll-ballot" tabIndex={-1} open={ballotOpen || !poll.userVote} onToggle={event => setBallotOpen(event.currentTarget.open)} className="mb-6 scroll-mt-24 rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
+            <summary className="cursor-pointer text-xl font-semibold text-gray-900">{poll.userVote ? 'Άλλαξε ψήφο' : 'Ψήφισε'}</summary>
+            <div className="mt-5"><PollVoting poll={poll} onVoteSuccess={handleVoteSuccess} /></div>
+          </details>
         )}
         {showResults && (
           <section className="mb-6 rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
             <h2 className="mb-4 text-xl font-semibold text-gray-900">Αποτελέσματα</h2>
             <PollResults poll={poll} canView={showResults} canEdit={canEdit} />
           </section>
-        )}
-        {isPollActive && (
-          <details id="poll-ballot" tabIndex={-1} open={ballotOpen || !showResults} onToggle={event => setBallotOpen(event.currentTarget.open)} className="mb-6 scroll-mt-24 rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
-            <summary className="cursor-pointer text-xl font-semibold text-gray-900">{poll.userVote ? 'Άλλαξε ψήφο' : 'Ψήφισε'}</summary>
-            <div className="mt-5"><PollVoting poll={poll} onVoteSuccess={handleVoteSuccess} /></div>
-          </details>
         )}
 
         {/* Results Not Available Message */}

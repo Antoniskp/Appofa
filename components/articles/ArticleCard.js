@@ -1,5 +1,6 @@
 'use client';
 
+import { editorialPreview } from '@/lib/utils/editorialPreview';
 import { ImageCard, ImageTopCard } from '@/components/ui/Card';
 import Badge, { TypeBadge } from '@/components/ui/Badge';
 import { TruncatedTextTooltip } from '@/components/ui/Tooltip';
@@ -184,7 +185,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
           
           {/* Summary */}
           <p className="body-copy mb-4">
-            {stripMarkdown(article.summary || (article.content ? `${article.content.substring(0, 200)}...` : ''))}
+            {stripMarkdown(editorialPreview(article))}
           </p>
           
           {/* Meta */}
@@ -238,7 +239,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
           </TruncatedTextTooltip>
         </h3>
         <p className="body-copy mb-4 line-clamp-3">
-          {stripMarkdown(article.summary || (article.content ? `${article.content.substring(0, 150)}...` : ''))}
+          {stripMarkdown(editorialPreview(article))}
         </p>
         <div className="mt-auto flex justify-between items-center text-sm text-gray-500 pt-2 border-t border-gray-100">
           <div className="flex items-center gap-1.5">

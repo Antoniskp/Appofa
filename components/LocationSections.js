@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { GlobeAltIcon, PhoneIcon, VideoCameraIcon, MegaphoneIcon, NewspaperIcon } from '@heroicons/react/24/outline';
 
@@ -118,6 +119,7 @@ function ContactsSection({ content }) {
 }
 
 function WebcamsSection({ content, compact = false }) {
+  const t = useTranslations('common');
   const webcams = content?.webcams || [];
   if (webcams.length === 0) return <p className="text-gray-500 text-sm">No webcams available.</p>;
 
@@ -155,7 +157,7 @@ function WebcamsSection({ content, compact = false }) {
                 rel="noopener noreferrer"
                 className="text-xs text-blue-600 hover:underline"
               >
-                Open ↗
+                {t('webcam_open')} ↗
               </a>
             </div>
             {embedType === 'image' ? (
@@ -182,7 +184,7 @@ function WebcamsSection({ content, compact = false }) {
                   className="text-blue-600 hover:underline flex items-center gap-1"
                 >
                   <VideoCameraIcon className="w-4 h-4" />
-                  View webcam
+                  {t('webcam_view')}
                 </a>
               </div>
             )}

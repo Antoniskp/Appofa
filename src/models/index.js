@@ -575,6 +575,7 @@ User.hasMany(VideoPin, { foreignKey: 'moderatedByUserId', as: 'moderatedVideoPin
 Location.hasMany(VideoPin, { foreignKey: 'locationId', as: 'videoPins' });
 
 module.exports = {
+  IssueFollow: require('./IssueFollow'),
   sequelize,
   User,
   Article,

@@ -101,6 +101,8 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
   const options = poll.options || [];
   const totalVotes = options.reduce((sum, opt) => sum + (opt.voteCount || 0), 0);
   
+  if (totalVotes === 0) return <p className="text-sm text-gray-600">Δεν έχουν καταχωριστεί ακόμη ψήφοι. Τα αποτελέσματα θα εμφανιστούν μετά την πρώτη συμμετοχή.</p>;
+
   const optionsWithStats = options.map(option => ({
     ...option,
     voteCount: option.voteCount || 0,

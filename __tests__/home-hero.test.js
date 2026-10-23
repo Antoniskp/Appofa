@@ -93,139 +93,13 @@ describe('HomeHero CTA link behavior', () => {
     });
   });
 
-  test('keeps external CTA links opening in a new tab', async () => {
+  test('uses a stable headline and primary actions even when slides contain promotional claims', async () => {
     const { container, root } = await renderHero(buildSlide('https://example.com'));
-    const ctaLink = container.querySelector('a[href="https://example.com"]');
-
-    expect(ctaLink).toBeTruthy();
-    expect(ctaLink.getAttribute('target')).toBe('_blank');
-    expect(ctaLink.getAttribute('rel')).toBe('noopener noreferrer');
-
-    await act(async () => {
-      root.unmount();
-    });
-  });
-
-  test('treats same-origin absolute CTA links as internal navigation', async () => {
-    const sameOriginUrl = `${window.location.origin}/polls?tab=open#latest`;
-    const { container, root } = await renderHero(buildSlide(sameOriginUrl));
-    const ctaLink = [...container.querySelectorAll('a')].find((anchor) => anchor.textContent.includes('Δες τώρα'));
-
-    expect(ctaLink).toBeTruthy();
-    expect(ctaLink.getAttribute('href')).toBe('/polls?tab=open#latest');
-    expect(ctaLink.getAttribute('target')).toBeNull();
-    expect(ctaLink.getAttribute('rel')).toBeNull();
-
-    await act(async () => {
-      root.unmount();
-    });
-  });
-
-  test('keeps CTA wrapper hidden when linkUrl is not internal or external', async () => {
-    const { container, root } = await renderHero(buildSlide('polls'));
-    const wrapper = container.querySelector('div.mb-3.transition-opacity.duration-500');
-
-    expect(wrapper).toBeTruthy();
-    expect(wrapper.className).toContain('opacity-0');
-    expect(wrapper.className).toContain('pointer-events-none');
-
-    await act(async () => {
-      root.unmount();
-    });
-  });
-
-  test('keeps arrow navigation row rendered but invisible with a single slide', async () => {
-    const { container, root } = await renderHero(buildSlide('/polls'));
-    const prevButton = container.querySelector('button[aria-label="Προηγούμενο slide"]');
-
-    expect(prevButton).toBeTruthy();
-    expect(prevButton.parentElement.className).toContain('invisible');
-
-    await act(async () => {
-      root.unmount();
-    });
-  });
-
-  test('shows arrow navigation row when multiple slides are available', async () => {
-    const { container, root } = await renderHero([
-      buildSlide('/polls', 'Δες τώρα'),
-      { ...buildSlide('/news', 'Δες περισσότερα'), id: 2, title: 'Second slide' },
-    ]);
-    const prevButton = container.querySelector('button[aria-label="Προηγούμενο slide"]');
-
-    expect(prevButton).toBeTruthy();
-    expect(prevButton.parentElement.className).not.toContain('invisible');
-
-    await act(async () => {
-      root.unmount();
-    });
-  });
-
-  test('changes headline and subtitle with the active slide', async () => {
-    const { container, root } = await renderHero([
-      { ...buildSlide('/polls'), id: 1, title: 'First hero title', subtitle: 'First hero subtitle' },
-      { ...buildSlide('/news'), id: 2, title: 'Second hero title', subtitle: 'Second hero subtitle' },
-    ]);
-
-    expect(container.textContent).toContain('First hero title');
-    expect(container.textContent).toContain('First hero subtitle');
-
-    const arrowRow = container.querySelector('div.flex.items-center.gap-3.mb-4');
-    const buttons = arrowRow.querySelectorAll('button');
-    await act(async () => {
-      buttons[buttons.length - 1].dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    });
-
-    expect(container.textContent).toContain('Second hero title');
-    expect(container.textContent).toContain('Second hero subtitle');
-    expect(container.textContent).not.toContain('First hero title');
-
-    await act(async () => {
-      root.unmount();
-    });
-  });
-
-  test('keeps a fixed slide text frame so hero height does not jump between slides', async () => {
-    const { container, root } = await renderHero([
-      {
-        ...buildSlide('/polls'),
-        id: 1,
-        title: 'Short title',
-        subtitle: 'Short subtitle',
-      },
-      {
-        ...buildSlide('/news'),
-        id: 2,
-        title: 'A much longer hero title that should be clamped instead of pushing the page down',
-        subtitle: 'A longer subtitle that simulates an admin-managed hero slide with more text than the default slide.',
-      },
-    ]);
-
-    const slideFrame = container.querySelector('[aria-live="polite"]');
-    const headline = slideFrame.querySelector('h1');
-
-    expect(slideFrame.className).toContain('h-[15rem]');
-    expect(slideFrame.className).toContain('md:h-[16rem]');
-    expect(slideFrame.className).toContain('lg:h-[17rem]');
-    expect(slideFrame.className).not.toContain('min-h');
-    expect(headline.className).toContain('line-clamp-2');
-
-    await act(async () => {
-      root.unmount();
-    });
-  });
-
-  test('does not render the old static live panel', async () => {
-    const { container, root } = await renderHero(buildSlide('/polls'));
-
-    expect(container.textContent).not.toContain('Ζωντανή εικόνα');
-    expect(container.textContent).not.toContain('Η συμμετοχή γίνεται πράξη');
-    expect(container.textContent).not.toContain('Τοπική δράση');
-    expect(container.textContent).not.toContain('Λύσεις πολιτών');
-
-    await act(async () => {
-      root.unmount();
-    });
+    expect(container.querySelector('h1').textContent).toBe('Δες τι συμβαίνει. Πάρε θέση. Πρότεινε λύσεις.');
+    expect(container.querySelector('a[href="/locations"]')).toBeTruthy();
+    expect(container.querySelector('[role="tablist"]')).toBeNull();
+    expect(container.textContent).toContain('Δεν αποτελούν επίσημες αποφάσεις');
+    await act(async () => root.unmount());
   });
 
   test('lets users vote in the featured poll without navigating away', async () => {
@@ -266,13 +140,13 @@ describe('HomeHero CTA link behavior', () => {
     });
   });
 
-  test('keeps fixed homepage action links out of the guest hero', async () => {
+  test('shows primary actions to guests', async () => {
     useAuth.mockReturnValue({ user: null, loading: false });
     const { container, root } = await renderHero(buildSlide('/polls'));
 
-    expect(container.textContent).toContain('Ενημέρωση · Συμμετοχή · Αποφάσεις');
+    expect(container.textContent).toContain('Ψήφισε σε ένα θέμα');
     expect(container.querySelector('a[href="/register"]')).toBeFalsy();
-    expect(container.querySelector('a[href="/locations"]')).toBeFalsy();
+    expect(container.querySelector('a[href="/locations"]')).toBeTruthy();
     expect(container.querySelector('a[href="/polls?voteRestriction=anyone"]')).toBeFalsy();
     expect(container.querySelector('a[href="/polls"]')).toBeTruthy(); // slide CTA only
     expect(container.textContent).not.toContain('Γίνε Moderator');
@@ -282,7 +156,7 @@ describe('HomeHero CTA link behavior', () => {
     });
   });
 
-  test('keeps fixed homepage action links out of the logged-in hero', async () => {
+  test('links returning users to their area and followed issues', async () => {
     useAuth.mockReturnValue({
       user: {
         role: 'admin',
@@ -293,10 +167,10 @@ describe('HomeHero CTA link behavior', () => {
     });
     const { container, root } = await renderHero(buildSlide('/suggestions'));
 
-    expect(container.querySelector('a[href="/locations/athens"]')).toBeFalsy();
-    expect(container.querySelector('a[href="/polls"]')).toBeFalsy();
+    expect(container.querySelector('a[href="/locations/athens"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/polls"]')).toBeTruthy();
     expect(container.querySelector('a[href="/admin"]')).toBeFalsy();
-    expect(container.querySelector('a[href="/suggestions"]')).toBeTruthy(); // slide CTA only
+    expect(container.querySelector('a[href="/following"]')).toBeTruthy();
     expect(container.textContent).not.toContain('Admin / Moderator');
 
     await act(async () => {

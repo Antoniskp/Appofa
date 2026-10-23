@@ -803,7 +803,13 @@
       "no_prefectures": "Niciun județ disponibil",
       "no_municipalities": "Niciun municipiu disponibil",
       "selected_label": "Selectat"
-    }
+    },
+    "map_activity": "Activitate",
+    "map_simple": "Simplu",
+    "map_political": "Politic",
+    "map_satellite": "Satelit",
+    "webcam_open": "Deschide",
+    "webcam_view": "Vezi camera"
   },
   "footer": {
     "rights": "Toate drepturile rezervate.",
@@ -2831,5 +2837,31 @@
     "choose_kind": "Alege un tip",
     "topics": "Subiecte",
     "all_topics": "Toate subiectele"
+  },
+  "reportContent": {
+    "report": "Raportează",
+    "title": "Raportează conținut",
+    "misinformation": "Dezinformare",
+    "harassment": "Hărțuire",
+    "spam": "Spam",
+    "privacy_violation": "Încălcarea confidențialității",
+    "impersonation": "Uzurpare de identitate",
+    "inappropriate_content": "Conținut inadecvat",
+    "other": "Altul",
+    "choose": "Selectează o categorie.",
+    "required": "Numele și adresa de email sunt obligatorii.",
+    "failed": "Raportul nu a fost trimis.",
+    "cancel": "Anulează",
+    "submitting": "Se trimite…",
+    "submit": "Trimite raportul",
+    "success": "Raport trimis",
+    "thanks": "Mulțumim. Echipa noastră va analiza raportul.",
+    "close": "Închide",
+    "category": "Categorie",
+    "reason": "Selectează un motiv…",
+    "details": "Detalii suplimentare (opțional)",
+    "describe": "Descrie problema…",
+    "name": "Numele tău",
+    "email": "Adresa ta de email"
   }
 }

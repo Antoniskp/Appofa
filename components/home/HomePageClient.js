@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import ManifestSupporters from '@/components/home/ManifestSupporters';
+import ProgressFeed from '@/components/ProgressFeed';
 import PollTopics from '@/components/home/PollTopics';
 import { useTranslations } from 'next-intl';
 import { useHomepageData } from '@/hooks/useHomepageData';
@@ -137,6 +138,10 @@ export default function HomePageClient({ initialPayload = null }) {
         />
       )}
 
+      <section className="app-container py-8" aria-label="Πρόοδος προτάσεων">
+        <h2 className="mb-5 text-2xl font-bold">Τι έγινε μετά τη συμμετοχή;</h2>
+        <ProgressFeed preview />
+      </section>
       <GovernmentSnapshotSection />
 
       <HomepageSection

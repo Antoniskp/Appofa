@@ -1,5 +1,6 @@
 'use client';
 
+import { editorialPreview, hasAuthoringPrompt } from '@/lib/utils/editorialPreview';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { InformationCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { ConfirmDialog } from '@/components/ui/Modal';
@@ -522,6 +523,12 @@ export default function ArticleForm({
         placeholder={formData.sourceUrl ? tArticles('form_summary_video_placeholder') : tArticles('form_summary_placeholder')}
       />
  
+      <section aria-label="Προεπισκόπηση δημοσίευσης" className="rounded-lg border bg-gray-50 p-4">
+        <h2 className="font-semibold">Προεπισκόπηση δημοσίευσης</h2>
+        <p className="mt-2 font-bold">{formData.title}</p>
+        <p className="mt-2 text-sm">{editorialPreview(formData)}</p>
+        {(hasAuthoringPrompt(formData.summary) || hasAuthoringPrompt(formData.content)) && <p role="alert" className="mt-3 text-sm text-amber-800">Το κείμενο φαίνεται να περιέχει οδηγία συγγραφής. Έλεγξε τη σύνοψη και το άρθρο πριν δημοσιεύσεις.</p>}
+      </section>
       {!formData.sourceUrl && (
         <ArticleBannerImageField
           value={formData.bannerImageUrl}

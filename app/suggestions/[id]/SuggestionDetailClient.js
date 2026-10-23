@@ -32,6 +32,7 @@ import { TooltipIconButton } from '@/components/ui/Tooltip';
 import ShareModal from '@/components/ui/ShareModal';
 import LoginLink from '@/components/ui/LoginLink';
 import UserAvatar from '@/components/user/UserAvatar';
+import IssueFollowButton from '@/components/IssueFollowButton';
 import ProposalProgress from '@/components/ProposalProgress';
 import VoteIdentitySelector from '@/components/VoteIdentitySelector';
 import { getEmbedPath } from '@/lib/utils/embed';
@@ -523,6 +524,7 @@ export default function SuggestionDetailPage() {
           })()}
         </div>
 
+        {suggestion.visibility === 'public' && !suggestion.organizationId && (<div className="mb-5"><IssueFollowButton entityType="suggestion" entityId={suggestion.id} /></div>)}
         <ProposalProgress proposal={suggestion} user={user} onUpdated={(data) => setSuggestion((previous) => ({ ...previous, ...data }))} />
         {/* Response Section */}
         <div>

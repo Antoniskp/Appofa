@@ -1,4 +1,5 @@
 'use client';
+import { editorialPreview } from '@/lib/utils/editorialPreview';
 
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -290,10 +291,10 @@ export default function ArticleDetailPage() {
             </div>
 
             {/* Article Summary */}
-            {article.summary && (
+            {article.summary && editorialPreview(article) && (
               <div className="mb-8">
                 <p className="text-xl text-gray-700 italic border-l-4 border-blue-600 pl-4">
-                  {article.summary}
+                  {editorialPreview(article)}
                 </p>
               </div>
             )}

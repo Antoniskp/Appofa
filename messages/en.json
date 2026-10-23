@@ -803,7 +803,13 @@
       "no_prefectures": "No prefectures available",
       "no_municipalities": "No municipalities available",
       "selected_label": "Selected"
-    }
+    },
+    "map_activity": "Activity",
+    "map_simple": "Simple",
+    "map_political": "Political",
+    "map_satellite": "Satellite",
+    "webcam_open": "Open",
+    "webcam_view": "View webcam"
   },
   "footer": {
     "rights": "All rights reserved.",
@@ -2954,5 +2960,31 @@
     "choose_kind": "Choose a kind",
     "topics": "Topics",
     "all_topics": "All topics"
+  },
+  "reportContent": {
+    "report": "Report",
+    "title": "Report Content",
+    "misinformation": "Misinformation",
+    "harassment": "Harassment",
+    "spam": "Spam",
+    "privacy_violation": "Privacy Violation",
+    "impersonation": "Impersonation",
+    "inappropriate_content": "Inappropriate Content",
+    "other": "Other",
+    "choose": "Please select a category.",
+    "required": "Name and email are required.",
+    "failed": "Failed to submit report.",
+    "cancel": "Cancel",
+    "submitting": "Submitting...",
+    "submit": "Submit Report",
+    "success": "Report submitted",
+    "thanks": "Thank you. Our team will review your report.",
+    "close": "Close",
+    "category": "Category",
+    "reason": "Select a reason...",
+    "details": "Additional Details (optional)",
+    "describe": "Describe the issue...",
+    "name": "Your Name",
+    "email": "Your Email"
   }
 }

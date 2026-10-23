@@ -29,3 +29,7 @@ src/data/hero-settings.json
 
 # Uploaded user files (served statically, not committed)
 /uploads/
+
+# Isolated participation verification build
+.next-participation/
+.next-participation-webpack/

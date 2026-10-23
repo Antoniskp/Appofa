@@ -491,6 +491,7 @@ export default memo(function GreeceBoundaryMap({
   onMarkersReady,
   showSelectionCard = true,
 }) {
+  const t = useTranslations('common');
   const [fallbackGeoData, setFallbackGeoData] = useState(null);
   const [fallbackGeoError, setFallbackGeoError] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState(null);
@@ -628,10 +629,10 @@ export default memo(function GreeceBoundaryMap({
     <div className={`relative ${className || 'h-[420px] w-full rounded-xl overflow-hidden'}`}>
       <div className="absolute left-3 top-3 z-[1000] flex flex-wrap gap-1 rounded-lg border border-gray-200 bg-white/95 p-1 shadow-sm">
         {[
-          { id: 'activity', label: 'Activity' },
-          { id: 'light', label: 'Simple' },
-          { id: 'political', label: 'Political' },
-          { id: 'satellite', label: 'Satellite' },
+          { id: 'activity', label: t('map_activity') },
+          { id: 'light', label: t('map_simple') },
+          { id: 'political', label: t('map_political') },
+          { id: 'satellite', label: t('map_satellite') },
         ].map((mode) => (
           <button
             key={mode.id}

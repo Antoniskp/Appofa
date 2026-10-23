@@ -162,7 +162,7 @@ export default function LocationRoles({
                   ) : (
                     <p className="text-sm font-semibold text-gray-800 truncate">{name}</p>
                   )}
-                  <p className="text-xs text-gray-500 truncate">@{user?.username || 'unknown'}</p>
+                  <>{user?.username && user.username.toLowerCase() !== 'unknown' && <p className="text-xs text-gray-500 truncate">@{user.username}</p>}</>
                 </div>
               </div>
               {profileHref && (
