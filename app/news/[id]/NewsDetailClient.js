@@ -119,7 +119,7 @@ export default function NewsDetailPage() {
     if (!article) return;
     const canonical = idSlug(article.id, article.title);
     if (params.id !== canonical) {
-      router.replace(`/news/${canonical}`);
+      router.replace(`/news/${canonical}${window.location.hash}`);
     }
   }, [article, params.id, router]);
 
@@ -172,7 +172,7 @@ export default function NewsDetailPage() {
   return (
     <>
     <div className="bg-gray-50 min-h-screen py-8">
-      <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <article className="max-w-4xl xl:has-[[data-article-contents]]:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav aria-label="Breadcrumb" className="mb-6">
           <ol className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
             <li>
@@ -185,7 +185,7 @@ export default function NewsDetailPage() {
           </ol>
         </nav>
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="bg-white rounded-lg shadow-md overflow-clip">
           {isVideoArticle ? (
             /* Video articles: show the embed as the hero instead of a static banner */
             <div className="bg-black">

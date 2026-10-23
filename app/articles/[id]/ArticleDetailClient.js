@@ -147,7 +147,7 @@ export default function ArticleDetailPage() {
     }
     const canonical = idSlug(article.id, article.title);
     if (params.id !== canonical) {
-      router.replace(`${basePath}/${canonical}`);
+      router.replace(`${basePath}/${canonical}${window.location.hash}`);
     }
   }, [article, params.id, router, pathname]);
 
@@ -193,7 +193,7 @@ export default function ArticleDetailPage() {
   return (
     <>
     <div className="bg-gray-50 min-h-screen py-8">
-      <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <article className="max-w-4xl xl:has-[[data-article-contents]]:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav aria-label={tArticles('breadcrumb')} className="mb-6">
           <ol className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
             <li>
@@ -206,7 +206,7 @@ export default function ArticleDetailPage() {
           </ol>
         </nav>
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="bg-white rounded-lg shadow-md overflow-clip">
           {/* For video articles: show video embed at the top, hide banner image */}
           {isVideo ? (
             <div className="p-4 sm:p-6 pb-0">

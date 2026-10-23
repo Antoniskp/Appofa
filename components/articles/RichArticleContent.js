@@ -2,6 +2,9 @@
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useEffect, useRef } from 'react';
+import articleContents from '@/lib/utils/articleContents';
+import ArticleContents from './ArticleContents';
 
 const isSafeUrl = (url) => {
   if (!url || typeof url !== 'string') return false;
@@ -57,13 +60,17 @@ const toVimeoEmbedUrl = (url) => {
   }
 };
 
+const headingStyles = ['text-3xl font-bold mt-6', 'text-2xl font-bold mt-5', 'text-xl font-semibold mt-4', 'text-lg font-semibold mt-3', 'text-base font-semibold mt-2', 'text-sm font-semibold mt-2'];
+const headings = Object.fromEntries(headingStyles.map((style, index) => {
+  const Heading = `h${index + 1}`;
+  return [Heading, function ArticleHeading({ id, children }) {
+    return <Heading id={id} tabIndex={id ? -1 : undefined} className={`${style} scroll-mt-6 break-words focus:outline-none target:rounded target:bg-blue-50`}>{children}</Heading>;
+  }];
+}));
+
 const components = {
-  h1: ({ children }) => <h1 className="text-3xl font-bold mt-6">{children}</h1>,
-  h2: ({ children }) => <h2 className="text-2xl font-bold mt-5">{children}</h2>,
-  h3: ({ children }) => <h3 className="text-xl font-semibold mt-4">{children}</h3>,
-  h4: ({ children }) => <h4 className="text-lg font-semibold mt-3">{children}</h4>,
-  h5: ({ children }) => <h5 className="text-base font-semibold mt-2">{children}</h5>,
-  h6: ({ children }) => <h6 className="text-sm font-semibold mt-2">{children}</h6>,
+  ...headings,
+  'article-toc': ({ node }) => <ArticleContents headings={node.data.outline} />,
   p: ({ children }) => <p className="break-words">{children}</p>,
   strong: ({ children }) => <strong>{children}</strong>,
   em: ({ children }) => <em>{children}</em>,
@@ -117,12 +124,12 @@ const components = {
       );
     }
 
-    if (!isSafeUrl(safeHref)) return <>{children}</>;
+    if (!isSafeUrl(safeHref) && !safeHref.startsWith('#')) return <>{children}</>;
 
     return (
       <a
         href={safeHref}
-        target="_blank"
+        target={safeHref.startsWith('#') ? undefined : '_blank'}
         rel="noopener noreferrer"
         className="text-blue-600 hover:text-blue-800 underline break-all"
       >
@@ -157,10 +164,31 @@ const components = {
   td: ({ children }) => <td className="border border-gray-300 px-4 py-2">{children}</td>,
 };
 
-export default function RichArticleContent({ content = '' }) {
+export default function RichArticleContent({ content = '', showContents = true }) {
+  const container = useRef(null);
+  useEffect(() => {
+    if (!showContents) return;
+    // Article bodies arrive asynchronously; restore deep links after they render.
+    const restoreSection = () => {
+      let id;
+      try { id = decodeURIComponent(window.location.hash.slice(1)); } catch { return; }
+      if (!id.startsWith('article-section-')) return;
+      const target = document.getElementById(id);
+      if (target && container.current?.contains(target)) {
+        target.scrollIntoView({ block: 'start' });
+        target.focus({ preventScroll: true });
+      }
+    };
+    const frame = requestAnimationFrame(restoreSection);
+    window.addEventListener('hashchange', restoreSection);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('hashchange', restoreSection);
+    };
+  }, [content, showContents]);
   return (
-    <div className="space-y-2 text-gray-800 leading-relaxed">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+    <div ref={container} className="space-y-2 text-gray-800 leading-relaxed">
+      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={showContents ? [articleContents] : []} components={components}>
         {String(content || '')}
       </ReactMarkdown>
     </div>
