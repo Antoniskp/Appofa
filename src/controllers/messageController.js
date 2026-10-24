@@ -478,25 +478,25 @@ const messageController = {
         const emailSubject = `Re: ${updatedMessage.subject}`;
         const emailBody = `
           <p>Γεια σας,</p>
-          <p>Λάβατε μια απάντηση στο μήνυμα που στείλατε στο Appofa με θέμα "<strong>${updatedMessage.subject}</strong>".</p>
+          <p>Λάβατε μια απάντηση στο μήνυμα που στείλατε στο Appofasi με θέμα "<strong>${updatedMessage.subject}</strong>".</p>
           <hr />
           <div style="background: #f9f9f9; padding: 15px; border-left: 4px solid #2563eb;">
             <p style="white-space: pre-wrap;">${updatedMessage.response}</p>
           </div>
           <hr />
           <p>Σας ευχαριστούμε για τη συμμετοχή σας,</p>
-          <p>Η ομάδα του Appofa</p>
+          <p>Η ομάδα του Appofasi</p>
         `;
         const emailText = `
           Γεια σας,
-          Λάβατε μια απάντηση στο μήνυμα που στείλατε στο Appofa με θέμα "${updatedMessage.subject}".
+          Λάβατε μια απάντηση στο μήνυμα που στείλατε στο Appofasi με θέμα "${updatedMessage.subject}".
 
           ---
           ${updatedMessage.response}
           ---
 
           Σας ευχαριστούμε για τη συμμετοχή σας,
-          Η ομάδα του Appofa
+          Η ομάδα του Appofasi
         `;
 
         newsletterService.sendMail({

@@ -92,7 +92,7 @@ export default async function EmbeddedEntityPage({ params }) {
     return (
       <EmbeddedState
         title="Η ενσωμάτωση δεν είναι διαθέσιμη"
-        description="Μόνο δημόσιο περιεχόμενο μπορεί να εμφανιστεί εκτός Appofa. Ανοίξτε το πλήρες αντικείμενο για να ελέγξετε τα δικαιώματα πρόσβασης."
+        description="Μόνο δημόσιο περιεχόμενο μπορεί να εμφανιστεί εκτός Appofasi. Ανοίξτε το πλήρες αντικείμενο για να ελέγξετε τα δικαιώματα πρόσβασης."
         openLabel={tCommon('open_in_app')}
       />
     );

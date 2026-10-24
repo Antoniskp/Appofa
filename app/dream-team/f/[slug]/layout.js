@@ -4,7 +4,7 @@ export async function generateMetadata({ params }) {
   // Attempt to fetch formation metadata for OG tags.
   // Falls back to generic metadata if fetch fails or backend is unavailable.
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://appofa.gr';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://appofasi.gr';
     const apiUrl = process.env.API_URL || baseUrl;
     const res = await fetch(`${apiUrl}/api/dream-team/formations/share/${slug}`, {
       next: { revalidate: 60 },
@@ -15,7 +15,7 @@ export async function generateMetadata({ params }) {
       if (formation) {
         const title = `${formation.name} — Ιδανική Κυβέρνηση`;
         const description = formation.description
-          || `Δείτε την ιδανική κυβέρνηση του ${formation.authorName || 'χρήστη'} στο Appofa.`;
+          || `Δείτε την ιδανική κυβέρνηση του ${formation.authorName || 'χρήστη'} στο Appofasi.`;
         return {
           title,
           description,
@@ -38,8 +38,8 @@ export async function generateMetadata({ params }) {
   }
 
   return {
-    title: 'Ιδανική Κυβέρνηση — Appofa',
-    description: 'Δείτε μια ιδανική κυβέρνηση στο Appofa.',
+    title: 'Ιδανική Κυβέρνηση — Appofasi',
+    description: 'Δείτε μια ιδανική κυβέρνηση στο Appofasi.',
   };
 }
 

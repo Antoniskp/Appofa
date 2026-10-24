@@ -615,7 +615,7 @@ export default function SuggestionDetailPage() {
       <ShareModal
         url={typeof window !== 'undefined' ? window.location.href : ''}
         title={suggestion.title}
-        shareText="Δείτε αυτή την πρόταση στο Appofa! 💡"
+        shareText="Δείτε αυτή την πρόταση στο Appofasi! 💡"
         embedPath={getEmbedPath('suggestions', suggestion.id)}
         embedHeight={540}
         onClose={() => setShowShareModal(false)}

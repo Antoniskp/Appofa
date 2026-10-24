@@ -8,23 +8,23 @@ import badges from '@/config/badges.json';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Badges & Επιτεύγματα | Appofa',
+  title: 'Badges & Επιτεύγματα | Appofasi',
   description:
-    'Ανακαλύψτε το σύστημα badges της πλατφόρμας Appofa — κερδίστε επιτεύγματα για τη δραστηριότητά σας. Τρία επίπεδα: Χάλκινο, Ασημένιο, Χρυσό.',
+    'Ανακαλύψτε το σύστημα badges της πλατφόρμας Appofasi — κερδίστε επιτεύγματα για τη δραστηριότητά σας. Τρία επίπεδα: Χάλκινο, Ασημένιο, Χρυσό.',
   openGraph: {
     url: `${SITE_URL}/platform/badges`,
     type: 'website',
     locale: 'el_GR',
-    siteName: 'Appofa',
-    title: 'Badges & Επιτεύγματα | Appofa',
+    siteName: 'Appofasi',
+    title: 'Badges & Επιτεύγματα | Appofasi',
     description:
-      'Ανακαλύψτε το σύστημα badges της πλατφόρμας Appofa — κερδίστε επιτεύγματα για τη δραστηριότητά σας. Τρία επίπεδα: Χάλκινο, Ασημένιο, Χρυσό.',
+      'Ανακαλύψτε το σύστημα badges της πλατφόρμας Appofasi — κερδίστε επιτεύγματα για τη δραστηριότητά σας. Τρία επίπεδα: Χάλκινο, Ασημένιο, Χρυσό.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Badges & Επιτεύγματα | Appofa',
+    title: 'Badges & Επιτεύγματα | Appofasi',
     description:
-      'Ανακαλύψτε το σύστημα badges της πλατφόρμας Appofa — κερδίστε επιτεύγματα για τη δραστηριότητά σας. Τρία επίπεδα: Χάλκινο, Ασημένιο, Χρυσό.',
+      'Ανακαλύψτε το σύστημα badges της πλατφόρμας Appofasi — κερδίστε επιτεύγματα για τη δραστηριότητά σας. Τρία επίπεδα: Χάλκινο, Ασημένιο, Χρυσό.',
   },
   alternates: {
     canonical: `${SITE_URL}/platform/badges`,

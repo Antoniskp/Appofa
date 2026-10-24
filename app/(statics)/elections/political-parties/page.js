@@ -5,9 +5,9 @@ import PoliticalPartyComparison from '@/components/political/PoliticalPartyCompa
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Πολιτικά Κόμματα στην Ελλάδα | Appofa',
+  title: 'Πολιτικά Κόμματα στην Ελλάδα | Appofasi',
   description:
-    'Σύγκριση κομματικών οργανώσεων στην Appofa με φιλοσοφία, ανθρώπους, δημόσια στατιστικά και συνδέσμους.',
+    'Σύγκριση κομματικών οργανώσεων στην Appofasi με φιλοσοφία, ανθρώπους, δημόσια στατιστικά και συνδέσμους.',
   openGraph: {
     title: 'Πολιτικά Κόμματα στην Ελλάδα',
     description:
@@ -39,7 +39,7 @@ export default function PoliticalPartiesPage() {
       }
     >
       <p className="text-lg text-gray-700 -mt-2">
-        Σύγκρινε τις κομματικές οργανώσεις που υπάρχουν στην Appofa: φιλοσοφία,
+        Σύγκρινε τις κομματικές οργανώσεις που υπάρχουν στην Appofasi: φιλοσοφία,
         δημόσιους ρόλους, μέλη όπου είναι ορατά, ψηφοφορίες, προτάσεις και
         επίσημες δημοσιεύσεις.
       </p>
@@ -49,7 +49,7 @@ export default function PoliticalPartiesPage() {
       <section>
         <p className="text-xs text-gray-400 leading-relaxed border-t border-gray-200 pt-4">
           <strong>Σημείωση:</strong> Τα στοιχεία προέρχονται από τις κομματικές
-          οργανώσεις της Appofa και δεν αποτελούν πολιτική τοποθέτηση ή
+          οργανώσεις της Appofasi και δεν αποτελούν πολιτική τοποθέτηση ή
           υποστήριξη οποιουδήποτε κόμματος. Για επίσημες πληροφορίες ανατρέξτε
           στους ιστοτόπους των οργανώσεων ή στο{' '}
           <a

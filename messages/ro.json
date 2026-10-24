@@ -42,7 +42,7 @@
     "retry": "Încercați din nou",
     "clear": "Eliminați destinatarul",
     "empty": "Nu există încă autorități înregistrate pentru această localitate.",
-    "publication_note": "Propunerea este publicată pe Appofa. Alegerea unei autorități nu trimite un mesaj și nu confirmă că un oficial a citit-o.",
+    "publication_note": "Propunerea este publicată pe Appofasi. Alegerea unei autorități nu trimite un mesaj și nu confirmă că un oficial a citit-o.",
     "heading": "Propuneri pentru comunitate și autorități",
     "intro": "Propuneți o schimbare primarului, autorității regionale, unui ministru sau prim-ministrului. Discutați și adunați sprijinul comunității.",
     "only_addressed": "Doar propuneri adresate autorităților publice",
@@ -2043,7 +2043,7 @@
   },
   "gdpr": {
     "banner_title": "Cookie settings",
-    "banner_description": "Analytics cookies are enabled by default to help us improve Appofa. You can opt out at any time from cookie settings. For security and abuse-prevention purposes, we always record visitor entry data (IP address, country, page path) regardless of your preferences.",
+    "banner_description": "Analytics cookies are enabled by default to help us improve Appofasi. You can opt out at any time from cookie settings. For security and abuse-prevention purposes, we always record visitor entry data (IP address, country, page path) regardless of your preferences.",
     "banner_settings_hint": "You can reopen cookie settings anytime from the footer.",
     "accept_all": "Accept All",
     "reject_non_essential": "Reject Non-Essential",
@@ -2247,7 +2247,7 @@
       "cons_empty": "No cons were provided.",
       "edit": "Edit Civic Question",
       "share": "Share civic question",
-      "share_text": "View this civic question on Appofa! 🗳️",
+      "share_text": "View this civic question on Appofasi! 🗳️",
       "vote": "Vote",
       "results": "Results",
       "commission_requirement": "EU Requirement",
@@ -2383,7 +2383,7 @@
     }
   },
   "onboarding": {
-    "title": "Bine ai venit pe Appofa!",
+    "title": "Bine ai venit pe Appofasi!",
     "subtitle": "Spune-ne cum vrei să participi pentru a-ți arăta instrumentele potrivite.",
     "choose_goal": "Cum dorești să participi în principal?",
     "choose_one_primary": "Alege un obiectiv principal",

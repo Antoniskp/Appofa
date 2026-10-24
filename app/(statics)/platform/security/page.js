@@ -12,23 +12,23 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Ασφάλεια Πλατφόρμας | Appofa',
+  title: 'Ασφάλεια Πλατφόρμας | Appofasi',
   description:
-    'Επισκόπηση των μέτρων ασφάλειας της πλατφόρμας Appofa — αυθεντικοποίηση, CSRF, rate limiting, κρυπτογράφηση και προστασία δεδομένων.',
+    'Επισκόπηση των μέτρων ασφάλειας της πλατφόρμας Appofasi — αυθεντικοποίηση, CSRF, rate limiting, κρυπτογράφηση και προστασία δεδομένων.',
   openGraph: {
     url: `${SITE_URL}/platform/security`,
     type: 'website',
     locale: 'el_GR',
-    siteName: 'Appofa',
-    title: 'Ασφάλεια Πλατφόρμας | Appofa',
+    siteName: 'Appofasi',
+    title: 'Ασφάλεια Πλατφόρμας | Appofasi',
     description:
-      'Επισκόπηση των μέτρων ασφάλειας της πλατφόρμας Appofa — αυθεντικοποίηση, CSRF, rate limiting, κρυπτογράφηση και προστασία δεδομένων.',
+      'Επισκόπηση των μέτρων ασφάλειας της πλατφόρμας Appofasi — αυθεντικοποίηση, CSRF, rate limiting, κρυπτογράφηση και προστασία δεδομένων.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Ασφάλεια Πλατφόρμας | Appofa',
+    title: 'Ασφάλεια Πλατφόρμας | Appofasi',
     description:
-      'Επισκόπηση των μέτρων ασφάλειας της πλατφόρμας Appofa — αυθεντικοποίηση, CSRF, rate limiting, κρυπτογράφηση και προστασία δεδομένων.',
+      'Επισκόπηση των μέτρων ασφάλειας της πλατφόρμας Appofasi — αυθεντικοποίηση, CSRF, rate limiting, κρυπτογράφηση και προστασία δεδομένων.',
   },
   alternates: {
     canonical: `${SITE_URL}/platform/security`,
@@ -115,7 +115,7 @@ export default function SecurityPage() {
       }
     >
       <p className="text-lg text-gray-700 -mt-6">
-        Η πλατφόρμα Appofa εφαρμόζει ένα πολυεπίπεδο μοντέλο ασφάλειας. Παρακάτω παρουσιάζεται
+        Η πλατφόρμα Appofasi εφαρμόζει ένα πολυεπίπεδο μοντέλο ασφάλειας. Παρακάτω παρουσιάζεται
         μια δημόσια επισκόπηση των βασικών μηχανισμών που χρησιμοποιούνται για την προστασία των
         χρηστών και των δεδομένων.
       </p>

@@ -42,7 +42,7 @@ function WorkerStatus({ status, loading, onRefresh }) {
         <div>
           <h2 className="text-lg font-semibold text-gray-900">Worker Connection</h2>
           <p className="mt-1 text-sm text-gray-600">
-            Appofa uses Appofasistis for import, parsing, and reference extraction.
+            Appofasi uses Appofasistis for import, parsing, and reference extraction.
           </p>
         </div>
         <Button

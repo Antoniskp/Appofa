@@ -10,23 +10,23 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Πρόσθεσέ μας στην Αρχική σου | Appofa',
+  title: 'Πρόσθεσέ μας στην Αρχική σου | Appofasi',
   description:
-    'Μάθε πώς να προσθέσεις το Appofa στην αρχική οθόνη του κινητού σου και να το χρησιμοποιείς σαν εφαρμογή — χωρίς λήψη.',
+    'Μάθε πώς να προσθέσεις το Appofasi στην αρχική οθόνη του κινητού σου και να το χρησιμοποιείς σαν εφαρμογή — χωρίς λήψη.',
   openGraph: {
     url: `${SITE_URL}/platform/install-app`,
     type: 'website',
     locale: 'el_GR',
-    siteName: 'Appofa',
-    title: 'Πρόσθεσέ μας στην Αρχική σου | Appofa',
+    siteName: 'Appofasi',
+    title: 'Πρόσθεσέ μας στην Αρχική σου | Appofasi',
     description:
-      'Μάθε πώς να προσθέσεις το Appofa στην αρχική οθόνη του κινητού σου και να το χρησιμοποιείς σαν εφαρμογή — χωρίς λήψη.',
+      'Μάθε πώς να προσθέσεις το Appofasi στην αρχική οθόνη του κινητού σου και να το χρησιμοποιείς σαν εφαρμογή — χωρίς λήψη.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Πρόσθεσέ μας στην Αρχική σου | Appofa',
+    title: 'Πρόσθεσέ μας στην Αρχική σου | Appofasi',
     description:
-      'Μάθε πώς να προσθέσεις το Appofa στην αρχική οθόνη του κινητού σου και να το χρησιμοποιείς σαν εφαρμογή — χωρίς λήψη.',
+      'Μάθε πώς να προσθέσεις το Appofasi στην αρχική οθόνη του κινητού σου και να το χρησιμοποιείς σαν εφαρμογή — χωρίς λήψη.',
   },
   alternates: {
     canonical: `${SITE_URL}/platform/install-app`,
@@ -39,7 +39,7 @@ const benefits = [
     iconBg: 'bg-blue-100',
     iconColor: 'text-blue-600',
     title: 'Άμεση πρόσβαση',
-    description: 'Βρίσκεις το Appofa στην αρχική οθόνη σου, ακριβώς όπως κάθε άλλη εφαρμογή.',
+    description: 'Βρίσκεις το Appofasi στην αρχική οθόνη σου, ακριβώς όπως κάθε άλλη εφαρμογή.',
   },
   {
     Icon: BoltIcon,
@@ -93,7 +93,7 @@ export default function InstallAppPage() {
         <div className="flex-shrink-0">
           <Image
             src="/images/branding/appofa-app-icon.png"
-            alt="Appofa app icon"
+            alt="Appofasi app icon"
             width={96}
             height={96}
             className="rounded-2xl shadow-md border border-gray-200"
@@ -101,7 +101,7 @@ export default function InstallAppPage() {
           />
         </div>
         <p className="text-lg text-gray-700 leading-relaxed">
-          Το Appofa λειτουργεί σαν εφαρμογή απευθείας μέσα από τον browser σου. Δεν χρειάζεται
+          Το Appofasi λειτουργεί σαν εφαρμογή απευθείας μέσα από τον browser σου. Δεν χρειάζεται
           να κατεβάσεις τίποτα — απλώς πρόσθεσέ το στην αρχική οθόνη σου και είσαι έτοιμος/η.
         </p>
       </div>
@@ -152,14 +152,14 @@ export default function InstallAppPage() {
                 Κύλισε κάτω και πάτησε <strong>«Προσθήκη στην Αρχική Οθόνη»</strong>.
               </li>
               <li>
-                Δώσε ένα όνομα (π.χ. <em>Appofa</em>) και πάτησε <strong>Προσθήκη</strong>.
+                Δώσε ένα όνομα (π.χ. <em>Appofasi</em>) και πάτησε <strong>Προσθήκη</strong>.
               </li>
             </ol>
             {/* Icon preview */}
             <div className="mt-4 flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
               <Image
                 src="/images/branding/appofa-app-icon.png"
-                alt="Appofa icon preview"
+                alt="Appofasi icon preview"
                 width={40}
                 height={40}
                 className="rounded-xl shadow-sm"
@@ -199,7 +199,7 @@ export default function InstallAppPage() {
             <div className="mt-4 flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
               <Image
                 src="/images/branding/appofa-app-icon.png"
-                alt="Appofa icon preview"
+                alt="Appofasi icon preview"
                 width={40}
                 height={40}
                 className="rounded-xl shadow-sm"

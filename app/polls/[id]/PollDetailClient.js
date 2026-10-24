@@ -377,7 +377,7 @@ export default function PollDetailPage() {
         <ShareModal
           url={typeof window !== 'undefined' ? window.location.href : ''}
           title={poll.title}
-          shareText="Δείτε αυτή τη δημοσκόπηση στο Appofa! 📊"
+          shareText="Δείτε αυτή τη δημοσκόπηση στο Appofasi! 📊"
           embedPath={getEmbedPath('polls', poll.id, poll.title)}
           embedHeight={620}
           onClose={() => setShowShareModal(false)}

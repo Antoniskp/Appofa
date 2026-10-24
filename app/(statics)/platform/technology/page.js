@@ -4,21 +4,21 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Τεχνολογίες Πλατφόρμας | Appofa',
+  title: 'Τεχνολογίες Πλατφόρμας | Appofasi',
   description:
-    'Οι τεχνολογίες που χρησιμοποιεί η πλατφόρμα Appofa, με ομαδοποιημένη παρουσίαση και συνδέσμους προς κάθε εργαλείο.',
+    'Οι τεχνολογίες που χρησιμοποιεί η πλατφόρμα Appofasi, με ομαδοποιημένη παρουσίαση και συνδέσμους προς κάθε εργαλείο.',
   openGraph: {
-    title: 'Τεχνολογίες Πλατφόρμας | Appofa',
+    title: 'Τεχνολογίες Πλατφόρμας | Appofasi',
     description:
-      'Οι τεχνολογίες που χρησιμοποιεί η πλατφόρμα Appofa, με ομαδοποιημένη παρουσίαση και συνδέσμους προς κάθε εργαλείο.',
+      'Οι τεχνολογίες που χρησιμοποιεί η πλατφόρμα Appofasi, με ομαδοποιημένη παρουσίαση και συνδέσμους προς κάθε εργαλείο.',
     url: `${SITE_URL}/platform/technology`,
     type: 'website',
   },
   twitter: {
     card: 'summary',
-    title: 'Τεχνολογίες Πλατφόρμας | Appofa',
+    title: 'Τεχνολογίες Πλατφόρμας | Appofasi',
     description:
-      'Οι τεχνολογίες που χρησιμοποιεί η πλατφόρμα Appofa, με ομαδοποιημένη παρουσίαση και συνδέσμους προς κάθε εργαλείο.',
+      'Οι τεχνολογίες που χρησιμοποιεί η πλατφόρμα Appofasi, με ομαδοποιημένη παρουσίαση και συνδέσμους προς κάθε εργαλείο.',
   },
   alternates: {
     canonical: `${SITE_URL}/platform/technology`,
@@ -111,7 +111,7 @@ export default function TechnologyPage() {
     >
       <section className="-mt-4 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 p-6">
         <p className="text-lg text-gray-700 leading-relaxed">
-          Το Appofa βασίζεται σε σύγχρονη στοίβα τεχνολογιών για frontend, backend, δεδομένα, χάρτες,
+          Το Appofasi βασίζεται σε σύγχρονη στοίβα τεχνολογιών για frontend, backend, δεδομένα, χάρτες,
           ασφάλεια και παραγωγικότητα. Παρακάτω θα βρείτε τις βασικές τεχνολογίες με άμεσους συνδέσμους.
         </p>
       </section>

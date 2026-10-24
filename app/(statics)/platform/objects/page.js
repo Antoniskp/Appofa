@@ -4,23 +4,23 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Αντικείμενα Πλατφόρμας | Appofa',
+  title: 'Αντικείμενα Πλατφόρμας | Appofasi',
   description:
-    'Κατανοήστε τα κύρια αντικείμενα δεδομένων της πλατφόρμας Appofa — Άρθρα, Χρήστες, Ψηφοφορίες, Τοποθεσίες.',
+    'Κατανοήστε τα κύρια αντικείμενα δεδομένων της πλατφόρμας Appofasi — Άρθρα, Χρήστες, Ψηφοφορίες, Τοποθεσίες.',
   openGraph: {
     url: `${SITE_URL}/platform/objects`,
     type: 'website',
     locale: 'el_GR',
-    siteName: 'Appofa',
-    title: 'Αντικείμενα Πλατφόρμας | Appofa',
+    siteName: 'Appofasi',
+    title: 'Αντικείμενα Πλατφόρμας | Appofasi',
     description:
-      'Κατανοήστε τα κύρια αντικείμενα δεδομένων της πλατφόρμας Appofa — Άρθρα, Χρήστες, Ψηφοφορίες, Τοποθεσίες.',
+      'Κατανοήστε τα κύρια αντικείμενα δεδομένων της πλατφόρμας Appofasi — Άρθρα, Χρήστες, Ψηφοφορίες, Τοποθεσίες.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Αντικείμενα Πλατφόρμας | Appofa',
+    title: 'Αντικείμενα Πλατφόρμας | Appofasi',
     description:
-      'Κατανοήστε τα κύρια αντικείμενα δεδομένων της πλατφόρμας Appofa — Άρθρα, Χρήστες, Ψηφοφορίες, Τοποθεσίες.',
+      'Κατανοήστε τα κύρια αντικείμενα δεδομένων της πλατφόρμας Appofasi — Άρθρα, Χρήστες, Ψηφοφορίες, Τοποθεσίες.',
   },
   alternates: {
     canonical: `${SITE_URL}/platform/objects`,
@@ -158,7 +158,7 @@ export default function ObjectsPage() {
       }
     >
       <p className="text-lg text-gray-700 -mt-6">
-        Η πλατφόρμα Appofa οργανώνεται γύρω από τέσσερα κύρια αντικείμενα δεδομένων. Κατανοήστε
+        Η πλατφόρμα Appofasi οργανώνεται γύρω από τέσσερα κύρια αντικείμενα δεδομένων. Κατανοήστε
         τη δομή και τις σχέσεις τους.
       </p>
 

@@ -305,7 +305,7 @@ export default function NewsDetailPage() {
         <ShareModal
           url={typeof window !== 'undefined' ? window.location.href : ''}
           title={article.title}
-          shareText="Δείτε αυτή την είδηση στο Appofa! 📰"
+          shareText="Δείτε αυτή την είδηση στο Appofasi! 📰"
           onClose={() => setShowShareModal(false)}
         />
       )}

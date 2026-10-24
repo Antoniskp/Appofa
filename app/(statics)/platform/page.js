@@ -28,8 +28,8 @@ import {
 import { StaticPageLayout } from '@/components/layout';
 
 export const metadata = {
-  title: 'Πλατφόρμα | Appofa',
-  description: 'Μάθετε περισσότερα για την πλατφόρμα Appofa — αποστολή, κανόνες, συνεισφορά και επικοινωνία.',
+  title: 'Πλατφόρμα | Appofasi',
+  description: 'Μάθετε περισσότερα για την πλατφόρμα Appofasi — αποστολή, κανόνες, συνεισφορά και επικοινωνία.',
 };
 
 const categories = [
@@ -45,7 +45,7 @@ const categories = [
       { href: '/platform/technology', label: 'Τεχνολογίες', description: 'Αναλυτική σελίδα τεχνολογικού stack με λογότυπα και συνδέσμους', Icon: CpuChipIcon },
       { href: '/platform/badges', label: 'Badges & Επιτεύγματα', description: 'Σύστημα badges και τρόπος απόκτησης', Icon: TrophyIcon },
       { href: '/github-files', label: 'Αρχεία GitHub', description: 'Άμεσοι σύνδεσμοι σε αρχεία που αλλάζουν συχνά — κατηγορίες, χρώματα, μεταφράσεις', Icon: CodeBracketIcon },
-      { href: '/platform/install-app', label: 'Εγκατάσταση στο Κινητό', description: 'Πρόσθεσε το Appofa στην αρχική οθόνη σου σαν εφαρμογή', Icon: DevicePhoneMobileIcon },
+      { href: '/platform/install-app', label: 'Εγκατάσταση στο Κινητό', description: 'Πρόσθεσε το Appofasi στην αρχική οθόνη σου σαν εφαρμογή', Icon: DevicePhoneMobileIcon },
     ],
   },
   {
@@ -98,7 +98,7 @@ export default function PlatformPage() {
       showHelpfulLinks={false}
     >
       <p className="text-lg text-gray-700 -mt-6">
-        Μάθετε περισσότερα για την πλατφόρμα Appofa — αποστολή, κανόνες, συνεισφορά και επικοινωνία.
+        Μάθετε περισσότερα για την πλατφόρμα Appofasi — αποστολή, κανόνες, συνεισφορά και επικοινωνία.
       </p>
 
       <div className="space-y-10">

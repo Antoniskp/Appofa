@@ -27,7 +27,7 @@ export default function InstallAppBanner() {
         <div className="min-w-0">
           <p className="font-bold text-sm leading-snug">📱 Χρησιμοποίησέ μας σαν εφαρμογή!</p>
           <p className="text-sm opacity-90 mt-0.5">
-            Πρόσθεσε το Appofa στην αρχική οθόνη σου — χωρίς λήψη.
+            Πρόσθεσε το Appofasi στην αρχική οθόνη σου — χωρίς λήψη.
           </p>
         </div>
       </div>

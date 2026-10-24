@@ -5,23 +5,23 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Ροές Εφαρμογής | Appofa',
+  title: 'Ροές Εφαρμογής | Appofasi',
   description:
-    'Κατανοήστε τις κύριες ροές της εφαρμογής Appofa — εγγραφή, δημιουργία άρθρου, έγκριση ειδήσεων, δημοσκοπήσεις και περισσότερα.',
+    'Κατανοήστε τις κύριες ροές της εφαρμογής Appofasi — εγγραφή, δημιουργία άρθρου, έγκριση ειδήσεων, δημοσκοπήσεις και περισσότερα.',
   openGraph: {
     url: `${SITE_URL}/platform/flows`,
     type: 'website',
     locale: 'el_GR',
-    siteName: 'Appofa',
-    title: 'Ροές Εφαρμογής | Appofa',
+    siteName: 'Appofasi',
+    title: 'Ροές Εφαρμογής | Appofasi',
     description:
-      'Κατανοήστε τις κύριες ροές της εφαρμογής Appofa — εγγραφή, δημιουργία άρθρου, έγκριση ειδήσεων, δημοσκοπήσεις και περισσότερα.',
+      'Κατανοήστε τις κύριες ροές της εφαρμογής Appofasi — εγγραφή, δημιουργία άρθρου, έγκριση ειδήσεων, δημοσκοπήσεις και περισσότερα.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Ροές Εφαρμογής | Appofa',
+    title: 'Ροές Εφαρμογής | Appofasi',
     description:
-      'Κατανοήστε τις κύριες ροές της εφαρμογής Appofa — εγγραφή, δημιουργία άρθρου, έγκριση ειδήσεων, δημοσκοπήσεις και περισσότερα.',
+      'Κατανοήστε τις κύριες ροές της εφαρμογής Appofasi — εγγραφή, δημιουργία άρθρου, έγκριση ειδήσεων, δημοσκοπήσεις και περισσότερα.',
   },
   alternates: {
     canonical: `${SITE_URL}/platform/flows`,
@@ -96,7 +96,7 @@ export default function FlowsPage() {
       }
     >
       <p className="text-lg text-gray-700 -mt-6">
-        Κατανοήστε πώς λειτουργούν οι κύριες ροές της εφαρμογής Appofa — από την εγγραφή και τη
+        Κατανοήστε πώς λειτουργούν οι κύριες ροές της εφαρμογής Appofasi — από την εγγραφή και τη
         δημιουργία περιεχομένου έως την έγκριση ειδήσεων και τις δημοσκοπήσεις.
       </p>
 

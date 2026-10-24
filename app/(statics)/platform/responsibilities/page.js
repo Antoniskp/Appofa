@@ -12,23 +12,23 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Υπευθυνότητες | Appofa',
+  title: 'Υπευθυνότητες | Appofasi',
   description:
-    'Ποιος είναι υπεύθυνος για τι στην πλατφόρμα Appofa — ρόλοι, αποφάσεις, περιεχόμενο και ασφάλεια.',
+    'Ποιος είναι υπεύθυνος για τι στην πλατφόρμα Appofasi — ρόλοι, αποφάσεις, περιεχόμενο και ασφάλεια.',
   openGraph: {
     url: `${SITE_URL}/platform/responsibilities`,
     type: 'website',
     locale: 'el_GR',
-    siteName: 'Appofa',
-    title: 'Υπευθυνότητες | Appofa',
+    siteName: 'Appofasi',
+    title: 'Υπευθυνότητες | Appofasi',
     description:
-      'Ποιος είναι υπεύθυνος για τι στην πλατφόρμα Appofa — ρόλοι, αποφάσεις, περιεχόμενο και ασφάλεια.',
+      'Ποιος είναι υπεύθυνος για τι στην πλατφόρμα Appofasi — ρόλοι, αποφάσεις, περιεχόμενο και ασφάλεια.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Υπευθυνότητες | Appofa',
+    title: 'Υπευθυνότητες | Appofasi',
     description:
-      'Ποιος είναι υπεύθυνος για τι στην πλατφόρμα Appofa — ρόλοι, αποφάσεις, περιεχόμενο και ασφάλεια.',
+      'Ποιος είναι υπεύθυνος για τι στην πλατφόρμα Appofasi — ρόλοι, αποφάσεις, περιεχόμενο και ασφάλεια.',
   },
   alternates: {
     canonical: `${SITE_URL}/platform/responsibilities`,
@@ -163,7 +163,7 @@ export default function ResponsibilitiesPage() {
       }
     >
       <p className="text-lg text-gray-700 -mt-6">
-        Κάθε ρόλος στην πλατφόρμα Appofa έχει σαφείς υπευθυνότητες — τόσο ως προς το τι ελέγχει
+        Κάθε ρόλος στην πλατφόρμα Appofasi έχει σαφείς υπευθυνότητες — τόσο ως προς το τι ελέγχει
         όσο και ως προς το τι φέρει. Εδώ ορίζουμε ποιος είναι υπεύθυνος για τι.
       </p>
 

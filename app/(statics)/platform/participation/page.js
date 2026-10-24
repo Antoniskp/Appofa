@@ -5,7 +5,7 @@ import { StaticPageLayout } from '@/components/layout';
 export async function generateMetadata() {
   const t = await getTranslations('democracy');
   return {
-    title: `${t('participationTitle')} | Appofa`,
+    title: `${t('participationTitle')} | Appofasi`,
     description: t('meaning'),
     alternates: { canonical: '/platform/participation' },
   };

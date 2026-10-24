@@ -21,23 +21,23 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Ενότητες Εφαρμογής | Appofa',
+  title: 'Ενότητες Εφαρμογής | Appofasi',
   description:
-    'Εξερευνήστε τις ενότητες της εφαρμογής Appofa — περιεχόμενο, συμμετοχή, κοινότητα, τοποθεσίες, λογαριασμός και διαχείριση.',
+    'Εξερευνήστε τις ενότητες της εφαρμογής Appofasi — περιεχόμενο, συμμετοχή, κοινότητα, τοποθεσίες, λογαριασμός και διαχείριση.',
   openGraph: {
     url: `${SITE_URL}/platform/modules`,
     type: 'website',
     locale: 'el_GR',
-    siteName: 'Appofa',
-    title: 'Ενότητες Εφαρμογής | Appofa',
+    siteName: 'Appofasi',
+    title: 'Ενότητες Εφαρμογής | Appofasi',
     description:
-      'Εξερευνήστε τις ενότητες της εφαρμογής Appofa — περιεχόμενο, συμμετοχή, κοινότητα, τοποθεσίες, λογαριασμός και διαχείριση.',
+      'Εξερευνήστε τις ενότητες της εφαρμογής Appofasi — περιεχόμενο, συμμετοχή, κοινότητα, τοποθεσίες, λογαριασμός και διαχείριση.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Ενότητες Εφαρμογής | Appofa',
+    title: 'Ενότητες Εφαρμογής | Appofasi',
     description:
-      'Εξερευνήστε τις ενότητες της εφαρμογής Appofa — περιεχόμενο, συμμετοχή, κοινότητα, τοποθεσίες, λογαριασμός και διαχείριση.',
+      'Εξερευνήστε τις ενότητες της εφαρμογής Appofasi — περιεχόμενο, συμμετοχή, κοινότητα, τοποθεσίες, λογαριασμός και διαχείριση.',
   },
   alternates: {
     canonical: `${SITE_URL}/platform/modules`,
@@ -202,7 +202,7 @@ export default function ModulesPage() {
       }
     >
       <p className="text-lg text-gray-700 -mt-6">
-        Εξερευνήστε όλες τις κύριες ενότητες και λειτουργίες που προσφέρει η πλατφόρμα Appofa.
+        Εξερευνήστε όλες τις κύριες ενότητες και λειτουργίες που προσφέρει η πλατφόρμα Appofasi.
       </p>
 
       <div className="space-y-10">

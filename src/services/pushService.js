@@ -191,7 +191,7 @@ async function getPushStatusForUser(userId) {
 async function sendTestPushToUser(userId) {
   const unreadCount = await getUnreadCount(userId);
   return sendPushToUser(userId, {
-    title: 'Appofa test notification',
+    title: 'Appofasi test notification',
     body: 'If this appears while the app is closed, Web Push is working on this device.',
     unreadCount,
     url: '/notifications',

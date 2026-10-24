@@ -511,7 +511,7 @@ function OnboardingContent() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 sm:px-8">
         <Link href="/" className="text-sm text-gray-500 hover:text-gray-800 transition-colors">
-          Appofa
+          Appofasi
         </Link>
         <button
           type="button"

@@ -1089,10 +1089,10 @@ function buildCampaignMessage({ campaign, unsubscribeLink, isTest }) {
   const safePreviewText = campaign.previewText ? escapeHtml(campaign.previewText) : '';
   const htmlBody = campaign.htmlContent || '';
   const textBody = campaign.textContent || stripHtml(htmlBody);
-  const title = isTest ? 'Appofa Newsletter (Test)' : 'Appofa Newsletter';
+  const title = isTest ? 'Appofasi Newsletter (Test)' : 'Appofasi Newsletter';
   const footerIntro = isTest
-    ? 'This is a test send for an Appofa newsletter campaign.'
-    : 'You are receiving this email as an Appofa newsletter/update.';
+    ? 'This is a test send for an Appofasi newsletter campaign.'
+    : 'You are receiving this email as an Appofasi newsletter/update.';
   const footerLinkLabel = isTest
     ? 'Unsubscribe link preview'
     : 'To stop receiving these emails, unsubscribe here';

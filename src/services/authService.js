@@ -20,10 +20,10 @@ const NAME_MAX_LENGTH = 100;
 const PASSWORD_RESET_DEFAULT_TTL_MINUTES = 60;
 const PASSWORD_RESET_TOKEN_BYTES = 32;
 const PASSWORD_RESET_GENERIC_SUCCESS_MESSAGE = 'If an account with that email exists, a password reset link has been sent.';
-const PASSWORD_RESET_EMAIL_SUBJECT = 'Appofa password reset request';
+const PASSWORD_RESET_EMAIL_SUBJECT = 'Appofasi password reset request';
 const EMAIL_VERIF_DEFAULT_TTL_HOURS = 24;
 const EMAIL_VERIF_TOKEN_BYTES = 32;
-const EMAIL_VERIF_SUBJECT = 'Please verify your Appofa email address';
+const EMAIL_VERIF_SUBJECT = 'Please verify your Appofasi email address';
 
 class ServiceError extends Error {
   constructor(status, message) {
@@ -77,7 +77,7 @@ const sendPasswordResetEmail = async (email, token, expiresInMinutes) => {
     to: email,
     subject: PASSWORD_RESET_EMAIL_SUBJECT,
     text: [
-      'You requested a password reset for your Appofa account.',
+      'You requested a password reset for your Appofasi account.',
       '',
       `Reset your password using this link (valid for ${expiresInMinutes} minutes):`,
       resetUrl,
@@ -85,7 +85,7 @@ const sendPasswordResetEmail = async (email, token, expiresInMinutes) => {
       'If you did not request this, you can safely ignore this email.',
     ].join('\n'),
     html: `
-      <p>You requested a password reset for your Appofa account.</p>
+      <p>You requested a password reset for your Appofasi account.</p>
       <p><strong>This link expires in ${expiresInMinutes} minutes.</strong></p>
       <p>
         Click here to reset your password:<br />
@@ -108,7 +108,7 @@ const sendVerificationEmail = async (email, token) => {
     to: email,
     subject: EMAIL_VERIF_SUBJECT,
     text: [
-      'Welcome to Appofa!',
+      'Welcome to Appofasi!',
       '',
       `Please verify your email address using this link (valid for ${verificationTtlText}):`,
       verificationUrl,
@@ -116,7 +116,7 @@ const sendVerificationEmail = async (email, token) => {
       'If you did not create this account, you can safely ignore this email.',
     ].join('\n'),
     html: `
-      <p>Welcome to Appofa!</p>
+      <p>Welcome to Appofasi!</p>
       <p><strong>Please verify your email address within ${verificationTtlText}.</strong></p>
       <p>
         Click here to verify your email:<br />

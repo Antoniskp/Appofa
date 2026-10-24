@@ -39,7 +39,7 @@ export async function generateMetadata({ params }) {
   const canonicalUrl = `${SITE_URL}/locations/${canonicalSlug}`;
   const description = location
     ? `Τοπικές ειδήσεις, δημοσκοπήσεις, προτάσεις και συμμετοχή για ${name} στην Απόφαση.`
-    : `News, education, polls, and community information for ${name} on Appofa.`;
+    : `News, education, polls, and community information for ${name} on Appofasi.`;
   const image = absoluteImageUrl(location?.image_url || location?.imageUrl);
 
   return {

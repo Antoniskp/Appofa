@@ -12,23 +12,23 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Κανόνες Παραγωγής | Appofa',
+  title: 'Κανόνες Παραγωγής | Appofasi',
   description:
-    'Κανόνες και πρότυπα για αλλαγές κώδικα, deployment και ποιότητα στην πλατφόρμα Appofa.',
+    'Κανόνες και πρότυπα για αλλαγές κώδικα, deployment και ποιότητα στην πλατφόρμα Appofasi.',
   openGraph: {
     url: `${SITE_URL}/platform/production-rules`,
     type: 'website',
     locale: 'el_GR',
-    siteName: 'Appofa',
-    title: 'Κανόνες Παραγωγής | Appofa',
+    siteName: 'Appofasi',
+    title: 'Κανόνες Παραγωγής | Appofasi',
     description:
-      'Κανόνες και πρότυπα για αλλαγές κώδικα, deployment και ποιότητα στην πλατφόρμα Appofa.',
+      'Κανόνες και πρότυπα για αλλαγές κώδικα, deployment και ποιότητα στην πλατφόρμα Appofasi.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Κανόνες Παραγωγής | Appofa',
+    title: 'Κανόνες Παραγωγής | Appofasi',
     description:
-      'Κανόνες και πρότυπα για αλλαγές κώδικα, deployment και ποιότητα στην πλατφόρμα Appofa.',
+      'Κανόνες και πρότυπα για αλλαγές κώδικα, deployment και ποιότητα στην πλατφόρμα Appofasi.',
   },
   alternates: {
     canonical: `${SITE_URL}/platform/production-rules`,

@@ -19,7 +19,7 @@ import {
 import { StaticPageLayout } from '@/components/layout';
 
 export const metadata = {
-  title: 'Βοήθεια Πολίτη | Appofa',
+  title: 'Βοήθεια Πολίτη | Appofasi',
   description: 'Πρακτικοί οδηγοί και πληροφορίες για τον πολίτη — δικαιώματα, φορολογία, εργασία, μεταβιβάσεις και πολλά ακόμα.',
 };
 

@@ -12,11 +12,11 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Εκλογές & Πολιτική | Appofa',
+  title: 'Εκλογές & Πολιτική | Appofasi',
   description:
     'Πληροφορίες για τις εκλογές, τα πολιτικά κόμματα, τους αξιωματούχους και τους θεσμούς της Ελληνικής Δημοκρατίας.',
   openGraph: {
-    title: 'Εκλογές & Πολιτική | Appofa',
+    title: 'Εκλογές & Πολιτική | Appofasi',
     description:
       'Πληροφορίες για τις εκλογές, τα πολιτικά κόμματα, τους αξιωματούχους και τους θεσμούς της Ελληνικής Δημοκρατίας.',
     url: `${SITE_URL}/elections`,
@@ -24,7 +24,7 @@ export const metadata = {
   },
   twitter: {
     card: 'summary',
-    title: 'Εκλογές & Πολιτική | Appofa',
+    title: 'Εκλογές & Πολιτική | Appofasi',
     description:
       'Πληροφορίες για τις εκλογές, τα πολιτικά κόμματα, τους αξιωματούχους και τους θεσμούς της Ελληνικής Δημοκρατίας.',
   },

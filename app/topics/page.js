@@ -106,7 +106,7 @@ export default function TopicsPage() {
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-3">Explore by topic</h1>
           <p className="text-gray-600 max-w-3xl">
-            Browse the civic conversations that connect articles, news, polls, and suggestions across Appofa.
+            Browse the civic conversations that connect articles, news, polls, and suggestions across Appofasi.
           </p>
         </div>
 

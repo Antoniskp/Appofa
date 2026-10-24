@@ -537,7 +537,7 @@ describe('Newsletter API', () => {
     expect(successfulEmailCall).toBeTruthy();
     expect(failedEmailCall).toBeTruthy();
     expect(successfulEmailCall[0].subject).toBe('Audience campaign');
-    expect(successfulEmailCall[0].html).toContain('Appofa Newsletter');
+    expect(successfulEmailCall[0].html).toContain('Appofasi Newsletter');
     expect(successfulEmailCall[0].html).toContain('unsubscribe');
     expect(successfulEmailCall[0].headers).toMatchObject({
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',

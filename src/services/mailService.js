@@ -2,7 +2,7 @@
 
 const nodemailer = require('nodemailer');
 
-const DEFAULT_FROM = 'Appofa <no-reply@appofasi.gr>';
+const DEFAULT_FROM = 'Appofasi <no-reply@appofasi.gr>';
 
 let smtpTransporter = null;
 let smtpConfigSignature = null;

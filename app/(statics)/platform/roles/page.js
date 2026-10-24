@@ -11,23 +11,23 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Ρόλοι & Δικαιώματα | Appofa',
+  title: 'Ρόλοι & Δικαιώματα | Appofasi',
   description:
-    'Πλήρης οδηγός ρόλων χρηστών της πλατφόρμας Appofa — Viewer, Editor, Moderator και Admin με αναλυτικό πίνακα δικαιωμάτων.',
+    'Πλήρης οδηγός ρόλων χρηστών της πλατφόρμας Appofasi — Viewer, Editor, Moderator και Admin με αναλυτικό πίνακα δικαιωμάτων.',
   openGraph: {
     url: `${SITE_URL}/platform/roles`,
     type: 'website',
     locale: 'el_GR',
-    siteName: 'Appofa',
-    title: 'Ρόλοι & Δικαιώματα | Appofa',
+    siteName: 'Appofasi',
+    title: 'Ρόλοι & Δικαιώματα | Appofasi',
     description:
-      'Πλήρης οδηγός ρόλων χρηστών της πλατφόρμας Appofa — Viewer, Editor, Moderator και Admin με αναλυτικό πίνακα δικαιωμάτων.',
+      'Πλήρης οδηγός ρόλων χρηστών της πλατφόρμας Appofasi — Viewer, Editor, Moderator και Admin με αναλυτικό πίνακα δικαιωμάτων.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Ρόλοι & Δικαιώματα | Appofa',
+    title: 'Ρόλοι & Δικαιώματα | Appofasi',
     description:
-      'Πλήρης οδηγός ρόλων χρηστών της πλατφόρμας Appofa — Viewer, Editor, Moderator και Admin με αναλυτικό πίνακα δικαιωμάτων.',
+      'Πλήρης οδηγός ρόλων χρηστών της πλατφόρμας Appofasi — Viewer, Editor, Moderator και Admin με αναλυτικό πίνακα δικαιωμάτων.',
   },
   alternates: {
     canonical: `${SITE_URL}/platform/roles`,
@@ -162,7 +162,7 @@ export default function RolesPage() {
       }
     >
       <p className="text-lg text-gray-700 -mt-6">
-        Η πλατφόρμα Appofa διαθέτει <strong>4 ρόλους χρηστών</strong>: Viewer, Editor, Moderator
+        Η πλατφόρμα Appofasi διαθέτει <strong>4 ρόλους χρηστών</strong>: Viewer, Editor, Moderator
         και Admin. Κάθε ρόλος έχει συγκεκριμένα δικαιώματα που ελέγχουν την πρόσβαση στις
         λειτουργίες της πλατφόρμας.
       </p>
