@@ -2,6 +2,7 @@ const js = require('@eslint/js');
 const globals = require('globals');
 const nextPlugin = require('@next/eslint-plugin-next');
 const reactHooksPlugin = require('eslint-plugin-react-hooks');
+const reactPlugin = require('eslint-plugin-react');
 
 module.exports = [
   js.configs.recommended,
@@ -17,6 +18,7 @@ module.exports = [
     plugins: {
       '@next/next': nextPlugin,
       'react-hooks': reactHooksPlugin,
+      react: reactPlugin,
     },
     languageOptions: {
       ecmaVersion: 'latest',
@@ -45,6 +47,7 @@ module.exports = [
     ],
     rules: {
       '@next/next/no-img-element': 'warn',
+      'react/jsx-uses-vars': 'error',
     },
     languageOptions: {
       ecmaVersion: 'latest',

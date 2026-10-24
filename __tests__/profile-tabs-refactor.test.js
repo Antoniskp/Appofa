@@ -34,7 +34,10 @@ describe('Profile page tab refactor', () => {
     expect(source).toContain('const [manifestList, setManifestList] = useState([]);');
     expect(source).toContain('const handleProfileSubmit = async (event) =>');
     expect(source).toContain('const handleInteractionSettingsSave = async () =>');
-    expect(source).toContain('const handleNewsletterPreferenceToggle = async () =>');
+    // EmailPreferences now owns subscription state; the profile hook must not fetch it again.
+    expect(source).not.toContain('newsletterAPI');
+    const settings = fs.readFileSync(path.join(__dirname, '..', 'app', 'profile', 'tabs', 'SettingsTab.js'), 'utf8');
+    expect(settings).toContain('<EmailPreferences />');
     expect(source).toContain('handleDeleteAccount');
     expect(source).toContain('handleAvatarSourceChange');
     expect(source).toContain('handleAddProfession');

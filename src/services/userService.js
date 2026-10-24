@@ -269,6 +269,11 @@ async function updateUserProfile(userId, data) {
     }
   }
 
+  if (data.isDiaspora !== undefined) {
+    if (typeof data.isDiaspora !== 'boolean') throw new ServiceError(400, 'isDiaspora must be a boolean.');
+    user.isDiaspora = data.isDiaspora;
+  }
+
   if (homeLocationId !== undefined) {
     if (homeLocationId === null) {
       if (user.homeLocationId !== null) {

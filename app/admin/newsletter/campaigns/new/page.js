@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
+import NewsletterAudienceFields from '@/components/admin/NewsletterAudienceFields';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { newsletterAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
@@ -19,6 +20,7 @@ const INITIAL_FORM = {
   templateKey: '',
   audienceFilters: {
     status: 'subscribed',
+    segment: 'all', topic: 'general', purpose: 'newsletter',
     locale: '',
     source: '',
     tags: '',
@@ -52,6 +54,7 @@ function AdminNewsletterCampaignCreateContent() {
       return {
         ...prev,
         templateKey,
+        audienceFilters: { ...prev.audienceFilters, purpose: 'newsletter', segment: 'all', topic: 'general', ...(template.audienceFilters || {}) },
         subject: template.subject,
         previewText: template.previewText,
         htmlContent: template.htmlContent,
@@ -59,6 +62,11 @@ function AdminNewsletterCampaignCreateContent() {
       };
     });
   };
+
+  useEffect(() => {
+    const templateKey = new URLSearchParams(window.location.search).get('template');
+    if (templateKey) handleTemplateApply(templateKey);
+  }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -73,6 +81,7 @@ function AdminNewsletterCampaignCreateContent() {
         textContent: form.textContent || undefined,
         ...(form.scheduledAt ? { scheduledAt: form.scheduledAt } : {}),
         audienceFilters: {
+          locationId: form.audienceFilters.locationId, segment: form.audienceFilters.segment, topic: form.audienceFilters.topic, purpose: form.audienceFilters.purpose,
           ...(form.audienceFilters.status ? { status: form.audienceFilters.status } : {}),
           ...(form.audienceFilters.locale ? { locale: form.audienceFilters.locale } : {}),
           ...(form.audienceFilters.source ? { source: form.audienceFilters.source } : {}),
@@ -182,6 +191,7 @@ function AdminNewsletterCampaignCreateContent() {
 
             <div className="rounded-lg border border-gray-200 p-4">
               <h2 className="text-sm font-semibold text-gray-900 mb-3">Audience filters</h2>
+              <NewsletterAudienceFields value={form.audienceFilters} onChange={(updates) => setForm((prev) => ({ ...prev, audienceFilters: { ...prev.audienceFilters, ...updates } }))} />
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1" htmlFor="campaign-audience-status">Status</label>
@@ -192,8 +202,6 @@ function AdminNewsletterCampaignCreateContent() {
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                   >
                     <option value="subscribed">subscribed</option>
-                    <option value="pending">pending</option>
-                    <option value="unsubscribed">unsubscribed</option>
                   </select>
                 </div>
                 <div>

@@ -15,6 +15,8 @@ const {
 } = require('../utils/validators');
 const { sendMail: deliverMail } = require('./mailService');
 
+const audience = require('./newsletterAudience');
+
 const SUBSCRIBER_STATUSES = ['pending', 'subscribed', 'unsubscribed'];
 const SUBSCRIBER_SOURCES = ['website', 'admin_manual', 'import'];
 const CAMPAIGN_STATUSES = ['draft', 'scheduled', 'sending', 'sent', 'failed'];
@@ -106,9 +108,25 @@ const normalizeAudienceFilters = (value) => {
   }
 
   const normalized = {};
+  if (value.locationId != null && value.locationId !== '') {
+    const id = Number(value.locationId);
+    if (!Number.isSafeInteger(id) || id <= 0) return { error: 'Location must be a positive integer.' };
+    normalized.locationId = id;
+  }
+  for (const [key, choices] of Object.entries({ segment: audience.SEGMENTS, topic: audience.TOPICS, purpose: ['newsletter', 'profile_location'] })) {
+    const result = normalizeEnum(value[key], choices, key);
+    if (result.error) return result;
+    if (result.value) normalized[key] = result.value;
+  }
+  if (normalized.purpose === 'profile_location') {
+    delete normalized.locationId;
+    normalized.segment = 'missing_location';
+    normalized.topic = 'general';
+  }
 
   const statusResult = normalizeEnum(value.status, SUBSCRIBER_STATUSES, 'Audience status');
   if (statusResult.error) return statusResult;
+  if (statusResult.value && statusResult.value !== 'subscribed') return { error: 'Campaigns can only target subscribed addresses.' };
   if (statusResult.value) normalized.status = statusResult.value;
 
   const localeResult = normalizeLocale(value.locale);
@@ -203,14 +221,28 @@ const isSubscriberEligibleByTags = (subscriber, requiredTags) => {
   return normalizedRequiredTags.every((requiredTag) => subscriberTags.includes(requiredTag));
 };
 
-async function getEligibleSubscribers(audienceFilters = {}, attributes = undefined) {
-  const subscribers = await NewsletterSubscriber.findAll({
-    where: buildAudienceWhere(audienceFilters),
-    order: [['id', 'ASC']],
-    ...(attributes ? { attributes } : {}),
-  });
+async function reviewAudience(audienceFilters = {}) {
+  const filters = await audience.resolveFilters(audienceFilters);
+  // Preserve any legacy non-subscribed status so eligibility fails closed.
+  const [subscribers, accounts] = await Promise.all([
+    NewsletterSubscriber.findAll({ where: buildAudienceWhere({ ...filters, status: undefined }, { defaultStatus: null }), order: [['id', 'ASC']] }),
+    audience.accountMap(),
+  ]);
+  const eligible = [];
+  const excluded = {};
+  const byStatus = {};
+  for (const subscriber of subscribers) {
+    if (!isSubscriberEligibleByTags(subscriber, filters.tags)) continue;
+    byStatus[subscriber.status] = (byStatus[subscriber.status] || 0) + 1;
+    const reason = audience.exclusionReason(subscriber, accounts.get(audience.emailKey(subscriber.email)), filters);
+    if (reason) excluded[reason] = (excluded[reason] || 0) + 1;
+    else eligible.push(subscriber);
+  }
+  return { eligible, excluded, byStatus };
+}
 
-  return subscribers.filter((subscriber) => isSubscriberEligibleByTags(subscriber, audienceFilters.tags));
+async function getEligibleSubscribers(audienceFilters = {}) {
+  return (await reviewAudience(audienceFilters)).eligible;
 }
 
 async function subscribePublic(payload = {}) {
@@ -268,6 +300,7 @@ async function getUserNewsletterPreference(user = {}) {
   return {
     subscribed: subscriber?.status === 'subscribed',
     status: subscriber?.status || 'unsubscribed',
+    preferences: subscriber?.preferences || audience.DEFAULT_PREFERENCES,
   };
 }
 
@@ -279,6 +312,18 @@ async function updateUserNewsletterPreference(user = {}, payload = {}) {
     throw new ServiceError(400, 'Subscribed must be a boolean.');
   }
 
+  const localeResult = normalizeLocale(payload.locale);
+  if (localeResult.error) throw new ServiceError(400, localeResult.error);
+  let preferences;
+  if (payload.preferences !== undefined) {
+    if (!payload.preferences || typeof payload.preferences !== 'object' || Array.isArray(payload.preferences)
+      || Object.keys(payload.preferences).some((key) => !audience.TOPICS.includes(key))
+      || audience.TOPICS.some((key) => typeof payload.preferences[key] !== 'boolean')) {
+      throw new ServiceError(400, 'Choose a boolean preference for general, local and activity updates.');
+    }
+    preferences = Object.fromEntries(audience.TOPICS.map((key) => [key, payload.preferences[key]]));
+    if (payload.subscribed && !Object.values(preferences).some(Boolean)) throw new ServiceError(400, 'Choose at least one email topic or unsubscribe.');
+  }
   const email = emailResult.value;
   let subscriber = await NewsletterSubscriber.findOne({ where: { email } });
 
@@ -303,6 +348,8 @@ async function updateUserNewsletterPreference(user = {}, payload = {}) {
 
     if (subscriber) {
       subscriber.status = 'subscribed';
+      if (preferences) subscriber.preferences = preferences;
+      if (localeResult.value) subscriber.locale = localeResult.value;
       subscriber.source = subscriber.source || 'website';
       applyStatusDates(subscriber, 'subscribed');
       await issueUnsubscribeToken(subscriber);
@@ -311,11 +358,13 @@ async function updateUserNewsletterPreference(user = {}, payload = {}) {
     return {
       subscribed: true,
       status: 'subscribed',
+      preferences: subscriber?.preferences || audience.DEFAULT_PREFERENCES,
     };
   }
 
   if (subscriber) {
     subscriber.status = 'unsubscribed';
+    if (preferences) subscriber.preferences = preferences;
     applyStatusDates(subscriber, 'unsubscribed');
     await subscriber.save();
   }
@@ -323,6 +372,7 @@ async function updateUserNewsletterPreference(user = {}, payload = {}) {
   return {
     subscribed: false,
     status: 'unsubscribed',
+    preferences: subscriber?.preferences || preferences || audience.DEFAULT_PREFERENCES,
   };
 }
 
@@ -357,6 +407,7 @@ async function getAdminStats() {
 
   return {
     total,
+    accounts: await audience.accountStats(),
     byStatus: {
       subscribed,
       pending,
@@ -421,6 +472,13 @@ async function listSubscribers(query = {}) {
     ];
   }
 
+  const segmentResult = normalizeEnum(query.segment, audience.SEGMENTS, 'Segment');
+  if (segmentResult.error) throw new ServiceError(400, segmentResult.error);
+  const accounts = await audience.accountMap();
+  if (segmentResult.value && segmentResult.value !== 'all') {
+    const emails = [...accounts.entries()].filter(([, user]) => audience.matchesSegment(user, segmentResult.value === 'newsletter_only' ? 'registered' : segmentResult.value)).map(([email]) => email);
+    where.email = { [segmentResult.value === 'newsletter_only' ? Op.notIn : Op.in]: emails };
+  }
   const { count, rows } = await NewsletterSubscriber.findAndCountAll({
     where,
     limit,
@@ -429,7 +487,7 @@ async function listSubscribers(query = {}) {
   });
 
   return {
-    subscribers: rows,
+    subscribers: rows.map((row) => ({ ...row.toJSON(), registered: accounts.has(audience.emailKey(row.email)), homeLocationId: accounts.get(audience.emailKey(row.email))?.homeLocationId || null })),
     pagination: {
       total: count,
       page,
@@ -652,6 +710,13 @@ async function exportSubscribersCsv(query = {}) {
     ];
   }
 
+  const segmentResult = normalizeEnum(query.segment, audience.SEGMENTS, 'Segment');
+  if (segmentResult.error) throw new ServiceError(400, segmentResult.error);
+  if (segmentResult.value && segmentResult.value !== 'all') {
+    const accounts = await audience.accountMap();
+    const emails = [...accounts.entries()].filter(([, user]) => audience.matchesSegment(user, segmentResult.value === 'newsletter_only' ? 'registered' : segmentResult.value)).map(([email]) => email);
+    where.email = { [segmentResult.value === 'newsletter_only' ? Op.notIn : Op.in]: emails };
+  }
   const subscribers = await NewsletterSubscriber.findAll({
     where,
     order: [['createdAt', 'DESC']],
@@ -980,30 +1045,21 @@ async function getCampaignById(id) {
 
   if (!campaign) throw new ServiceError(404, 'Campaign not found.');
 
-  const [estimatedRecipients, recentLogs] = await Promise.all([
-    getEligibleSubscribers(campaign.audienceFilters || {}, ['id']),
-    NewsletterSendLog.findAll({
-      where: { campaignId: campaign.id },
-      order: [['createdAt', 'DESC']],
-      limit: 10,
-    }),
+  const [review, recentLogs] = await Promise.all([
+    reviewAudience(campaign.audienceFilters || {}),
+    NewsletterSendLog.findAll({ where: { campaignId: campaign.id }, order: [['createdAt', 'DESC']], limit: 10 }),
   ]);
-
-  const allMatchingStatuses = await NewsletterSubscriber.findAll({
-    where: buildAudienceWhere(campaign.audienceFilters || {}, { defaultStatus: null }),
-    attributes: ['id', 'status', 'tags'],
-  });
-  const filteredStatuses = allMatchingStatuses.filter((subscriber) => isSubscriberEligibleByTags(subscriber, campaign.audienceFilters?.tags));
-  const audienceSummary = filteredStatuses.reduce((acc, subscriber) => {
-    const key = subscriber.status || 'unknown';
-    acc[key] = (acc[key] || 0) + 1;
-    return acc;
-  }, {});
-
+  const remindedLogs = await NewsletterSendLog.findAll({ where: { campaignId: campaign.id, status: 'sent' }, attributes: ['email'] });
+  const accounts = await audience.accountMap();
   return {
     campaign,
-    estimatedRecipients: estimatedRecipients.length,
-    audienceSummary,
+    estimatedRecipients: review.eligible.length,
+    audienceSummary: review.byStatus,
+    exclusions: review.excluded,
+    previewHtml: buildCampaignMessage({ campaign, unsubscribeLink: getFrontendUrl() + '/newsletter/unsubscribe', isTest: true }).html,
+    sampleRecipients: review.eligible.slice(0, 5).map((subscriber) => subscriber.email),
+    completedProfiles: campaign.audienceFilters?.purpose === 'profile_location'
+      ? remindedLogs.filter((log) => accounts.get(audience.emailKey(log.email))?.homeLocationId).length : null,
     recentLogs,
   };
 }
@@ -1087,8 +1143,9 @@ async function renderCampaignTestEmail(campaign, testEmail) {
 function buildCampaignMessage({ campaign, unsubscribeLink, isTest }) {
   const safeUnsubscribeLink = escapeHtml(unsubscribeLink);
   const safePreviewText = campaign.previewText ? escapeHtml(campaign.previewText) : '';
-  const htmlBody = campaign.htmlContent || '';
-  const textBody = campaign.textContent || stripHtml(htmlBody);
+  const onboardingUrl = getFrontendUrl() + '/onboarding?step=location';
+  const htmlBody = (campaign.htmlContent || '').replaceAll('{{onboardingUrl}}', escapeHtml(onboardingUrl));
+  const textBody = (campaign.textContent || stripHtml(htmlBody)).replaceAll('{{onboardingUrl}}', onboardingUrl);
   const title = isTest ? 'Appofasi Newsletter (Test)' : 'Appofasi Newsletter';
   const footerIntro = isTest
     ? 'This is a test send for an Appofasi newsletter campaign.'
@@ -1209,6 +1266,7 @@ async function sendCampaignNow(campaignId) {
 
   await campaign.reload();
 
+  const deliveryFilters = await audience.resolveFilters(campaign.audienceFilters || {});
   const recipients = await getEligibleSubscribers(campaign.audienceFilters || {}, ['id', 'email', 'tags']);
   campaign.totalRecipients = recipients.length;
   await campaign.save();
@@ -1222,6 +1280,14 @@ async function sendCampaignNow(campaignId) {
     for (let offset = 0; offset < recipients.length; offset += batchSize) {
       const batch = recipients.slice(offset, offset + batchSize);
       const batchResults = await Promise.all(batch.map(async (subscriber) => {
+        // Recheck preferences, completion and unsubscribe state immediately before delivery.
+        await subscriber.reload();
+        const account = await User.findOne({ where: { email: subscriber.email, claimStatus: null }, attributes: ['id', 'homeLocationId', 'emailVerified'] });
+        if (audience.exclusionReason(subscriber, account, deliveryFilters)) return { success: 0, failure: 0 };
+        const isReminder = campaign.audienceFilters?.purpose === 'profile_location';
+        if (isReminder && !(await audience.claimReminder(subscriber.id))) return { success: 0, failure: 0 };
+        const alreadySent = await NewsletterSendLog.findOne({ where: { campaignId: campaign.id, email: subscriber.email, status: 'sent' } });
+        if (alreadySent) return { success: 0, failure: 0 };
         const log = await NewsletterSendLog.create({
           campaignId: campaign.id,
           subscriberId: subscriber.id,
@@ -1239,6 +1305,7 @@ async function sendCampaignNow(campaignId) {
             headers: rendered.headers,
           });
 
+          if (isReminder) await NewsletterSubscriber.update({ profileReminderSentAt: new Date() }, { where: { id: subscriber.id } });
           log.status = 'sent';
           log.providerMessageId = info?.messageId || null;
           log.errorMessage = null;

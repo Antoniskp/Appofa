@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
-  CheckCircleIcon,
   ChevronRightIcon,
   ShieldCheckIcon,
   PencilSquareIcon,
@@ -16,12 +15,11 @@ import {
   VideoCameraIcon,
   ChartBarIcon,
   LightBulbIcon,
-  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
-import { useAuth } from '@/lib/auth-context';
 import { authAPI, messageAPI, candidateRegistrationAPI, onboardingEventAPI } from '@/lib/api';
 import Button from '@/components/ui/Button';
+import LocationStep from '@/components/onboarding/LocationStep';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 const GOALS = ['moderator', 'creator', 'independent', 'citizen'];
@@ -217,7 +215,7 @@ function buildChecklist(goal, onboardingData, t, extendedData) {
   return [...commonSteps, ...(goalExtras[goal] || [])];
 }
 
-function GoalCard({ goalKey, selected, secondary, onPrimary, onSecondary, t }) {
+function GoalCard({ goalKey, selected, secondary, onPrimary, t }) {
   const Icon = GOAL_ICONS[goalKey];
   const isPrimary = selected === goalKey;
   const isSecondary = secondary.includes(goalKey);
@@ -321,7 +319,7 @@ function CreatorTemplates({ t }) {
 
 /** Independent profile readiness panel */
 function IndependentProfilePanel({ onboardingData, t }) {
-  const { emailVerified, firstNameNative, avatar, bio, homeLocationId, username } = onboardingData || {};
+  const { emailVerified, firstNameNative, bio, homeLocationId, username } = onboardingData || {};
   const missing = [];
   if (!emailVerified) missing.push(t('step_email'));
   if (!firstNameNative) missing.push(t('step_fullname'));
@@ -361,7 +359,6 @@ function IndependentProfilePanel({ onboardingData, t }) {
 function OnboardingContent() {
   const t = useTranslations('onboarding');
   const router = useRouter();
-  const { user } = useAuth();
   const [phase, setPhase] = useState('loading'); // loading | choose | checklist
   const [primaryGoal, setPrimaryGoal] = useState(null);
   const [secondaryGoals, setSecondaryGoals] = useState([]);
@@ -384,6 +381,7 @@ function OnboardingContent() {
         } else {
           setPhase('choose');
         }
+        if (!data.homeLocationId || new URLSearchParams(window.location.search).get('step') === 'location') setPhase('location');
       }
       // Record onboarding viewed (idempotent)
       onboardingEventAPI.record({ eventType: 'onboarding_viewed' }).catch(() => {});
@@ -527,6 +525,12 @@ function OnboardingContent() {
       {/* Main */}
       <main className="flex-1 flex items-start justify-center px-4 pb-12 pt-6 sm:pt-10">
         <div className="w-full max-w-xl">
+          {phase === 'location' && <LocationStep onContinue={async () => {
+            const res = await authAPI.getOnboarding();
+            if (!res.success) throw new Error('Could not refresh your profile. Please retry.');
+            setOnboardingData(res.data.onboarding);
+            setPhase(res.data.onboarding.onboardingGoal ? 'checklist' : 'choose');
+          }} />}
           {phase === 'choose' && (
             <>
               <div className="text-center mb-8">
@@ -546,8 +550,7 @@ function OnboardingContent() {
                       selected={primaryGoal}
                       secondary={secondaryGoals}
                       onPrimary={handleSelectPrimary}
-                      onSecondary={handleToggleSecondary}
-                      t={t}
+                          t={t}
                     />
                   ))}
                 </div>

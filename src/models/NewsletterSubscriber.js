@@ -22,6 +22,9 @@ const NewsletterSubscriber = sequelize.define('NewsletterSubscriber', {
     type: DataTypes.STRING(150),
     allowNull: true,
   },
+  preferences: { type: DataTypes.JSON, allowNull: true },
+  profileReminderSentAt: { type: DataTypes.DATE, allowNull: true },
+  profileReminderClaimedAt: { type: DataTypes.DATE, allowNull: true },
   status: {
     type: DataTypes.ENUM('pending', 'subscribed', 'unsubscribed'),
     allowNull: false,

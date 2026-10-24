@@ -2481,7 +2481,8 @@
     "independent_profile_title": "Candidate Profile Readiness",
     "independent_preview_link": "View your public profile",
     "go_to_moderator_workspace": "Go to Moderator Workspace",
-    "go_to_creator_workspace": "Go to Creator Workspace"
+    "go_to_creator_workspace": "Go to Creator Workspace",
+    "location_prompt": "Choose your area to discover local issues and proposals to vote on. You can also opt into relevant email updates."
   },
   "moderator": {
     "title": "Moderator Workspace",
@@ -2987,5 +2988,31 @@
     "describe": "Describe the issue...",
     "name": "Your Name",
     "email": "Your Email"
+  },
+  "locationOnboarding": {
+    "title": "Make Appofasi local to you",
+    "description": "Choose your area to discover local issues and proposals to vote on. You can also opt into relevant email updates.",
+    "abroad": "I live abroad",
+    "abroadHelp": "Choose where you currently live. You can select a country if your town is not listed.",
+    "locationLabel": "Your municipality, town or area",
+    "search": "Search locations…",
+    "empty": "No matching locations. Try a wider area.",
+    "loading": "Loading…",
+    "clear": "Clear location",
+    "eligibility": "Location helps you discover relevant votes. Each vote has its own eligibility rules; choosing a location does not verify residency.",
+    "saveLocation": "Save location and continue",
+    "skip": "Skip for now",
+    "saving": "Saving…",
+    "saveError": "Could not save. Please try again.",
+    "emailTitle": "Your email updates",
+    "emailHelp": "Optional. Choose the campaign topics you want. Account and security messages are separate. You can change these choices or unsubscribe at any time.",
+    "subscribe": "I want email updates from Appofasi",
+    "general": "Appofasi news and profile reminders",
+    "local": "Local issues and polls",
+    "activity": "Community activity updates",
+    "savePreferences": "Save email preferences",
+    "preferencesSaved": "Email preferences saved.",
+    "loadError": "Could not load email preferences.",
+    "retry": "Try again"
   }
 }

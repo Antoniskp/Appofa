@@ -2481,7 +2481,8 @@
     "independent_profile_title": "Pregătirea profilului candidatului",
     "independent_preview_link": "Vezi profilul tău public",
     "go_to_moderator_workspace": "Accesați spațiul de lucru Moderator",
-    "go_to_creator_workspace": "Accesați spațiul de lucru Creator"
+    "go_to_creator_workspace": "Accesați spațiul de lucru Creator",
+    "location_prompt": "Alege zona pentru a descoperi probleme locale și propuneri de vot. Poți opta și pentru actualizări relevante prin email."
   },
   "moderator": {
     "title": "Spațiu de lucru Moderator",
@@ -2864,5 +2865,31 @@
     "describe": "Descrie problema…",
     "name": "Numele tău",
     "email": "Adresa ta de email"
+  },
+  "locationOnboarding": {
+    "title": "Appofasi în zona ta",
+    "description": "Alege zona pentru a descoperi probleme locale și propuneri de vot. Poți opta și pentru actualizări relevante prin email.",
+    "abroad": "Locuiesc în străinătate",
+    "abroadHelp": "Alege unde locuiești acum. Poți selecta țara dacă localitatea nu este listată.",
+    "locationLabel": "Municipiul, localitatea sau zona ta",
+    "search": "Caută o localitate…",
+    "empty": "Nicio localitate găsită. Încearcă o zonă mai largă.",
+    "loading": "Se încarcă…",
+    "clear": "Șterge localitatea",
+    "eligibility": "Locația te ajută să descoperi voturi relevante. Fiecare vot are propriile reguli; alegerea locației nu verifică domiciliul.",
+    "saveLocation": "Salvează locația și continuă",
+    "skip": "Omite pentru moment",
+    "saving": "Se salvează…",
+    "saveError": "Salvarea a eșuat. Încearcă din nou.",
+    "emailTitle": "Actualizările tale prin email",
+    "emailHelp": "Opțional. Alege temele campaniilor dorite. Mesajele de cont și securitate sunt separate. Poți modifica opțiunile sau te poți dezabona oricând.",
+    "subscribe": "Vreau actualizări prin email de la Appofasi",
+    "general": "Noutăți Appofasi și mementouri de profil",
+    "local": "Probleme locale și sondaje",
+    "activity": "Actualizări despre activitatea comunității",
+    "savePreferences": "Salvează preferințele email",
+    "preferencesSaved": "Preferințele email au fost salvate.",
+    "loadError": "Preferințele email nu au putut fi încărcate.",
+    "retry": "Încearcă din nou"
   }
 }

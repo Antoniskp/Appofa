@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { NEWSLETTER_SEGMENTS } from '@/components/admin/NewsletterAudienceFields';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { StatsCard } from '@/components/ui/Card';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -37,6 +38,7 @@ function AdminNewsletterContent() {
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [status, setStatus] = useState('');
+  const [segment, setSegment] = useState('all');
   const [source, setSource] = useState('');
   const [locale, setLocale] = useState('');
   const [tag, setTag] = useState('');
@@ -65,6 +67,7 @@ function AdminNewsletterContent() {
   const queryParams = useMemo(() => ({
     page,
     limit: PAGE_SIZE,
+    segment,
     ...(search ? { search } : {}),
     ...(status ? { status } : {}),
     ...(source ? { source } : {}),
@@ -72,7 +75,7 @@ function AdminNewsletterContent() {
     ...(tag ? { tag } : {}),
     ...(createdFrom ? { createdFrom } : {}),
     ...(createdTo ? { createdTo } : {}),
-  }), [page, search, status, source, locale, tag, createdFrom, createdTo]);
+  }), [page, search, status, source, locale, tag, createdFrom, createdTo, segment]);
 
   const { data: statsData, loading: statsLoading, refetch: refetchStats } = useAsyncData(
     async () => {
@@ -235,6 +238,14 @@ function AdminNewsletterContent() {
             </div>
           )}
 
+          <section className="mb-6 rounded-xl border bg-white p-4">
+            <h2 className="font-semibold">Accounts and email subscriptions</h2>
+            <p className="mt-1 text-sm text-gray-600">An account is separate from email consent. These account counts include people without newsletter subscriptions.</p>
+            <dl className="my-4 grid gap-3 sm:grid-cols-3">
+              {Object.entries({ registered: 'Registered accounts', missingLocation: 'Accounts missing a location', locatedWithoutSubscription: 'With location, not subscribed', registeredSubscribed: 'Registered and subscribed', addressesWithSendFailures: 'Addresses with send failures (not confirmed bounces)', completedAfterReminder: 'Reminded profiles now with a location' }).map(([key, label]) => <div key={key}><dt className="text-xs text-gray-500">{label}</dt><dd className="text-xl font-semibold">{stats.accounts?.[key] ?? '—'}</dd></div>)}
+            </dl>
+            {canWrite && <Link href="/admin/newsletter/campaigns/new?template=profile_location_el" className="text-sm font-semibold text-blue-700">Prepare location reminder draft →</Link>}
+          </section>
           {statsLoading ? (
             <SkeletonLoader count={3} type="card" />
           ) : (
@@ -247,6 +258,11 @@ function AdminNewsletterContent() {
           )}
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+            <label className="mb-4 block text-sm font-medium">Subscriber account segment
+              <select value={segment} onChange={(e) => { setSegment(e.target.value); setPage(1); }} className="ml-2 rounded-lg border p-2">
+                {NEWSLETTER_SEGMENTS.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+              </select>
+            </label>
             <form onSubmit={handleSearch} className="flex flex-wrap gap-3 items-end">
               <div className="flex-1 min-w-[220px]">
                 <label className="block text-xs font-medium text-gray-500 mb-1" htmlFor="newsletter-search">Search</label>

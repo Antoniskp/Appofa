@@ -69,7 +69,6 @@ function ProfileContent() {
     savingInteraction,
     setupPreferences,
     updateSetupPreferences,
-    newsletterPreference,
     passwordData,
     showPasswordFields,
     githubLinked,
@@ -93,7 +92,6 @@ function ProfileContent() {
     handleSocialLinkChange,
     handleInteractionSettingsChange,
     handleInteractionSettingsSave,
-    handleNewsletterPreferenceToggle,
     handleManifestAccept,
     handleManifestWithdraw,
     handleEvaluateBadges,
@@ -244,7 +242,6 @@ function ProfileContent() {
             profileData={profileData}
             interactionSettings={interactionSettings}
             savingInteraction={savingInteraction}
-            newsletterPreference={newsletterPreference}
             passwordData={passwordData}
             hasPassword={hasPassword}
             showPasswordFields={showPasswordFields}
@@ -253,7 +250,6 @@ function ProfileContent() {
             oauthConfig={oauthConfig}
             uploadedAvatarUrl={uploadedAvatarUrl}
             avatarSourceUpdating={avatarSourceUpdating}
-            handleNewsletterPreferenceToggle={handleNewsletterPreferenceToggle}
             handleInteractionSettingsChange={handleInteractionSettingsChange}
             handleInteractionSettingsSave={handleInteractionSettingsSave}
             handlePasswordChange={handlePasswordChange}

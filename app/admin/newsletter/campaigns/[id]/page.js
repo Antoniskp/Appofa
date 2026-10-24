@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
+import NewsletterAudienceFields from '@/components/admin/NewsletterAudienceFields';
 import AdminHeader from '@/components/admin/AdminHeader';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -88,7 +89,11 @@ function AdminNewsletterCampaignDetailContent() {
     htmlContent: campaign?.htmlContent || '',
     textContent: campaign?.textContent || '',
     scheduledAt: campaign?.scheduledAt ? new Date(campaign.scheduledAt).toISOString().slice(0, 16) : '',
-    status: campaign?.audienceFilters?.status || 'subscribed',
+    status: 'subscribed',
+    locationId: campaign?.audienceFilters?.locationId || null,
+    purpose: campaign?.audienceFilters?.purpose || 'newsletter',
+    segment: campaign?.audienceFilters?.segment || 'all',
+    topic: campaign?.audienceFilters?.topic || 'general',
     locale: campaign?.audienceFilters?.locale || '',
     source: campaign?.audienceFilters?.source || '',
     tags: Array.isArray(campaign?.audienceFilters?.tags) ? campaign.audienceFilters.tags.join(', ') : '',
@@ -103,6 +108,8 @@ function AdminNewsletterCampaignDetailContent() {
     setForm(formState);
   }, [formState]);
 
+  const hasUnsavedChanges = JSON.stringify(form) !== JSON.stringify(formState);
+
   const handleSave = async (event) => {
     event.preventDefault();
     if (!canEdit || saving) return;
@@ -116,6 +123,7 @@ function AdminNewsletterCampaignDetailContent() {
         ...(form.textContent ? { textContent: form.textContent } : {}),
         ...(form.scheduledAt ? { scheduledAt: form.scheduledAt } : { scheduledAt: null }),
         audienceFilters: {
+          locationId: form.locationId, segment: form.segment, topic: form.topic, purpose: form.purpose,
           ...(form.status ? { status: form.status } : {}),
           ...(form.locale ? { locale: form.locale } : {}),
           ...(form.source ? { source: form.source } : {}),
@@ -136,7 +144,7 @@ function AdminNewsletterCampaignDetailContent() {
   };
 
   const handleSendTest = async () => {
-    if (!testEmail || sendingTest) return;
+    if (!testEmail || sendingTest || hasUnsavedChanges) return;
     setSendingTest(true);
     try {
       await newsletterAPI.adminSendCampaignTest(campaignId, { email: testEmail });
@@ -149,7 +157,7 @@ function AdminNewsletterCampaignDetailContent() {
   };
 
   const handleSendNow = async () => {
-    if (sendingCampaign) return;
+    if (sendingCampaign || hasUnsavedChanges) return;
     setSendingCampaign(true);
     try {
       await newsletterAPI.adminSendCampaignNow(campaignId);
@@ -163,7 +171,7 @@ function AdminNewsletterCampaignDetailContent() {
   };
 
   const handleSchedule = async () => {
-    if (!form.scheduledAt || schedulingCampaign) return;
+    if (!form.scheduledAt || schedulingCampaign || hasUnsavedChanges) return;
     setSchedulingCampaign(true);
     try {
       await newsletterAPI.adminScheduleCampaign(campaignId, { scheduledAt: form.scheduledAt });
@@ -181,6 +189,8 @@ function AdminNewsletterCampaignDetailContent() {
     if (!template) return;
     setForm((prev) => ({
       ...prev,
+      purpose: 'newsletter', segment: 'all', topic: 'general',
+      ...(template.audienceFilters || {}),
       subject: template.subject,
       previewText: template.previewText,
       htmlContent: template.htmlContent,
@@ -279,6 +289,7 @@ function AdminNewsletterCampaignDetailContent() {
 
                   <div className="rounded-lg border border-gray-200 p-4">
                     <h2 className="text-sm font-semibold text-gray-900 mb-3">Audience filters</h2>
+                    <NewsletterAudienceFields value={form} disabled={!canEdit} onChange={(updates) => setForm((prev) => ({ ...prev, ...updates }))} />
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                       <select
                         value={form.status}
@@ -287,8 +298,6 @@ function AdminNewsletterCampaignDetailContent() {
                         className="border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
                       >
                         <option value="subscribed">subscribed</option>
-                        <option value="pending">pending</option>
-                        <option value="unsubscribed">unsubscribed</option>
                       </select>
 
                       <select
@@ -400,9 +409,20 @@ function AdminNewsletterCampaignDetailContent() {
               </div>
 
               <div className="space-y-6">
+                <section className="rounded-xl border bg-white p-5">
+                  <h2 className="font-semibold">Saved email preview</h2>
+                  <iframe title="Campaign email preview" sandbox="" srcDoc={data?.previewHtml || ''} className="mt-3 h-96 w-full border" />
+                  <h3 className="mt-3 text-sm font-semibold">Sample eligible recipients</h3>
+                  <ul className="text-xs text-gray-600">{(data?.sampleRecipients || []).map((email) => <li key={email}>{email}</li>)}</ul>
+                </section>
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
                   <h2 className="text-sm font-semibold text-gray-900 mb-3">Delivery summary</h2>
+                  {hasUnsavedChanges && <p role="status" className="mb-3 text-sm text-amber-700">Save your changes to update the preview and recipient count before sending.</p>}
+                  <p className="mb-3 text-xs text-gray-500">Counts and preview reflect the saved draft. Save changes before reviewing or sending.</p>
                   <dl className="space-y-2 text-sm">
+                    {data?.completedProfiles != null && <div><dt>Reminded profiles now with a location</dt><dd>{data.completedProfiles}</dd></div>}
+                    {Object.entries(data?.exclusions || {}).map(([reason, count]) => <div key={reason} className="flex justify-between"><dt>Excluded: {({ outsideSegment: 'outside segment', outsideLocation: 'outside selected area', topicOptOut: 'topic not selected', locationCompleteOrNoAccount: 'location complete / no account', unverifiedEmail: 'unverified email', alreadyReminded: 'already reminded', reminderInProgress: 'delivery held for review', pending: 'pending', unsubscribed: 'unsubscribed' })[reason] || reason}</dt><dd>{count}</dd></div>)}
+
                     <div className="flex items-center justify-between"><dt className="text-gray-500">Estimated recipients</dt><dd className="font-medium text-gray-900">{estimatedRecipients}</dd></div>
                     <div className="flex items-center justify-between"><dt className="text-gray-500">Audience subscribed</dt><dd className="font-medium text-gray-900">{audienceSummary.subscribed || 0}</dd></div>
                     <div className="flex items-center justify-between"><dt className="text-gray-500">Audience pending</dt><dd className="font-medium text-gray-900">{audienceSummary.pending || 0}</dd></div>
@@ -429,7 +449,7 @@ function AdminNewsletterCampaignDetailContent() {
                   <button
                     type="button"
                     onClick={handleSendTest}
-                    disabled={sendingTest || !testEmail}
+                    disabled={sendingTest || !testEmail || hasUnsavedChanges}
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-100 disabled:opacity-60"
                   >
                     {sendingTest ? 'Sending test…' : 'Send test email'}
@@ -441,7 +461,7 @@ function AdminNewsletterCampaignDetailContent() {
                     <button
                       type="button"
                       onClick={handleSchedule}
-                      disabled={schedulingCampaign || !form.scheduledAt}
+                      disabled={schedulingCampaign || !form.scheduledAt || hasUnsavedChanges}
                       className="w-full px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-100 disabled:opacity-60"
                     >
                       {schedulingCampaign ? 'Scheduling…' : 'Schedule campaign'}
@@ -454,7 +474,7 @@ function AdminNewsletterCampaignDetailContent() {
                     <button
                       type="button"
                       onClick={handleSendNow}
-                      disabled={sendingCampaign}
+                      disabled={sendingCampaign || hasUnsavedChanges || !estimatedRecipients}
                       className="w-full px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
                     >
                       {sendingCampaign ? 'Sending…' : 'Send campaign now'}

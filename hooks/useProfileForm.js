@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { authAPI, locationAPI, commentAPI, badgeAPI, manifestAPI, newsletterAPI } from '@/lib/api';
+import { authAPI, locationAPI, commentAPI, badgeAPI, manifestAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -108,11 +108,6 @@ export function useProfileForm() {
     profileVisibility: 'registered',
   });
   const [savingInteraction, setSavingInteraction] = useState(false);
-  const [newsletterPreference, setNewsletterPreference] = useState({
-    subscribed: false,
-    loaded: false,
-    saving: false,
-  });
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -248,21 +243,6 @@ export function useProfileForm() {
         setGoogleLinked(!!googleId);
         setHasPassword(typeof userData.hasPassword === 'boolean' ? userData.hasPassword : !!userData.password);
 
-        try {
-          const newsletterResponse = await newsletterAPI.getMyPreference();
-          if (newsletterResponse?.success) {
-            setNewsletterPreference({
-              subscribed: !!newsletterResponse.data?.subscribed,
-              loaded: true,
-              saving: false,
-            });
-          } else {
-            setNewsletterPreference((prev) => ({ ...prev, loaded: true, saving: false }));
-          }
-        } catch (_newsletterError) {
-          setNewsletterPreference((prev) => ({ ...prev, loaded: true, saving: false }));
-        }
-
         if (homeLocationId) {
           try {
             const locationResponse = await locationAPI.getById(homeLocationId);
@@ -281,7 +261,7 @@ export function useProfileForm() {
               setFollowersCount(countsRes.data.followersCount ?? 0);
               setFollowingCount(countsRes.data.followingCount ?? 0);
             }
-          } catch (_err) {
+          } catch {
             // counts are non-critical
           }
         }
@@ -342,7 +322,7 @@ export function useProfileForm() {
         ]);
         if (manifestsRes?.success) setManifestList(manifestsRes.data?.manifests || []);
         if (acceptancesRes?.success) setManifestAcceptances(acceptancesRes.data?.acceptances || []);
-      } catch (_err) {
+      } catch {
         // non-critical
       } finally {
         setManifestLoading(false);
@@ -365,7 +345,7 @@ export function useProfileForm() {
       await badgeAPI.evaluate();
       const res = await badgeAPI.getMyProgress();
       if (res?.data?.badges) setBadgeProgress(res.data.badges);
-    } catch (_err) {
+    } catch {
       // ignore
     } finally {
       setBadgeEvaluating(false);
@@ -380,7 +360,7 @@ export function useProfileForm() {
         setDisplayBadge({ slug, tier });
         success(tProfile('display_badge_updated'));
       }
-    } catch (_err) {
+    } catch {
       error(tProfile('display_badge_update_failed'));
     } finally {
       setSavingDisplayBadge(false);
@@ -395,7 +375,7 @@ export function useProfileForm() {
         setDisplayBadge({ slug: null, tier: null });
         success(tProfile('display_badge_cleared'));
       }
-    } catch (_err) {
+    } catch {
       error(tProfile('display_badge_clear_failed'));
     } finally {
       setSavingDisplayBadge(false);
@@ -409,7 +389,7 @@ export function useProfileForm() {
         setManifestAcceptances((prev) => [...prev, { slug, acceptedAt: res.data?.acceptedAt || new Date().toISOString() }]);
         success(tProfile('manifest_accept_success'));
       }
-    } catch (_err) {
+    } catch {
       error(tProfile('manifest_accept_failed'));
     }
   };
@@ -421,7 +401,7 @@ export function useProfileForm() {
         setManifestAcceptances((prev) => prev.filter((item) => item.slug !== slug));
         success(tProfile('manifest_withdraw_success'));
       }
-    } catch (_err) {
+    } catch {
       error(tProfile('manifest_withdraw_failed'));
     }
   };
@@ -600,28 +580,6 @@ export function useProfileForm() {
     }
   };
 
-  const handleNewsletterPreferenceToggle = async () => {
-    if (!newsletterPreference.loaded || newsletterPreference.saving) return;
-    const nextSubscribed = !newsletterPreference.subscribed;
-    setNewsletterPreference((prev) => ({ ...prev, saving: true }));
-    try {
-      const response = await newsletterAPI.updateMyPreference({ subscribed: nextSubscribed });
-      if (response?.success) {
-        setNewsletterPreference({
-          subscribed: !!response.data?.subscribed,
-          loaded: true,
-          saving: false,
-        });
-        success(tProfile('newsletter_settings_saved'));
-      } else {
-        throw new Error(tProfile('newsletter_settings_save_failed'));
-      }
-    } catch (err) {
-      setNewsletterPreference((prev) => ({ ...prev, saving: false }));
-      error(err.message || tProfile('newsletter_settings_save_failed'));
-    }
-  };
-
   const handleDeleteAccount = async ({ password, mode }) => {
     await deleteAccount({ password, mode });
     router.replace('/');
@@ -698,7 +656,6 @@ export function useProfileForm() {
     savingDisplayBadge,
     interactionSettings,
     savingInteraction,
-    newsletterPreference,
     passwordData,
     showPasswordFields,
     githubLinked,
@@ -722,7 +679,6 @@ export function useProfileForm() {
     handleSocialLinkChange,
     handleInteractionSettingsChange,
     handleInteractionSettingsSave,
-    handleNewsletterPreferenceToggle,
     handleManifestAccept,
     handleManifestWithdraw,
     handleEvaluateBadges,

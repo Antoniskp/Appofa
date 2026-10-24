@@ -1,4 +1,5 @@
 // Basic tests for profile components
+jest.mock('next-intl', () => require('../__mocks__/next-intl'));
 
 const ProfileHeader = require('../components/profile/ProfileHeader');
 const ProfileCompleteness = require('../components/profile/ProfileCompleteness');

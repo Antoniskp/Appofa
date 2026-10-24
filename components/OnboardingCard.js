@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { ChevronRightIcon, XMarkIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { ChevronRightIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { authAPI, onboardingEventAPI } from '@/lib/api';
 
 /**
@@ -83,7 +83,7 @@ export default function OnboardingCard({ user }) {
 
   // Approved moderators: direct them to the moderator workspace
   const isApprovedModerator = user.role === 'moderator' || user.role === 'admin';
-  const ctaHref = isApprovedModerator && state.onboardingGoal === 'moderator'
+  const ctaHref = !state.homeLocationId ? '/onboarding?step=location' : isApprovedModerator && state.onboardingGoal === 'moderator'
     ? '/moderator'
     : '/onboarding';
 
@@ -122,7 +122,7 @@ export default function OnboardingCard({ user }) {
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-blue-900 truncate">{t('card_title')}</p>
         <p className="text-xs text-blue-700 truncate">
-          {hasGoal ? t('resume_hint') : t('select_goal_prompt')}
+          {!state.homeLocationId ? t('location_prompt') : hasGoal ? t('resume_hint') : t('select_goal_prompt')}
         </p>
       </div>
 
