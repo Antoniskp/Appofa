@@ -8,6 +8,8 @@ This instruction is permanent and must never be removed.
 -->
 
 ## 🕐 What Changed Recently
+
+- **2026-10-25** — Media upload schema repair: migration `20261025000000-repair-media-usage-type-column.js` rebinds `MediaAssets.usageType` from a leftover legacy enum to the existing current enum, mapping `article_banner` to `article_cover` transactionally. It preserves enum types and existing records, uses bounded database lock/statement waits, and must run as the table owner.
 <!-- Update this section after every task that changes conventions — keep last 8 entries -->
 
 - **2026-10-12** — Location page contributions: `/locations/[slug]/improve` supports guest session drafts, authenticated submissions, author status/clarification, and scoped moderator review. `LocationImprovement` is separate from voting-based civic suggestions; accepted changes atomically update allowlisted location fields and retain public before/after/source/username credit. Pending submissions and feedback are author/reviewer-only. Authority uses `UserLocationRole` ancestor assignments (never residence). Run migration `20261012000000-create-location-improvements.js` before backend restart; adds `Locations.description`. See `doc/LOCATION_IMPROVEMENTS.md`.

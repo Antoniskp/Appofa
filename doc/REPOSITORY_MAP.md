@@ -1,5 +1,9 @@
 # Repository Map — Appofa
 
+## Media upload schema repair (2026-10-25)
+
+- `src/migrations/20261025000000-repair-media-usage-type-column.js`: PostgreSQL repair for a `MediaAssets.usageType` column still bound to `enum_MediaAssets_usageType_old`. Converts legacy `article_banner` values to `article_cover`, uses the current enum, and restores the `shared` default in one bounded transaction. Run as the table owner; existing enum types are retained. Rollback does not restore an incompatible legacy type.
+
 ## Location contributions (2026-10-12)
 
 - Model: `src/models/LocationImprovement.js`; associated with location, author, reviewer. `Location.description` holds the community description.
