@@ -5,106 +5,27 @@ const { createRoot } = require('react-dom/client');
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 let mockUser = null;
 const mockGet = jest.fn();
+const mockFollow = jest.fn();
 jest.mock('next/link', () => ({ __esModule: true, default: ({ href, children, ...props }) => require('react').createElement('a', { href, ...props }, children) }));
-jest.mock('next/dynamic', () => loader => {
-  const isMap = loader.toString().includes('ExploreLocationsMap');
-  return props => require('react').createElement('div', { 'data-testid': isMap ? 'territory-map' : 'video' }, isMap ? props.prefectures.map(p => p.name).join(', ') : props.article.title);
-});
 jest.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: mockUser, loading: false }) }));
 jest.mock('@/lib/api', () => ({ homepageAPI: { get: (...args) => mockGet(...args) } }));
-jest.mock('@/components/geo/CountryEntryPopup', () => () => null);
+jest.mock('@/lib/api/issueFollows', () => ({ issueFollowAPI: { list: (...args) => mockFollow(...args) } }));
 jest.mock('@/components/OnboardingCard', () => () => null);
-jest.mock('@/components/HomeHero', () => props => require('react').createElement('div', { 'data-testid': 'original-hero' }, props.featuredPoll?.title));
-jest.mock('@/components/HomeActionLanes', () => () => require('react').createElement('div', { 'data-testid': 'action-lanes' }));
-jest.mock('@/components/GovernmentSnapshotSection', () => () => require('react').createElement('div', { 'data-testid': 'government' }));
-jest.mock('@/components/SuggestionCard', () => ({ suggestion }) => require('react').createElement('p', null, suggestion.title));
-jest.mock('@/components/polls/PollCard', () => ({ poll }) => require('react').createElement('p', null, poll.title));
-jest.mock('@/components/articles/ArticleCard', () => ({ article }) => require('react').createElement('p', null, article.title));
+jest.mock('@/components/ProgressFeed', () => () => null);
+jest.mock('@/components/ui/LocationSelector', () => ({ onChange }) => require('react').createElement('button', { 'data-testid': 'location', onClick: () => onChange(12) }, 'Choose location'));
 const Home = require('../components/home/HomePageClient').default;
-const payload = { suggestions: [{ id: 1, title: 'Public sample proposal' }], polls: [], latestNews: [{ id: 2, title: 'Local news', type: 'news' }], latestArticles: [{ id: 3, title: 'Community article', type: 'articles' }], videos: [{ id: 4, title: 'Community video' }], prefectures: [{ id: 12, name: 'Attica' }], manifestData: [{ slug: 'public-commitment', title: 'Public commitment', randomSupporters: [] }] };
-describe('Restored map homepage', () => {
-  let container, root;
-  beforeEach(() => {
-    mockUser = null;
-    mockGet.mockReset().mockResolvedValue({ success: true, data: payload });
-    container = document.createElement('div');
-    document.body.appendChild(container);
-    root = createRoot(container);
-  });
-  afterEach(async () => { await act(async () => root.unmount()); container.remove(); });
-  const render = async () => { await act(async () => root.render(React.createElement(Home))); };
-  test('restores the original hero, map, government overview, articles, videos and supporters', async () => {
-    await render();
-    for (const id of ['original-hero', 'territory-map', 'action-lanes', 'government']) expect(container.querySelector('[data-testid="' + id + '"]')).toBeTruthy();
-    for (const text of ['Attica', 'Local news', 'Community article', 'Community video', 'Public commitment']) expect(container.textContent).toContain(text);
-    expect(container.querySelector('#home-area')).toBeNull();
-  });
-  test('preserves featured-poll audience settings', async () => {
-    mockGet.mockResolvedValue({ success: true, data: { ...payload, featuredPoll: { title: 'Members poll' }, homepageSettings: { featuredPoll: { enabled: true, audience: 'registered' } } } });
-    await render();
-    expect(container.querySelector('[data-testid="original-hero"]').textContent).not.toContain('Members poll');
-    mockUser = { id: 1, username: 'member' };
-    await render();
-    expect(container.querySelector('[data-testid="original-hero"]').textContent).toContain('Members poll');
-  });
-  test('shows a loading failure instead of silently rendering an empty response', async () => {
-    mockGet.mockResolvedValue({ success: false, message: 'Homepage unavailable' });
-    await render();
-    expect(container.querySelector('[role="alert"]')).toBeTruthy();
-    expect(container.textContent).toContain('Σφάλμα φόρτωσης');
-  });
-
-  test('retries only a failed section and retains successful content', async () => {
-    mockGet.mockResolvedValueOnce({ success: true, data: payload, errors: { polls: 'unavailable' } });
-    await render();
-    expect(container.querySelectorAll('[role="alert"]')).toHaveLength(1);
-    expect(container.textContent).toContain('Local news');
-    mockGet.mockResolvedValueOnce({ success: true, data: { polls: [{ id: 9, title: 'Recovered poll' }] }, errors: {} });
-    await act(async () => container.querySelector('[role="alert"] button').click());
-    expect(mockGet).toHaveBeenLastCalledWith(undefined, ['polls']);
-    expect(container.querySelector('[role="alert"]')).toBeNull();
-    expect(container.textContent).toContain('Recovered poll');
-    expect(container.textContent).toContain('Local news');
-  });
-
-  test('keeps other errors after recovering from a network failure', async () => {
-    mockGet.mockRejectedValueOnce(new Error('offline'));
-    await render();
-    mockGet.mockResolvedValueOnce({ success: true, data: { polls: [] }, errors: {} });
-    await act(async () => container.querySelector('[role="alert"] button').click());
-    expect(container.querySelectorAll('[role="alert"]')).toHaveLength(4);
-  });
-
-  test('discards a previous account response and clears private content on logout', async () => {
-    let resolveOld;
-    mockUser = { id: 7 };
-    mockGet.mockReturnValueOnce(new Promise(resolve => { resolveOld = resolve; }));
-    await render();
-    mockUser = null;
-    await render();
-    await act(async () => resolveOld({ success: true, data: { suggestions: [{ id: 1, title: 'Private proposal' }] } }));
-    expect(container.textContent).not.toContain('Private proposal');
-    expect(container.textContent).toContain('Public sample proposal');
-  });
-
-  test('loads successfully in React Strict Mode', async () => {
-    await act(async () => root.render(React.createElement(React.StrictMode, null, React.createElement(Home))));
-    expect(container.textContent).toContain('Local news');
-  });
-
-  test('overlapping section retries retain both recovered results', async () => {
-    mockGet.mockResolvedValueOnce({ success: true, data: payload, errors: { polls: 'unavailable', suggestions: 'unavailable' } });
-    await render();
-    let resolveFirst;
-    mockGet.mockReturnValueOnce(new Promise(resolve => { resolveFirst = resolve; }));
-    await act(async () => container.querySelector('[role="alert"] button').click());
-    mockGet.mockResolvedValueOnce({ success: true, data: { polls: [{ id: 1, title: 'Latest poll' }], suggestions: [{ id: 2, title: 'Recovered suggestion' }] } });
-    await act(async () => container.querySelector('[role="alert"] button').click());
-    expect(mockGet).toHaveBeenLastCalledWith(undefined, ['polls', 'suggestions']);
-    await act(async () => resolveFirst({ success: true, data: { polls: [{ id: 3, title: 'Stale poll' }] } }));
-    expect(container.textContent).toContain('Latest poll');
-    expect(container.textContent).toContain('Recovered suggestion');
-    expect(container.textContent).not.toContain('Stale poll');
-    expect(container.querySelector('[role="alert"]')).toBeNull();
-  });
+const payload = { suggestions: [{ id: 1, title: 'Public proposal', createdAt: '2026-10-20' }], polls: [{ id: 2, title: 'Public poll', createdAt: '2026-10-21' }], latestNews: [{ id: 3, title: 'Local news' }], latestArticles: [] };
+describe('Community homepage', () => {
+ let container, root;
+ beforeEach(() => { mockUser = null; window.history.replaceState(null, '', '/'); mockGet.mockReset().mockResolvedValue({ success: true, data: payload }); mockFollow.mockReset().mockResolvedValue({ data: [], pagination: { totalPages: 1 } }); container = document.createElement('div'); document.body.appendChild(container); root = createRoot(container); });
+ afterEach(async () => { await act(async () => root.unmount()); container.remove(); });
+ const render = async () => { await act(async () => root.render(React.createElement(Home))); };
+ test('shows a mixed public feed and participation path', async () => { await render(); expect(container.textContent).toContain('Public proposal'); expect(container.textContent).toContain('Public poll'); expect(container.textContent).toContain('Local news'); expect(container.querySelector('a[href^="/register?next="]')).toBeTruthy(); });
+ test('filters on the server and preserves the selected location through registration', async () => { await render(); await act(async () => container.querySelector('[data-testid="location"]').click()); expect(mockGet).toHaveBeenLastCalledWith(12, undefined); expect(window.location.search).toBe('?locationId=12'); const link = container.querySelector('a[href^="/register?next="]'); expect(decodeURIComponent(link.getAttribute('href'))).toContain('/suggestions/new?locationId=12'); });
+ test('defaults members to their home location', async () => { mockUser = { id: 7, homeLocationId: 21 }; await render(); expect(mockGet).toHaveBeenLastCalledWith(21, undefined); });
+ test('recovers a failed section without dropping loaded items', async () => { mockGet.mockResolvedValueOnce({ success: true, data: payload, errors: { polls: 'unavailable' } }); await render(); mockGet.mockResolvedValueOnce({ success: true, data: { polls: [{ id: 9, title: 'Recovered poll' }] } }); await act(async () => container.querySelector('[role="alert"] button').click()); expect(mockGet).toHaveBeenLastCalledWith(undefined, ['polls']); expect(container.textContent).toContain('Recovered poll'); expect(container.textContent).toContain('Local news'); });
+ test('discards old account requests on logout', async () => { let resolveOld; mockUser = { id: 7 }; mockGet.mockReturnValueOnce(new Promise(resolve => { resolveOld = resolve; })); await render(); mockUser = null; await render(); await act(async () => resolveOld({ success: true, data: { suggestions: [{ id: 8, title: 'Private proposal' }] } })); expect(container.textContent).not.toContain('Private proposal'); expect(container.textContent).toContain('Public proposal'); });
+ test('restores a location from the URL', async () => { window.history.replaceState(null, '', '/?locationId=42'); await render(); expect(mockGet).toHaveBeenLastCalledWith(42, undefined); });
+ test('loads followed issues only when members open Following', async () => { mockUser = { id: 7 }; mockFollow.mockResolvedValue({ data: [{ id: 90, title: 'Followed proposal', entityType: 'suggestion' }], pagination: { totalPages: 1 } }); await render(); expect(mockFollow).not.toHaveBeenCalled(); await act(async () => container.querySelector('nav button:nth-child(2)').click()); expect(container.textContent).toContain('Followed proposal'); expect(container.textContent).not.toContain('Public proposal'); });
+ test('surfaces a request failure', async () => { mockGet.mockRejectedValueOnce(new Error('offline')); await render(); expect(container.querySelector('[role="alert"]')).toBeTruthy(); });
 });

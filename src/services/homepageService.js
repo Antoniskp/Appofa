@@ -277,8 +277,8 @@ async function buildHomepagePayload(req, sections = HOMEPAGE_SECTIONS) {
   let settingsPromise;
   const settings = () => (settingsPromise ||= getOrCreateSettings());
   const loaders = {
-    latestArticles: () => listData(articleService.getAllArticles({ status: 'published', type: 'articles', orderBy: 'createdAt', order: 'desc', limit: 3, page: 1 }, user), 'articles'),
-    latestNews: () => listData(articleService.getAllArticles({ status: 'published', type: 'news', newsApproved: true, orderBy: 'newsApprovedAt', order: 'desc', limit: 3, page: 1 }, user), 'articles'),
+    latestArticles: () => listData(articleService.getAllArticles({ status: 'published', ...(locationId ? { locationId } : {}), type: 'articles', orderBy: 'createdAt', order: 'desc', limit: 3, page: 1 }, user), 'articles'),
+    latestNews: () => listData(articleService.getAllArticles({ status: 'published', ...(locationId ? { locationId } : {}), type: 'news', newsApproved: true, orderBy: 'newsApprovedAt', order: 'desc', limit: 3, page: 1 }, user), 'articles'),
     videos: () => listData(articleService.getAllArticles({ type: 'video', status: 'published', limit: 6, orderBy: 'createdAt', order: 'desc' }, user), 'articles'),
     polls: () => listData(pollService.getAllPolls({ limit: 3, ...(locationId ? { locationId } : {}) }, user, getClientIp(req), getUserAgent(req)), 'polls'),
     suggestions: () => getTopSuggestions(user, locationId),
