@@ -6,8 +6,8 @@ import { homepageAPI } from '@/lib/api';
 import sectionsList from '@/config/homepageSections.json';
 
 // Keep account-scoped data separate, including while an account change is loading.
-export function useHomepageData(user, initialPayload, locationId) {
-  const owner = `${user?.id || 'guest'}:${user?.role || ''}:${user?.homeLocation?.id || ''}:${locationId || ''}`;
+export function useHomepageData(user, initialPayload) {
+  const owner = `${user?.id || 'guest'}:${user?.role || ''}:${user?.homeLocation?.id || ''}`;
   const [requested, setRequested] = useState(null);
   const current = useRef(null);
   const pending = useRef([]);
@@ -18,7 +18,7 @@ export function useHomepageData(user, initialPayload, locationId) {
     setRequested(sections || null);
     let response;
     try {
-      response = await homepageAPI.get(locationId, sections);
+      response = await homepageAPI.get(undefined, sections);
       if (!response?.success) throw new Error('Homepage unavailable');
     } catch {
       response = { data: {}, errors: Object.fromEntries((sections || sectionsList).map(key => [key, 'unavailable'])) };
@@ -34,7 +34,7 @@ export function useHomepageData(user, initialPayload, locationId) {
       errors: { ...errors, ...response.errors },
     };
   }, [owner], {
-    initialData: initialPayload ? { owner: 'guest:::', ...initialPayload } : null,
+    initialData: initialPayload ? { owner: 'guest:', ...initialPayload } : null,
   });
   current.current = result.data;
   const active = result.data?.owner === owner ? result.data : null;
