@@ -722,6 +722,7 @@
     "unlocked": "Deblocat"
   },
   "common": {
+    "retry": "Încearcă din nou",
     "loading": "Se încarcă...",
     "error": "A apărut o eroare.",
     "save": "Salvează",

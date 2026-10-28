@@ -722,6 +722,7 @@
     "unlocked": "Unlocked"
   },
   "common": {
+    "retry": "Try again",
     "loading": "Loading...",
     "error": "An error occurred.",
     "save": "Save",

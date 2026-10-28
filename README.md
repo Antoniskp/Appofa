@@ -1,4 +1,4 @@
-# Appofa
+# appofasi
 
 **Greek civic-engagement platform** — connecting citizens with their communities through articles, polls, suggestions, dream-team formations, person profiles, and manifests.
 
@@ -6,7 +6,7 @@
 
 ![Node.js](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen) ![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-red)
 
-Appofa empowers Greek communities by giving residents a single place to:
+appofasi empowers Greek communities by giving residents a single place to:
 
 - 📰 **Read & publish** local news and articles
 - 🗳️ **Vote on polls** scoped to their municipality, prefecture, or country
@@ -135,7 +135,7 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=your-smtp-username
 SMTP_PASS=your-smtp-password
-SMTP_FROM="Appofa <no-reply@appofasi.gr>"
+SMTP_FROM="appofasi <no-reply@appofasi.gr>"
 PASSWORD_RESET_TOKEN_TTL_MINUTES=60
 FRONTEND_URL=http://localhost:3001
 ```
@@ -161,7 +161,7 @@ WORKER_TOKEN=<shared-worker-secret>
 
 ### Worker token management (admin API)
 
-Appofa now supports database-backed worker API tokens (hashed at rest) managed by admins:
+appofasi now supports database-backed worker API tokens (hashed at rest) managed by admins:
 
 - `POST /api/admin/worker-tokens` → create token (returns plaintext token **once**)
 - `GET /api/admin/worker-tokens` → list metadata only (`id`, `name`, `created_at`, `last_used_at`, `revoked_at`, `created_by`)

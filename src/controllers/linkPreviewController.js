@@ -220,7 +220,7 @@ const buildTikTokEmbedUrl = (videoId) => {
  */
 const MAX_REDIRECTS = 5;
 
-const safeFetch = (url, redirectCount = 0) => {
+const safeFetch = (url, redirectCount = 0, includeUrl = false) => {
   return new Promise((resolve, reject) => {
     if (redirectCount >= MAX_REDIRECTS) {
       return reject(new Error('Too many redirects'));
@@ -241,6 +241,9 @@ const safeFetch = (url, redirectCount = 0) => {
 
     if (urlObj.protocol !== 'https:' && urlObj.protocol !== 'http:') {
       return reject(new Error('Only http/https fetch supported'));
+    }
+    if (urlObj.username || urlObj.password || urlObj.port) {
+      return reject(new Error('Fetch credentials and custom ports are not allowed'));
     }
 
     const lib = urlObj.protocol === 'https:' ? https : http;
@@ -266,7 +269,8 @@ const safeFetch = (url, redirectCount = 0) => {
               hostAllowed &&
               (redirectUrl.protocol === 'https:' || redirectUrl.protocol === 'http:')
             ) {
-              return resolve(safeFetch(redirectUrl.toString(), redirectCount + 1));
+              res.resume?.();
+              return resolve(safeFetch(redirectUrl.toString(), redirectCount + 1, includeUrl));
             }
           } catch {
             // ignore bad redirect
@@ -281,10 +285,11 @@ const safeFetch = (url, redirectCount = 0) => {
 
       let body = '';
       let bytes = 0;
+      res.setEncoding?.('utf8');
 
       res.on('data', (chunk) => {
-        bytes += chunk.length;
-        if (bytes > MAX_BODY_BYTES) {
+        bytes += Buffer.byteLength(chunk);
+        if (bytes > (includeUrl ? 2 * 1024 * 1024 : MAX_BODY_BYTES)) {
           req.destroy();
           reject(new Error('Response body too large'));
           return;
@@ -292,7 +297,7 @@ const safeFetch = (url, redirectCount = 0) => {
         body += chunk;
       });
 
-      res.on('end', () => resolve(body));
+      res.on('end', () => resolve(includeUrl ? { body, url } : body));
       res.on('error', reject);
     });
 
@@ -333,9 +338,9 @@ const fetchTikTokOEmbed = async (originalUrl) => {
 
   // Try to extract video ID from oEmbed HTML data-video-id attribute.
   // This handles vm.tiktok.com shortlinks where the original URL has no ID.
-  let extractedVideoId = null;
+  let extractedVideoId = /^\d+$/.test(data.embed_product_id || '') ? String(data.embed_product_id) : null;
   if (data.html) {
-    const idMatch = data.html.match(/data-video-id=["'](\d+)["']/);
+    const idMatch = data.html.match(/data-video-id=["'](\d+)["']/) || data.html.match(/\/player\/v1\/(\d+)/);
     if (idMatch) extractedVideoId = idMatch[1];
   }
 
@@ -348,6 +353,42 @@ const fetchTikTokOEmbed = async (originalUrl) => {
     embedHtml: data.html || null,
     videoId: extractedVideoId
   };
+};
+
+// Public page metadata is needed when oEmbed returns only player markup.
+const parseTikTokPage = (body, videoId) => {
+  for (const match of body.matchAll(/<script\b[^>]*\bid=["'](?:__UNIVERSAL_DATA_FOR_REHYDRATION__|SIGI_STATE)["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const state = JSON.parse(match[1]);
+      const item = state.__DEFAULT_SCOPE__?.['webapp.video-detail']?.itemInfo?.itemStruct
+        || state.ItemModule?.[videoId];
+      if (item && String(item.id) === videoId) {
+        const authorName = item.author?.nickname || item.author?.uniqueId;
+        return {
+          title: truncate(item.desc || (authorName ? `TikTok · ${authorName}` : null)),
+          authorName: truncate(authorName),
+          thumbnailUrl: item.video?.cover || null,
+          videoId,
+        };
+      }
+    } catch { /* Ignore non-JSON scripts. */ }
+  }
+  const decode = (value) => value.replace(/&(?:amp|quot|apos|lt|gt|#39|#x[0-9a-f]+|#\d+);/gi, (entity) => {
+    const named = { '&amp;': '&', '&quot;': '"', '&apos;': "'", '&lt;': '<', '&gt;': '>', '&#39;': "'" };
+    const key = entity.toLowerCase();
+    if (named[key]) return named[key];
+    const code = key.startsWith('&#x') ? parseInt(key.slice(3), 16) : parseInt(key.slice(2), 10);
+    return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : entity;
+  });
+  const metadata = {};
+  for (const tag of body.matchAll(/<meta\b[^>]*>/gi)) {
+    const attrs = {};
+    for (const attr of tag[0].matchAll(/([\w:-]+)\s*=\s*(["'])([\s\S]*?)\2/g)) attrs[attr[1].toLowerCase()] = decode(attr[3]);
+    metadata[attrs.property || attrs.name] = attrs.content;
+  }
+  // Do not use generic page titles (login, captcha, or TikTok home page).
+  if (!videoId || !metadata['og:description']) return {};
+  return { title: truncate(metadata['og:description']), thumbnailUrl: metadata['og:image'] || null, videoId };
 };
 
 /**
@@ -387,6 +428,28 @@ const buildPreview = async (urlObj, provider, originalUrl) => {
       console.warn(`[link-preview] oEmbed fetch failed for ${originalUrl} after all retries: ${lastErr.message}`);
     } else {
       console.warn(`[link-preview] oEmbed fetch failed for ${originalUrl}: ${lastErr.message}`);
+    }
+  }
+
+  if (provider === 'tiktok' && !meta.title) {
+    try {
+      const page = await safeFetch(originalUrl, 0, true);
+      const resolved = validateAndParseUrl(page.url);
+      if (resolved.provider !== 'tiktok') throw new Error('Unexpected TikTok redirect');
+      const videoId = extractTikTokVideoId(resolved.urlObj);
+      const pageMeta = parseTikTokPage(page.body, videoId);
+      if (videoId && !extractTikTokVideoId(urlObj)) {
+        try {
+          const canonicalMeta = await fetchTikTokOEmbed(normalizeUrl(resolved.urlObj, 'tiktok'));
+          meta = { ...meta, ...canonicalMeta };
+        } catch { /* Page metadata can still supply autocomplete. */ }
+      }
+      for (const [key, value] of Object.entries(pageMeta)) {
+        if (!meta[key] && value) meta[key] = value;
+      }
+      if (videoId) meta.videoId = videoId;
+    } catch (err) {
+      console.warn(`[link-preview] TikTok page metadata unavailable: ${err.message}`);
     }
   }
 
@@ -544,5 +607,6 @@ module.exports = {
   buildTikTokEmbedUrl,
   detectProvider,
   YOUTUBE_HOSTS,
-  TIKTOK_HOSTS
+  TIKTOK_HOSTS,
+  parseTikTokPage
 };

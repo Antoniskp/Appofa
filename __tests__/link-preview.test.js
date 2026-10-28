@@ -500,7 +500,8 @@ describe('POST /api/link-preview', () => {
       expect(second.body.data.cached).toBe(false);
       const third = await request(app).post('/api/link-preview').send({ url }).expect(200);
       expect(third.body.data.cached).toBe(true);
-      expect(get).toHaveBeenCalledTimes(2);
+      // The empty first response also triggers a public-page metadata fetch.
+      expect(get).toHaveBeenCalledTimes(3);
     } finally {
       get.mockRestore();
     }
