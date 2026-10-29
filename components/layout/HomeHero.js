@@ -16,6 +16,8 @@ import {
 const DEFAULT_BG_COLOR = '#252627';
 const DEFAULT_TITLE = 'Δες τι συμβαίνει. Πάρε θέση. Πρότεινε λύσεις.';
 const DEFAULT_SUBTITLE = 'Ανακάλυψε τι αφορά την περιοχή σου, συμμετείχε σε ανοιχτές ψηφοφορίες και δώσε ορατότητα σε ιδέες, προβλήματα και ανθρώπους.';
+const GUEST_TITLE = 'Η περιοχή σου. Τα θέματα που σε αφορούν. Η δική σου φωνή.';
+const GUEST_SUBTITLE = 'Ανακάλυψε προτάσεις και ψηφοφορίες για την περιοχή σου. Δημιούργησε λογαριασμό για να ακολουθείς όσα σε ενδιαφέρουν και να καταθέτεις τις δικές σου προτάσεις.';
 
 function FeaturedLivePoll({ poll, loading, user }) {
   const [currentPoll, setCurrentPoll] = useState(poll);
@@ -226,13 +228,14 @@ export default function HomeHero({ featuredPoll = null, featuredPollLoading = fa
                 </p>
               )}
 
-              <h1 className="text-3xl font-extrabold leading-tight tracking-tight md:text-5xl">{DEFAULT_TITLE}</h1>
-              <p className="mt-3 max-w-2xl text-base leading-7 text-white/90">{DEFAULT_SUBTITLE}</p>
+              <h1 className="text-3xl font-extrabold leading-tight tracking-tight md:text-5xl">{user ? DEFAULT_TITLE : GUEST_TITLE}</h1>
+              <p className="mt-3 max-w-2xl text-base leading-7 text-white/90">{user ? DEFAULT_SUBTITLE : GUEST_SUBTITLE}</p>
               <div className="my-5 flex flex-wrap gap-3">
-                <Link href={user?.homeLocation?.slug ? `/locations/${user.homeLocation.slug}` : '/locations'} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-white px-4 py-3 font-semibold text-charcoal">
-                  <MapPinIcon className="h-5 w-5" />{user?.homeLocation?.slug ? 'Η περιοχή σου' : 'Βρες την περιοχή σου'}
+                {!user && <Link href="/register" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-white px-4 py-3 font-semibold text-charcoal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Δημιούργησε λογαριασμό <ArrowRightIcon className="h-4 w-4" /></Link>}
+                <Link href={user?.homeLocation?.slug ? `/locations/${user.homeLocation.slug}` : '/locations'} className={`inline-flex min-h-11 items-center gap-2 rounded-lg px-4 py-3 font-semibold ${user ? 'bg-white text-charcoal' : 'border border-white/60 text-white'}`}>
+                  <MapPinIcon className="h-5 w-5" />{user?.homeLocation?.slug ? 'Η περιοχή σου' : user ? 'Βρες την περιοχή σου' : 'Εξερεύνησε την περιοχή σου'}
                 </Link>
-                <Link href="/polls" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/60 px-4 py-3 font-semibold text-white">Ψήφισε σε ένα θέμα <ArrowRightIcon className="h-4 w-4" /></Link>
+                {user && <Link href="/polls" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/60 px-4 py-3 font-semibold text-white">Ψήφισε σε ένα θέμα <ArrowRightIcon className="h-4 w-4" /></Link>}
               </div>
               <p className="mb-4 text-xs leading-5 text-white/80">Οι ψηφοφορίες εκφράζουν τους συμμετέχοντες. Δεν αποτελούν επίσημες αποφάσεις ή αντιπροσωπευτικές δημοσκοπήσεις. Η σύνδεση με Google δεν επαληθεύει μοναδικό φυσικό πρόσωπο.</p>
               <nav aria-label="Συνέχισε τη συμμετοχή σου" className="mb-5 flex flex-wrap gap-4 text-sm font-semibold underline">

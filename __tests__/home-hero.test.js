@@ -82,7 +82,7 @@ describe('HomeHero CTA link behavior', () => {
 
   test('renders internal CTA links without opening a new tab', async () => {
     const { container, root } = await renderHero(buildSlide('/polls'));
-    const ctaLink = container.querySelector('a[href="/polls"]');
+    const ctaLink = container.querySelector('a[href="/register"]');
 
     expect(ctaLink).toBeTruthy();
     expect(ctaLink.getAttribute('target')).toBeNull();
@@ -95,7 +95,7 @@ describe('HomeHero CTA link behavior', () => {
 
   test('uses a stable headline and primary actions even when slides contain promotional claims', async () => {
     const { container, root } = await renderHero(buildSlide('https://example.com'));
-    expect(container.querySelector('h1').textContent).toBe('Δες τι συμβαίνει. Πάρε θέση. Πρότεινε λύσεις.');
+    expect(container.querySelector('h1').textContent).toBe('Η περιοχή σου. Τα θέματα που σε αφορούν. Η δική σου φωνή.');
     expect(container.querySelector('a[href="/locations"]')).toBeTruthy();
     expect(container.querySelector('[role="tablist"]')).toBeNull();
     expect(container.textContent).toContain('Δεν αποτελούν επίσημες αποφάσεις');
@@ -144,11 +144,11 @@ describe('HomeHero CTA link behavior', () => {
     useAuth.mockReturnValue({ user: null, loading: false });
     const { container, root } = await renderHero(buildSlide('/polls'));
 
-    expect(container.textContent).toContain('Ψήφισε σε ένα θέμα');
-    expect(container.querySelector('a[href="/register"]')).toBeFalsy();
+    expect(container.textContent).toContain('Δημιούργησε λογαριασμό');
+    expect(container.querySelector('a[href="/register"]')).toBeTruthy();
     expect(container.querySelector('a[href="/locations"]')).toBeTruthy();
     expect(container.querySelector('a[href="/polls?voteRestriction=anyone"]')).toBeFalsy();
-    expect(container.querySelector('a[href="/polls"]')).toBeTruthy(); // slide CTA only
+    expect(container.querySelector('a[href="/polls"]')).toBeFalsy();
     expect(container.textContent).not.toContain('Γίνε Moderator');
 
     await act(async () => {
