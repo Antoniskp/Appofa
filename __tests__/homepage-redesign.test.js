@@ -5,13 +5,16 @@ const { createRoot } = require('react-dom/client');
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 let mockUser = null;
 const mockGet = jest.fn();
-jest.mock('next/link', () => ({ __esModule: true, default: ({ href, children, ...props }) => require('react').createElement('a', { href, ...props }, children) }));
+jest.mock('next/link', () => ({ __esModule: true, default: ({ href, children, prefetch, ...props }) => require('react').createElement('a', { href, ...props }, children) }));
 jest.mock('next/dynamic', () => loader => {
   const isMap = loader.toString().includes('ExploreLocationsMap');
   return props => require('react').createElement('div', { 'data-testid': isMap ? 'territory-map' : 'video' }, isMap ? props.prefectures.map(p => p.name).join(', ') : props.article.title);
 });
 jest.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: mockUser, loading: false }) }));
-jest.mock('@/lib/api', () => ({ homepageAPI: { get: (...args) => mockGet(...args) } }));
+jest.mock('@/lib/api', () => ({
+  homepageAPI: { get: (...args) => mockGet(...args) },
+  suggestionAPI: { getProgress: jest.fn().mockResolvedValue({ success: true, data: [] }) },
+}));
 jest.mock('@/components/geo/CountryEntryPopup', () => () => null);
 jest.mock('@/components/OnboardingCard', () => () => null);
 jest.mock('@/components/HomeHero', () => props => require('react').createElement('div', { 'data-testid': 'original-hero' }, props.featuredPoll?.title));

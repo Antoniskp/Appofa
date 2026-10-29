@@ -5,6 +5,7 @@ const { act } = require('react');
 const { createRoot } = require('react-dom/client');
 const { useAuth } = require('@/lib/auth-context');
 const { usePathname } = require('next/navigation');
+const { nav } = require('../messages/el.json').adminWorkspace;
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -24,13 +25,13 @@ jest.mock('@/lib/auth-context', () => ({
   useAuth: jest.fn(),
 }));
 
-jest.mock('@/lib/api', () => ({
+jest.mock('@/lib/api/adminSummary', () => ({
   adminSummaryAPI: {
     getQueueCounts: jest.fn(),
   },
 }));
 
-const { adminSummaryAPI } = require('@/lib/api');
+const { adminSummaryAPI } = require('@/lib/api/adminSummary');
 const AdminSidebar = require('../components/admin/AdminSidebar').default;
 
 const renderSidebar = (user = { role: 'admin' }, pathname = '/admin') => {
@@ -61,14 +62,9 @@ describe('AdminSidebar', () => {
   it('groups admin navigation into operational sections', () => {
     const { container, root } = renderSidebar();
 
-    expect(container.textContent).toContain('Overview');
-    expect(container.textContent).toContain('Queues');
-    expect(container.textContent).toContain('People & Orgs');
-    expect(container.textContent).toContain('Content');
-    expect(container.textContent).toContain('Locations');
-    expect(container.textContent).toContain('System');
-    expect(container.textContent).toContain('Geo & Countries');
-    expect(container.textContent).toContain('Organizations');
+    for (const key of ['Overview', 'Queues', 'PeopleOrgs', 'Content', 'Locations', 'System', 'GeoCountries', 'Organizations']) {
+      expect(container.textContent).toContain(nav[key]);
+    }
     expect(container.querySelector('nav a[href="/admin"]')?.getAttribute('aria-current')).toBe('page');
 
     act(() => root.unmount());
@@ -77,12 +73,11 @@ describe('AdminSidebar', () => {
   it('hides admin-only destinations for moderators', () => {
     const { container, root } = renderSidebar({ role: 'moderator' });
 
-    expect(container.textContent).toContain('Reports');
-    expect(container.textContent).toContain('Locations');
-    expect(container.textContent).not.toContain('Geo & Countries');
-    expect(container.textContent).not.toContain('IP Rules');
-    expect(container.textContent).not.toContain('System Health');
-    expect(container.textContent).not.toContain('Worker Status');
+    expect(container.querySelector('a[href="/admin/reports"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/admin/locations"]')).toBeTruthy();
+    for (const href of ['/admin/geo', '/admin/ip-rules', '/admin/status', '/admin/worker-status']) {
+      expect(container.querySelector(`a[href="${href}"]`)).toBeNull();
+    }
 
     act(() => root.unmount());
   });

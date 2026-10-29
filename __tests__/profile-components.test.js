@@ -1,5 +1,5 @@
 // Basic tests for profile components
-jest.mock('next-intl', () => require('../__mocks__/next-intl'));
+jest.mock('next-intl');
 
 const ProfileHeader = require('../components/profile/ProfileHeader');
 const ProfileCompleteness = require('../components/profile/ProfileCompleteness');
@@ -15,7 +15,7 @@ describe('Profile components', () => {
   });
 
   it('ProfileHeader should export a function or object (React component)', () => {
-    const type = typeof ProfileHeader.default || typeof ProfileHeader;
+    const type = typeof (ProfileHeader.default || ProfileHeader);
     expect(['function', 'object']).toContain(type);
   });
 
@@ -24,7 +24,7 @@ describe('Profile components', () => {
   });
 
   it('ProfileCompleteness should export a function or object (React component)', () => {
-    const type = typeof ProfileCompleteness.default || typeof ProfileCompleteness;
+    const type = typeof (ProfileCompleteness.default || ProfileCompleteness);
     expect(['function', 'object']).toContain(type);
   });
 
@@ -33,7 +33,7 @@ describe('Profile components', () => {
   });
 
   it('ProfileBasicInfoForm should export a function or object (React component)', () => {
-    const type = typeof ProfileBasicInfoForm.default || typeof ProfileBasicInfoForm;
+    const type = typeof (ProfileBasicInfoForm.default || ProfileBasicInfoForm);
     expect(['function', 'object']).toContain(type);
   });
 
@@ -42,7 +42,7 @@ describe('Profile components', () => {
   });
 
   it('ProfileHomeLocationSection should export a function or object (React component)', () => {
-    const type = typeof ProfileHomeLocationSection.default || typeof ProfileHomeLocationSection;
+    const type = typeof (ProfileHomeLocationSection.default || ProfileHomeLocationSection);
     expect(['function', 'object']).toContain(type);
   });
 
@@ -51,7 +51,7 @@ describe('Profile components', () => {
   });
 
   it('ProfilePrivacySection should export a function or object (React component)', () => {
-    const type = typeof ProfilePrivacySection.default || typeof ProfilePrivacySection;
+    const type = typeof (ProfilePrivacySection.default || ProfilePrivacySection);
     expect(['function', 'object']).toContain(type);
   });
 
@@ -60,7 +60,7 @@ describe('Profile components', () => {
   });
 
   it('ProfileSecuritySection should export a function or object (React component)', () => {
-    const type = typeof ProfileSecuritySection.default || typeof ProfileSecuritySection;
+    const type = typeof (ProfileSecuritySection.default || ProfileSecuritySection);
     expect(['function', 'object']).toContain(type);
   });
 
@@ -69,7 +69,7 @@ describe('Profile components', () => {
   });
 
   it('ProfileDangerZone should export a function or object (React component)', () => {
-    const type = typeof ProfileDangerZone.default || typeof ProfileDangerZone;
+    const type = typeof (ProfileDangerZone.default || ProfileDangerZone);
     expect(['function', 'object']).toContain(type);
   });
 });

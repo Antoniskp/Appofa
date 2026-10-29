@@ -30,7 +30,10 @@ describe('Romanian i18n wiring', () => {
     const geoTrackerSource = fs.readFileSync(geoTrackerPath, 'utf8');
 
     expect(constantsSource).toContain("SUPPORTED_LOCALES = ['el', 'en', 'ro']");
-    expect(layoutSource).toContain('ro: SITE_URL');
+    // Locale is selected at runtime on the shared URL, not through hreflang URLs.
+    expect(layoutSource).toContain('const locale = await getLocale()');
+    expect(layoutSource).toContain('<html lang={locale}>');
+    expect(layoutSource).toContain('NextIntlClientProvider locale={locale}');
     expect(geoTrackerSource).toContain("['el', 'en', 'ro']");
   });
 
