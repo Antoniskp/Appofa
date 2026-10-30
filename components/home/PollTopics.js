@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
   AcademicCapIcon, BanknotesIcon, BuildingLibraryIcon,
-  CpuChipIcon, SparklesIcon, GlobeEuropeAfricaIcon, ArrowRightIcon,
+  CpuChipIcon, SparklesIcon, GlobeEuropeAfricaIcon,
 } from '@heroicons/react/24/outline';
 
 const topics = [
@@ -17,23 +17,17 @@ const topics = [
 export default function PollTopics({ tags = [] }) {
   const t = useTranslations('pollTopics');
   return (
-    <nav aria-label={t('title')} className="mb-8">
-      <h3 className="text-lg font-semibold text-gray-900">{t('title')}</h3>
-      <p className="mt-1 text-sm text-gray-600">{t('description')}</p>
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
+    <nav aria-label={t('title')} className="mb-5">
+      <div className="flex flex-wrap gap-2">
         {topics.map(({ key, category, icon: Icon }) => (
           <Link
             key={key}
             href={`/polls?category=${encodeURIComponent(category)}`}
             prefetch={false}
-            className="group rounded-xl border border-gray-200 bg-ivory p-4 transition-colors hover:border-copper hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            className="inline-flex min-h-10 items-center gap-2 rounded-full border border-gray-200 bg-ivory px-3 py-2 transition-colors hover:border-copper hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
           >
-            <div className="flex items-center justify-between gap-2">
-              <Icon aria-hidden="true" className="h-6 w-6 text-copper" />
-              <ArrowRightIcon aria-hidden="true" className="h-4 w-4 text-gray-400 group-hover:text-copper" />
-            </div>
-            <span className="mt-3 block text-sm font-semibold text-gray-900">{t(`${key}.title`)}</span>
-            <span className="mt-1 block text-xs leading-relaxed text-gray-600">{t(`${key}.description`)}</span>
+            <Icon aria-hidden="true" className="h-4 w-4 text-copper" />
+            <span className="text-xs font-semibold text-gray-900">{t(`${key}.title`)}</span>
           </Link>
         ))}
       </div>

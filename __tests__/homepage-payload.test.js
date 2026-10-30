@@ -1,6 +1,6 @@
 const request = require('supertest');
 const express = require('express');
-const { sequelize, User, Location, Suggestion, Poll, LocationLink, Tag, TaggableItem } = require('../src/models');
+const { sequelize, User, Location, Suggestion, Poll, PollOption, PollVote, LocationLink, Tag, TaggableItem } = require('../src/models');
 const articleService = require('../src/services/articleService');
 const homepageRoutes = require('../src/routes/homepageRoutes');
 
@@ -46,6 +46,26 @@ describe('Homepage Payload API', () => {
       featuredPoll: null,
       manifestData: [],
     });
+  });
+
+  it('ranks popular polls before newer polls and excludes closed polls', async () => {
+    const author = await User.create({ username: 'popular-author', email: 'popular@example.test', password: 'password123' });
+    const popular = await Poll.create({ title: 'Popular active poll', creatorId: author.id, createdAt: new Date('2025-01-01') });
+    const closed = await Poll.create({ title: 'Popular closed poll', creatorId: author.id, status: 'closed' });
+    const newer = await Poll.create({ title: 'Newer quiet poll', creatorId: author.id });
+    try {
+      for (const poll of [popular, closed]) {
+        const option = await PollOption.create({ pollId: poll.id, text: 'Yes', order: 0 });
+        await PollVote.create({ pollId: poll.id, optionId: option.id, userId: author.id, isAuthenticated: true });
+      }
+      const res = await request(app).get('/api/homepage?sections=polls');
+      expect(res.body.errors?.polls).toBeUndefined();
+      expect(res.body.data.polls[0].id).toBe(popular.id);
+      expect(res.body.data.polls.map(poll => poll.id)).not.toContain(closed.id);
+    } finally {
+      await Poll.destroy({ where: { id: [popular.id, closed.id, newer.id] } });
+      await author.destroy();
+    }
   });
 
   it('filters an area and its descendants without exposing restricted proposals', async () => {

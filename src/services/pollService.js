@@ -805,7 +805,11 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
       ],
       limit: limitNum,
       offset: offset,
-      order: [['createdAt', 'DESC'], [{ model: PollOption, as: 'options' }, 'order', 'ASC']]
+      order: [
+        ...(filters.sort === 'popular' ? [[sequelize.literal('(SELECT COUNT(*) FROM "PollVotes" WHERE "PollVotes"."pollId" = "Poll"."id")'), 'DESC']] : []),
+        ['createdAt', 'DESC'],
+        [{ model: PollOption, as: 'options' }, 'order', 'ASC']
+      ]
     });
 
     // Add vote counts to each option

@@ -29,8 +29,8 @@ export default function HomepageSection({
   const t = useTranslations('homeRecovery');
   return (
     <section aria-label={title} aria-busy={Boolean(loading)} className={`${bgColor} border-t border-gray-200`}>
-      <div className="app-container py-12 sm:py-16">
-        <div className="mb-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div className="app-container py-8 sm:py-10">
+        <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0">
             <div className="mb-2 h-1 w-12 rounded-full bg-copper" />
             <h2 className="section-title !mb-0">{title}</h2>

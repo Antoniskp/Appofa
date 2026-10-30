@@ -158,7 +158,7 @@ function ActionCard({ action }) {
   return (
     <Link
       href={action.href}
-      className="group flex h-full flex-col rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="group flex h-full flex-col rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
       <div className="flex items-start justify-between gap-4">
         <div className={`flex h-11 w-11 items-center justify-center rounded-lg border ${toneClasses[action.tone]}`}>
@@ -169,7 +169,7 @@ function ActionCard({ action }) {
           <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
         </span>
       </div>
-      <h3 className="mt-4 text-base font-bold text-gray-900">{action.title}</h3>
+      <h3 className="mt-2 text-base font-bold text-gray-900">{action.title}</h3>
       <p className="mt-2 text-sm leading-6 text-gray-600">{action.description}</p>
     </Link>
   );
@@ -228,7 +228,7 @@ export default function HomeActionLanes({ user }) {
 
   return (
     <section aria-labelledby="home-actions-title" className="border-t border-gray-200 bg-white">
-      <div className="app-container py-12">
+      <div className="app-container py-6">
 
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
@@ -253,14 +253,14 @@ export default function HomeActionLanes({ user }) {
             ))}
           </div>
         </div>
-        <div className="mt-7 grid gap-4 md:grid-cols-3">
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
           {actions.map((action) => (
             <ActionCard key={action.href} action={action} />
           ))}
         </div>
-        {!user && <GuestRegistrationBridge />}
-        <details className="mt-8 rounded-lg border border-gray-200 p-5">
+        <details className="mt-4 rounded-lg border border-gray-200 p-3">
           <summary className="cursor-pointer rounded font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">{t('more')}</summary>
+        {!user && <GuestRegistrationBridge />}
         <div className="mt-6 border-y border-blue-100 bg-gradient-to-r from-blue-50 via-white to-blue-50 py-8 text-gray-900">
           <div className="grid gap-7 px-1 sm:px-2 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.45fr)] lg:items-start">
             <div>

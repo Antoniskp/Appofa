@@ -36,9 +36,15 @@ describe('Restored map homepage', () => {
   });
   afterEach(async () => { await act(async () => root.unmount()); container.remove(); });
   const render = async () => { await act(async () => root.render(React.createElement(Home))); };
-  test('restores the original hero, map, government overview, articles, videos and supporters', async () => {
+  test('leads with news and polls, with secondary actions below the content', async () => {
     await render();
-    for (const id of ['original-hero', 'territory-map', 'action-lanes', 'government']) expect(container.querySelector('[data-testid="' + id + '"]')).toBeTruthy();
+    for (const id of ['original-hero', 'territory-map', 'action-lanes']) expect(container.querySelector('[data-testid="' + id + '"]')).toBeTruthy();
+    expect(container.querySelector('[data-testid="government"]')).toBeNull();
+    expect(container.textContent).not.toContain('Τι έγινε μετά τη συμμετοχή;');
+    const sections = container.querySelectorAll('section');
+    expect(sections[0].textContent).toContain('Local news');
+    expect(sections[1].textContent).toContain('Δημοφιλείς δημοσκοπήσεις');
+    expect(sections[1].compareDocumentPosition(container.querySelector('[data-testid="action-lanes"]')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     for (const text of ['Attica', 'Local news', 'Community article', 'Community video', 'Public commitment']) expect(container.textContent).toContain(text);
     expect(container.querySelector('#home-area')).toBeNull();
   });
@@ -74,7 +80,7 @@ describe('Restored map homepage', () => {
     mockGet.mockRejectedValueOnce(new Error('offline'));
     await render();
     mockGet.mockResolvedValueOnce({ success: true, data: { polls: [] }, errors: {} });
-    await act(async () => container.querySelector('[role="alert"] button').click());
+    await act(async () => container.querySelectorAll('[role="alert"] button')[1].click());
     expect(container.querySelectorAll('[role="alert"]')).toHaveLength(4);
   });
 
