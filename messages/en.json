@@ -785,9 +785,13 @@
       "title": "Rate limit reached",
       "try_again_in": "Try again in {time}.",
       "try_again_now": "You can try again now.",
-      "guest_cta": "Get higher limits by creating an account:",
+      "guest_cta": "A free account gives you higher, personal limits. Register or sign in, then return to your page.",
       "sign_up": "Create account",
-      "sign_in": "Sign in"
+      "sign_in": "Sign in",
+      "guest_explanation": "Browsing is temporarily paused because this connection made many requests. This limit protects the service from automated traffic and may be shared with others on the same network.",
+      "member_explanation": "Your account made many requests in a short time. Take a brief pause before continuing to browse.",
+      "try_again_later": "Please wait a little before trying again.",
+      "dismiss": "Dismiss notice"
     },
     "yes": "Yes",
     "no": "No",

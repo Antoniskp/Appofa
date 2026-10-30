@@ -785,9 +785,13 @@
       "title": "Limită de utilizare atinsă",
       "try_again_in": "Încearcă din nou în {time}.",
       "try_again_now": "Poți încerca din nou acum.",
-      "guest_cta": "Obține limite mai mari creând un cont:",
+      "guest_cta": "Un cont gratuit îți oferă limite personale mai mari. Înregistrează-te sau conectează-te, apoi revino la pagina ta.",
       "sign_up": "Creează cont",
-      "sign_in": "Conectare"
+      "sign_in": "Conectare",
+      "guest_explanation": "Navigarea este întreruptă temporar deoarece această conexiune a trimis multe cereri. Limita protejează serviciul de traficul automat și poate fi partajată cu alții din aceeași rețea.",
+      "member_explanation": "Contul tău a trimis multe cereri într-un timp scurt. Ia o scurtă pauză înainte de a continua navigarea.",
+      "try_again_later": "Așteaptă puțin înainte de a încerca din nou.",
+      "dismiss": "Închide notificarea"
     },
     "yes": "Da",
     "no": "Nu",

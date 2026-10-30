@@ -123,24 +123,22 @@ describe('TopNav simplified navigation', () => {
     document.body.innerHTML = '';
   });
 
-  test('guest desktop nav exposes core value paths directly and tucks deeper pages under More', () => {
-    const desktopNavContainer = container.querySelector('a[href="/locations"]')?.parentElement;
-    expect(desktopNavContainer).toBeTruthy();
-    expect(desktopNavContainer.querySelector('a[href="/locations"]')).toBeTruthy();
-    expect(desktopNavContainer.querySelector('a[href="/polls"]')).toBeTruthy();
-    expect(desktopNavContainer.querySelector('a[href="/suggestions"]')).toBeTruthy();
-    expect(desktopNavContainer.querySelector('a[href="/news"]')).toBeTruthy();
-
-    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-more-menu"]');
-    expect(moreDropdown).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/articles"]')).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/civic-questions"]')).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/dream-team"]')).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/platform"]')).toBeTruthy();
+  test('guests and members share desktop groups and mobile destinations', async () => {
+    const ids = ['information', 'participation', 'community', 'pages'];
+    const links = () => ids.map(id => Array.from(container.querySelectorAll('[data-testid="dropdown-desktop-nav-' + id + '-menu"] a')).map(a => a.getAttribute('href')));
+    const guestLinks = links();
+    expect(guestLinks.every(group => group.length > 0)).toBe(true);
+    expect(container.querySelector('[data-testid="dropdown-desktop-nav-more-menu"]')).toBeNull();
+    const guestMobile = container.querySelector('#mobile-menu').textContent;
+    for (const id of ids) expect(container.querySelector('#mobile-nav-section-' + id)).toBeTruthy();
+    mockAuthUser = { id: 1, username: 'member' };
+    await renderTopNav();
+    expect(links()).toEqual(guestLinks);
+    expect(guestMobile).toContain('Σύνδεση');
   });
 
-  test('shows Cameras under the guest More navigation in desktop and mobile menus', () => {
-    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-more-menu"]');
+  test('shows Cameras under the guest grouped navigation in desktop and mobile menus', () => {
+    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-community-menu"]');
     expect(moreDropdown).toBeTruthy();
     expect(moreDropdown.querySelector('a[href="/cameras"]')).toBeTruthy();
     expect(moreDropdown.querySelector('a[href="/users"]')).toBeTruthy();
@@ -151,8 +149,8 @@ describe('TopNav simplified navigation', () => {
     expect(container.querySelector('#mobile-menu a[href="/candidates"]')).toBeTruthy();
   });
 
-  test('guest More dropdown includes sub-page links without the legacy all-pages item', () => {
-    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-more-menu"]');
+  test('guest grouped dropdown includes sub-page links without the legacy all-pages item', () => {
+    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-pages-menu"]');
     expect(moreDropdown).toBeTruthy();
     expect(moreDropdown.querySelector('a[href="/platform"]')).toBeTruthy();
     expect(moreDropdown.querySelector('a[href="/elections"]')).toBeTruthy();
@@ -162,7 +160,7 @@ describe('TopNav simplified navigation', () => {
   });
 
   test('guest desktop dropdown and mobile sections both exclude legacy /pages link', () => {
-    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-more-menu"]');
+    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-pages-menu"]');
     expect(moreDropdown).toBeTruthy();
     expect(moreDropdown.querySelector('a[href="/pages"]')).toBeFalsy();
 
@@ -173,11 +171,11 @@ describe('TopNav simplified navigation', () => {
     expect(mobileMenu.querySelector('a[href="/pages"]')).toBeFalsy();
   });
 
-  test('marks guest More menu active when inside civic polls routes', async () => {
+  test('marks guest grouped menu active when inside civic polls routes', async () => {
     mockPathname = '/civic-questions/123';
     await renderTopNav();
 
-    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-more-menu"]');
+    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-participation-menu"]');
     expect(moreDropdown).toBeTruthy();
     expect(moreDropdown.getAttribute('data-trigger-class')).toContain('bg-blue-50');
     expect(moreDropdown.getAttribute('data-trigger-class')).toContain('text-blue-700');
@@ -245,7 +243,7 @@ describe('TopNav simplified navigation', () => {
   });
 
   test('uses xl breakpoint classes for desktop/mobile nav switch', () => {
-    const desktopNavContainer = container.querySelector('a[href="/locations"]')?.parentElement;
+    const desktopNavContainer = container.querySelector('[data-testid="dropdown-desktop-nav-information-menu"]')?.parentElement;
     const desktopAuthContainer = container.querySelector('a[href="/login"].inline-flex')?.parentElement;
     const mobileToggle = container.querySelector('button[aria-controls="mobile-menu"]');
     const mobileMenu = container.querySelector('#mobile-menu');
@@ -266,8 +264,8 @@ describe('TopNav simplified navigation', () => {
     expect(mobileMenu.className).not.toContain('sm:hidden');
   });
 
-  test('Education AI page is NOT in the guest More dropdown or mobile nav', () => {
-    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-more-menu"]');
+  test('Education AI page is NOT in the guest grouped dropdown or mobile nav', () => {
+    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-pages-menu"]');
     expect(moreDropdown).toBeTruthy();
     expect(moreDropdown.querySelector('a[href="/education/ai"]')).toBeNull();
 
@@ -276,8 +274,8 @@ describe('TopNav simplified navigation', () => {
     expect(mobileMenu.querySelector('a[href="/education/ai"]')).toBeNull();
   });
 
-  test('Education page /education is still in the guest More dropdown', () => {
-    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-more-menu"]');
+  test('Education page /education is still in the guest grouped dropdown', () => {
+    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-pages-menu"]');
     expect(moreDropdown).toBeTruthy();
     expect(moreDropdown.querySelector('a[href="/education"]')).toBeTruthy();
   });

@@ -11,6 +11,14 @@ const { createRoot } = require('react-dom/client');
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
+jest.mock('next-intl', () => ({
+  useTranslations: () => (key, values = {}) => {
+    const messages = require('../messages/el.json').common;
+    const text = key.split('.').reduce((value, part) => value[part], messages);
+    return text.replace(/\{(\w+)\}/g, (_, name) => values[name] ?? `{${name}}`);
+  },
+}));
+
 jest.mock('next/link', () => {
   const MockLink = ({ href, children, className }) =>
     React.createElement('a', { href, className }, children);
@@ -50,6 +58,18 @@ describe('RateLimitBanner', () => {
     const alert = container.querySelector('[role="alert"]');
     expect(alert).toBeTruthy();
     expect(alert.textContent.length).toBeGreaterThan(0);
+  });
+
+  test('counts down when the server only supplies retryAfter', async () => {
+    jest.useFakeTimers();
+    await act(async () => root.render(React.createElement(RateLimitBanner, { retryAfter: 5, isAuthenticated: false, browsing: true })));
+    expect(container.textContent).toContain('5s');
+    expect(container.textContent).toContain('δίκτυο');
+    await act(async () => jest.advanceTimersByTime(2000));
+    expect(container.textContent).toContain('3s');
+    await act(async () => jest.advanceTimersByTime(3000));
+    expect(container.textContent).toContain('Μπορείτε να δοκιμάσετε ξανά τώρα');
+    jest.useRealTimers();
   });
 
   test('shows /register and /login links for unauthenticated users', async () => {

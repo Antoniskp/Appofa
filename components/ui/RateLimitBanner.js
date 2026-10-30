@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { saveReturnTo } from '@/lib/auth-redirect';
 
 /**
  * Displays a rate-limit notice with a live countdown and, for guests,
@@ -12,7 +13,7 @@ import { useTranslations } from 'next-intl';
  * @param {number|null}  resetTime       - Epoch-ms timestamp when window resets (from 429 body)
  * @param {boolean}      isAuthenticated - Whether the current user is signed in
  */
-export default function RateLimitBanner({ retryAfter, resetTime, isAuthenticated }) {
+export default function RateLimitBanner({ retryAfter, resetTime, isAuthenticated, browsing = false }) {
   const t = useTranslations('common');
 
   const computeSeconds = () => {
@@ -24,12 +25,13 @@ export default function RateLimitBanner({ retryAfter, resetTime, isAuthenticated
   const [secondsLeft, setSecondsLeft] = useState(computeSeconds);
 
   useEffect(() => {
+    const deadline = resetTime || (retryAfter != null ? Date.now() + retryAfter * 1000 : null);
     const getSecondsLeft = () => {
-      if (resetTime) return Math.max(0, Math.ceil((resetTime - Date.now()) / 1000));
-      if (retryAfter) return Math.max(0, retryAfter);
+      if (deadline) return Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
       return 0;
     };
     const current = getSecondsLeft();
+    setSecondsLeft(current);
     if (current <= 0) return;
     const timer = setInterval(() => setSecondsLeft(getSecondsLeft()), 1000);
     return () => clearInterval(timer);
@@ -47,11 +49,12 @@ export default function RateLimitBanner({ retryAfter, resetTime, isAuthenticated
       role="alert"
       className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm"
     >
-      <p className="font-semibold text-amber-900">{t('rate_limit.title')}</p>
+      <p className="pr-8 font-semibold text-amber-900">{t('rate_limit.title')}</p>
+      {browsing && <p className="mt-2 text-amber-900">{t(isAuthenticated ? 'rate_limit.member_explanation' : 'rate_limit.guest_explanation')}</p>}
       <p className="text-amber-700 mt-0.5">
         {secondsLeft > 0
           ? t('rate_limit.try_again_in', { time: formatTime(secondsLeft) })
-          : t('rate_limit.try_again_now')}
+          : t(resetTime != null || retryAfter != null ? 'rate_limit.try_again_now' : 'rate_limit.try_again_later')}
       </p>
       {!isAuthenticated && (
         <div className="mt-2">
@@ -59,12 +62,14 @@ export default function RateLimitBanner({ retryAfter, resetTime, isAuthenticated
           <div className="flex gap-2">
             <Link
               href="/register"
+              onClick={() => saveReturnTo()}
               className="text-xs font-semibold bg-amber-700 text-white px-2.5 py-1 rounded hover:bg-amber-800 transition"
             >
               {t('rate_limit.sign_up')}
             </Link>
             <Link
               href="/login"
+              onClick={() => saveReturnTo()}
               className="text-xs font-semibold text-amber-800 underline hover:text-amber-900"
             >
               {t('rate_limit.sign_in')}

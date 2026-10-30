@@ -5,6 +5,15 @@ const { normalizeIp } = require('../utils/normalizeIp');
 
 const API_LIMIT_ANONYMOUS = 200;
 const API_LIMIT_AUTHENTICATED = 1000;
+const BROWSING_LIMIT_ANONYMOUS = 1200;
+const BROWSING_LIMIT_AUTHENTICATED = 3600;
+const isReadRequest = req => ['GET', 'HEAD'].includes(req.method);
+const apiBucket = req => {
+  // Keep session recovery available even when a browsing quota is exhausted.
+  const path = (req.originalUrl || '').split('?')[0];
+  if (['/api/auth/profile', '/api/auth/csrf', '/api/auth/oauth/config', '/api/auth/github', '/api/auth/github/callback', '/api/auth/google', '/api/auth/google/callback'].includes(path) && isReadRequest(req)) return 'session';
+  return isReadRequest(req) ? 'browse' : 'write';
+};
 const hydrateRateLimitUser = async (req) => {
   const user = await resolveSession(req);
   if (user) req.user = user;
@@ -53,6 +62,7 @@ const skipForVerifiedOrWhitelist = async (req) => {
 
 const apiLimitForRequest = async (req) => {
   const user = await hydrateRateLimitUser(req);
+  if (apiBucket(req) === 'browse') return user ? BROWSING_LIMIT_AUTHENTICATED : BROWSING_LIMIT_ANONYMOUS;
   return user ? API_LIMIT_AUTHENTICATED : API_LIMIT_ANONYMOUS;
 };
 
@@ -63,7 +73,7 @@ const keyForIp = (req) => {
 
 const keyForUserOrIp = async (req) => {
   const user = await hydrateRateLimitUser(req);
-  return user?.id ? `user:${user.id}` : keyForIp(req);
+  return `${apiBucket(req)}:${user?.id ? `user:${user.id}` : keyForIp(req)}`;
 };
 
 /**
@@ -72,17 +82,18 @@ const keyForUserOrIp = async (req) => {
  * @param {string} message - Human-readable error message
  * @returns {Function} express-rate-limit handler
  */
-const makeRateLimitHandler = (message) => (req, res) => {
+const makeRateLimitHandler = (message, code) => (req, res) => {
   const info = req.rateLimit;
   const resetTime =
     info?.resetTime instanceof Date
       ? info.resetTime.getTime()
       : Date.now() + (info?.windowMs ?? 60 * 60 * 1000);
   const retryAfter = Math.max(0, Math.ceil((resetTime - Date.now()) / 1000));
-  return res.status(429).json({ success: false, message, retryAfter, resetTime });
+  return res.status(429).json({ success: false, message, retryAfter, resetTime, ...(code ? { code } : {}) });
 };
 
-// General API rate limiter - 200 anonymous / 1000 authenticated requests per 15 minutes.
+// Browsing: 1200 guest / 3600 member requests per 15 minutes, in a separate bucket.
+// Writes retain the existing 200 / 1000 budgets and operation-specific limits.
 // Verified users, admins, moderators, and editors are exempt.
 // The limiter hydrates req.user from the auth cookie/header so route middleware order
 // does not decide whether authenticated traffic is treated as anonymous traffic.
@@ -91,7 +102,10 @@ const apiLimiter = rateLimit({
   limit: apiLimitForRequest,
   keyGenerator: keyForUserOrIp,
   skip: skipForVerifiedOrWhitelist,
-  handler: makeRateLimitHandler('Too many requests from this account or IP, please try again later.'),
+  handler: (req, res) => makeRateLimitHandler(
+    'A temporary request limit was reached. Please wait before trying again.',
+    apiBucket(req) === 'browse' ? 'BROWSING_RATE_LIMITED' : 'API_RATE_LIMITED'
+  )(req, res),
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
