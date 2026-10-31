@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import LoginLink from '@/components/ui/LoginLink';
 import {
   HomeIcon,
+  BuildingOffice2Icon,
   NewspaperIcon,
   PlusCircleIcon,
   MapPinIcon,
@@ -22,11 +23,11 @@ import {
 const EXPLORE_ROOTS = ['/news', '/articles', '/videos', '/topics'];
 
 // Route groups that belong to the "Participate" tab (used for active-state only)
-const PARTICIPATE_ROOTS = ['/polls', '/civic-questions', '/suggestions', '/dream-team', '/progress'];
+const PARTICIPATE_ROOTS = ['/polls', '/civic-questions', '/suggestions', '/dream-team', '/organizations'];
 
 export default function MobileBottomNav() {
   const t = useTranslations('nav');
-  const tDemocracy = useTranslations('democracy');
+  const tOrganizations = useTranslations('organizations');
   const { user, loading } = useAuth();
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -266,9 +267,9 @@ export default function MobileBottomNav() {
                   </span>
                 </Link>
 
-                <Link href="/progress" onClick={handleCloseSheet} className="flex min-h-[44px] items-center gap-3 rounded-xl bg-ivory px-4 py-3 text-sm font-medium text-charcoal hover:bg-sand">
-                  <ClipboardDocumentListIcon className="h-5 w-5" aria-hidden="true" />
-                  {tDemocracy('progress')}
+                <Link href="/organizations" onClick={handleCloseSheet} className="flex min-h-[44px] items-center gap-3 rounded-xl bg-ivory px-4 py-3 text-sm font-medium text-charcoal hover:bg-sand">
+                  <BuildingOffice2Icon className="h-5 w-5" aria-hidden="true" />
+                  {tOrganizations('title')}
                 </Link>
                 {user && (
                   <Link

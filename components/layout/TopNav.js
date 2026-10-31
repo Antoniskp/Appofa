@@ -9,6 +9,7 @@ import {
   CalendarDaysIcon,
   ArrowLeftOnRectangleIcon,
   ArrowRightOnRectangleIcon,
+  BuildingOffice2Icon,
   ChatBubbleLeftRightIcon,
   ClipboardDocumentListIcon,
   DocumentTextIcon,
@@ -37,7 +38,7 @@ import NotificationBell from '@/components/notifications/NotificationBell';
 export default function TopNav() {
   const tNav = useTranslations('nav');
   const tCalendar = useTranslations('calendar');
-  const tDemocracy = useTranslations('democracy');
+  const tOrganizations = useTranslations('organizations');
   const { user, loading, logout } = useAuth();
   const { canAccessAdmin } = usePermissions();
   const pathname = usePathname();
@@ -126,11 +127,6 @@ export default function TopNav() {
       menuId: 'desktop-nav-participation-menu',
       items: [
         {
-          id: 'progress', label: tDemocracy('progress'), href: '/progress',
-          icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
-          mobileIcon: <ClipboardDocumentListIcon className="h-5 w-5" />,
-        },
-        {
           id: 'polls',
           label: tNav('polls'),
           href: '/polls',
@@ -165,6 +161,11 @@ export default function TopNav() {
       label: tNav('community'),
       menuId: 'desktop-nav-community-menu',
       items: [
+        {
+          id: 'organizations', label: tOrganizations('title'), href: '/organizations',
+          icon: <BuildingOffice2Icon className="h-4 w-4" />,
+          mobileIcon: <BuildingOffice2Icon className="h-5 w-5" />,
+        },
         {
           id: 'locations',
           label: tNav('locations'),
