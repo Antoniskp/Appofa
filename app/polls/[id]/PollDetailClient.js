@@ -21,6 +21,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import IssueFollowButton from '@/components/IssueFollowButton';
 import PollVoting from '@/components/polls/PollVoting';
 import PollResults from '@/components/polls/PollResults';
+import RelatedPolls from '@/components/polls/RelatedPolls';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
 import Badge from '@/components/ui/Badge';
@@ -350,6 +351,8 @@ export default function PollDetailPage() {
             </p>
           </div>
         )}
+
+        <RelatedPolls poll={poll} />
 
         {/* Comments */}
         <div className="bg-white border border-gray-200 rounded-lg p-6 mt-6">

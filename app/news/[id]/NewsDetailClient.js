@@ -20,6 +20,7 @@ import VideoEmbed from '@/components/articles/VideoEmbed';
 import ReportButton from '@/components/ReportButton';
 import ShareModal from '@/components/ui/ShareModal';
 import ArticleTaxonomyPills from '@/components/articles/ArticleTaxonomyPills';
+import RelatedArticles from '@/components/articles/RelatedArticles';
 
 export default function NewsDetailPage() {
   const params = useParams();
@@ -292,6 +293,8 @@ export default function NewsDetailPage() {
       </article>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <RelatedArticles article={article} />
+
         <CommentsThread
           entityType="article"
           entityId={article.id}

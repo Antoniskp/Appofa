@@ -22,6 +22,7 @@ import ReportButton from '@/components/ReportButton';
 import ShareModal from '@/components/ui/ShareModal';
 import { useTranslations } from 'next-intl';
 import ArticleTaxonomyPills from '@/components/articles/ArticleTaxonomyPills';
+import RelatedArticles from '@/components/articles/RelatedArticles';
 
 export default function ArticleDetailPage() {
   const tArticles = useTranslations('articles');
@@ -306,6 +307,8 @@ export default function ArticleDetailPage() {
             <div className="prose max-w-none mb-8">
               <RichArticleContent content={article.content} />
             </div>
+
+            <RelatedArticles article={article} />
 
             <CommentsThread
               entityType="article"

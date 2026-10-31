@@ -525,6 +525,8 @@
     "edit_article_title": "Edit Article",
     "no_edit_permission": "You do not have permission to edit this article.",
     "single_title": "Article",
+    "related_stories": "Keep reading",
+    "related_stories_description": "Related stories and recent updates to explore next.",
     "contents": "Contents",
     "view_article": "View article",
     "edit_article": "Edit article",
@@ -1151,6 +1153,8 @@
     "create_first": "Create your first article!"
   },
   "polls": {
+    "related_polls": "More polls to explore",
+    "related_polls_description": "Discover related topics and recent polls open for voting.",
     "hub_title": "Polls for you",
     "hub_description": "Find polls for your home area and its wider regions. Start with the ones you have not answered.",
     "hub_unanswered": "Unanswered in my areas",

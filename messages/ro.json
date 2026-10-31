@@ -525,6 +525,8 @@
     "edit_article_title": "Editează articolul",
     "no_edit_permission": "Nu ai permisiunea de a edita acest articol.",
     "single_title": "Articol",
+    "related_stories": "Continuă lectura",
+    "related_stories_description": "Articole relevante și noutăți de explorat în continuare.",
     "contents": "Cuprins",
     "view_article": "Vezi articolul",
     "edit_article": "Editează articolul",
@@ -1151,6 +1153,8 @@
     "create_first": "Creează primul tău articol!"
   },
   "polls": {
+    "related_polls": "Descoperă alte sondaje",
+    "related_polls_description": "Explorează subiecte similare și sondaje recente deschise pentru vot.",
     "hub_title": "Sondaje pentru tine",
     "hub_description": "Găsește sondaje pentru localitatea ta și regiunile din care face parte. Începe cu cele la care nu ai răspuns.",
     "hub_unanswered": "Fără răspuns în zonele mele",
