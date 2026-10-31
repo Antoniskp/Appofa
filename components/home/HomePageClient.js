@@ -14,6 +14,7 @@ import SuggestionCard from '@/components/SuggestionCard';
 import HomepageSection from '@/components/HomepageSection';
 import OnboardingCard from '@/components/OnboardingCard';
 import CountryEntryPopup from '@/components/geo/CountryEntryPopup';
+import LocalActivity from '@/components/home/LocalActivity';
 
 const VideoThumbnailCard = dynamic(() => import('@/components/articles/VideoThumbnailCard'));
 const ExploreLocationsMap = dynamic(() => import('@/components/locations/ExploreLocationsMap'), { ssr: false });
@@ -21,6 +22,7 @@ const ExploreLocationsMap = dynamic(() => import('@/components/locations/Explore
 export default function HomePageClient({ initialPayload = null }) {
   const tHome = useTranslations('home');
   const { user } = useAuth();
+  const homeLocationId = user?.homeLocation?.id || user?.homeLocationId;
 
   const { data, loading, error, retry } = useHomepageData(user, initialPayload);
   const { latestArticles = [], latestNews = [], videos = [], polls = [], suggestions = [],
@@ -70,6 +72,11 @@ export default function HomePageClient({ initialPayload = null }) {
         featuredPoll={shouldShowFeaturedPoll ? featuredPoll : null}
         featuredPollLoading={shouldShowFeaturedPoll && featuredPollLoading}
       />
+      {homeLocationId && <LocalActivity
+        key={`${user.id}:${user.role}:${homeLocationId}`}
+        locationId={homeLocationId}
+        locationHref={`/locations/${user.homeLocation?.slug || homeLocationId}`}
+      />}
       <HomepageSection
         title={tHome('latest_content_title')}
         subtitle={tHome('latest_content_subtitle')}

@@ -48,6 +48,17 @@ describe('Restored map homepage', () => {
     for (const text of ['Attica', 'Local news', 'Community article', 'Community video', 'Public commitment']) expect(container.textContent).toContain(text);
     expect(container.querySelector('#home-area')).toBeNull();
   });
+  test('puts area activity first and removes it on logout', async () => {
+    mockUser = { id: 1, homeLocation: { id: 42, slug: 'athens' } };
+    await render();
+    expect(mockGet).toHaveBeenCalledWith(42, ['latestNews', 'latestArticles', 'suggestions', 'polls']);
+    expect(container.querySelector('section').getAttribute('aria-label')).toBe('Στην περιοχή σου');
+    expect(container.querySelector('section a').getAttribute('href')).toBe('/locations/athens');
+    mockUser = null;
+    await render();
+    expect(container.querySelector('section[aria-label="Στην περιοχή σου"]')).toBeNull();
+  });
+
   test('preserves featured-poll audience settings', async () => {
     mockGet.mockResolvedValue({ success: true, data: { ...payload, featuredPoll: { title: 'Members poll' }, homepageSettings: { featuredPoll: { enabled: true, audience: 'registered' } } } });
     await render();

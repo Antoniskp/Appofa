@@ -14,8 +14,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 const DEFAULT_BG_COLOR = '#252627';
-const DEFAULT_TITLE = 'Δες τι συμβαίνει. Πάρε θέση. Πρότεινε λύσεις.';
-const DEFAULT_SUBTITLE = 'Ανακάλυψε τι αφορά την περιοχή σου, συμμετείχε σε ανοιχτές ψηφοφορίες και δώσε ορατότητα σε ιδέες, προβλήματα και ανθρώπους.';
+const DEFAULT_TITLE = 'Επίλεξε την περιοχή σου';
+const DEFAULT_SUBTITLE = 'Όρισε την περιοχή σου στο προφίλ σου για να βλέπεις τα τοπικά θέματα και να συμμετέχεις.';
 const GUEST_TITLE = 'Η περιοχή σου. Τα θέματα που σε αφορούν. Η δική σου φωνή.';
 const GUEST_SUBTITLE = 'Ανακάλυψε προτάσεις και ψηφοφορίες για την περιοχή σου. Δημιούργησε λογαριασμό για να ακολουθείς όσα σε ενδιαφέρουν και να καταθέτεις τις δικές σου προτάσεις.';
 
@@ -176,6 +176,9 @@ function FeaturedLivePoll({ poll, loading, user }) {
 
 export default function HomeHero({ featuredPoll = null, featuredPollLoading = false }) {
   const { user, loading: authLoading } = useAuth();
+  const area = user?.homeLocation;
+  const areaKey = area?.slug || area?.id || user?.homeLocationId;
+  const areaHref = areaKey ? `/locations/${areaKey}` : '/profile#location-politics';
   const [heroBg, setHeroBg] = useState({ type: 'color', value: DEFAULT_BG_COLOR });
   // Fetch hero background settings (side-effect only — sets heroBg state)
   useAsyncData(
@@ -217,7 +220,7 @@ export default function HomeHero({ featuredPoll = null, featuredPollLoading = fa
         <div className="absolute inset-0 bg-gradient-to-br from-charcoal/65 via-charcoal/35 to-charcoal/50 pointer-events-none" />
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ivory to-transparent pointer-events-none" />
 
-        <div className="relative app-container py-6 md:py-10">
+        <div className={`relative app-container py-6 ${areaKey ? 'md:py-6' : 'md:py-10'}`}>
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-center animate-fade-in">
 
             {/* Left – text & actions */}
@@ -228,17 +231,18 @@ export default function HomeHero({ featuredPoll = null, featuredPollLoading = fa
                 </p>
               )}
 
-              <h1 className="text-3xl font-extrabold leading-tight tracking-tight md:text-5xl">{user ? DEFAULT_TITLE : GUEST_TITLE}</h1>
-              <p className="mt-3 max-w-2xl text-base leading-7 text-white/90">{user ? DEFAULT_SUBTITLE : GUEST_SUBTITLE}</p>
+              <h1 className={`text-3xl font-extrabold leading-tight tracking-tight ${areaKey ? 'md:text-3xl' : 'md:text-5xl'}`}>{areaKey ? (area?.name ? `Τι συμβαίνει στην περιοχή σου: ${area.name}` : 'Τι συμβαίνει στην περιοχή σου') : user ? DEFAULT_TITLE : GUEST_TITLE}</h1>
+              {!areaKey && <p className="mt-3 max-w-2xl text-base leading-7 text-white/90">{user ? DEFAULT_SUBTITLE : GUEST_SUBTITLE}</p>}
               <div className="my-5 flex flex-wrap gap-3">
                 {!user && <Link href="/register" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-white px-4 py-3 font-semibold text-charcoal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Δημιούργησε λογαριασμό <ArrowRightIcon className="h-4 w-4" /></Link>}
-                <Link href={user?.homeLocation?.slug ? `/locations/${user.homeLocation.slug}` : '/locations'} className={`inline-flex min-h-11 items-center gap-2 rounded-lg px-4 py-3 font-semibold ${user ? 'bg-white text-charcoal' : 'border border-white/60 text-white'}`}>
-                  <MapPinIcon className="h-5 w-5" />{user?.homeLocation?.slug ? 'Η περιοχή σου' : user ? 'Βρες την περιοχή σου' : 'Εξερεύνησε την περιοχή σου'}
+                <Link href={user ? areaHref : '/locations'} className={`inline-flex min-h-11 items-center gap-2 rounded-lg px-4 py-3 font-semibold ${user ? 'bg-white text-charcoal' : 'border border-white/60 text-white'}`}>
+                  <MapPinIcon className="h-5 w-5" />{areaKey ? 'Δες τα θέματα της περιοχής σου' : user ? 'Επίλεξε την περιοχή σου' : 'Εξερεύνησε την περιοχή σου'}
                 </Link>
                 {user && <Link href="/polls" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/60 px-4 py-3 font-semibold text-white">Ψήφισε σε ένα θέμα <ArrowRightIcon className="h-4 w-4" /></Link>}
               </div>
               <p className="mb-4 text-xs leading-5 text-white/80">Οι ψηφοφορίες εκφράζουν τους συμμετέχοντες. Δεν αποτελούν επίσημες αποφάσεις ή αντιπροσωπευτικές δημοσκοπήσεις. Η σύνδεση με Google δεν επαληθεύει μοναδικό φυσικό πρόσωπο.</p>
               <nav aria-label="Συνέχισε τη συμμετοχή σου" className="mb-5 flex flex-wrap gap-4 text-sm font-semibold underline">
+                {areaKey && <Link href="/profile#location-politics">Αλλαγή περιοχής</Link>}
                 {user && <Link href="/following">Θέματα που ακολουθείς</Link>}
                 <Link href="/progress">Δες την πρόοδο των προτάσεων</Link>
               </nav>

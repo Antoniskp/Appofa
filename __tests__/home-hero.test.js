@@ -156,6 +156,24 @@ describe('HomeHero CTA link behavior', () => {
     });
   });
 
+  test('prompts members without an area to set it in their profile', async () => {
+    useAuth.mockReturnValue({ user: { id: 1, username: 'member' }, loading: false });
+    const { container, root } = await renderHero();
+    expect(container.querySelector('h1').textContent).toBe('Επίλεξε την περιοχή σου');
+    expect(container.querySelector('a[href="/profile#location-politics"]')).toBeTruthy();
+    await act(async () => root.unmount());
+  });
+
+  test('recognizes a saved area without a slug', async () => {
+    useAuth.mockReturnValue({ user: { id: 1, homeLocationId: 42, homeLocation: { id: 42, name: 'Αθήνα' } }, loading: false });
+    const { container, root } = await renderHero();
+    expect(container.querySelector('h1').textContent).toContain('Αθήνα');
+    expect(container.querySelector('a[href="/locations/42"]').textContent).toContain('Δες τα θέματα');
+    expect(container.querySelector('a[href="/profile#location-politics"]').textContent).toBe('Αλλαγή περιοχής');
+    expect(container.textContent).not.toContain('Επίλεξε την περιοχή σου');
+    await act(async () => root.unmount());
+  });
+
   test('links returning users to their area and followed issues', async () => {
     useAuth.mockReturnValue({
       user: {
