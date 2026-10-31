@@ -1,3 +1,4 @@
+import LocationActivityImage from '@/components/locations/LocationActivityImage';
 import LocationActionSummary from '@/components/locations/LocationActionSummary';
 import CalendarView from '@/components/calendar/CalendarView';
 import Link from 'next/link';
@@ -43,12 +44,14 @@ function formatMetaDate(date) {
   return new Date(date).toLocaleDateString('el-GR');
 }
 
-function FeedItem({ href, title, excerpt, badges = [], metadata = [], compact = false }) {
+function FeedItem({ href, title, excerpt, badges = [], metadata = [], compact = false, media, poll = false }) {
   return (
     <Link
       href={href}
-      className={`group block rounded-xl border border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/40 transition-all ${compact ? 'h-full p-3' : 'p-4'}`}
+      className={`group block rounded-xl border border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/40 transition-all overflow-hidden h-full`}
     >
+      {media && <LocationActivityImage item={media} poll={poll} />}
+      <div className={compact ? 'p-3' : 'p-4'}>
       {badges.length > 0 && (
         <div className="mb-2 flex flex-wrap items-center gap-2">
           {badges.map((badge) => (
@@ -72,6 +75,7 @@ function FeedItem({ href, title, excerpt, badges = [], metadata = [], compact = 
           ))}
         </div>
       )}
+      </div>
     </Link>
   );
 }
@@ -207,15 +211,17 @@ export default function LocationTabs({
                   : 'Δεν έχει συνδεθεί ακόμη κάποια τοπική ψηφοφορία για αυτή την περιοχή.'
               }
               actions={[
-                { href: '/polls/create', label: '+ Ξεκίνησε ψηφοφορία' },
+                { href: locationId ? `/polls/create?locationId=${locationId}` : '/polls/create', label: '+ Ξεκίνησε ψηφοφορία' },
                 { href: `/locations/${locationIdentifier}?tab=suggestions#location-content`, label: 'Δες προτάσεις', variant: 'secondary' },
               ]}
             />
           ) : (
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {activePolls.map(poll => (
                 <FeedItem
                   key={poll.id}
+                  media={poll}
+                  poll
                   href={`/polls/${idSlug(poll.id, poll.title)}`}
                   title={poll.title}
                   excerpt={poll.description}
@@ -254,10 +260,11 @@ export default function LocationTabs({
               ]}
             />
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {newsArticles.map(article => (
                 <FeedItem
                   key={article.id}
+                  media={article}
                   href={`/news/${idSlug(article.id, article.title)}`}
                   title={article.title}
                   excerpt={article.summary}
@@ -287,22 +294,23 @@ export default function LocationTabs({
             <p className="text-center text-gray-400 py-8 animate-pulse">Φόρτωση…</p>
           ) : regularArticles.length === 0 ? (
             <TabEmptyState
-              title="Δεν υπάρχουν ακόμη άρθρα"
+              title="Δεν υπάρχουν ακόμη αναλύσεις"
               description="Δεν έχουν συνδεθεί ακόμη άρθρα ανάλυσης ή γνώμης για αυτή την τοποθεσία."
               actions={[
                 { href: '#location-overview', label: 'Επιστροφή στη σύνοψη', variant: 'secondary' },
               ]}
             />
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {regularArticles.map(article => (
                 <FeedItem
                   key={article.id}
+                  media={article}
                   href={`/articles/${idSlug(article.id, article.title)}`}
                   title={article.title}
                   excerpt={article.summary}
                   badges={[
-                    { label: 'Άρθρο', className: 'bg-green-50 text-green-700 border-green-200' },
+                    { label: 'Ανάλυση', className: 'bg-green-50 text-green-700 border-green-200' },
                   ]}
                   metadata={[
                     article.hideAuthor || article.author?.username

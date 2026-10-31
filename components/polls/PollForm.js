@@ -42,6 +42,7 @@ export default function PollForm({
   onDelete,
   isSubmitting = false,
   submitError = '',
+  initialLocationId = null,
   mode = 'create'
 }) {
   const { user } = useAuth();
@@ -59,7 +60,7 @@ export default function PollForm({
     resultsVisibility: 'after_vote',
     allowUserContributions: false,
     deadline: '',
-    locationId: null,
+    locationId: mode === 'create' ? initialLocationId : null,
     hideCreator: false,
     commentsEnabled: true,
     commentsLocked: false,
@@ -69,7 +70,7 @@ export default function PollForm({
   });
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const hasAutoFilledLocation = useRef(false);
+  const hasAutoFilledLocation = useRef(mode === 'create' && initialLocationId != null);
 
   const [options, setOptions] = useState([
     { text: '', mediaAssetId: null, photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom', color: '#3b82f6' },

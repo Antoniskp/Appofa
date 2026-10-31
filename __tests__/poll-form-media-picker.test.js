@@ -31,7 +31,7 @@ jest.mock('@/lib/api', () => ({
 }));
 
 jest.mock('@/lib/auth-context', () => ({
-  useAuth: () => ({ user: { id: 5, role: 'user', username: 'polluser' } }),
+  useAuth: () => ({ user: { id: 5, role: 'user', username: 'polluser', homeLocationId: 9 } }),
 }));
 
 jest.mock('@/components/ui/CascadingLocationSelector', () => ({
@@ -79,6 +79,17 @@ describe('PollForm media picker', () => {
       root.unmount();
     });
     document.body.innerHTML = '';
+  });
+
+  test('keeps the originating location instead of the home location', async () => {
+    const PollForm = require('../components/polls/PollForm').default;
+    const { locationAPI } = require('@/lib/api');
+    locationAPI.getById.mockClear();
+    await act(async () => {
+      root.render(React.createElement(PollForm, { mode: 'create', initialLocationId: 42 }));
+    });
+    expect(locationAPI.getById).toHaveBeenCalledWith(42);
+    expect(locationAPI.getById).not.toHaveBeenCalledWith(9);
   });
 
   test('a voting-intention ballot is locked after voting while status remains editable', async () => {

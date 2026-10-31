@@ -19,9 +19,12 @@ describe('Location dashboard', () => {
     expect(calendarAPI.list).toHaveBeenCalledWith(expect.objectContaining({ locationId: 3, view: 'public', period: 'upcoming' }));
     expect(container.querySelector('a[href="/events/1"]')).toBeTruthy();
     expect(container.querySelector('a[href="#location-cameras"]')).toBeNull();
-    expect(container.querySelector('a[href="/locations/town/improve"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/cameras"]')).toBeTruthy();
     await act(async () => root.render(React.createElement(Dashboard, { ...props, sections: [{ type: 'webcams', isPublished: true, content: { webcams: [{}] } }] })));
     expect(container.querySelector('a[href="#location-cameras"]')).toBeTruthy();
+    await act(async () => root.render(React.createElement(Dashboard, { ...props, loading: true, sections: [{ type: 'webcams', isPublished: true, content: { webcams: [{}] } }] })));
+    expect(container.querySelector('a[href="#location-cameras"]')).toBeNull();
+    expect(container.querySelector('a[href="/cameras"]')).toBeTruthy();
   });
   test('shows a recoverable error instead of a false empty state', async () => {
     calendarAPI.list.mockRejectedValueOnce(new Error('Unavailable')).mockResolvedValueOnce({ success: true, data: [] });

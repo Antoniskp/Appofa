@@ -118,7 +118,7 @@ describe('LocationTabs suggestion anonymity', () => {
       }));
     });
 
-    expect(container.querySelector('.grid.gap-3.md\\:grid-cols-2')).toBeTruthy();
+    expect(container.querySelector('.grid.gap-4.sm\\:grid-cols-2')).toBeTruthy();
 
     await act(async () => {
       root.render(React.createElement(LocationTabs, {

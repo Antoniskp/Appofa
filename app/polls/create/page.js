@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { pollAPI } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import PollForm from '@/components/polls/PollForm';
 
 function CreatePollContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedLocationId = Number(searchParams.get('locationId'));
+  const initialLocationId = Number.isSafeInteger(requestedLocationId) && requestedLocationId > 0 ? requestedLocationId : null;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
@@ -43,6 +46,8 @@ function CreatePollContent() {
 
         <PollForm
           mode="create"
+          key={initialLocationId || 'default'}
+          initialLocationId={initialLocationId}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           isSubmitting={isSubmitting}
@@ -56,7 +61,9 @@ function CreatePollContent() {
 export default function CreatePollPage() {
   return (
     <ProtectedRoute>
-      <CreatePollContent />
+      <Suspense fallback={<p role="status" className="p-6">Φόρτωση…</p>}>
+        <CreatePollContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }

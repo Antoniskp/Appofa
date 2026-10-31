@@ -584,7 +584,7 @@ export default function LocationDetailPage() {
     events: tCalendar('events'),
     polls: `Ψηφοφορίες${activePolls.length ? ` (${activePolls.length})` : ''}`,
     news: `Ειδήσεις${newsArticles.length ? ` (${newsArticles.length})` : ''}`,
-    articles: `Άρθρα${regularArticles.length ? ` (${regularArticles.length})` : ''}`,
+    articles: `Αναλύσεις${regularArticles.length ? ` (${regularArticles.length})` : ''}`,
     users: `Χρήστες${entities.usersCount ? ` (${entities.usersCount})` : ''}`,
     unclaimed: `Αδιεκδίκητα${entities.unclaimedCount ? ` (${entities.unclaimedCount})` : ''}`,
     candidates: `Υποψήφιοι${candidates.length ? ` (${candidates.length})` : ''}`,
@@ -603,7 +603,7 @@ export default function LocationDetailPage() {
     suggestions: suggestions.length,
     elections: 1,
   };
-  const preferredAlwaysVisibleTabs = ['polls', 'suggestions', 'users', ...ALWAYS_VISIBLE_TABS];
+  const preferredAlwaysVisibleTabs = ['polls', 'news', 'articles', 'suggestions', 'users', ...ALWAYS_VISIBLE_TABS];
   const visibleTabs = secondaryLoading
     ? VALID_TABS
     : [
@@ -750,7 +750,7 @@ export default function LocationDetailPage() {
                 <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-600">
                   {location.wikipedia_url && <a href={location.wikipedia_url} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">Wikipedia ↗</a>}
                   <a href="#location-map" className="text-blue-700 hover:underline" hidden={!showMainLocationMap}>Χάρτης περιοχής</a>
-                  {!location.hasModerator && <Link href={'/locations/' + (location.slug || location.id) + '?apply=moderator'} className="text-blue-700 hover:underline">Γίνε συντονιστής</Link>}
+                  {!location.hasModerator && <Link href="/become-moderator" className="text-blue-700 hover:underline">Γίνε συντονιστής</Link>}
                   {location.hasModerator && <span>Συντονιστής: {location.moderatorPreview?.username || 'Διαθέσιμος'}</span>}
                 </div>
                 <details className="text-sm text-gray-500">

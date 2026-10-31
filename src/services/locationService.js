@@ -1166,7 +1166,7 @@ const getLocationEntities = async (locationId, queryParams, user) => {
 
     const articles = articleIds.length > 0 ? await Article.findAll({
       where: { id: articleIds },
-      attributes: ['id', 'title', 'summary', 'status', 'type', 'createdAt', 'authorId', 'hideAuthor'],
+      attributes: ['id', 'title', 'summary', 'status', 'type', 'createdAt', 'authorId', 'hideAuthor', 'bannerImageUrl', 'sourceMeta'],
       include: [
         {
           model: User,

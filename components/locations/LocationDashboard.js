@@ -32,7 +32,7 @@ export default function LocationDashboard({ location, polls = [], usersCount = 0
     { title: 'Ψηφοφορίες', hint: !loading && votes ? `${votes} ανοιχτές ψηφοφορίες` : 'Πάρε μέρος στις αποφάσεις', icon: HandRaisedIcon, href: tabHref('polls'), tone: 'bg-violet-50 text-violet-700' },
     { title: 'Ζητήματα & ιδέες', hint: 'Δες προτάσεις για την περιοχή', icon: ChatBubbleLeftRightIcon, href: tabHref('suggestions'), tone: 'bg-amber-50 text-amber-800' },
     { title: 'Κοινότητα', hint: !loading && usersCount ? `${usersCount} μέλη στην περιοχή` : 'Γνώρισε τους ανθρώπους της', icon: UsersIcon, href: tabHref('users'), tone: 'bg-emerald-50 text-emerald-700' },
-    { title: 'Κάμερες', hint: !loading && cameras ? `${cameras} διαθέσιμες κάμερες` : 'Πρόσθεσε μια τοπική κάμερα', icon: VideoCameraIcon, href: cameras ? '#location-cameras' : `${base}/improve`, tone: 'bg-sky-50 text-sky-700' },
+    { title: 'Κάμερες', hint: !loading && cameras ? `${cameras} διαθέσιμες κάμερες` : 'Εξερεύνησε τις διαθέσιμες κάμερες', icon: VideoCameraIcon, href: !loading && cameras ? '#location-cameras' : '/cameras', tone: 'bg-sky-50 text-sky-700' },
   ];
   const pending = agenda.loading || agenda.locationId !== location.id;
   const entries = agenda.entries.slice(0, 3);
