@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState, use } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import OrgAvatar from '@/components/organization/OrgAvatar';
+import OrganizationPeople from '@/components/organization/OrganizationPeople';
+import RolePersonPhoto from '@/components/organization/RolePersonPhoto';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
@@ -619,13 +622,11 @@ export default function OrganizationProfilePage({ params }) {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-6">
             <div className="flex items-start gap-5">
-              {organization.logo ? (
-                <img src={organization.logo} alt={organization.name} className="w-20 h-20 rounded-xl object-cover flex-shrink-0 border border-gray-200" />
-              ) : (
+              <OrgAvatar org={organization} size="h-20 w-20" fallback={
                 <div className="w-20 h-20 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
                   <ProfileTypeIcon className="w-10 h-10 text-gray-400" />
                 </div>
-              )}
+              } />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-2xl font-bold text-gray-900">{organization.name}</h1>
@@ -751,6 +752,9 @@ export default function OrganizationProfilePage({ params }) {
 
             {activeTab === 'tab_info' && (
               <div className="space-y-3 text-sm text-gray-700">
+                {rolesLoading && <SkeletonLoader count={1} type="list" />}
+                {!rolesLoading && rolesError && <AlertMessage message={rolesError} />}
+                {!rolesLoading && !rolesError && <OrganizationPeople roles={orgRoles} title={t('roles')} />}
                 {organization.description && <p><span className="font-semibold">{t('description')}:</span> {organization.description}</p>}
                 {organization.website && <p><span className="font-semibold">{t('website')}:</span> <a className="text-blue-600 hover:underline" href={organization.website} target="_blank" rel="noopener noreferrer">{organization.website}</a></p>}
                 {organization.contactEmail && <p><span className="font-semibold">{t('contact_email')}:</span> <a className="text-blue-600 hover:underline" href={`mailto:${organization.contactEmail}`}>{organization.contactEmail}</a></p>}
@@ -977,13 +981,7 @@ export default function OrganizationProfilePage({ params }) {
                       return (
                         <div key={role.id} className="flex items-start gap-3 p-3 bg-white hover:bg-gray-50 transition-colors">
                           <div className="flex-shrink-0 mt-0.5">
-                            {assignee?.avatar ? (
-                              <img src={assignee.avatar} alt={displayName} className="w-9 h-9 rounded-full object-cover border border-gray-200" />
-                            ) : (
-                              <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center">
-                                <UserCircleIcon className="h-5 w-5 text-gray-400" />
-                              </div>
-                            )}
+                            <RolePersonPhoto person={assignee} name={displayName} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-1.5">

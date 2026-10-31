@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import OrgAvatar from '@/components/organization/OrgAvatar';
 import {
   ArrowTopRightOnSquareIcon,
   BuildingOffice2Icon,
@@ -71,17 +72,11 @@ async function loadPartyDetails(partyId) {
 }
 
 function PartyLogo({ party }) {
-  return party.logo ? (
-    <img
-      src={party.logo}
-      alt={party.name}
-      className="h-12 w-12 rounded-lg border border-gray-200 object-cover"
-    />
-  ) : (
+  return <OrgAvatar org={{ ...party, type: 'party' }} size="h-12 w-12" fallback={
     <span className="flex h-12 w-12 items-center justify-center rounded-lg border border-gray-200 bg-gray-100 text-sm font-semibold text-gray-600">
       {getInitials(party.name)}
     </span>
-  );
+  } />;
 }
 
 function StatPill({ icon: Icon, label, value, muted = false }) {

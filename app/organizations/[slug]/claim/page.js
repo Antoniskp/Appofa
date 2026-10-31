@@ -2,6 +2,7 @@
 
 import { use, useState } from 'react';
 import Link from 'next/link';
+import OrgAvatar from '@/components/organization/OrgAvatar';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { BuildingOffice2Icon } from '@heroicons/react/24/outline';
@@ -95,13 +96,11 @@ export default function ClaimOrganizationPage({ params }) {
           <p className="mt-1 text-sm text-gray-600">{t('claim_subtitle')}</p>
 
           <div className="mt-5 flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
-            {organization.logo ? (
-              <img src={organization.logo} alt={organization.name} className="h-12 w-12 rounded-lg border border-gray-200 object-cover" />
-            ) : (
+            <OrgAvatar org={organization} size="h-12 w-12" fallback={
               <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-gray-200 bg-white">
                 <BuildingOffice2Icon className="h-6 w-6 text-gray-400" />
               </div>
-            )}
+            } />
             <div className="min-w-0">
               <p className="truncate font-medium text-gray-900">{organization.name}</p>
               <p className="text-sm text-gray-500">{t(`type_${organization.type}`)}</p>

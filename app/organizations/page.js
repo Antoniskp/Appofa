@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import OrgAvatar from '@/components/organization/OrgAvatar';
 import { useTranslations } from 'next-intl';
 import {
   AcademicCapIcon,
@@ -83,13 +84,11 @@ function OrganizationCard({ organization, t }) {
     <Link href={`/organizations/${organization.slug}`} className="block h-full bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow overflow-hidden">
       <div className="p-5">
         <div className="flex items-start gap-4">
-          {organization.logo ? (
-            <img src={organization.logo} alt={organization.name} className="h-14 w-14 rounded-lg object-cover border border-gray-200 flex-shrink-0" />
-          ) : (
+          <OrgAvatar org={organization} size="h-14 w-14" fallback={
             <div className={`h-14 w-14 rounded-lg border border-gray-200 flex items-center justify-center flex-shrink-0 ${detail.accent}`}>
               <TypeIcon className="h-7 w-7" />
             </div>
-          )}
+          } />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base font-semibold text-gray-900 truncate">{organization.name}</h2>
