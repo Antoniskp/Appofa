@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState, use } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import OrgAvatar from '@/components/organization/OrgAvatar';
-import OrganizationPeople from '@/components/organization/OrganizationPeople';
 import RolePersonPhoto from '@/components/organization/RolePersonPhoto';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -25,7 +24,7 @@ import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
 import SearchInput from '@/components/ui/SearchInput';
 
-const BASE_TABS = ['tab_info', 'tab_roles', 'tab_members', 'tab_polls', 'tab_suggestions', 'tab_analytics'];
+const BASE_TABS = ['tab_roles', 'tab_info', 'tab_members', 'tab_polls', 'tab_suggestions', 'tab_analytics'];
 const OFFICIAL_POST_TABS = ['tab_official_posts'];
 const OFFICIAL_POST_ORG_TYPES = ['party', 'institution'];
 const MANAGEABLE_ROLES = ['admin', 'moderator', 'member'];
@@ -91,7 +90,7 @@ export default function OrganizationProfilePage({ params }) {
   const { slug } = use(params);
   const { user } = useAuth();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState('tab_info');
+  const [activeTab, setActiveTab] = useState('tab_roles');
   const [actionLoading, setActionLoading] = useState(false);
   const [memberActionError, setMemberActionError] = useState('');
   const [memberActionSuccess, setMemberActionSuccess] = useState('');
@@ -752,9 +751,6 @@ export default function OrganizationProfilePage({ params }) {
 
             {activeTab === 'tab_info' && (
               <div className="space-y-3 text-sm text-gray-700">
-                {rolesLoading && <SkeletonLoader count={1} type="list" />}
-                {!rolesLoading && rolesError && <AlertMessage message={rolesError} />}
-                {!rolesLoading && !rolesError && <OrganizationPeople roles={orgRoles} title={t('roles')} />}
                 {organization.description && <p><span className="font-semibold">{t('description')}:</span> {organization.description}</p>}
                 {organization.website && <p><span className="font-semibold">{t('website')}:</span> <a className="text-blue-600 hover:underline" href={organization.website} target="_blank" rel="noopener noreferrer">{organization.website}</a></p>}
                 {organization.contactEmail && <p><span className="font-semibold">{t('contact_email')}:</span> <a className="text-blue-600 hover:underline" href={`mailto:${organization.contactEmail}`}>{organization.contactEmail}</a></p>}
@@ -970,7 +966,7 @@ export default function OrganizationProfilePage({ params }) {
                   <p className="text-sm text-gray-500 py-4">{t('roles_empty')}</p>
                 )}
                 {!rolesLoading && !rolesError && orgRoles.length > 0 && (
-                  <div className="divide-y divide-gray-100 rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="grid gap-4 md:grid-cols-2">
                     {orgRoles.map((role) => {
                       const assignee = role.user || role.personProfile || null;
                       const nativeName = assignee ? (`${assignee.firstNameNative || ''} ${assignee.lastNameNative || ''}`).trim() : '';
@@ -979,11 +975,11 @@ export default function OrganizationProfilePage({ params }) {
                       const profileHref = role.user ? `/users/${role.user.username}` : role.personProfile ? `/persons/${role.personProfile.slug}` : null;
 
                       return (
-                        <div key={role.id} className="flex items-start gap-3 p-3 bg-white hover:bg-gray-50 transition-colors">
+                        <article key={role.id} className="relative flex flex-wrap items-start gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
                           <div className="flex-shrink-0 mt-0.5">
                             <RolePersonPhoto person={assignee} name={displayName} />
                           </div>
-                          <div className="flex-1 min-w-0">
+                          <div className={`min-w-0 flex-1 ${canManageMembers ? 'pr-8' : ''}`}>
                             <div className="flex flex-wrap items-center gap-1.5">
                               <span className="font-medium text-sm text-gray-900">{role.title}</span>
                               {role.category && (
@@ -994,7 +990,7 @@ export default function OrganizationProfilePage({ params }) {
                               )}
                             </div>
                             {assignee ? (
-                              <div className="mt-0.5 text-sm text-gray-700">
+                              <div className="mt-2 break-words text-lg font-semibold text-gray-900">
                                 {profileHref ? (
                                   <Link href={profileHref} className="hover:text-blue-600 hover:underline">{displayName}</Link>
                                 ) : (
@@ -1004,12 +1000,12 @@ export default function OrganizationProfilePage({ params }) {
                             ) : (
                               <p className="mt-0.5 text-sm text-gray-400 italic">{t('roles_vacant')}</p>
                             )}
-                            {role.description && (
-                              <p className="mt-1 text-xs text-gray-500 whitespace-pre-line">{role.description}</p>
-                            )}
                           </div>
+                          {role.description && (
+                            <p className="w-full border-t border-gray-100 pt-3 text-sm leading-relaxed text-gray-600 whitespace-pre-line break-words [overflow-wrap:anywhere]">{role.description}</p>
+                          )}
                           {canManageMembers && (
-                            <div className="flex-shrink-0 flex gap-1">
+                            <div className="absolute right-2 top-2 flex flex-col gap-1">
                               <button
                                 type="button"
                                 onClick={() => openRoleEdit(role)}
@@ -1029,7 +1025,7 @@ export default function OrganizationProfilePage({ params }) {
                               </button>
                             </div>
                           )}
-                        </div>
+                        </article>
                       );
                     })}
                   </div>
