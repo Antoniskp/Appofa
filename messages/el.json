@@ -85,8 +85,8 @@
     "notifications": "Ειδοποιήσεις",
     "home_aria": "Αρχική Appofasi",
     "brand_alt": "Appofasi",
-    "civic_questions": "Δημόσια ζητήματα",
-    "civic_polls": "Δημόσια ζητήματα",
+    "civic_questions": "θέματα της χώρας",
+    "civic_polls": "θέματα της χώρας",
     "information": "Ενημέρωση",
     "participation": "Συμμετοχή",
     "community": "Κοινότητα",
@@ -107,7 +107,7 @@
     "bottom_nav_aria": "Κύρια πλοήγηση",
     "bottom_participate_sheet_title": "Συμμετοχή",
     "bottom_participate_vote": "Ψήφισε σε δημοσκοπήσεις",
-    "bottom_participate_civic": "Δημόσια ζητήματα",
+    "bottom_participate_civic": "θέματα της χώρας",
     "bottom_participate_ideas": "Δες ιδέες & προβλήματα",
     "bottom_participate_suggest": "Κάνε πρόταση",
     "bottom_participate_close": "Κλείσιμο"
@@ -1202,7 +1202,7 @@
     "compare_scope": "Επιλέξτε κατηγορία ή θέμα για να ξεκινήσετε τη σύγκριση.",
     "no_recorded_position": "Δεν έχει καταγραφεί θέση για αυτή την επιλογή.",
 
-    "heading": "Θέσεις & προτάσεις",
+    "heading": "Πολιτικές",
     "description": "Δείτε τι προτείνουν οι οργανισμοί, ελέγξτε τις πηγές και συμφωνήστε ή διαφωνήστε με κάθε θέση.",
     "compare_all": "Σύγκριση οργανισμών",
     "manage": "Διαχείριση θέσεων",
