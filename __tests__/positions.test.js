@@ -56,6 +56,7 @@ describe('Organization positions workflow', () => {
     await publish(created.revisionId);
     const response = await request(app).put('/api/positions/revisions/' + created.revisionId + '/vote').set(headers(viewer)).send({ value: 1 });
     expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({ value: 1, support: 1, oppose: 0 });
     let result = await service.list({ organizationId: org.id }, viewer);
     expect(result.positions[0]).toMatchObject({ support: 1, oppose: 0, myVote: 1 });
     expect(result.positions[0].votes).toBeUndefined();

@@ -1229,6 +1229,8 @@
     "vote_count": "{count, plural, one {# vot} few {# voturi} other {# de voturi}}",
     "no_votes": "Încă nu există voturi",
     "sign_in": "Autentifică-te pentru a vota",
+    "vote_saved": "Vot salvat.",
+    "vote_removed": "Vot eliminat.",
     "vote_private": "Votul tău este privat. Selectează-l din nou pentru a-l retrage.",
     "official": "Poziție oficială",
     "sourced": "Poziție documentată",

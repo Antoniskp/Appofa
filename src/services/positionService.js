@@ -93,7 +93,7 @@ async function metadata(organizationId, user) {
   const [categories, topics, organizations] = await Promise.all([
     PolicyCategory.findAll({ order: [['name', 'ASC']] }),
     Topic.findAll({ where: { status: 'active' }, attributes: ['id', 'name', 'slug'], order: [['name', 'ASC']] }),
-    organizationId ? [] : Organization.findAll({ where: { isPublic: true }, attributes: ['id', 'name', 'slug', 'type'], order: [['name', 'ASC']] }),
+    organizationId ? [] : Organization.findAll({ where: { isPublic: true }, attributes: ['id', 'name', 'slug', 'type', 'logo'], order: [['name', 'ASC']] }),
   ]);
   return { categories, topics, organizations, canManage: !!permissions.canManage, canPublishOfficial: !!permissions.canPublishOfficial };
 }
@@ -132,7 +132,7 @@ async function list(query, user) {
   const include = [{
     model: OrganizationPosition, as: 'position', required: true, where: positionWhere,
     include: [
-      { model: Organization, as: 'organization', required: true, attributes: ['id', 'name', 'slug', 'type'],
+      { model: Organization, as: 'organization', required: true, attributes: ['id', 'name', 'slug', 'type', 'logo'],
         where: organizationId ? {} : { isPublic: true } },
       { model: PolicyCategory, as: 'category' },
       { model: Topic, as: 'topics', through: { attributes: [] }, attributes: ['id', 'name', 'slug'],
@@ -243,7 +243,9 @@ async function vote(revisionId, value, user) {
     const where = { revisionId: revision.id, userId: user.id };
     if (value === 0) await PositionVote.destroy({ where, transaction });
     else await PositionVote.upsert({ ...where, value, identityVisibility: 'anonymous' }, { transaction });
-    return { value };
+    const support = await PositionVote.count({ where: { revisionId: revision.id, value: 1 }, transaction });
+    const oppose = await PositionVote.count({ where: { revisionId: revision.id, value: -1 }, transaction });
+    return { value, support, oppose };
   });
 }
 async function history(positionId, user) {

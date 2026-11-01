@@ -1229,6 +1229,8 @@
     "vote_count": "{count, plural, one {# vote} other {# votes}}",
     "no_votes": "No votes yet",
     "sign_in": "Sign in to vote",
+    "vote_saved": "Vote saved.",
+    "vote_removed": "Vote removed.",
     "vote_private": "Your vote is private. Select it again to remove it.",
     "official": "Official position",
     "sourced": "Sourced position",

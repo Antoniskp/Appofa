@@ -7,12 +7,26 @@ import { HandThumbUpIcon, HandThumbDownIcon, ArrowTopRightOnSquareIcon, PlusIcon
 import { positionAPI } from '@/lib/api/positions';
 import { useAuth } from '@/lib/auth-context';
 import LoginLink from '@/components/ui/LoginLink';
+import OrgAvatar from '@/components/organization/OrgAvatar';
 
 const inputClass = 'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100';
 const buttonClass = 'rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50';
 const primaryClass = 'rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50';
 const blankSource = () => ({ provider: 'website', sourceUrl: '', originalSourceUrl: '', sourcePublishedAt: '' });
 const blankForm = () => ({ title: '', body: '', attribution: 'sourced', categoryId: '', topicIds: [], sources: [blankSource()] });
+
+function applyVote(result, revisionId, vote) {
+  return result && { ...result, positions: result.positions.map(row =>
+    row.id === revisionId ? { ...row, support: vote.support, oppose: vote.oppose, myVote: vote.value } : row
+  ) };
+}
+
+// Replace only the voted row; fetching the ranked page here would move cards.
+async function updateVote(setResult, revisionId, value) {
+  const { data } = await positionAPI.vote(revisionId, value);
+  setResult(previous => applyVote(previous, revisionId, data));
+  return data;
+}
 
 function SourceLinks({ sources, t, formatDate }) {
   return <div className="space-y-2 text-xs text-gray-600">
@@ -65,6 +79,16 @@ function PositionEditor({ editing, metadata, onSave, onCancel, busy, t, category
 
 function PositionCard({ row, manage, metadata, user, busy, onVote, onEdit, onAction, t, categoryName, formatDate }) {
   const [expanded, setExpanded] = useState(false);
+  const [voting, setVoting] = useState(false);
+  const [voteMessage, setVoteMessage] = useState('');
+  const [voteError, setVoteError] = useState('');
+  const vote = async value => {
+    if (voting) return;
+    setVoting(true); setVoteError(''); setVoteMessage('');
+    try { await onVote(row.id, value); setVoteMessage(t(value === 0 ? 'vote_removed' : 'vote_saved')); }
+    catch (error) { setVoteError(error.message); }
+    finally { setVoting(false); }
+  };
   const [history, setHistory] = useState(null);
   const [historyError, setHistoryError] = useState('');
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -90,7 +114,7 @@ function PositionCard({ row, manage, metadata, user, busy, onVote, onEdit, onAct
       {manage && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-900">{t(row.status)} · v{row.version}</span>}
       {row.position.status !== 'active' && <span className="rounded-full bg-red-50 px-2.5 py-1 text-red-700">{t(row.position.status)}</span>}
     </div>
-    <Link href={'/organizations/' + row.position.organization.slug + '?tab=tab_positions'} className="mb-2 text-sm font-semibold text-blue-700 hover:underline">{row.position.organization.name}</Link>
+    <Link href={'/organizations/' + row.position.organization.slug + '?tab=tab_positions'} className="mb-3 flex items-center gap-3 text-sm font-semibold text-gray-700 hover:text-blue-700 hover:underline" aria-label={row.position.organization.name}><span aria-hidden="true"><OrgAvatar org={row.position.organization} size="h-12 w-16" /></span><span>{row.position.organization.name}</span></Link>
     <h3 className="text-lg font-semibold leading-snug text-gray-900">{row.title}</h3>
     <p className="mt-2 text-xs font-medium text-gray-600">{sourceYears.length ? t('source_years', { years: sourceYears.join(', ') }) : t('unknown_date')}</p>
     <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-700">{!expanded && row.body.length > 180 ? row.body.slice(0, 180) + "…" : row.body}</p>
@@ -105,9 +129,9 @@ function PositionCard({ row, manage, metadata, user, busy, onVote, onEdit, onAct
         {[1, -1].map(value => {
           const Icon = value === 1 ? HandThumbUpIcon : HandThumbDownIcon;
           const selected = row.myVote === value;
-          return <button key={value} type="button" disabled={busy || !user} aria-pressed={selected}
-            onClick={() => onVote(row.id, selected ? 0 : value)}
-            className={buttonClass + ' inline-flex items-center gap-2 ' + (selected ? 'ring-2 ring-blue-500 bg-blue-50 text-blue-800' : '')}>
+          return <button key={value} type="button" disabled={busy || voting || !user} aria-pressed={selected}
+            onClick={() => vote(selected ? 0 : value)}
+            className={buttonClass + ' inline-flex min-h-11 flex-1 justify-center items-center gap-2 ' + (selected ? 'ring-2 ring-blue-500 bg-blue-50 text-blue-800' : '')}>
             <Icon className="h-4 w-4" />{t(value === 1 ? 'support' : 'oppose')}
             <span>{value === 1 ? row.support : row.oppose}</span>
             {selected && <span aria-hidden="true">✓</span>}
@@ -115,7 +139,7 @@ function PositionCard({ row, manage, metadata, user, busy, onVote, onEdit, onAct
         })}
       </div>}
       {!user && row.status === 'published' && <LoginLink className="mt-2 block text-sm text-blue-700 hover:underline">{t('sign_in')}</LoginLink>}
-      {row.myVote !== 0 && <p className="mt-2 text-xs text-gray-500">{t('vote_private')}</p>}
+      {user && row.status === 'published' && <div className="mt-2 min-h-14 text-xs"><p className="text-gray-500">{t('vote_private')}</p><p role="status" className="mt-1 text-emerald-700">{voting ? t('saving') : voteMessage}</p>{voteError && <p role="alert" className="mt-1 text-red-700">{voteError}</p>}</div>}
       <details className="mt-4"><summary className="cursor-pointer text-xs font-medium text-gray-600">{t("details")}</summary>
       <p className="mt-2 text-xs text-gray-500">{t('source_context')}</p>
       {row.publishedAt && <p className="mt-2 text-xs text-gray-500">{t("published_date", { date: formatDate(row.publishedAt) })}</p>}
@@ -159,7 +183,10 @@ function ComparisonColumn({ organization, filters, cardProps, refresh }) {
     <h2 className="border-b pb-2 text-lg font-semibold">{organization.name}</h2>
     {error ? <p role="alert" className="text-sm text-red-700">{error} <button className="underline" onClick={() => setRetry(value => value + 1)}>{t('retry')}</button></p> : !result ? <p role="status">{t('loading')}</p> : <>
       <p className="text-xs text-gray-600">{t('result_count', { count: result.pagination.total })}</p>
-      {result.positions.length ? result.positions.map(row => <PositionCard key={row.id} row={row} manage={false} {...cardProps} />) : <p className="rounded-xl border border-dashed p-5 text-sm text-gray-600">{t(filters.search ? 'empty_public' : 'no_recorded_position')}</p>}
+      {result.positions.length ? result.positions.map(row => <PositionCard key={row.id} row={row} manage={false} {...cardProps} onVote={async (revisionId, value) => {
+        const vote = await cardProps.onVote(revisionId, value);
+        setResult(previous => applyVote(previous, revisionId, vote));
+      }} />) : <p className="rounded-xl border border-dashed p-5 text-sm text-gray-600">{t(filters.search ? 'empty_public' : 'no_recorded_position')}</p>}
       {result.pagination.pages > 1 && <nav className="flex flex-wrap items-center gap-2" aria-label={t('pagination')}><button className={buttonClass} disabled={page === 1 || loading} onClick={() => setPage(value => value - 1)}>{t('previous')}</button><span className="text-xs">{t('page_count', { page, pages: result.pagination.pages })}</span><button className={buttonClass} disabled={page >= result.pagination.pages || loading} onClick={() => setPage(value => value + 1)}>{t('next')}</button></nav>}
     </>}
   </section>;
@@ -254,10 +281,10 @@ export default function PositionsPanel({ organizationId, topicId, standalone = f
         <p className="mb-2 text-xs text-gray-600">{t('compare_hint')}</p>
         <div className="flex max-h-40 flex-wrap gap-3 overflow-y-auto">{metadata.organizations.map(org => <label key={org.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedOrganizations.includes(org.id)} disabled={selectedOrganizations.length >= 3 && !selectedOrganizations.includes(org.id)} onChange={event => setSelectedOrganizations(previous => event.target.checked ? [...previous, org.id] : previous.filter(id => id !== org.id))} />{org.name}</label>)}</div>
       </fieldset>
-      {!(filters.categoryId || filters.topicId || topicId) ? <p className="text-sm text-gray-600">{t('compare_scope')}</p> : <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">{selectedOrganizations.map(id => <ComparisonColumn key={id + JSON.stringify(filters)} refresh={refresh} organization={metadata.organizations.find(org => org.id === id)} filters={{ ...filters, topicId: topicId || filters.topicId }} cardProps={{ metadata, user, busy, onVote: (revisionId, value) => action(() => positionAPI.vote(revisionId, value)), onEdit: setEditing, onAction: action, t, categoryName, formatDate }} />)}</div>}
+      {!(filters.categoryId || filters.topicId || topicId) ? <p className="text-sm text-gray-600">{t('compare_scope')}</p> : <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">{selectedOrganizations.map(id => <ComparisonColumn key={id + JSON.stringify(filters)} refresh={refresh} organization={metadata.organizations.find(org => org.id === id)} filters={{ ...filters, topicId: topicId || filters.topicId }} cardProps={{ metadata, user, busy, onVote: (revisionId, value) => updateVote(setResult, revisionId, value), onEdit: setEditing, onAction: action, t, categoryName, formatDate }} />)}</div>}
     </>}
 
-    {(!comparison || manage) && (loading && !result.positions.length ? <div role="status" className="rounded-xl border border-gray-200 p-10 text-center text-gray-500">{t('loading')}</div> : result.positions.length ? <div className="grid items-start gap-5 lg:grid-cols-2">{result.positions.map(row => <PositionCard key={row.id + ':' + row.status} row={row} manage={manage} metadata={metadata} user={user} busy={busy} onVote={(revisionId, value) => action(() => positionAPI.vote(revisionId, value))} onEdit={setEditing} onAction={action} t={t} categoryName={categoryName} formatDate={formatDate} />)}</div> : !error && <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center"><h3 className="font-semibold text-gray-800">{t('empty')}</h3><p className="mt-2 text-sm text-gray-500">{t(manage ? 'empty_manage' : 'empty_public')}</p></div>)}
+    {(!comparison || manage) && (loading && !result.positions.length ? <div role="status" className="rounded-xl border border-gray-200 p-10 text-center text-gray-500">{t('loading')}</div> : result.positions.length ? <div className="grid items-start gap-5 lg:grid-cols-2">{result.positions.map(row => <PositionCard key={row.id + ':' + row.status} row={row} manage={manage} metadata={metadata} user={user} busy={busy} onVote={(revisionId, value) => updateVote(setResult, revisionId, value)} onEdit={setEditing} onAction={action} t={t} categoryName={categoryName} formatDate={formatDate} />)}</div> : !error && <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center"><h3 className="font-semibold text-gray-800">{t('empty')}</h3><p className="mt-2 text-sm text-gray-500">{t(manage ? 'empty_manage' : 'empty_public')}</p></div>)}
     {(!comparison || manage) && result.pagination.pages > 1 && <nav className="flex items-center justify-center gap-4" aria-label={t('pagination')}><button type="button" className={buttonClass} disabled={page === 1 || loading} onClick={() => setPage(value => value - 1)}>{t('previous')}</button><span className="text-sm">{t('page_count', { page, pages: result.pagination.pages })}</span><button type="button" className={buttonClass} disabled={page >= result.pagination.pages || loading} onClick={() => setPage(value => value + 1)}>{t('next')}</button></nav>}
   </section>;
 }
