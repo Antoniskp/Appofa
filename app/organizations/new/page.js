@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { ArrowLeftIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import { organizationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import organizationTypesConfig from '@/config/organizationTypes.json';
 import AlertMessage from '@/components/ui/AlertMessage';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
@@ -15,6 +16,7 @@ const LocationPickerMap = dynamic(() => import('@/components/map/LocationPickerM
 
 const INITIAL_FORM = {
   name: '',
+  type: 'organization',
   description: '',
   address: '',
   latitude: '',
@@ -39,7 +41,7 @@ export default function NewOrganizationPage() {
     setFeedback(null);
 
     if (!user) {
-      setFeedback({ tone: 'error', message: t('login_to_create_block') });
+      setFeedback({ tone: 'error', message: t('login_to_create') });
       return;
     }
 
@@ -54,7 +56,7 @@ export default function NewOrganizationPage() {
     try {
       const response = await organizationAPI.create({
         name: form.name,
-        type: 'block',
+        type: form.type,
         description: form.description,
         address: form.address,
         latitude: hasLatitude ? Number(form.latitude) : null,
@@ -82,7 +84,7 @@ export default function NewOrganizationPage() {
     return (
       <div className="bg-gray-50 min-h-screen py-8">
         <div className="app-container max-w-2xl">
-          <AlertMessage message={t('login_to_create_block')} />
+          <AlertMessage message={t('login_to_create')} />
           <Link href="/login" className="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
             {t('sign_in')}
           </Link>
@@ -101,13 +103,27 @@ export default function NewOrganizationPage() {
 
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="mb-5">
-            <h1 className="text-2xl font-bold text-gray-900">{t('create_block_title')}</h1>
-            <p className="mt-1 text-sm text-gray-600">{t('create_block_intro')}</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t('create_button')}</h1>
+            <p className="mt-1 text-sm text-gray-600">{t(form.type === 'block' ? 'create_block_intro' : 'create_intro')}</p>
           </div>
 
           {feedback && <AlertMessage tone={feedback.tone} message={feedback.message} className="mb-4" />}
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            <label className="block text-sm font-medium text-gray-700">
+              {t('type')}
+              <select
+                value={form.type}
+                onChange={(event) => setField('type', event.target.value)}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                aria-describedby="organization-type-hint"
+              >
+                {organizationTypesConfig.types.map((type) => (
+                  <option key={type} value={type}>{t(`type_${type}`)}</option>
+                ))}
+              </select>
+            </label>
+            <p id="organization-type-hint" className="text-sm text-gray-600">{t(`type_hint_${form.type}`)}</p>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="text-sm font-medium text-gray-700 sm:col-span-2">
                 {t('name')}
@@ -116,7 +132,7 @@ export default function NewOrganizationPage() {
                   type="text"
                   value={form.name}
                   onChange={(event) => setField('name', event.target.value)}
-                  placeholder={t('block_name_placeholder')}
+                  placeholder={t(form.type === 'block' ? 'block_name_placeholder' : 'name_placeholder')}
                   className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </label>
@@ -138,7 +154,7 @@ export default function NewOrganizationPage() {
                   rows={3}
                   value={form.description}
                   onChange={(event) => setField('description', event.target.value)}
-                  placeholder={t('block_description_placeholder')}
+                  placeholder={t(form.type === 'block' ? 'block_description_placeholder' : 'description_placeholder')}
                   className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </label>
@@ -198,7 +214,7 @@ export default function NewOrganizationPage() {
               />
               <span>
                 <span className="block font-medium text-gray-800">{t('is_public')}</span>
-                <span className="text-gray-500">{t('block_public_help')}</span>
+                <span className="text-gray-500">{t(form.type === 'block' ? 'block_public_help' : 'public_help')}</span>
               </span>
             </label>
 
@@ -208,7 +224,7 @@ export default function NewOrganizationPage() {
                 disabled={isSubmitting}
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
               >
-                {isSubmitting ? t('loading') : t('create_block_submit')}
+                {isSubmitting ? t('loading') : t('create_button')}
               </button>
               <Link href="/organizations" className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
                 {t('cancel')}

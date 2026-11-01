@@ -181,7 +181,7 @@ export default function OrganizationsPage() {
                 href="/organizations/new"
                 className="inline-flex min-w-0 max-w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors sm:justify-start"
               >
-                <span className="truncate">{t('create_block_button')}</span>
+                <span className="truncate">{t('create_button')}</span>
               </Link>
             )}
             {canManageOrganizations && (

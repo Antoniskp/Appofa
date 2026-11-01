@@ -147,14 +147,51 @@ describe('Organizations API', () => {
     expect(membership.role).toBe('owner');
     expect(membership.status).toBe('active');
 
-    const createNonBlock = await request(app)
-      .post('/api/organizations')
-      .set(withCsrf(viewerUser.id, viewerToken, 'csrf-org-create-viewer-company-denied'))
-      .send({
-        name: 'Viewer Company Denied',
-        type: 'company',
+  });
+
+  it.each(require('../config/organizationTypes.json').types)(
+    'allows regular users to create and manage an unverified %s',
+    async (type) => {
+      const created = await request(app)
+        .post('/api/organizations')
+        .set(withCsrf(viewerUser.id, viewerToken, `csrf-create-${type}`))
+        .send({ name: `Viewer entity ${type}`, type, isPublic: false });
+      expect(created.status).toBe(201);
+      const organization = created.body.data.organization;
+      expect(organization.type).toBe(type);
+      expect(organization.isVerified).toBe(false);
+      const membership = await OrganizationMember.findOne({
+        where: { organizationId: organization.id, userId: viewerUser.id },
       });
-    expect(createNonBlock.status).toBe(403);
+      expect(membership.role).toBe('owner');
+      expect(membership.status).toBe('active');
+
+      const updated = await request(app)
+        .put(`/api/organizations/${organization.id}`)
+        .set(withCsrf(viewerUser.id, viewerToken, `csrf-update-${type}`))
+        .send({ type, description: 'Updated by owner' });
+      expect(updated.status).toBe(200);
+      expect(updated.body.data.organization.description).toBe('Updated by owner');
+
+      const forbidden = await request(app)
+        .put(`/api/organizations/${organization.id}`)
+        .set(withCsrf(secondViewerUser.id, secondViewerToken, `csrf-other-${type}`))
+        .send({ description: 'Not the owner' });
+      expect(forbidden.status).toBe(403);
+    }
+  );
+
+  it('rejects invalid types and self-verification during creation', async () => {
+    for (const [body, status] of [
+      [{ name: 'Invalid entity', type: 'invalid' }, 400],
+      [{ name: 'Self verified entity', type: 'company', isVerified: true }, 403],
+    ]) {
+      const response = await request(app)
+        .post('/api/organizations')
+        .set(withCsrf(viewerUser.id, viewerToken, `csrf-invalid-${status}`))
+        .send(body);
+      expect(response.status).toBe(status);
+    }
   });
 
   it('lists and fetches organizations by slug', async () => {

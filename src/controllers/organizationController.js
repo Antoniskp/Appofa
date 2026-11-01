@@ -30,7 +30,6 @@ const MEMBER_STATUSES = ['active', 'invited', 'pending'];
 const ASSIGNABLE_MEMBER_ROLES = ['admin', 'moderator', 'member'];
 const OFFICIAL_POST_SCOPES = ['platform', 'organization'];
 const OFFICIAL_POST_ORG_TYPES = ['party', 'institution'];
-const USER_CREATABLE_ORG_TYPES = ['block'];
 const CLAIM_STATUSES = ['pending', 'approved', 'rejected'];
 const ORG_CONTENT_VISIBILITIES = organizationContentConfig.visibilities;
 const ORG_SUGGESTION_TYPES = organizationContentConfig.suggestionTypes;
@@ -463,10 +462,6 @@ const organizationController = {
         await transaction.rollback();
         return res.status(400).json({ success: false, message: 'Invalid organization type.' });
       }
-      if (!['admin', 'moderator'].includes(req.user.role) && !USER_CREATABLE_ORG_TYPES.includes(type)) {
-        await transaction.rollback();
-        return res.status(403).json({ success: false, message: 'Only block organizations can be created by regular users.' });
-      }
 
       const addressResult = normalizeOptionalPlainText(address, 'Address', 500);
       if (addressResult.error) {
@@ -631,9 +626,6 @@ const organizationController = {
       if (req.body.type !== undefined) {
         if (!organizationService.ORGANIZATION_TYPES.includes(req.body.type)) {
           return res.status(400).json({ success: false, message: 'Invalid organization type.' });
-        }
-        if (!['admin', 'moderator'].includes(req.user.role) && req.body.type !== 'block') {
-          return res.status(403).json({ success: false, message: 'Only block organizations can be managed by regular users.' });
         }
         updates.type = req.body.type;
       }

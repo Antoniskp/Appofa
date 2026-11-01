@@ -574,7 +574,7 @@ export default function AdminOrganizationsPage() {
                   return (
                     <tr key={organization.id} className={`border-b border-gray-100 ${isEditing ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'hover:bg-gray-50'}`}>
                       <td className="px-4 py-3 text-gray-600">
-                        {organization.address || (organization.latitude && organization.longitude ? t('map_pin') : 'â€”')}
+                        {organization.address || (organization.latitude && organization.longitude ? t('map_pin') : '—')}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
