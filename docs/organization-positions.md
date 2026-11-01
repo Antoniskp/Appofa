@@ -20,6 +20,15 @@ review workflow, revision history, and public voting UI.
   Signed-in users can support/oppose, change their choice, or click their selected
   choice again to remove it. Prior versions remain available in history.
 - Navigation links and all new UI text support Greek, English, and Romanian.
+- The public list includes debounced title/body search, category shortcuts, removable
+  filter chips, result totals, and collapsible filters. Search applies before pagination.
+- Compare mode shows up to three selected organizations within a category or topic.
+  Each column has independent pagination. Empty columns mean no published position
+  is recorded for that selection, not that the organization has no policy.
+- Below ten votes, cards show raw support/opposition counts with a low-participation
+  label instead of a percentage bar. Original source years are prominent; dates
+  are never inferred from upload dates. Details contain platform publication dates
+  and revision history. Source age alone does not establish whether a policy is current.
 
 Sources are entered manually in this release. There is no automated Vouliwatch
 scraper or scheduled import, and no third-party position content is preloaded.
@@ -94,7 +103,7 @@ All endpoints use /api/positions and return { success, data }.
 | Method/path | Use |
 | --- | --- |
 | GET /metadata?organizationId=ID | Categories, topics, and management permissions |
-| GET / | Published positions; categoryId, topicId, organizationId, sort, page |
+| GET / | Published positions; categoryId, topicId, organizationId, search (up to 200 characters), sort, page |
 | GET /?organizationId=ID&manage=true | Scoped management list, including drafts |
 | GET /:positionId/history | Published and superseded versions with vote totals |
 | POST /organizations/:organizationId | Create position and first draft |

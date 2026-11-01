@@ -64,6 +64,7 @@ function PositionEditor({ editing, metadata, onSave, onCancel, busy, t, category
 }
 
 function PositionCard({ row, manage, metadata, user, busy, onVote, onEdit, onAction, t, categoryName, formatDate }) {
+  const [expanded, setExpanded] = useState(false);
   const [history, setHistory] = useState(null);
   const [historyError, setHistoryError] = useState('');
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -71,6 +72,7 @@ function PositionCard({ row, manage, metadata, user, busy, onVote, onEdit, onAct
   const [checked, setChecked] = useState(false);
   const [reviewNote, setReviewNote] = useState('');
   const total = row.support + row.oppose;
+  const sourceYears = [...new Set(row.sources.filter(source => source.sourcePublishedAt).map(source => new Date(source.sourcePublishedAt).getUTCFullYear()))].sort();
   const approval = total ? Math.round(row.support / total * 100) : null;
   const editable = ['draft', 'in_review', 'rejected'].includes(row.status);
   const officialAllowed = row.attribution !== 'official' || metadata.canPublishOfficial;
@@ -90,12 +92,15 @@ function PositionCard({ row, manage, metadata, user, busy, onVote, onEdit, onAct
     </div>
     <Link href={'/organizations/' + row.position.organization.slug + '?tab=tab_positions'} className="mb-2 text-sm font-semibold text-blue-700 hover:underline">{row.position.organization.name}</Link>
     <h3 className="text-lg font-semibold leading-snug text-gray-900">{row.title}</h3>
-    <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-700">{row.body}</p>
+    <p className="mt-2 text-xs font-medium text-gray-600">{sourceYears.length ? t('source_years', { years: sourceYears.join(', ') }) : t('unknown_date')}</p>
+    <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-700">{!expanded && row.body.length > 180 ? row.body.slice(0, 180) + "…" : row.body}</p>
+    {row.body.length > 180 && <button type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)} className="mt-1 self-start text-sm text-blue-700 hover:underline">{t(expanded ? "read_less" : "read_more")}</button>}
     {row.position.topics.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{row.position.topics.map(topic => <Link href={'/topics/' + topic.slug} key={topic.id} className="text-xs text-blue-700 hover:underline">#{topic.name}</Link>)}</div>}
-    <div className="mt-4 border-t border-gray-100 pt-3"><SourceLinks sources={row.sources} t={t} formatDate={formatDate} />{row.publishedAt && <p className="mt-2 text-xs text-gray-500">{t('published_date', { date: formatDate(row.publishedAt) })}</p>}</div>
+    <div className="mt-4 border-t border-gray-100 pt-3"><SourceLinks sources={row.sources} t={t} formatDate={formatDate} /></div>
     <div className="mt-auto pt-5">
-      <div className="mb-2 flex items-center justify-between gap-2 text-sm"><strong>{approval === null ? t('no_votes') : t('approval_percent', { percent: approval })}</strong><span className="text-gray-500">{t('vote_count', { count: total })}</span></div>
-      <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-gray-100" aria-hidden="true"><div className="h-full bg-emerald-500" style={{ width: (approval || 0) + '%' }} /></div>
+      <div className="mb-2 flex items-center justify-between gap-2 text-sm"><strong>{approval === null ? t('no_votes') : total < 10 ? t('vote_totals', { support: row.support, oppose: row.oppose }) : t('approval_percent', { percent: approval })}</strong><span className="text-gray-500">{t('vote_count', { count: total })}</span></div>
+      {total > 0 && total < 10 && <p className="mb-3 text-xs text-gray-500">{t("low_participation")}</p>}
+      {total >= 10 && <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-gray-100" aria-hidden="true"><div className="h-full bg-emerald-500" style={{ width: (approval || 0) + '%' }} /></div>}
       {row.status === 'published' && row.position.status === 'active' && <div className="flex flex-wrap gap-2">
         {[1, -1].map(value => {
           const Icon = value === 1 ? HandThumbUpIcon : HandThumbDownIcon;
@@ -111,9 +116,13 @@ function PositionCard({ row, manage, metadata, user, busy, onVote, onEdit, onAct
       </div>}
       {!user && row.status === 'published' && <LoginLink className="mt-2 block text-sm text-blue-700 hover:underline">{t('sign_in')}</LoginLink>}
       {row.myVote !== 0 && <p className="mt-2 text-xs text-gray-500">{t('vote_private')}</p>}
+      <details className="mt-4"><summary className="cursor-pointer text-xs font-medium text-gray-600">{t("details")}</summary>
+      <p className="mt-2 text-xs text-gray-500">{t('source_context')}</p>
+      {row.publishedAt && <p className="mt-2 text-xs text-gray-500">{t("published_date", { date: formatDate(row.publishedAt) })}</p>}
       <button type="button" disabled={historyLoading} onClick={toggleHistory} className="mt-4 text-xs font-medium text-gray-600 hover:underline">{historyLoading ? t('loading') : history ? t('hide_history') : t('history')}</button>
       {historyError && <p role="alert" className="mt-2 text-sm text-red-700">{historyError}</p>}
       {history && <div className="mt-3 space-y-4 rounded-lg bg-gray-50 p-3">{history.length ? history.map(version => <div key={version.id} className="border-b border-gray-200 pb-3 last:border-0"><p className="text-xs font-semibold text-gray-500">v{version.version} · {t(version.status)}</p><h4 className="mt-1 text-sm font-semibold">{version.title}</h4><p className="my-2 whitespace-pre-wrap text-sm text-gray-600">{version.body}</p><SourceLinks sources={version.sources} t={t} formatDate={formatDate} /><p className="mt-2 text-xs">{t('support')}: {version.support} · {t('oppose')}: {version.oppose}</p></div>) : <p className="text-sm text-gray-500">{t('no_history')}</p>}</div>}
+      </details>
       {manage && <div className="mt-4 space-y-3 border-t pt-4">
         {row.reviewNote && <p className="text-sm text-amber-800">{row.reviewNote}</p>}
         <div className="flex flex-wrap gap-2">
@@ -132,6 +141,30 @@ function PositionCard({ row, manage, metadata, user, busy, onVote, onEdit, onAct
   </article>;
 }
 
+function ComparisonColumn({ organization, filters, cardProps, refresh }) {
+  const { t, user } = cardProps;
+  const { categoryId, topicId, search, sort } = filters;
+  const [page, setPage] = useState(1);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true); setError('');
+    positionAPI.list({ categoryId, topicId, search, sort, organizationId: organization.id, page }).then(response => { if (!cancelled) setResult(response.data); }).catch(err => { if (!cancelled) setError(err.message); }).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [organization.id, categoryId, topicId, search, sort, page, user?.id, retry, refresh]);
+  return <section className="min-w-0 space-y-3" aria-label={organization.name} aria-busy={loading}>
+    <h2 className="border-b pb-2 text-lg font-semibold">{organization.name}</h2>
+    {error ? <p role="alert" className="text-sm text-red-700">{error} <button className="underline" onClick={() => setRetry(value => value + 1)}>{t('retry')}</button></p> : !result ? <p role="status">{t('loading')}</p> : <>
+      <p className="text-xs text-gray-600">{t('result_count', { count: result.pagination.total })}</p>
+      {result.positions.length ? result.positions.map(row => <PositionCard key={row.id} row={row} manage={false} {...cardProps} />) : <p className="rounded-xl border border-dashed p-5 text-sm text-gray-600">{t(filters.search ? 'empty_public' : 'no_recorded_position')}</p>}
+      {result.pagination.pages > 1 && <nav className="flex flex-wrap items-center gap-2" aria-label={t('pagination')}><button className={buttonClass} disabled={page === 1 || loading} onClick={() => setPage(value => value - 1)}>{t('previous')}</button><span className="text-xs">{t('page_count', { page, pages: result.pagination.pages })}</span><button className={buttonClass} disabled={page >= result.pagination.pages || loading} onClick={() => setPage(value => value + 1)}>{t('next')}</button></nav>}
+    </>}
+  </section>;
+}
+
 export default function PositionsPanel({ organizationId, topicId, standalone = false }) {
   const Heading = standalone ? 'h1' : 'h2';
   const t = useTranslations('positions');
@@ -139,7 +172,10 @@ export default function PositionsPanel({ organizationId, topicId, standalone = f
   const { user } = useAuth();
   const [metadata, setMetadata] = useState({ categories: [], topics: [], organizations: [] });
   const [result, setResult] = useState({ positions: [], pagination: {} });
-  const [filters, setFilters] = useState({ categoryId: '', topicId: '', organizationId: '', sort: 'top' });
+  const [filters, setFilters] = useState({ categoryId: '', topicId: '', organizationId: '', sort: 'top', search: '' });
+  const [search, setSearch] = useState('');
+  const [comparison, setComparison] = useState(false);
+  const [selectedOrganizations, setSelectedOrganizations] = useState([]);
   const [manage, setManage] = useState(false);
   const [page, setPage] = useState(1);
   const [refresh, setRefresh] = useState(0);
@@ -161,6 +197,10 @@ export default function PositionsPanel({ organizationId, topicId, standalone = f
     positionAPI.list({ ...filters, organizationId: organizationId || filters.organizationId, topicId: topicId || filters.topicId, manage: manage ? 'true' : undefined, page }).then(response => { if (!cancelled) setResult(response.data); }).catch(err => { if (!cancelled) { setError(err.message); setResult({ positions: [], pagination: {} }); } }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [organizationId, topicId, filters, manage, page, refresh, user?.id]);
+  useEffect(() => {
+    const timer = setTimeout(() => { setFilters(previous => previous.search === search.trim() ? previous : { ...previous, search: search.trim() }); setPage(1); }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
   const filter = (key, value) => { setFilters(previous => ({ ...previous, [key]: value })); setPage(1); };
   const action = async operation => {
     setBusy(true); setError(''); setNotice('');
@@ -177,18 +217,47 @@ export default function PositionsPanel({ organizationId, topicId, standalone = f
       <div><Heading className={standalone ? 'text-3xl font-bold text-gray-900' : 'text-2xl font-bold text-gray-900'}>{t('heading')}</Heading><p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600">{t('description')}</p></div>
       <div className="flex flex-wrap gap-2">{!standalone && <Link href="/positions" className={buttonClass}>{t('compare_all')}</Link>}{metadata.canManage && <><button type="button" className={buttonClass} onClick={() => { setManage(!manage); setPage(1); setEditing(null); }}>{t(manage ? 'public_view' : 'manage')}</button><button type="button" className={primaryClass + ' inline-flex items-center gap-1'} onClick={() => setEditing({ mode: 'create' })}><PlusIcon className="h-4 w-4" />{t('add_position')}</button></>}</div>
     </div>
-    <p className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-xs leading-relaxed text-blue-900">{t('participation_note')}</p>
+    <p className="text-xs leading-relaxed text-gray-600">{t("participation_short")}</p>
     {error && <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}<button type="button" className="ml-3 underline" onClick={() => setRefresh(value => value + 1)}>{t('retry')}</button></div>}
     {notice && <p role="status" className="text-sm text-emerald-700">{notice}</p>}
     {editing && <PositionEditor key={editing.mode + (editing.row?.id || '')} editing={editing} metadata={metadata} onSave={save} onCancel={() => setEditing(null)} busy={busy} t={t} categoryName={categoryName} />}
-    <div className="grid gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="flex gap-2">
+      <label className="min-w-0 flex-1"><span className="sr-only">{t('search')}</span><input type="search" maxLength={200} value={search} onChange={event => setSearch(event.target.value)} placeholder={t('search')} className={inputClass} /></label>
+      {standalone && !manage && <button type="button" aria-pressed={comparison} className={buttonClass} onClick={() => setComparison(!comparison)}>{t(comparison ? 'list_view' : 'compare')}</button>}
+    </div>
+    <div className="flex gap-2 overflow-x-auto pb-1" aria-label={t('category')}>
+      <button type="button" aria-pressed={!filters.categoryId} className={buttonClass + ' shrink-0 ' + (!filters.categoryId ? 'bg-blue-50 text-blue-800' : '')} onClick={() => filter('categoryId', '')}>{t('all_categories')}</button>
+      {metadata.categories.map(category => <button key={category.id} type="button" aria-pressed={String(category.id) === filters.categoryId} className={buttonClass + ' shrink-0 ' + (String(category.id) === filters.categoryId ? 'bg-blue-50 text-blue-800' : '')} onClick={() => filter('categoryId', String(category.id))}>{categoryName(category)}</button>)}
+    </div>
+    <details className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+      <summary className="cursor-pointer text-sm font-medium">{t('filters')}</summary>
+    <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <label className="text-xs font-medium text-gray-600">{t('category')}<select className={inputClass + ' mt-1'} value={filters.categoryId} onChange={event => filter('categoryId', event.target.value)}><option value="">{t('all_categories')}</option>{metadata.categories.map(category => <option key={category.id} value={category.id}>{categoryName(category)}</option>)}</select></label>
-      {!topicId && <label className="text-xs font-medium text-gray-600">{t('topic')}<select className={inputClass + ' mt-1'} value={filters.topicId} onChange={event => filter('topicId', event.target.value)}><option value="">{t('all_topics')}</option>{metadata.topics.map(topic => <option key={topic.id} value={topic.id}>{topic.name}</option>)}</select></label>}
-      {!organizationId && <label className="text-xs font-medium text-gray-600">{t('organization')}<select className={inputClass + ' mt-1'} value={filters.organizationId} onChange={event => filter('organizationId', event.target.value)}><option value="">{t('all_organizations')}</option>{metadata.organizations.map(organization => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
+      {!topicId && <label className="text-xs font-medium text-gray-600">{t('topic')}<select disabled={!metadata.topics.length} aria-describedby={!metadata.topics.length ? 'positions-no-topics' : undefined} className={inputClass + ' mt-1'} value={filters.topicId} onChange={event => filter('topicId', event.target.value)}><option value="">{t('all_topics')}</option>{metadata.topics.map(topic => <option key={topic.id} value={topic.id}>{topic.name}</option>)}</select></label>}
+      {!organizationId && !comparison && <label className="text-xs font-medium text-gray-600">{t('organization')}<select className={inputClass + ' mt-1'} value={filters.organizationId} onChange={event => filter('organizationId', event.target.value)}><option value="">{t('all_organizations')}</option>{metadata.organizations.map(organization => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
       <label className="text-xs font-medium text-gray-600">{t('sort')}<select disabled={manage} className={inputClass + ' mt-1'} value={manage ? 'newest' : filters.sort} onChange={event => filter('sort', event.target.value)}>{['top', 'support', 'approval', 'divisive', 'newest'].map(sort => <option key={sort} value={sort}>{t('sort_' + sort)}</option>)}</select></label>
     </div>
-    {!manage && <p className="text-xs text-gray-500">{t('ranking_note')}</p>}
-    {loading ? <div role="status" className="rounded-xl border border-gray-200 p-10 text-center text-gray-500">{t('loading')}</div> : result.positions.length ? <div className="grid items-start gap-5 lg:grid-cols-2">{result.positions.map(row => <PositionCard key={row.id + ':' + row.status} row={row} manage={manage} metadata={metadata} user={user} busy={busy} onVote={(revisionId, value) => action(() => positionAPI.vote(revisionId, value))} onEdit={setEditing} onAction={action} t={t} categoryName={categoryName} formatDate={formatDate} />)}</div> : !error && <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center"><h3 className="font-semibold text-gray-800">{t('empty')}</h3><p className="mt-2 text-sm text-gray-500">{t(manage ? 'empty_manage' : 'empty_public')}</p></div>}
-    {result.pagination.pages > 1 && <nav className="flex items-center justify-center gap-4" aria-label={t('pagination')}><button type="button" className={buttonClass} disabled={page === 1 || loading} onClick={() => setPage(value => value - 1)}>{t('previous')}</button><span className="text-sm">{t('page_count', { page, pages: result.pagination.pages })}</span><button type="button" className={buttonClass} disabled={page >= result.pagination.pages || loading} onClick={() => setPage(value => value + 1)}>{t('next')}</button></nav>}
+      {!metadata.topics.length && !topicId && <p id="positions-no-topics" className="text-xs text-gray-500">{t('no_topics')}</p>}
+      {!manage && <p className="text-xs text-gray-500">{t('ranking_note')}</p>}
+      <p className="mt-2 text-xs text-gray-500">{t('participation_note')}</p>
+    </details>
+    <div className="flex flex-wrap items-center gap-2" aria-live="polite">
+      {!comparison && !loading && !error && <span className="text-sm text-gray-600">{t('result_count', { count: result.pagination.total || 0 })}</span>}
+      {['categoryId', 'topicId', 'organizationId', 'search'].filter(key => filters[key] && !(comparison && key === 'organizationId')).map(key => {
+        const item = (key === 'categoryId' ? metadata.categories : key === 'topicId' ? metadata.topics : metadata.organizations).find(item => String(item.id) === filters[key]);
+        const label = key === 'search' ? filters.search : item ? key === 'categoryId' ? categoryName(item) : item.name : filters[key];
+        return <button type="button" key={key} className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-800" aria-label={t('remove_filter', { name: label })} onClick={() => { filter(key, ''); if (key === 'search') setSearch(''); }}>{label} ×</button>;
+      })}
+    </div>
+    {comparison && !manage && <>
+      <fieldset className="rounded-xl border p-3"><legend className="px-1 text-sm font-medium">{t('compare_choose')}</legend>
+        <p className="mb-2 text-xs text-gray-600">{t('compare_hint')}</p>
+        <div className="flex max-h-40 flex-wrap gap-3 overflow-y-auto">{metadata.organizations.map(org => <label key={org.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedOrganizations.includes(org.id)} disabled={selectedOrganizations.length >= 3 && !selectedOrganizations.includes(org.id)} onChange={event => setSelectedOrganizations(previous => event.target.checked ? [...previous, org.id] : previous.filter(id => id !== org.id))} />{org.name}</label>)}</div>
+      </fieldset>
+      {!(filters.categoryId || filters.topicId || topicId) ? <p className="text-sm text-gray-600">{t('compare_scope')}</p> : <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">{selectedOrganizations.map(id => <ComparisonColumn key={id + JSON.stringify(filters)} refresh={refresh} organization={metadata.organizations.find(org => org.id === id)} filters={{ ...filters, topicId: topicId || filters.topicId }} cardProps={{ metadata, user, busy, onVote: (revisionId, value) => action(() => positionAPI.vote(revisionId, value)), onEdit: setEditing, onAction: action, t, categoryName, formatDate }} />)}</div>}
+    </>}
+
+    {(!comparison || manage) && (loading && !result.positions.length ? <div role="status" className="rounded-xl border border-gray-200 p-10 text-center text-gray-500">{t('loading')}</div> : result.positions.length ? <div className="grid items-start gap-5 lg:grid-cols-2">{result.positions.map(row => <PositionCard key={row.id + ':' + row.status} row={row} manage={manage} metadata={metadata} user={user} busy={busy} onVote={(revisionId, value) => action(() => positionAPI.vote(revisionId, value))} onEdit={setEditing} onAction={action} t={t} categoryName={categoryName} formatDate={formatDate} />)}</div> : !error && <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center"><h3 className="font-semibold text-gray-800">{t('empty')}</h3><p className="mt-2 text-sm text-gray-500">{t(manage ? 'empty_manage' : 'empty_public')}</p></div>)}
+    {(!comparison || manage) && result.pagination.pages > 1 && <nav className="flex items-center justify-center gap-4" aria-label={t('pagination')}><button type="button" className={buttonClass} disabled={page === 1 || loading} onClick={() => setPage(value => value - 1)}>{t('previous')}</button><span className="text-sm">{t('page_count', { page, pages: result.pagination.pages })}</span><button type="button" className={buttonClass} disabled={page >= result.pagination.pages || loading} onClick={() => setPage(value => value + 1)}>{t('next')}</button></nav>}
   </section>;
 }

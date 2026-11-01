@@ -114,6 +114,19 @@ async function list(query, user) {
   if (organizationId) positionWhere.organizationId = organizationId;
   if (query.categoryId) positionWhere.categoryId = id(query.categoryId);
   const revisionWhere = { status: manage ? { [Op.in]: ['draft', 'in_review', 'rejected', 'published'] } : 'published' };
+  if (query.search) {
+    const search = requiredText(query.search, 200);
+    // POSITION/INSTR performs a literal substring match, including % and _.
+    const needle = sequelize.fn('LOWER', search);
+    const contains = column => sequelize.where(
+      sequelize.fn('instr', sequelize.fn('LOWER', sequelize.col(column)), needle),
+      { [Op.gt]: 0 },
+    );
+    const match = column => sequelize.getDialect() === 'postgres'
+      ? sequelize.where(sequelize.fn('strpos', sequelize.fn('LOWER', sequelize.col(column)), needle), { [Op.gt]: 0 })
+      : contains(column);
+    revisionWhere[Op.or] = [match('PositionRevision.title'), match('PositionRevision.body')];
+  }
   const page = Math.max(1, Math.min(100000, parseInt(query.page, 10) || 1));
   const limit = 12;
   const include = [{

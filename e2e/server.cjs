@@ -21,6 +21,7 @@ async function start() {
   const author = await User.create({ username: 'e2e-author', email: 'author@example.test', password: 'TestPassword123!', role: 'admin' });
   await User.create({ username: 'e2e-contributor', email: 'contributor@example.test', password: 'TestPassword123!', role: 'viewer', emailVerified: true });
   const policyOrg = await Organization.create({ name: 'Civic Policy Lab', slug: 'civic-policy-lab', type: 'party', createdByUserId: author.id });
+  await Organization.create({ name: 'Community Forum', slug: 'community-forum', type: 'party', createdByUserId: author.id });
   await OrganizationMember.create({ organizationId: policyOrg.id, userId: author.id, role: 'owner' });
   await PolicyCategory.create({ name: 'Housing', slug: 'housing' });
   await Topic.create({ name: 'Public housing', slug: 'public-housing' });

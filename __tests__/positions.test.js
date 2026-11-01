@@ -68,6 +68,19 @@ describe('Organization positions workflow', () => {
     expect(await PositionVote.count({ where: { revisionId: created.revisionId } })).toBe(0);
   });
 
+  test('search matches title and body before pagination and treats wildcard characters literally', async () => {
+    const created = await service.create(org.id, input({ title: 'Rental support 80% plan', body: 'A UNIQUE_HOUSING proposal.' }), owner);
+    await publish(created.revisionId);
+    for (const search of ['rental', 'unique_housing', '80%']) {
+      const result = await service.list({ organizationId: org.id, search }, viewer);
+      expect(result.pagination.total).toBe(1);
+      expect(result.positions[0].id).toBe(created.revisionId);
+    }
+    expect((await service.list({ organizationId: org.id, search: 'missing' }, viewer)).pagination.total).toBe(0);
+    expect((await service.list({ organizationId: org.id, search: '___' }, viewer)).positions).toHaveLength(0);
+    await expect(service.list({ search: 'a'.repeat(201) }, viewer)).rejects.toMatchObject({ status: 400 });
+  });
+
   test('new versions preserve old votes and prevent editing or voting on old versions', async () => {
     const created = await service.create(org.id, input(), owner);
     await publish(created.revisionId);

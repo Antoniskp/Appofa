@@ -56,6 +56,9 @@ test('create, review, compare, vote and revise an organization position', async 
     await expect(voterPage).not.toHaveURL(/\/login/);
     await voterPage.goto('http://127.0.0.1:3101/positions');
     await dismissCookies(voterPage);
+    await expect(voterPage.getByRole('heading', { name: title, exact: true })).toBeVisible();
+    await voterPage.screenshot({ path: testInfo.outputPath('positions-first-screen.png') });
+    await voterPage.getByText(t.filters, { exact: true }).click();
     await voterPage.getByRole('combobox', { name: t.topic, exact: true }).selectOption({ label: 'Public housing' });
     let voterCard = voterPage.locator('article').filter({ hasText: title });
     await voterCard.getByRole('button', { name: 'Support 0', exact: true }).click();
@@ -66,6 +69,21 @@ test('create, review, compare, vote and revise an organization position', async 
     await expect(voterCard.getByText(t.no_votes, { exact: true })).toBeVisible();
     await voterCard.getByRole('button', { name: 'Support 0', exact: true }).click();
     await expect(voterCard.getByRole('button', { name: 'Support 1', exact: true })).toBeVisible();
+    await expect(voterCard.getByText(t.low_participation, { exact: true })).toBeVisible();
+    await expect(voterCard.getByText('100% agree', { exact: true })).toHaveCount(0);
+    await voterPage.getByRole('searchbox', { name: t.search }).fill('no-matching-proposal');
+    await expect(voterPage.locator('article')).toHaveCount(0);
+    await voterPage.getByRole('searchbox', { name: t.search }).fill(title);
+    await expect(voterPage.locator('article')).toHaveCount(1);
+    await voterPage.getByRole('button', { name: t.compare, exact: true }).click();
+    await voterPage.getByRole('checkbox', { name: 'Civic Policy Lab', exact: true }).check();
+    await voterPage.getByRole('checkbox', { name: 'Community Forum', exact: true }).check();
+    await expect(voterPage.getByRole('region', { name: 'Civic Policy Lab', exact: true }).getByRole('heading', { name: title, exact: true })).toBeVisible();
+    await voterPage.getByRole('searchbox', { name: t.search }).fill('');
+    await expect(voterPage.getByRole('region', { name: 'Community Forum', exact: true }).getByText(t.no_recorded_position, { exact: true })).toBeVisible();
+    await voterPage.screenshot({ path: testInfo.outputPath('comparison-columns.png'), fullPage: true });
+    await voterPage.getByRole('button', { name: t.list_view, exact: true }).click();
+    await voterPage.getByRole('searchbox', { name: t.search }).fill('');
     expect(await voterPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await voterPage.screenshot({ path: testInfo.outputPath('position-comparison.png'), fullPage: true });
 
@@ -83,6 +101,7 @@ test('create, review, compare, vote and revise an organization position', async 
     await voterPage.reload();
     voterCard = voterPage.locator('article').filter({ hasText: title });
     await expect(voterCard.getByText(t.no_votes, { exact: true })).toBeVisible();
+    await voterCard.getByText(t.details, { exact: true }).click();
     await voterCard.getByRole('button', { name: t.history, exact: true }).click();
     await expect(voterCard.getByText('v1 · Previous version', { exact: true })).toBeVisible();
     await expect(voterCard.getByText('Support: 1 · Oppose: 0', { exact: true })).toBeVisible();
