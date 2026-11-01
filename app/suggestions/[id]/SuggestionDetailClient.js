@@ -1,5 +1,7 @@
 'use client';
 import RecipientLabel from '@/components/suggestions/RecipientLabel';
+import SuggestionLocation from '@/components/suggestions/SuggestionLocation';
+import SuggestionPhotos from '@/components/suggestions/SuggestionPhotos';
 
 import { useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -429,6 +431,8 @@ export default function SuggestionDetailPage() {
             </Link>
           )}
           <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{suggestion.body}</p>
+          <SuggestionLocation suggestion={suggestion} />
+          <SuggestionPhotos photos={suggestion.photos || []} />
 
           {/* Footer row */}
           <div className="flex flex-wrap items-center justify-between mt-6 pt-4 border-t border-gray-100 gap-3">

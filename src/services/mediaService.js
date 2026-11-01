@@ -1,7 +1,7 @@
 'use strict';
 
 const { Op, fn, col, where, Sequelize } = require('sequelize');
-const { MediaAsset, User, Article, PollOption } = require('../models');
+const { MediaAsset, User, Article, PollOption, Suggestion } = require('../models');
 const { processMediaImage } = require('./imageProcessingService');
 const { saveMediaVariant, deleteMediaByStorageKey, inspectMediaStorageKey } = require('./imageStorageService');
 
@@ -154,6 +154,18 @@ async function getReferenceSummaryForAssets(assets = []) {
   }
 
   if (ids.length === 0) return summaryById;
+
+  const reports = await Suggestion.findAll({ attributes: ['id', 'photos', 'progress'] });
+  for (const report of reports) {
+    const references = [...(report.photos || []), ...(report.progress?.history || []).flatMap(event => event.repairPhotos || [])];
+    for (const photo of references) {
+      const entry = summaryById[photo.id];
+      if (!entry) continue;
+      entry.total += 1;
+      entry.byType.suggestion_photo = (entry.byType.suggestion_photo || 0) + 1;
+      entry.items.push({ type: 'suggestion_photo', id: report.id, label: `Report #${report.id}` });
+    }
+  }
 
   const coverArticles = await Article.findAll({
     where: { coverImageId: { [Op.in]: ids } },

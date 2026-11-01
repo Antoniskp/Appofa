@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { suggestionAPI } from '@/lib/api';
 import AlertMessage from '@/components/ui/AlertMessage';
+import SuggestionPhotos from '@/components/suggestions/SuggestionPhotos';
 
 const STAGES = ['discussion', 'voting', 'response', 'delivery', 'completed', 'rejected'];
 const FIELDS = ['responsibleBody', 'responseDeadline', 'cost', 'decisionPollId', 'response', 'milestones', 'evidenceUrl', 'note'];
@@ -11,11 +12,14 @@ const FIELDS = ['responsibleBody', 'responseDeadline', 'cost', 'decisionPollId',
 export default function ProposalProgress({ proposal, user, onUpdated }) {
   const t = useTranslations('democracy');
   const progress = proposal.progress;
-  const canManage = user && (user.id === proposal.authorId || user.role === 'admin');
+  const canManage = user && (user.id === proposal.authorId || ['admin', 'moderator'].includes(user.role));
+  const isProblem = proposal.type === 'problem';
+  const stages = isProblem ? STAGES.filter(item => item !== 'voting') : STAGES;
+  const fields = isProblem ? FIELDS.filter(key => !['cost', 'decisionPollId'].includes(key)) : FIELDS;
   const [draft, setDraft] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const stage = progress?.stage || 'discussion';
+  const stage = progress?.stage || ({ implemented: 'completed', rejected: 'rejected', under_review: 'response' }[proposal.status] || 'discussion');
   const startEditing = () => {
     setError('');
     setDraft(Object.fromEntries([...FIELDS.map(key => [key, key === 'note' ? '' : progress?.[key] || '']), ['stage', stage], ['revision', progress?.revision || 0]]));
@@ -35,12 +39,12 @@ export default function ProposalProgress({ proposal, user, onUpdated }) {
   return (
     <section aria-label={t('progressTitle')} className="mb-6 rounded-2xl border border-teal-200 bg-white p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold text-slate-900">{t('progressTitle')}</h2>
+        <h2 className="text-xl font-semibold text-slate-900">{isProblem ? 'Εξέλιξη και ιστορικό αναφοράς' : t('progressTitle')}</h2>
         {canManage && !draft && <button type="button" onClick={startEditing} className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white">{t('update')}</button>}
       </div>
       <p className="mt-2 text-sm text-slate-600">{t('reported')}</p>
       <ol className="my-5 flex flex-wrap gap-2" aria-label={t('stages')}>
-        {STAGES.filter(item => item !== 'rejected' || stage === 'rejected').map(item => <li key={item} aria-current={item === stage ? 'step' : undefined} className={`rounded-full px-3 py-1 text-xs font-semibold ${item === stage ? 'bg-teal-800 text-white' : 'bg-slate-100 text-slate-600'}`}>{t(`stage_${item}`)}</li>)}
+        {stages.filter(item => item !== 'rejected' || stage === 'rejected').map(item => <li key={item} aria-current={item === stage ? 'step' : undefined} className={`rounded-full px-3 py-1 text-xs font-semibold ${item === stage ? 'bg-teal-800 text-white' : 'bg-slate-100 text-slate-600'}`}>{t(`stage_${item}`)}</li>)}
       </ol>
       {!progress && <p className="text-sm text-slate-600">{t('noProgress')}</p>}
       {progress && <>
@@ -56,15 +60,16 @@ export default function ProposalProgress({ proposal, user, onUpdated }) {
           <ol className="mt-3 space-y-3">{[...progress.history].reverse().map(event => <li key={event.revision} className="border-l-2 border-teal-200 pl-3 text-sm">
             <p className="font-semibold">{t(`stage_${event.stage}`)} · <time dateTime={event.at}>{new Date(event.at).toLocaleDateString()}</time> · {t(event.publisherRole)}</p>
             <p className="whitespace-pre-wrap">{event.note}</p>
+            <SuggestionPhotos photos={event.repairPhotos || []} />
             <details className="mt-1 text-slate-600"><summary className="cursor-pointer">{t('snapshot')}</summary><dl className="space-y-1">{FIELDS.filter(key => key !== 'note').map(key => <div key={key}><dt className="font-medium">{t(key)}</dt><dd className="whitespace-pre-wrap">{event[key] || t('notSet')}</dd></div>)}</dl></details>
           </li>)}</ol>
         </details>
       </>}
       {draft && <form onSubmit={save} className="mt-5 space-y-4 border-t pt-5">
         <AlertMessage message={error} />
-        <label className="block text-sm font-semibold">{t('stages')}<select value={draft.stage} onChange={event => setDraft({ ...draft, stage: event.target.value })} className="mt-1 block w-full rounded-lg border p-2">{STAGES.map(item => <option key={item} value={item}>{t(`stage_${item}`)}</option>)}</select></label>
-        <p className="text-xs text-slate-600">{t('requirements')}</p>
-        {FIELDS.map(key => <label key={key} className="block text-sm font-semibold">{t(key)}
+        <label className="block text-sm font-semibold">{t('stages')}<select value={draft.stage} onChange={event => setDraft({ ...draft, stage: event.target.value })} className="mt-1 block w-full rounded-lg border p-2">{stages.map(item => <option key={item} value={item}>{t(`stage_${item}`)}</option>)}</select></label>
+        <p className="text-xs text-slate-600">{isProblem ? 'Καταγράψτε τον αρμόδιο φορέα και την απάντησή του. Για αποκατάσταση, προσθέστε σύνδεσμο τεκμηρίωσης ή αποθηκεύστε φωτογραφία αποκατάστασης στην επεξεργασία αναφοράς.' : t('requirements')}</p>
+        {fields.map(key => <label key={key} className="block text-sm font-semibold">{t(key)}
           {['response', 'milestones', 'note'].includes(key)
             ? <textarea required={key === 'note'} maxLength={4000} rows={3} value={draft[key]} onChange={event => setDraft({ ...draft, [key]: event.target.value })} className="mt-1 block w-full rounded-lg border p-2 font-normal" />
             : <input type={key === 'responseDeadline' ? 'date' : key === 'decisionPollId' ? 'number' : key === 'evidenceUrl' ? 'url' : 'text'} min={key === 'decisionPollId' ? 1 : undefined} maxLength={key === 'responsibleBody' ? 200 : 4000} value={draft[key]} onChange={event => setDraft({ ...draft, [key]: event.target.value })} className="mt-1 block w-full rounded-lg border p-2 font-normal" />}

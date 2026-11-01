@@ -6,6 +6,7 @@ const { getAncestorLocationIds } = require('../utils/locationUtils');
 const { shouldHideSuggestionAuthor } = require('../utils/suggestionAuthorVisibility');
 const { syncTags, attachTags } = require('../utils/tagUtils');
 const { getRecipients, resolveRecipient, validRecipientKey } = require('../services/suggestionRecipientService');
+const { resolvePhotos } = require('../services/suggestionPhotoService');
 
 const SUGGESTION_TYPES = ['idea', 'problem', 'problem_request', 'location_suggestion'];
 const SUGGESTION_STATUSES = ['open', 'under_review', 'implemented', 'rejected'];
@@ -429,6 +430,7 @@ const suggestionController = {
       if (recipientResult.error) return res.status(400).json({ success: false, message: recipientResult.error });
 
       const suggestion = await Suggestion.create({
+        photos: await resolvePhotos(req.body.photos || [], req.user),
         ...recipientResult,
         title: titleResult.value,
         body: bodyResult.value,
@@ -472,6 +474,7 @@ const suggestionController = {
       });
     } catch (error) {
       console.error('Create suggestion error:', error);
+      if (error.status === 400) return res.status(400).json({ success: false, message: error.message });
       return res.status(500).json({ success: false, message: 'Error creating suggestion.' });
     }
   },
@@ -496,6 +499,7 @@ const suggestionController = {
       }
 
       const updates = {};
+      if (req.body.photos !== undefined) updates.photos = await resolvePhotos(req.body.photos, req.user, suggestion.photos || []);
 
       if (req.body.title !== undefined) {
         const r = normalizeRequiredText(req.body.title, 'Title', 5, 200);
@@ -516,7 +520,7 @@ const suggestionController = {
       }
 
       if (req.body.status !== undefined) {
-        if (suggestion.progress && req.body.status !== suggestion.status) {
+        if ((suggestion.progress || suggestion.type === 'problem') && req.body.status !== suggestion.status) {
           return res.status(409).json({ success: false, message: 'Update the proposal timeline to change its status.' });
         }
         const r = normalizeEnum(req.body.status, SUGGESTION_STATUSES, 'Status');
@@ -580,6 +584,8 @@ const suggestionController = {
       }
 
       if (
+        updates.locationId !== undefined
+        ||
         req.body.mapLat !== undefined
         || req.body.mapLng !== undefined
         || req.body.mapIssueType !== undefined
@@ -614,6 +620,7 @@ const suggestionController = {
       return res.json({ success: true, data: updatedData, message: 'Suggestion updated.' });
     } catch (error) {
       console.error('Update suggestion error:', error);
+      if (error.status === 400) return res.status(400).json({ success: false, message: error.message });
       return res.status(500).json({ success: false, message: 'Error updating suggestion.' });
     }
   },

@@ -9,7 +9,7 @@ async function updateProgress(id, user, input) {
   return sequelize.transaction(async (transaction) => {
     const proposal = await Suggestion.findByPk(id, { transaction, lock: transaction.LOCK.UPDATE });
     if (!proposal) throw fail(404, 'Proposal not found.');
-    if (proposal.authorId !== user.id && user.role !== 'admin') throw fail(403, 'Only the author or an administrator can publish progress.');
+    if (proposal.authorId !== user.id && !['admin', 'moderator'].includes(user.role)) throw fail(403, 'Only the author or a moderator can publish progress.');
     const previous = proposal.progress || { revision: 0, history: [] };
     if (input.revision !== previous.revision) throw fail(409, 'Progress changed. Reload before saving.');
     if (!STAGES.includes(input.stage)) throw fail(400, 'Invalid progress stage.');
@@ -36,9 +36,10 @@ async function updateProgress(id, user, input) {
     if (next.stage === 'voting' && !next.decisionPollId) throw fail(400, 'Link a consultation before opening the voting stage.');
     if (['response', 'delivery', 'completed', 'rejected'].includes(next.stage) && (!next.responsibleBody || !next.response)) throw fail(400, 'Provide the responsible body and its response.');
     if (next.stage === 'delivery' && !next.milestones) throw fail(400, 'Provide delivery milestones.');
-    if (next.stage === 'completed' && !next.evidenceUrl) throw fail(400, 'Completion requires an evidence link.');
+    const repairPhotos = (proposal.photos || []).filter(photo => photo.kind === 'repair');
+    if (next.stage === 'completed' && !next.evidenceUrl && !repairPhotos.length) throw fail(400, 'Completion requires an evidence link or a repair photo.');
     const revision = previous.revision + 1;
-    const event = { ...next, revision, at: new Date().toISOString(), publisherRole: user.role === 'admin' ? 'administrator' : 'author' };
+    const event = { ...next, repairPhotos, revision, at: new Date().toISOString(), publisherRole: ['admin', 'moderator'].includes(user.role) ? 'administrator' : 'author' };
     const progress = { ...next, revision, history: [...previous.history, event] };
     const status = { discussion: 'open', voting: 'under_review', response: 'under_review', delivery: 'under_review', completed: 'implemented', rejected: 'rejected' }[next.stage];
     await proposal.update({ progress, status }, { transaction });

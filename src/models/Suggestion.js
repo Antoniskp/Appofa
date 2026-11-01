@@ -2,6 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const Suggestion = sequelize.define('Suggestion', {
+  photos: { type: DataTypes.JSON, allowNull: true },
   recipientKey: {
     type: DataTypes.STRING(80),
     allowNull: true,

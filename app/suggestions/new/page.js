@@ -15,6 +15,8 @@ import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector
 import TagInput from '@/components/ui/TagInput';
 import articleCategories from '@/config/articleCategories.json';
 import RecipientSelector from '@/components/suggestions/RecipientSelector';
+import SuggestionPinEditor from '@/components/suggestions/SuggestionPinEditor';
+import SuggestionPhotos from '@/components/suggestions/SuggestionPhotos';
 
 const SUGGESTION_TYPES = [
   { value: 'idea', label: 'Ιδέα – Πρόταση βελτίωσης' },
@@ -37,6 +39,7 @@ export default function NewSuggestionPage() {
   const tCommon = useTranslations('common');
 
   const [form, setForm] = useState({
+    photos: [], mapLat: null, mapLng: null, mapIssueType: null,
     title: '',
     body: '',
     type: 'idea',
@@ -49,6 +52,7 @@ export default function NewSuggestionPage() {
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const hasAutoFilledLocation = useRef(false);
 
@@ -133,6 +137,7 @@ export default function NewSuggestionPage() {
     setForm((prev) => ({
       ...prev,
       locationId: locationId || null,
+      mapLat: null, mapLng: null, mapIssueType: null,
       recipientKey: null,
     }));
     if (errors.locationId) {
@@ -142,6 +147,7 @@ export default function NewSuggestionPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (uploadingPhoto) return;
     const errs = validate();
     if (Object.keys(errs).length) {
       setErrors(errs);
@@ -150,6 +156,8 @@ export default function NewSuggestionPage() {
     setSubmitting(true);
     try {
       const payload = {
+        photos: form.photos,
+        mapLat: form.mapLat, mapLng: form.mapLng, mapIssueType: form.mapIssueType,
         title: form.title,
         body: form.body,
         type: form.type,
@@ -284,6 +292,9 @@ export default function NewSuggestionPage() {
               />
             </div>
 
+            <SuggestionPinEditor form={form} onChange={patch => setForm(prev => ({ ...prev, ...patch }))} />
+            <SuggestionPhotos photos={form.photos} onChange={photos => setForm(prev => ({ ...prev, photos }))} onBusyChange={setUploadingPhoto} disabled={submitting || uploadingPhoto} />
+
             <RecipientSelector locationId={form.locationId} value={form.recipientKey}
               onChange={(recipientKey) => setForm(prev => ({ ...prev, recipientKey }))} />
 
@@ -343,7 +354,7 @@ export default function NewSuggestionPage() {
               </Link>
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || uploadingPhoto}
                 className="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
               >
                 {submitting ? 'Υποβολή...' : 'Δημοσίευση Πρότασης'}

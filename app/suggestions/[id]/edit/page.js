@@ -4,6 +4,8 @@ import { useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import RecipientSelector from '@/components/suggestions/RecipientSelector';
+import SuggestionPinEditor from '@/components/suggestions/SuggestionPinEditor';
+import SuggestionPhotos from '@/components/suggestions/SuggestionPhotos';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { suggestionAPI, tagAPI } from '@/lib/api';
@@ -43,6 +45,7 @@ export default function EditSuggestionPage() {
   const [form, setForm] = useState(null);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [tagSuggestions, setTagSuggestions] = useState([]);
 
   const fetchSuggestion = useCallback(async () => {
@@ -54,6 +57,9 @@ export default function EditSuggestionPage() {
   const { loading, error } = useAsyncData(fetchSuggestion, [suggestionId], {
     onSuccess: (data) => {
       setForm({
+        photos: data.photos || [],
+        mapLat: data.mapLat ?? null, mapLng: data.mapLng ?? null, mapIssueType: data.mapIssueType || null,
+        progress: data.progress,
         title: data.title,
         body: data.body,
         type: data.type,
@@ -157,6 +163,7 @@ export default function EditSuggestionPage() {
     setForm((prev) => ({
       ...prev,
       locationId: locationId || null,
+      mapLat: null, mapLng: null, mapIssueType: null,
       recipientKey: null,
     }));
     if (errors.locationId) {
@@ -166,6 +173,7 @@ export default function EditSuggestionPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (uploadingPhoto) return;
     const errs = validate();
     if (Object.keys(errs).length) {
       setErrors(errs);
@@ -174,6 +182,8 @@ export default function EditSuggestionPage() {
     setSubmitting(true);
     try {
       const payload = {
+        photos: form.photos,
+        mapLat: form.mapLat, mapLng: form.mapLng, mapIssueType: form.mapIssueType,
         title: form.title,
         body: form.body,
         type: form.type,
@@ -184,7 +194,7 @@ export default function EditSuggestionPage() {
         tags: form.tags,
         recipientKey: form.recipientKey,
       };
-      if (isPrivileged) {
+      if (isPrivileged && form.type !== 'problem' && !form.progress) {
         payload.status = form.status;
       }
       const res = await suggestionAPI.update(suggestionId, payload);
@@ -309,6 +319,9 @@ export default function EditSuggestionPage() {
               />
             </div>
 
+            <SuggestionPinEditor form={form} excludeId={suggestionId} onChange={patch => setForm(prev => ({ ...prev, ...patch }))} />
+            <SuggestionPhotos photos={form.photos} onChange={photos => setForm(prev => ({ ...prev, photos }))} onBusyChange={setUploadingPhoto} disabled={submitting || uploadingPhoto} />
+
             <RecipientSelector locationId={form.locationId} value={form.recipientKey} currentRecipient={form.recipient}
               onChange={(recipientKey) => setForm(prev => ({ ...prev, recipientKey }))} />
 
@@ -358,8 +371,9 @@ export default function EditSuggestionPage() {
               />
             </div>
 
+            {form.type === 'problem' && <p className="text-sm text-gray-600">Για αλλαγή κατάστασης, χρησιμοποιήστε το ιστορικό εξέλιξης στη σελίδα της αναφοράς.</p>}
             {/* Status – only for admins/moderators */}
-            {isPrivileged && (
+            {isPrivileged && form.type !== 'problem' && !form.progress && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Κατάσταση
@@ -389,7 +403,7 @@ export default function EditSuggestionPage() {
               </Link>
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || uploadingPhoto}
                 className="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
               >
                 {submitting ? 'Αποθήκευση...' : 'Αποθήκευση Αλλαγών'}

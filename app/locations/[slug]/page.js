@@ -24,9 +24,12 @@ import CommentsThread from '@/components/comments/CommentsThread';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import LoginLink from '@/components/ui/LoginLink';
 import { VALID_TABS, ALWAYS_VISIBLE_TABS, DEFAULT_TAB } from '@/lib/constants/locations';
+import SuggestionPhotos from '@/components/suggestions/SuggestionPhotos';
+import NearbySuggestions from '@/components/suggestions/NearbySuggestions';
 import { MAP_ISSUE_TYPES } from '@/lib/constants/mapIssues';
 
 const DEFAULT_MAP_ISSUE_FORM = {
+  photos: [],
   mapIssueType: 'pothole',
   title: '',
   body: '',
@@ -136,6 +139,7 @@ export default function LocationDetailPage() {
   const [secondaryLoading, setSecondaryLoading] = useState(false);
   const [fundingData, setFundingData] = useState(null);
   const [fundingLoaded, setFundingLoaded] = useState(false);
+  const [uploadingIssuePhoto, setUploadingIssuePhoto] = useState(false);
   const [mapIssuePin, setMapIssuePin] = useState(null);
   const [mapIssueForm, setMapIssueForm] = useState(DEFAULT_MAP_ISSUE_FORM);
   const [isSubmittingMapIssue, setIsSubmittingMapIssue] = useState(false);
@@ -485,6 +489,7 @@ export default function LocationDetailPage() {
       toastError('Please sign in to post a local issue.');
       return;
     }
+    if (uploadingIssuePhoto) return;
     if (!mapIssuePin) {
       toastError('Select a point on the map first.');
       return;
@@ -504,6 +509,7 @@ export default function LocationDetailPage() {
     setIsSubmittingMapIssue(true);
     try {
       const response = await suggestionAPI.create({
+        photos: mapIssueForm.photos,
         title,
         body,
         type: 'problem',
@@ -849,6 +855,8 @@ export default function LocationDetailPage() {
                       Ανώνυμη δημοσίευση
                     </label>
 
+                    {isAuthenticated && <SuggestionPhotos photos={mapIssueForm.photos} onChange={photos => setMapIssueForm(prev => ({ ...prev, photos }))} onBusyChange={setUploadingIssuePhoto} disabled={isSubmittingMapIssue} />}
+                    <NearbySuggestions lat={mapIssuePin?.lat} lng={mapIssuePin?.lng} />
                     {mapIssuePin && (
                       <p className="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-600">
                         {Number(mapIssuePin.lat).toFixed(5)}, {Number(mapIssuePin.lng).toFixed(5)}
@@ -859,7 +867,7 @@ export default function LocationDetailPage() {
                       <div className="flex items-center gap-2">
                         <button
                           type="submit"
-                          disabled={isSubmittingMapIssue || !mapIssuePin}
+                          disabled={isSubmittingMapIssue || uploadingIssuePhoto || !mapIssuePin}
                           className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                         >
                           {isSubmittingMapIssue ? 'Δημοσίευση…' : 'Δημοσίευση ζητήματος'}
