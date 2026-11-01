@@ -1,5 +1,6 @@
 const { Sequelize, DataTypes: S } = require('sequelize');
 const migration = require('../src/migrations/20261101000000-create-organization-positions');
+const categorySeed = require('../src/migrations/20261101010000-seed-policy-categories');
 
 describe('Organization position migration', () => {
   let db;
@@ -63,6 +64,14 @@ describe('Organization position migration', () => {
     const source = { revisionId: 1, provider: 'vouliwatch', sourceUrl: 'https://vouliwatch.gr/policies', retrievedAt: new Date(), contentFingerprint: 'abc' };
     await insert('PositionSources', source);
     await expect(insert('PositionSources', source)).rejects.toThrow();
+  });
+
+  test('category seed is repeatable and preserves existing category identities', async () => {
+    await categorySeed.up(qi);
+    await categorySeed.up(qi);
+    const [categories] = await db.query('SELECT id, slug FROM PolicyCategories');
+    expect(categories).toHaveLength(12);
+    expect(categories.find(category => category.slug === 'housing').id).toBe(1);
   });
 
   test('rolls back and can be applied again without changing existing tables', async () => {

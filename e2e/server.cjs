@@ -13,13 +13,17 @@ process.env.SMTP_PASS = '';
 // Only delivery is stubbed; registration, sessions, permissions and CSRF stay real.
 require('../src/services/mailService').sendMail = async () => ({ messageId: 'local-e2e' });
 const app = require('../src/index');
-const { sequelize, User, Location, LocationLink, Poll, PollOption } = require('../src/models');
+const { sequelize, User, Location, LocationLink, Poll, PollOption, Organization, OrganizationMember, PolicyCategory, Topic } = require('../src/models');
 
 async function start() {
   if (sequelize.getDialect() !== 'sqlite' || sequelize.options.storage !== ':memory:') throw new Error('E2E requires an in-memory database');
   await sequelize.sync({ force: true });
   const author = await User.create({ username: 'e2e-author', email: 'author@example.test', password: 'TestPassword123!', role: 'admin' });
   await User.create({ username: 'e2e-contributor', email: 'contributor@example.test', password: 'TestPassword123!', role: 'viewer', emailVerified: true });
+  const policyOrg = await Organization.create({ name: 'Civic Policy Lab', slug: 'civic-policy-lab', type: 'party', createdByUserId: author.id });
+  await OrganizationMember.create({ organizationId: policyOrg.id, userId: author.id, role: 'owner' });
+  await PolicyCategory.create({ name: 'Housing', slug: 'housing' });
+  await Topic.create({ name: 'Public housing', slug: 'public-housing' });
   const country = await Location.create({ id: 1, name: 'Greece', slug: 'greece', code: 'GR', type: 'country' });
   const region = await Location.create({ id: 2, name: 'Attica', slug: 'attica', type: 'prefecture', parent_id: country.id });
   const town = await Location.create({ id: 3, name: 'Test Municipality', slug: 'test-municipality', type: 'municipality', parent_id: region.id });

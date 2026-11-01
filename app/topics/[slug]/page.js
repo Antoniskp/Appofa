@@ -11,6 +11,7 @@ import SuggestionCard from '@/components/SuggestionCard';
 import EmptyState from '@/components/ui/EmptyState';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import TopicFollowButton from '@/components/topics/TopicFollowButton';
+import PositionsPanel from '@/components/positions/PositionsPanel';
 
 function Section({ title, icon: Icon, href, children, count }) {
   return (
@@ -192,6 +193,7 @@ export default function TopicDetailPage() {
           </div>
         </header>
 
+        <div className="mb-10"><PositionsPanel topicId={topic.id} /></div>
         {topic.externalLinks?.length > 0 && (
           <Section title="External links" icon={LinkIcon} count={topic.externalLinks.length}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

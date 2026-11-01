@@ -1,0 +1,93 @@
+/* global document, window */
+const { test, expect } = require('@playwright/test');
+const t = require('../messages/en.json').positions;
+const auth = require('../messages/en.json').auth;
+test.setTimeout(180000);
+
+test.beforeEach(async ({ context }) => {
+  await context.addCookies([{ name: 'NEXT_LOCALE', value: 'en', domain: '127.0.0.1', path: '/' }]);
+  await context.addInitScript(() => localStorage.setItem('appofa_country_entry_decision_v1', 'stay'));
+});
+
+async function login(page, email) {
+  await page.goto('/login');
+  await page.locator('[name="email"]').fill(email);
+  await page.locator('[name="password"]').fill('TestPassword123!');
+  await page.getByRole('button', { name: auth.submit_login, exact: true }).click();
+  await expect(page).not.toHaveURL(/\/login/);
+}
+async function dismissCookies(page) {
+  const dismiss = page.getByRole('button', { name: 'Reject Non-Essential', exact: true });
+  if (await dismiss.isVisible()) await dismiss.click();
+}
+
+test('create, review, compare, vote and revise an organization position', async ({ page, browser }, testInfo) => {
+  const title = 'Build public rental homes ' + testInfo.project.name;
+  await login(page, 'author@example.test');
+  await page.goto('/organizations/civic-policy-lab?tab=tab_positions');
+  await dismissCookies(page);
+  await page.getByRole('button', { name: t.add_position, exact: true }).click();
+  await page.getByLabel(t.title_label, { exact: true }).fill(title);
+  await page.getByRole('textbox', { name: t.body_label, exact: true }).fill('Build affordable rental housing with transparent eligibility criteria.');
+  await page.getByRole('combobox', { name: t.category, exact: true }).first().selectOption({ label: 'Housing' });
+  await page.getByLabel('Public housing', { exact: true }).check();
+  await page.getByLabel(t.provider, { exact: true }).fill('Vouliwatch');
+  await page.getByLabel(t.source_url, { exact: true }).fill('https://vouliwatch.gr/policies');
+  await page.getByLabel(t.original_url, { exact: true }).fill('https://example.org/housing-programme');
+  await page.screenshot({ path: testInfo.outputPath('position-editor.png'), fullPage: true });
+  await page.getByRole('button', { name: t.save_draft, exact: true }).click();
+  let card = page.locator('article').filter({ hasText: title });
+  await expect(card.getByText('Draft · v1', { exact: true })).toBeVisible();
+  await card.getByRole('button', { name: t.review, exact: true }).click();
+  await card.getByLabel(t.review_confirm, { exact: true }).check();
+  await card.getByRole('button', { name: t.publish, exact: true }).click();
+  await expect(card.getByText('Published · v1', { exact: true })).toBeVisible();
+
+  const voterContext = await browser.newContext({ viewport: testInfo.project.use.viewport });
+  try {
+    await voterContext.addCookies([{ name: 'NEXT_LOCALE', value: 'en', domain: '127.0.0.1', path: '/' }]);
+    await voterContext.addInitScript(() => localStorage.setItem('appofa_country_entry_decision_v1', 'stay'));
+    const voterPage = await voterContext.newPage();
+    // newContext does not inherit baseURL.
+    await voterPage.goto('http://127.0.0.1:3101/login');
+    await voterPage.locator('[name="email"]').fill('contributor@example.test');
+    await voterPage.locator('[name="password"]').fill('TestPassword123!');
+    await voterPage.getByRole('button', { name: auth.submit_login, exact: true }).click();
+    await expect(voterPage).not.toHaveURL(/\/login/);
+    await voterPage.goto('http://127.0.0.1:3101/positions');
+    await dismissCookies(voterPage);
+    await voterPage.getByRole('combobox', { name: t.topic, exact: true }).selectOption({ label: 'Public housing' });
+    let voterCard = voterPage.locator('article').filter({ hasText: title });
+    await voterCard.getByRole('button', { name: 'Support 0', exact: true }).click();
+    await expect(voterCard.getByRole('button', { name: 'Support 1', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await voterCard.getByRole('button', { name: 'Oppose 0', exact: true }).click();
+    await expect(voterCard.getByRole('button', { name: 'Oppose 1', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await voterCard.getByRole('button', { name: 'Oppose 1', exact: true }).click();
+    await expect(voterCard.getByText(t.no_votes, { exact: true })).toBeVisible();
+    await voterCard.getByRole('button', { name: 'Support 0', exact: true }).click();
+    await expect(voterCard.getByRole('button', { name: 'Support 1', exact: true })).toBeVisible();
+    expect(await voterPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await voterPage.screenshot({ path: testInfo.outputPath('position-comparison.png'), fullPage: true });
+
+    await page.goto('/organizations/civic-policy-lab?tab=tab_positions');
+    await page.getByRole('button', { name: t.manage, exact: true }).click();
+    card = page.locator('article').filter({ hasText: title });
+    await card.getByRole('button', { name: t.new_version, exact: true }).click();
+    await page.getByRole('textbox', { name: t.body_label, exact: true }).fill('Revised housing proposal with a delivery timetable.');
+    await page.getByRole('button', { name: t.save_draft, exact: true }).click();
+    card = page.locator('article').filter({ hasText: title }).filter({ hasText: 'Draft · v2' });
+    await card.getByRole('button', { name: t.review, exact: true }).click();
+    await card.getByLabel(t.review_confirm, { exact: true }).check();
+    await card.getByRole('button', { name: t.publish, exact: true }).click();
+    await expect(page.locator('article').filter({ hasText: title }).getByText('Published · v2')).toBeVisible();
+    await voterPage.reload();
+    voterCard = voterPage.locator('article').filter({ hasText: title });
+    await expect(voterCard.getByText(t.no_votes, { exact: true })).toBeVisible();
+    await voterCard.getByRole('button', { name: t.history, exact: true }).click();
+    await expect(voterCard.getByText('v1 · Previous version', { exact: true })).toBeVisible();
+    await expect(voterCard.getByText('Support: 1 · Oppose: 0', { exact: true })).toBeVisible();
+    await voterPage.goto('http://127.0.0.1:3101/topics/public-housing');
+    await expect(voterPage.locator('article').filter({ hasText: title })).toBeVisible();
+    await voterPage.screenshot({ path: testInfo.outputPath('topic-positions.png'), fullPage: true });
+  } finally { await voterContext.close(); }
+});

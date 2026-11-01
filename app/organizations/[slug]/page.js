@@ -23,8 +23,9 @@ import PersonSearch from '@/components/dream-team/PersonSearch';
 import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
 import SearchInput from '@/components/ui/SearchInput';
+import PositionsPanel from '@/components/positions/PositionsPanel';
 
-const BASE_TABS = ['tab_roles', 'tab_info', 'tab_members', 'tab_polls', 'tab_suggestions', 'tab_analytics'];
+const BASE_TABS = ['tab_roles', 'tab_positions', 'tab_info', 'tab_members', 'tab_polls', 'tab_suggestions', 'tab_analytics'];
 const OFFICIAL_POST_TABS = ['tab_official_posts'];
 const OFFICIAL_POST_ORG_TYPES = ['party', 'institution'];
 const MANAGEABLE_ROLES = ['admin', 'moderator', 'member'];
@@ -90,7 +91,7 @@ export default function OrganizationProfilePage({ params }) {
   const { slug } = use(params);
   const { user } = useAuth();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState('tab_roles');
+  const [activeTab, setActiveTab] = useState(() => BASE_TABS.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'tab_roles');
   const [actionLoading, setActionLoading] = useState(false);
   const [memberActionError, setMemberActionError] = useState('');
   const [memberActionSuccess, setMemberActionSuccess] = useState('');
@@ -749,6 +750,7 @@ export default function OrganizationProfilePage({ params }) {
             {contentActionError && <AlertMessage message={contentActionError} />}
             {contentActionSuccess && <AlertMessage tone="success" message={contentActionSuccess} />}
 
+            {activeTab === 'tab_positions' && <PositionsPanel organizationId={organization.id} />}
             {activeTab === 'tab_info' && (
               <div className="space-y-3 text-sm text-gray-700">
                 {organization.description && <p><span className="font-semibold">{t('description')}:</span> {organization.description}</p>}

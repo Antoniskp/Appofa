@@ -39,6 +39,7 @@ export default function TopNav() {
   const tNav = useTranslations('nav');
   const tCalendar = useTranslations('calendar');
   const tOrganizations = useTranslations('organizations');
+  const tPositions = useTranslations('positions');
   const { user, loading, logout } = useAuth();
   const { canAccessAdmin } = usePermissions();
   const pathname = usePathname();
@@ -161,6 +162,11 @@ export default function TopNav() {
       label: tNav('community'),
       menuId: 'desktop-nav-community-menu',
       items: [
+        {
+          id: 'positions', label: tPositions('heading'), href: '/positions',
+          icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
+          mobileIcon: <ClipboardDocumentListIcon className="h-5 w-5" />,
+        },
         {
           id: 'organizations', label: tOrganizations('title'), href: '/organizations',
           icon: <BuildingOffice2Icon className="h-4 w-4" />,

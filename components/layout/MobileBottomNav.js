@@ -23,11 +23,12 @@ import {
 const EXPLORE_ROOTS = ['/news', '/articles', '/videos', '/topics'];
 
 // Route groups that belong to the "Participate" tab (used for active-state only)
-const PARTICIPATE_ROOTS = ['/polls', '/civic-questions', '/suggestions', '/dream-team', '/organizations'];
+const PARTICIPATE_ROOTS = ['/polls', '/civic-questions', '/suggestions', '/dream-team', '/organizations', '/positions'];
 
 export default function MobileBottomNav() {
   const t = useTranslations('nav');
   const tOrganizations = useTranslations('organizations');
+  const tPositions = useTranslations('positions');
   const { user, loading } = useAuth();
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -267,6 +268,10 @@ export default function MobileBottomNav() {
                   </span>
                 </Link>
 
+                <Link href="/positions" onClick={handleCloseSheet} className="flex min-h-[44px] items-center gap-3 rounded-xl bg-ivory px-4 py-3 text-sm font-medium text-charcoal hover:bg-sand">
+                  <ClipboardDocumentListIcon className="h-5 w-5" aria-hidden="true" />
+                  {tPositions('heading')}
+                </Link>
                 <Link href="/organizations" onClick={handleCloseSheet} className="flex min-h-[44px] items-center gap-3 rounded-xl bg-ivory px-4 py-3 text-sm font-medium text-charcoal hover:bg-sand">
                   <BuildingOffice2Icon className="h-5 w-5" aria-hidden="true" />
                   {tOrganizations('title')}

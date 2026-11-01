@@ -33,3 +33,5 @@ src/data/hero-settings.json
 # Isolated participation verification build
 .next-participation/
 .next-participation-webpack/
+.next-positions-build/
+.next-positions-webpack/

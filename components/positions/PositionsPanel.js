@@ -1,0 +1,194 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
+import { HandThumbUpIcon, HandThumbDownIcon, ArrowTopRightOnSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { positionAPI } from '@/lib/api/positions';
+import { useAuth } from '@/lib/auth-context';
+import LoginLink from '@/components/ui/LoginLink';
+
+const inputClass = 'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100';
+const buttonClass = 'rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50';
+const primaryClass = 'rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50';
+const blankSource = () => ({ provider: 'website', sourceUrl: '', originalSourceUrl: '', sourcePublishedAt: '' });
+const blankForm = () => ({ title: '', body: '', attribution: 'sourced', categoryId: '', topicIds: [], sources: [blankSource()] });
+
+function SourceLinks({ sources, t, formatDate }) {
+  return <div className="space-y-2 text-xs text-gray-600">
+    {sources.map((source, index) => <div key={source.id || index} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <a href={source.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-medium text-blue-700 hover:underline">
+        {source.provider} <ArrowTopRightOnSquareIcon className="h-3 w-3" />
+      </a>
+      {source.originalSourceUrl && <a href={source.originalSourceUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">{t('original_source')}</a>}
+      <span>{source.sourcePublishedAt ? t('source_date', { date: formatDate(source.sourcePublishedAt) }) : t('unknown_date')}</span>
+    </div>)}
+  </div>;
+}
+
+function PositionEditor({ editing, metadata, onSave, onCancel, busy, t, categoryName }) {
+  const [form, setForm] = useState(() => editing.row ? {
+    title: editing.row.title, body: editing.row.body, attribution: editing.row.attribution,
+    categoryId: String(editing.row.position.categoryId),
+    topicIds: editing.row.position.topics.map(topic => topic.id),
+    sources: editing.row.sources.map(source => ({ ...source, sourcePublishedAt: source.sourcePublishedAt?.slice(0, 10) || '' })),
+  } : blankForm());
+  const set = (field, value) => setForm(previous => ({ ...previous, [field]: value }));
+  const setSource = (index, field, value) => set('sources', form.sources.map((source, sourceIndex) => sourceIndex === index ? { ...source, [field]: value } : source));
+  return <form onSubmit={event => { event.preventDefault(); onSave(form); }} className="space-y-5 rounded-xl border border-blue-200 bg-blue-50/40 p-4 sm:p-6">
+    <div className="flex items-start justify-between gap-4"><h3 className="text-lg font-semibold">{t(editing.mode === 'revise' ? 'new_version' : editing.mode === 'edit' ? 'edit_draft' : 'add_position')}</h3><button type="button" onClick={onCancel} disabled={busy} className={buttonClass}>{t('cancel')}</button></div>
+    <p className="text-sm text-gray-600">{t('editor_hint')}</p>
+    <label className="block text-sm font-medium">{t('title_label')}<input required minLength={5} maxLength={200} className={inputClass + ' mt-1'} value={form.title} onChange={event => set('title', event.target.value)} /></label>
+    <label className="block text-sm font-medium">{t('body_label')}<textarea required maxLength={20000} rows={5} className={inputClass + ' mt-1'} value={form.body} onChange={event => set('body', event.target.value)} /></label>
+    <div className="grid gap-4 sm:grid-cols-2">
+      <label className="block text-sm font-medium">{t('category')}<select required disabled={!!editing.row} className={inputClass + ' mt-1'} value={form.categoryId} onChange={event => set('categoryId', event.target.value)}><option value="">{t('choose_category')}</option>{metadata.categories.map(category => <option key={category.id} value={category.id}>{categoryName(category)}</option>)}</select></label>
+      <label className="block text-sm font-medium">{t('attribution')}<select className={inputClass + ' mt-1'} value={form.attribution} onChange={event => set('attribution', event.target.value)}><option value="sourced">{t('sourced')}</option><option value="community">{t('community')}</option>{(metadata.canPublishOfficial || form.attribution === 'official') && <option value="official" disabled={!metadata.canPublishOfficial}>{t('official')}</option>}</select></label>
+    </div>
+    {!editing.row && <fieldset><legend className="mb-2 text-sm font-medium">{t('topics')}</legend><div className="flex max-h-44 flex-wrap gap-2 overflow-y-auto rounded-lg border bg-white p-3">
+      {metadata.topics.length ? metadata.topics.map(topic => <label key={topic.id} className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1.5 text-sm"><input type="checkbox" checked={form.topicIds.includes(topic.id)} onChange={event => set('topicIds', event.target.checked ? [...form.topicIds, topic.id] : form.topicIds.filter(value => value !== topic.id))} />{topic.name}</label>) : <p className="text-sm text-gray-500">{t('no_topics')}</p>}
+    </div></fieldset>}
+    <fieldset className="space-y-3"><legend className="mb-2 text-sm font-semibold">{t('sources')}</legend>
+      {form.sources.map((source, index) => <div key={index} className="space-y-3 rounded-lg border bg-white p-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="text-sm">{t('provider')}<input required maxLength={80} className={inputClass} value={source.provider} onChange={event => setSource(index, 'provider', event.target.value)} placeholder="Vouliwatch" /></label>
+          <label className="text-sm">{t('publication_date')}<input type="date" className={inputClass} value={source.sourcePublishedAt} onChange={event => setSource(index, 'sourcePublishedAt', event.target.value)} /></label>
+          <label className="text-sm">{t('source_url')}<input required type="url" maxLength={2048} className={inputClass} value={source.sourceUrl} onChange={event => setSource(index, 'sourceUrl', event.target.value)} placeholder="https://" /></label>
+          <label className="text-sm">{t('original_url')}<input type="url" maxLength={2048} className={inputClass} value={source.originalSourceUrl || ''} onChange={event => setSource(index, 'originalSourceUrl', event.target.value)} placeholder="https://" /></label>
+        </div>
+        <button type="button" className="text-sm text-red-700 hover:underline" onClick={() => set('sources', form.sources.filter((_, sourceIndex) => sourceIndex !== index))}>{t('remove_source')}</button>
+      </div>)}
+      <button type="button" disabled={form.sources.length >= 10} className={buttonClass} onClick={() => set('sources', [...form.sources, blankSource()])}>{t('add_source')}</button>
+    </fieldset>
+    <button type="submit" disabled={busy} className={primaryClass}>{busy ? t('saving') : t('save_draft')}</button>
+  </form>;
+}
+
+function PositionCard({ row, manage, metadata, user, busy, onVote, onEdit, onAction, t, categoryName, formatDate }) {
+  const [history, setHistory] = useState(null);
+  const [historyError, setHistoryError] = useState('');
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const [reviewNote, setReviewNote] = useState('');
+  const total = row.support + row.oppose;
+  const approval = total ? Math.round(row.support / total * 100) : null;
+  const editable = ['draft', 'in_review', 'rejected'].includes(row.status);
+  const officialAllowed = row.attribution !== 'official' || metadata.canPublishOfficial;
+  const toggleHistory = async () => {
+    if (history) { setHistory(null); return; }
+    setHistoryLoading(true); setHistoryError('');
+    try { setHistory((await positionAPI.history(row.positionId)).data); }
+    catch (error) { setHistoryError(error.message); }
+    finally { setHistoryLoading(false); }
+  };
+  return <article className="flex flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="mb-3 flex flex-wrap gap-2 text-xs font-medium">
+      <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-800">{categoryName(row.position.category)}</span>
+      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">{t(row.attribution)}</span>
+      {manage && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-900">{t(row.status)} · v{row.version}</span>}
+      {row.position.status !== 'active' && <span className="rounded-full bg-red-50 px-2.5 py-1 text-red-700">{t(row.position.status)}</span>}
+    </div>
+    <Link href={'/organizations/' + row.position.organization.slug + '?tab=tab_positions'} className="mb-2 text-sm font-semibold text-blue-700 hover:underline">{row.position.organization.name}</Link>
+    <h3 className="text-lg font-semibold leading-snug text-gray-900">{row.title}</h3>
+    <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-700">{row.body}</p>
+    {row.position.topics.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{row.position.topics.map(topic => <Link href={'/topics/' + topic.slug} key={topic.id} className="text-xs text-blue-700 hover:underline">#{topic.name}</Link>)}</div>}
+    <div className="mt-4 border-t border-gray-100 pt-3"><SourceLinks sources={row.sources} t={t} formatDate={formatDate} />{row.publishedAt && <p className="mt-2 text-xs text-gray-500">{t('published_date', { date: formatDate(row.publishedAt) })}</p>}</div>
+    <div className="mt-auto pt-5">
+      <div className="mb-2 flex items-center justify-between gap-2 text-sm"><strong>{approval === null ? t('no_votes') : t('approval_percent', { percent: approval })}</strong><span className="text-gray-500">{t('vote_count', { count: total })}</span></div>
+      <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-gray-100" aria-hidden="true"><div className="h-full bg-emerald-500" style={{ width: (approval || 0) + '%' }} /></div>
+      {row.status === 'published' && row.position.status === 'active' && <div className="flex flex-wrap gap-2">
+        {[1, -1].map(value => {
+          const Icon = value === 1 ? HandThumbUpIcon : HandThumbDownIcon;
+          const selected = row.myVote === value;
+          return <button key={value} type="button" disabled={busy || !user} aria-pressed={selected}
+            onClick={() => onVote(row.id, selected ? 0 : value)}
+            className={buttonClass + ' inline-flex items-center gap-2 ' + (selected ? 'ring-2 ring-blue-500 bg-blue-50 text-blue-800' : '')}>
+            <Icon className="h-4 w-4" />{t(value === 1 ? 'support' : 'oppose')}
+            <span>{value === 1 ? row.support : row.oppose}</span>
+            {selected && <span aria-hidden="true">✓</span>}
+          </button>;
+        })}
+      </div>}
+      {!user && row.status === 'published' && <LoginLink className="mt-2 block text-sm text-blue-700 hover:underline">{t('sign_in')}</LoginLink>}
+      {row.myVote !== 0 && <p className="mt-2 text-xs text-gray-500">{t('vote_private')}</p>}
+      <button type="button" disabled={historyLoading} onClick={toggleHistory} className="mt-4 text-xs font-medium text-gray-600 hover:underline">{historyLoading ? t('loading') : history ? t('hide_history') : t('history')}</button>
+      {historyError && <p role="alert" className="mt-2 text-sm text-red-700">{historyError}</p>}
+      {history && <div className="mt-3 space-y-4 rounded-lg bg-gray-50 p-3">{history.length ? history.map(version => <div key={version.id} className="border-b border-gray-200 pb-3 last:border-0"><p className="text-xs font-semibold text-gray-500">v{version.version} · {t(version.status)}</p><h4 className="mt-1 text-sm font-semibold">{version.title}</h4><p className="my-2 whitespace-pre-wrap text-sm text-gray-600">{version.body}</p><SourceLinks sources={version.sources} t={t} formatDate={formatDate} /><p className="mt-2 text-xs">{t('support')}: {version.support} · {t('oppose')}: {version.oppose}</p></div>) : <p className="text-sm text-gray-500">{t('no_history')}</p>}</div>}
+      {manage && <div className="mt-4 space-y-3 border-t pt-4">
+        {row.reviewNote && <p className="text-sm text-amber-800">{row.reviewNote}</p>}
+        <div className="flex flex-wrap gap-2">
+          <button type="button" disabled={busy || !officialAllowed} className={buttonClass} onClick={() => onEdit({ row, mode: editable ? 'edit' : 'revise' })}>{t(editable ? 'edit_draft' : 'new_version')}</button>
+          {editable && <button type="button" disabled={busy || !officialAllowed} className={buttonClass} onClick={() => setReviewing(!reviewing)}>{t('review')}</button>}
+          <button type="button" disabled={busy} className={buttonClass} onClick={() => onAction(() => positionAPI.status(row.positionId, row.position.status === 'active' ? 'withdrawn' : 'active'))}>{t(row.position.status === 'active' ? 'withdraw' : 'reactivate')}</button>
+        </div>
+        {reviewing && <div className="space-y-3 rounded-lg bg-amber-50 p-3">
+          <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={checked} onChange={event => setChecked(event.target.checked)} />{t('review_confirm')}</label>
+          <button type="button" disabled={busy || !checked || row.position.status !== 'active'} className={primaryClass} onClick={() => onAction(() => positionAPI.publish(row.id))}>{t('publish')}</button>
+          <label className="block text-sm">{t('rejection_note')}<textarea maxLength={2000} className={inputClass + ' mt-1'} value={reviewNote} onChange={event => setReviewNote(event.target.value)} /></label>
+          <button type="button" disabled={busy || !reviewNote.trim()} className={buttonClass} onClick={() => onAction(() => positionAPI.reject(row.id, reviewNote))}>{t('reject')}</button>
+        </div>}
+      </div>}
+    </div>
+  </article>;
+}
+
+export default function PositionsPanel({ organizationId, topicId, standalone = false }) {
+  const Heading = standalone ? 'h1' : 'h2';
+  const t = useTranslations('positions');
+  const locale = useLocale();
+  const { user } = useAuth();
+  const [metadata, setMetadata] = useState({ categories: [], topics: [], organizations: [] });
+  const [result, setResult] = useState({ positions: [], pagination: {} });
+  const [filters, setFilters] = useState({ categoryId: '', topicId: '', organizationId: '', sort: 'top' });
+  const [manage, setManage] = useState(false);
+  const [page, setPage] = useState(1);
+  const [refresh, setRefresh] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const categoryName = category => t.has('categories.' + category.slug) ? t('categories.' + category.slug) : category.name;
+  const formatDate = value => new Date(value).toLocaleDateString(locale);
+  useEffect(() => {
+    let cancelled = false;
+    positionAPI.metadata(organizationId ? { organizationId } : {}).then(response => { if (!cancelled) setMetadata(response.data); }).catch(err => { if (!cancelled) setError(err.message); });
+    return () => { cancelled = true; };
+  }, [organizationId, user?.id]);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true); setError('');
+    positionAPI.list({ ...filters, organizationId: organizationId || filters.organizationId, topicId: topicId || filters.topicId, manage: manage ? 'true' : undefined, page }).then(response => { if (!cancelled) setResult(response.data); }).catch(err => { if (!cancelled) { setError(err.message); setResult({ positions: [], pagination: {} }); } }).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [organizationId, topicId, filters, manage, page, refresh, user?.id]);
+  const filter = (key, value) => { setFilters(previous => ({ ...previous, [key]: value })); setPage(1); };
+  const action = async operation => {
+    setBusy(true); setError(''); setNotice('');
+    try { await operation(); setRefresh(value => value + 1); setNotice(t('saved')); return true; }
+    catch (err) { setError(err.message); return false; }
+    finally { setBusy(false); }
+  };
+  const save = async form => {
+    const succeeded = await action(() => editing.mode === 'edit' ? positionAPI.save(editing.row.id, form) : editing.mode === 'revise' ? positionAPI.revise(editing.row.positionId, form) : positionAPI.create(organizationId, form));
+    if (succeeded) { setEditing(null); setManage(true); setPage(1); }
+  };
+  return <section className="space-y-5" aria-label={t('heading')}>
+    <div className="flex flex-wrap items-start justify-between gap-4">
+      <div><Heading className={standalone ? 'text-3xl font-bold text-gray-900' : 'text-2xl font-bold text-gray-900'}>{t('heading')}</Heading><p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600">{t('description')}</p></div>
+      <div className="flex flex-wrap gap-2">{!standalone && <Link href="/positions" className={buttonClass}>{t('compare_all')}</Link>}{metadata.canManage && <><button type="button" className={buttonClass} onClick={() => { setManage(!manage); setPage(1); setEditing(null); }}>{t(manage ? 'public_view' : 'manage')}</button><button type="button" className={primaryClass + ' inline-flex items-center gap-1'} onClick={() => setEditing({ mode: 'create' })}><PlusIcon className="h-4 w-4" />{t('add_position')}</button></>}</div>
+    </div>
+    <p className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-xs leading-relaxed text-blue-900">{t('participation_note')}</p>
+    {error && <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}<button type="button" className="ml-3 underline" onClick={() => setRefresh(value => value + 1)}>{t('retry')}</button></div>}
+    {notice && <p role="status" className="text-sm text-emerald-700">{notice}</p>}
+    {editing && <PositionEditor key={editing.mode + (editing.row?.id || '')} editing={editing} metadata={metadata} onSave={save} onCancel={() => setEditing(null)} busy={busy} t={t} categoryName={categoryName} />}
+    <div className="grid gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <label className="text-xs font-medium text-gray-600">{t('category')}<select className={inputClass + ' mt-1'} value={filters.categoryId} onChange={event => filter('categoryId', event.target.value)}><option value="">{t('all_categories')}</option>{metadata.categories.map(category => <option key={category.id} value={category.id}>{categoryName(category)}</option>)}</select></label>
+      {!topicId && <label className="text-xs font-medium text-gray-600">{t('topic')}<select className={inputClass + ' mt-1'} value={filters.topicId} onChange={event => filter('topicId', event.target.value)}><option value="">{t('all_topics')}</option>{metadata.topics.map(topic => <option key={topic.id} value={topic.id}>{topic.name}</option>)}</select></label>}
+      {!organizationId && <label className="text-xs font-medium text-gray-600">{t('organization')}<select className={inputClass + ' mt-1'} value={filters.organizationId} onChange={event => filter('organizationId', event.target.value)}><option value="">{t('all_organizations')}</option>{metadata.organizations.map(organization => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
+      <label className="text-xs font-medium text-gray-600">{t('sort')}<select disabled={manage} className={inputClass + ' mt-1'} value={manage ? 'newest' : filters.sort} onChange={event => filter('sort', event.target.value)}>{['top', 'support', 'approval', 'divisive', 'newest'].map(sort => <option key={sort} value={sort}>{t('sort_' + sort)}</option>)}</select></label>
+    </div>
+    {!manage && <p className="text-xs text-gray-500">{t('ranking_note')}</p>}
+    {loading ? <div role="status" className="rounded-xl border border-gray-200 p-10 text-center text-gray-500">{t('loading')}</div> : result.positions.length ? <div className="grid items-start gap-5 lg:grid-cols-2">{result.positions.map(row => <PositionCard key={row.id + ':' + row.status} row={row} manage={manage} metadata={metadata} user={user} busy={busy} onVote={(revisionId, value) => action(() => positionAPI.vote(revisionId, value))} onEdit={setEditing} onAction={action} t={t} categoryName={categoryName} formatDate={formatDate} />)}</div> : !error && <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center"><h3 className="font-semibold text-gray-800">{t('empty')}</h3><p className="mt-2 text-sm text-gray-500">{t(manage ? 'empty_manage' : 'empty_public')}</p></div>}
+    {result.pagination.pages > 1 && <nav className="flex items-center justify-center gap-4" aria-label={t('pagination')}><button type="button" className={buttonClass} disabled={page === 1 || loading} onClick={() => setPage(value => value - 1)}>{t('previous')}</button><span className="text-sm">{t('page_count', { page, pages: result.pagination.pages })}</span><button type="button" className={buttonClass} disabled={page >= result.pagination.pages || loading} onClick={() => setPage(value => value + 1)}>{t('next')}</button></nav>}
+  </section>;
+}
