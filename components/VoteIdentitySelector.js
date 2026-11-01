@@ -39,7 +39,6 @@ export default function VoteIdentitySelector({
           );
         })}
       </div>
-      <p className="text-xs leading-relaxed text-gray-600">{t('privacy')}</p>
     </fieldset>
   );
 }
