@@ -574,7 +574,39 @@ User.hasMany(VideoPin, { foreignKey: 'submittedByUserId', as: 'submittedVideoPin
 User.hasMany(VideoPin, { foreignKey: 'moderatedByUserId', as: 'moderatedVideoPins' });
 Location.hasMany(VideoPin, { foreignKey: 'locationId', as: 'videoPins' });
 
+// Organization policy positions share organizations and curated topics.
+const PolicyCategory = require('./PolicyCategory');
+const OrganizationPosition = require('./OrganizationPosition');
+const PositionRevision = require('./PositionRevision');
+const PositionTopic = require('./PositionTopic');
+const PositionSource = require('./PositionSource');
+const PositionVote = require('./PositionVote');
+Organization.hasMany(OrganizationPosition, { foreignKey: 'organizationId', as: 'positions' });
+OrganizationPosition.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+PolicyCategory.hasMany(OrganizationPosition, { foreignKey: 'categoryId', as: 'positions' });
+OrganizationPosition.belongsTo(PolicyCategory, { foreignKey: 'categoryId', as: 'category' });
+OrganizationPosition.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
+OrganizationPosition.belongsTo(Suggestion, { foreignKey: 'suggestionId', as: 'suggestion' });
+OrganizationPosition.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+OrganizationPosition.hasMany(PositionRevision, { foreignKey: 'positionId', as: 'revisions' });
+PositionRevision.belongsTo(OrganizationPosition, { foreignKey: 'positionId', as: 'position' });
+PositionRevision.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+PositionRevision.belongsTo(User, { foreignKey: 'reviewedByUserId', as: 'reviewedBy' });
+OrganizationPosition.belongsToMany(Topic, { through: PositionTopic, foreignKey: 'positionId', otherKey: 'topicId', as: 'topics' });
+Topic.belongsToMany(OrganizationPosition, { through: PositionTopic, foreignKey: 'topicId', otherKey: 'positionId', as: 'positions' });
+PositionRevision.hasMany(PositionSource, { foreignKey: 'revisionId', as: 'sources' });
+PositionSource.belongsTo(PositionRevision, { foreignKey: 'revisionId', as: 'revision' });
+PositionRevision.hasMany(PositionVote, { foreignKey: 'revisionId', as: 'votes' });
+PositionVote.belongsTo(PositionRevision, { foreignKey: 'revisionId', as: 'revision' });
+PositionVote.belongsTo(User, { foreignKey: 'userId', as: 'voter' });
+
 module.exports = {
+  PolicyCategory,
+  OrganizationPosition,
+  PositionRevision,
+  PositionTopic,
+  PositionSource,
+  PositionVote,
   IssueFollow: require('./IssueFollow'),
   sequelize,
   User,
