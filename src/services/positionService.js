@@ -105,12 +105,32 @@ const totalSql = '(' + supportSql + ' + ' + opposeSql + ')';
 const proportionSql = '(1.0 * ' + supportSql + ' / NULLIF(' + totalSql + ', 0))';
 const topSql = 'COALESCE((' + proportionSql + ' + 1.9208 / NULLIF(' + totalSql + ', 0) - 1.96 * SQRT((' + proportionSql + ' * (1 - ' + proportionSql + ') + 0.9604 / NULLIF(' + totalSql + ', 0)) / NULLIF(' + totalSql + ', 0))) / (1 + 3.8416 / NULLIF(' + totalSql + ', 0)), 0)';
 
+async function summary(organizationId, user) {
+  await access(organizationId, user);
+  const [rows] = await sequelize.query(`
+    SELECT COUNT(DISTINCT p.id) AS positions, COUNT(CASE WHEN v.value = 1 THEN 1 END) AS support,
+           COUNT(CASE WHEN v.value = -1 THEN 1 END) AS oppose
+    FROM "OrganizationPositions" p JOIN "PositionRevisions" r ON r."positionId" = p.id AND r.status = 'published'
+    LEFT JOIN "PositionVotes" v ON v."revisionId" = r.id
+    WHERE p."organizationId" = :organizationId AND p.status = 'active'`, { replacements: { organizationId: id(organizationId) } });
+  return Object.fromEntries(Object.entries(rows[0]).map(([key, value]) => [key, Number(value)]));
+}
+
+async function detail(positionId, user) {
+  const position = await OrganizationPosition.findByPk(id(positionId));
+  if (!position) fail(404, 'Position not found.');
+  const result = await list({ organizationId: position.organizationId, positionId }, user);
+  if (!result.positions.length) fail(404, 'Position not found.');
+  return result.positions[0];
+}
+
 async function list(query, user) {
   const organizationId = query.organizationId ? id(query.organizationId) : null;
   const manage = query.manage === 'true';
   if (manage && !organizationId) fail(400, 'Select an organization to manage.');
   if (organizationId) await access(organizationId, user, manage);
   const positionWhere = manage ? {} : { status: 'active' };
+  if (query.positionId) positionWhere.id = id(query.positionId);
   if (organizationId) positionWhere.organizationId = organizationId;
   if (query.categoryId) positionWhere.categoryId = id(query.categoryId);
   const revisionWhere = { status: manage ? { [Op.in]: ['draft', 'in_review', 'rejected', 'published'] } : 'published' };
@@ -267,4 +287,4 @@ async function createCategory(input, user) {
   return PolicyCategory.create({ name, slug });
 }
 
-module.exports = { metadata, list, create, revise, mutateRevision, changeStatus, vote, history, createCategory };
+module.exports = { access, metadata, list, summary, detail, create, revise, mutateRevision, changeStatus, vote, history, createCategory };

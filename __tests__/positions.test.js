@@ -69,6 +69,20 @@ describe('Organization positions workflow', () => {
     expect(await PositionVote.count({ where: { revisionId: created.revisionId } })).toBe(0);
   });
 
+  test('profile totals and detail exclude drafts and votes from superseded revisions', async () => {
+    const first = await service.create(org.id, input(), owner);
+    await service.create(org.id, input(), owner);
+    await expect(service.detail(first.positionId, viewer)).rejects.toMatchObject({ status: 404 });
+    await publish(first.revisionId);
+    await service.vote(first.revisionId, 1, viewer);
+    await service.vote(first.revisionId, -1, owner);
+    expect(await service.summary(org.id, viewer)).toEqual({ positions: 1, support: 1, oppose: 1 });
+    const next = await service.revise(first.positionId, input(), owner);
+    await publish(next.revisionId);
+    expect(await service.detail(first.positionId, viewer)).toMatchObject({ id: next.revisionId });
+    expect(await service.summary(org.id, viewer)).toEqual({ positions: 1, support: 0, oppose: 0 });
+  });
+
   test('search matches title and body before pagination and treats wildcard characters literally', async () => {
     const created = await service.create(org.id, input({ title: 'Rental support 80% plan', body: 'A UNIQUE_HOUSING proposal.' }), owner);
     await publish(created.revisionId);

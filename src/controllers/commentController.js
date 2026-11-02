@@ -1,4 +1,4 @@
-const { Comment, User, Article, Poll, CivicQuestion, Location } = require('../models');
+const { Comment, User, Article, Poll, CivicQuestion, Location, OrganizationPosition, PositionRevision } = require('../models');
 const badgeService = require('../services/badgeService');
 const notificationService = require('../services/notificationService');
 const { isValidProfileVisibility, VALID_PROFILE_VISIBILITY } = require('../utils/profileVisibility');
@@ -9,7 +9,15 @@ const MAX_DEPTH = 5;
  * Fetch entity settings (commentsEnabled, commentsLocked) and owner for a given entity.
  * Returns null if the entity is not found.
  */
-async function getEntitySettings(entityType, entityId) {
+async function getEntitySettings(entityType, entityId, user) {
+  if (entityType === 'position') {
+    const entity = await OrganizationPosition.findOne({ where: { id: entityId, status: 'active' },
+      include: [{ model: PositionRevision, as: 'revisions', required: true, attributes: [], where: { status: 'published' } }] });
+    if (!entity) return null;
+    try { await require('../services/positionService').access(entity.organizationId, user); }
+    catch (error) { if (error.status === 404) return null; throw error; }
+    return { entity, ownerId: null, enabled: true, locked: false };
+  }
   if (entityType === 'article') {
     const entity = await Article.findByPk(entityId);
     if (!entity) return null;
@@ -71,7 +79,7 @@ const commentController = {
         return res.status(400).json({ success: false, message: 'entityType and entityId are required.' });
       }
 
-      const validEntityTypes = ['article', 'poll', 'user_profile', 'civic_question', 'location'];
+      const validEntityTypes = ['article', 'poll', 'user_profile', 'civic_question', 'location', 'position'];
       if (!validEntityTypes.includes(entityType)) {
         return res.status(400).json({ success: false, message: 'Invalid entityType.' });
       }
@@ -81,6 +89,9 @@ const commentController = {
         return res.status(400).json({ success: false, message: 'Invalid entityId.' });
       }
 
+      if (entityType === 'position' && !await getEntitySettings(entityType, parsedEntityId, req.user)) {
+        return res.status(404).json({ success: false, message: 'Position not found.' });
+      }
       const comments = await Comment.findAll({
         where: { entityType, entityId: parsedEntityId },
         include: [
@@ -116,7 +127,7 @@ const commentController = {
     try {
       const { entityType, entityId, parentId, body } = req.body;
 
-      const validEntityTypes = ['article', 'poll', 'user_profile', 'civic_question', 'location'];
+      const validEntityTypes = ['article', 'poll', 'user_profile', 'civic_question', 'location', 'position'];
       if (!entityType || !validEntityTypes.includes(entityType)) {
         return res.status(400).json({ success: false, message: 'Invalid entityType.' });
       }
@@ -135,7 +146,7 @@ const commentController = {
       }
 
       // Verify entity exists and check comment settings
-      const settings = await getEntitySettings(entityType, parsedEntityId);
+      const settings = await getEntitySettings(entityType, parsedEntityId, req.user);
       if (!settings) {
         return res.status(404).json({ success: false, message: 'Entity not found.' });
       }
@@ -209,7 +220,7 @@ const commentController = {
       if (!comment) return res.status(404).json({ success: false, message: 'Comment not found.' });
 
       if (!isAdminOrModerator(req.user)) {
-        const settings = await getEntitySettings(comment.entityType, comment.entityId);
+        const settings = await getEntitySettings(comment.entityType, comment.entityId, req.user);
         if (!settings || settings.ownerId !== req.user.id) {
           return res.status(403).json({ success: false, message: 'Insufficient permissions.' });
         }
@@ -234,7 +245,7 @@ const commentController = {
       if (!comment) return res.status(404).json({ success: false, message: 'Comment not found.' });
 
       if (!isAdminOrModerator(req.user)) {
-        const settings = await getEntitySettings(comment.entityType, comment.entityId);
+        const settings = await getEntitySettings(comment.entityType, comment.entityId, req.user);
         if (!settings || settings.ownerId !== req.user.id) {
           return res.status(403).json({ success: false, message: 'Insufficient permissions.' });
         }
@@ -263,7 +274,7 @@ const commentController = {
       const isMod = isAdminOrModerator(req.user);
 
       if (!isAuthor && !isMod) {
-        const settings = await getEntitySettings(comment.entityType, comment.entityId);
+        const settings = await getEntitySettings(comment.entityType, comment.entityId, req.user);
         if (!settings || settings.ownerId !== req.user.id) {
           return res.status(403).json({ success: false, message: 'Insufficient permissions.' });
         }

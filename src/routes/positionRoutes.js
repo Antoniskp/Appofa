@@ -18,6 +18,8 @@ const handle = fn => async (req, res) => {
 
 router.get('/metadata', optionalAuth, apiLimiter, handle(req => service.metadata(req.query.organizationId, req.user)));
 router.get('/', optionalAuth, apiLimiter, handle(req => service.list(req.query, req.user)));
+router.get('/organizations/:id/summary', optionalAuth, apiLimiter, handle(req => service.summary(req.params.id, req.user)));
+router.get('/:id', optionalAuth, apiLimiter, handle(req => service.detail(req.params.id, req.user)));
 router.get('/:id/history', optionalAuth, apiLimiter, handle(req => service.history(req.params.id, req.user)));
 router.post('/categories', auth, csrf, createLimiter, handle(req => service.createCategory(req.body, req.user)));
 router.post('/organizations/:id', auth, csrf, createLimiter, handle(req => service.create(req.params.id, req.body, req.user)));

@@ -23,6 +23,7 @@ import PersonSearch from '@/components/dream-team/PersonSearch';
 import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
 import SearchInput from '@/components/ui/SearchInput';
+import { positionAPI } from '@/lib/api/positions';
 import PositionsPanel from '@/components/positions/PositionsPanel';
 
 const BASE_TABS = ['tab_roles', 'tab_positions', 'tab_info', 'tab_members', 'tab_polls', 'tab_suggestions', 'tab_analytics'];
@@ -320,6 +321,15 @@ export default function OrganizationProfilePage({ params }) {
   const ProfileTypeIcon = profileDetail.icon;
   const hasMapPin = organization?.latitude != null && organization?.longitude != null;
   const activeMemberCount = members.filter((member) => member.status === 'active').length;
+  const [summaryVersion, refreshSummary] = useState(0);
+  const [stats, setStats] = useState(null);
+  const orgId = organization?.id;
+  useEffect(() => {
+    let current = true;
+    setStats(null);
+    if (orgId) positionAPI.summary(orgId).then(({ data }) => { if (current) setStats(data); }).catch(() => {});
+    return () => { current = false; };
+  }, [orgId, summaryVersion, user?.id]);
   const currentRoleCount = orgRoles.filter((role) => role.isCurrent !== false).length;
   const roleTemplates = ROLE_TEMPLATES[organization?.type] || ROLE_TEMPLATES.organization;
 
@@ -702,23 +712,11 @@ export default function OrganizationProfilePage({ params }) {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold">{t(`type_focus_title_${organization.type}`)}</p>
                       <p className="mt-1 text-sm leading-5">{t(`type_focus_body_${organization.type}`)}</p>
-                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-                        <div className="rounded bg-white/70 px-2 py-1.5">
-                          <span className="block font-semibold text-gray-900">{activeMemberCount}</span>
-                          <span className="text-gray-600">{t('summary_active_members')}</span>
-                        </div>
-                        <div className="rounded bg-white/70 px-2 py-1.5">
-                          <span className="block font-semibold text-gray-900">{currentRoleCount}</span>
-                          <span className="text-gray-600">{t('summary_roles')}</span>
-                        </div>
-                        <div className="rounded bg-white/70 px-2 py-1.5">
-                          <span className="block font-semibold text-gray-900">{polls.length + suggestions.length}</span>
-                          <span className="text-gray-600">{t('summary_civic_items')}</span>
-                        </div>
-                        <div className="rounded bg-white/70 px-2 py-1.5">
-                          <span className="block font-semibold text-gray-900">{children.length}</span>
-                          <span className="text-gray-600">{t('summary_branches')}</span>
-                        </div>
+                      <button type="button" onClick={() => { setActiveTab('tab_positions'); document.getElementById('organization-sections')?.scrollIntoView({ block: 'start' }); }} className="mt-4 grid w-full grid-cols-3 gap-2 rounded-xl border border-blue-200 bg-white p-3 text-left shadow-sm hover:border-blue-500">
+                        {[['positions', 'text-blue-800', ''], ['support', 'text-emerald-700', '+'], ['oppose', 'text-rose-700', '−']].map(([key, color, sign]) => <span key={key}><strong className={`block text-xl tabular-nums ${color}`}>{stats ? sign + stats[key] : '—'}</strong><span className="text-xs text-gray-700">{t('summary_' + key)}</span></span>)}
+                      </button>
+                      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+                        {[[activeMemberCount, 'active_members'], [currentRoleCount, 'roles'], [children.length, 'branches']].map(([value, key]) => <span key={key}><strong>{value}</strong> {t('summary_' + key)}</span>)}
                       </div>
                     </div>
                   </div>
@@ -727,7 +725,7 @@ export default function OrganizationProfilePage({ params }) {
             </div>
           </div>
 
-          <div className="border-t border-gray-200 px-4 sm:px-6">
+          <div id="organization-sections" className="border-t border-gray-200 px-4 sm:px-6">
             <div className="flex gap-2 overflow-x-auto py-3">
               {tabs.map((tab) => (
                 <button
@@ -750,7 +748,7 @@ export default function OrganizationProfilePage({ params }) {
             {contentActionError && <AlertMessage message={contentActionError} />}
             {contentActionSuccess && <AlertMessage tone="success" message={contentActionSuccess} />}
 
-            {activeTab === 'tab_positions' && <PositionsPanel organizationId={organization.id} />}
+            {activeTab === 'tab_positions' && <PositionsPanel onChange={() => refreshSummary(value => value + 1)} organizationId={organization.id} />}
             {activeTab === 'tab_info' && (
               <div className="space-y-3 text-sm text-gray-700">
                 {organization.description && <p><span className="font-semibold">{t('description')}:</span> {organization.description}</p>}

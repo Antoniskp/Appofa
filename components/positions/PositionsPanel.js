@@ -77,8 +77,8 @@ function PositionEditor({ editing, metadata, onSave, onCancel, busy, t, category
   </form>;
 }
 
-function PositionCard({ row, manage, metadata, user, busy, onVote, onEdit, onAction, t, categoryName, formatDate }) {
-  const [expanded, setExpanded] = useState(false);
+export function PositionCard({ detail = false, row, manage, metadata, user, busy, onVote, onEdit, onAction, t, categoryName, formatDate }) {
+  const [expanded, setExpanded] = useState(detail);
   const [voting, setVoting] = useState(false);
   const [voteMessage, setVoteMessage] = useState('');
   const [voteError, setVoteError] = useState('');
@@ -115,7 +115,7 @@ function PositionCard({ row, manage, metadata, user, busy, onVote, onEdit, onAct
       {row.position.status !== 'active' && <span className="rounded-full bg-red-50 px-2.5 py-1 text-red-700">{t(row.position.status)}</span>}
     </div>
     <Link href={'/organizations/' + row.position.organization.slug + '?tab=tab_positions'} className="mb-3 flex items-center gap-3 text-sm font-semibold text-gray-700 hover:text-blue-700 hover:underline" aria-label={row.position.organization.name}><span aria-hidden="true"><OrgAvatar org={row.position.organization} size="h-12 w-16" /></span><span>{row.position.organization.name}</span></Link>
-    <h3 className="text-lg font-semibold leading-snug text-gray-900">{row.title}</h3>
+    {detail ? <h1 className="text-2xl font-bold">{row.title}</h1> : <h3 className="text-lg font-semibold leading-snug">{row.status === 'published' && row.position.status === 'active' ? <Link className="text-blue-800 underline decoration-blue-200 underline-offset-4 hover:decoration-current" href={`/positions/${row.positionId}`}>{row.title}</Link> : row.title}</h3>}
     <p className="mt-2 text-xs font-medium text-gray-600">{sourceYears.length ? t('source_years', { years: sourceYears.join(', ') }) : t('unknown_date')}</p>
     <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-700">{!expanded && row.body.length > 180 ? row.body.slice(0, 180) + "…" : row.body}</p>
     {row.body.length > 180 && <button type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)} className="mt-1 self-start text-sm text-blue-700 hover:underline">{t(expanded ? "read_less" : "read_more")}</button>}
@@ -192,7 +192,7 @@ function ComparisonColumn({ organization, filters, cardProps, refresh }) {
   </section>;
 }
 
-export default function PositionsPanel({ organizationId, topicId, standalone = false }) {
+export default function PositionsPanel({ organizationId, topicId, onChange, standalone = false }) {
   const Heading = standalone ? 'h1' : 'h2';
   const t = useTranslations('positions');
   const locale = useLocale();
@@ -228,10 +228,15 @@ export default function PositionsPanel({ organizationId, topicId, standalone = f
     const timer = setTimeout(() => { setFilters(previous => previous.search === search.trim() ? previous : { ...previous, search: search.trim() }); setPage(1); }, 300);
     return () => clearTimeout(timer);
   }, [search]);
+  const vote = async (revisionId, value) => {
+    const data = await updateVote(setResult, revisionId, value);
+    onChange?.();
+    return data;
+  };
   const filter = (key, value) => { setFilters(previous => ({ ...previous, [key]: value })); setPage(1); };
   const action = async operation => {
     setBusy(true); setError(''); setNotice('');
-    try { await operation(); setRefresh(value => value + 1); setNotice(t('saved')); return true; }
+    try { await operation(); onChange?.(); setRefresh(value => value + 1); setNotice(t('saved')); return true; }
     catch (err) { setError(err.message); return false; }
     finally { setBusy(false); }
   };
@@ -284,7 +289,7 @@ export default function PositionsPanel({ organizationId, topicId, standalone = f
       {!(filters.categoryId || filters.topicId || topicId) ? <p className="text-sm text-gray-600">{t('compare_scope')}</p> : <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">{selectedOrganizations.map(id => <ComparisonColumn key={id + JSON.stringify(filters)} refresh={refresh} organization={metadata.organizations.find(org => org.id === id)} filters={{ ...filters, topicId: topicId || filters.topicId }} cardProps={{ metadata, user, busy, onVote: (revisionId, value) => updateVote(setResult, revisionId, value), onEdit: setEditing, onAction: action, t, categoryName, formatDate }} />)}</div>}
     </>}
 
-    {(!comparison || manage) && (loading && !result.positions.length ? <div role="status" className="rounded-xl border border-gray-200 p-10 text-center text-gray-500">{t('loading')}</div> : result.positions.length ? <div className="grid items-start gap-5 lg:grid-cols-2">{result.positions.map(row => <PositionCard key={row.id + ':' + row.status} row={row} manage={manage} metadata={metadata} user={user} busy={busy} onVote={(revisionId, value) => updateVote(setResult, revisionId, value)} onEdit={setEditing} onAction={action} t={t} categoryName={categoryName} formatDate={formatDate} />)}</div> : !error && <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center"><h3 className="font-semibold text-gray-800">{t('empty')}</h3><p className="mt-2 text-sm text-gray-500">{t(manage ? 'empty_manage' : 'empty_public')}</p></div>)}
+    {(!comparison || manage) && (loading && !result.positions.length ? <div role="status" className="rounded-xl border border-gray-200 p-10 text-center text-gray-500">{t('loading')}</div> : result.positions.length ? <div className="grid items-start gap-5 lg:grid-cols-2">{result.positions.map(row => <PositionCard key={row.id + ':' + row.status} row={row} manage={manage} metadata={metadata} user={user} busy={busy} onVote={vote} onEdit={setEditing} onAction={action} t={t} categoryName={categoryName} formatDate={formatDate} />)}</div> : !error && <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center"><h3 className="font-semibold text-gray-800">{t('empty')}</h3><p className="mt-2 text-sm text-gray-500">{t(manage ? 'empty_manage' : 'empty_public')}</p></div>)}
     {(!comparison || manage) && result.pagination.pages > 1 && <nav className="flex items-center justify-center gap-4" aria-label={t('pagination')}><button type="button" className={buttonClass} disabled={page === 1 || loading} onClick={() => setPage(value => value - 1)}>{t('previous')}</button><span className="text-sm">{t('page_count', { page, pages: result.pagination.pages })}</span><button type="button" className={buttonClass} disabled={page >= result.pagination.pages || loading} onClick={() => setPage(value => value + 1)}>{t('next')}</button></nav>}
   </section>;
 }
