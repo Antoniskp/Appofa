@@ -322,6 +322,23 @@ const organizationController = {
         offset,
       });
 
+      if (type === 'party' && req.query.positionStats === 'true') {
+        const ids = rows.filter(row => row.isPublic).map(row => row.id);
+        if (ids.length) {
+          const [totals] = await sequelize.query(`
+            SELECT p."organizationId", COUNT(DISTINCT p.id) AS positions,
+              COUNT(CASE WHEN v.value = 1 THEN 1 END) AS support, COUNT(CASE WHEN v.value = -1 THEN 1 END) AS oppose
+            FROM "OrganizationPositions" p JOIN "PositionRevisions" r ON r."positionId" = p.id AND r.status = 'published'
+            LEFT JOIN "PositionVotes" v ON v."revisionId" = r.id
+            WHERE p."organizationId" IN (:ids) AND p.status = 'active' GROUP BY p."organizationId"`, { replacements: { ids } });
+          const byOrg = new Map(totals.map(row => [row.organizationId, row]));
+          for (const row of rows.filter(row => row.isPublic)) {
+            const stats = byOrg.get(row.id);
+            row.setDataValue('positionStats', { positions: Number(stats?.positions || 0), support: Number(stats?.support || 0), oppose: Number(stats?.oppose || 0) });
+          }
+        }
+      }
+
       return res.status(200).json({
         success: true,
         data: {
