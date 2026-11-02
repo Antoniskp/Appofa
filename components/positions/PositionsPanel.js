@@ -95,7 +95,7 @@ export function PositionCard({ detail = false, row, manage, metadata, user, busy
   const [checked, setChecked] = useState(false);
   const [reviewNote, setReviewNote] = useState('');
   const total = row.support + row.oppose;
-  const sourceYears = [...new Set(row.sources.filter(source => source.sourcePublishedAt).map(source => new Date(source.sourcePublishedAt).getUTCFullYear()))].sort();
+  const expanded = detail || manage;
   const approval = total ? Math.round(row.support / total * 100) : null;
   const editable = ['draft', 'in_review', 'rejected'].includes(row.status);
   const officialAllowed = row.attribution !== 'official' || metadata.canPublishOfficial;
@@ -110,18 +110,18 @@ export function PositionCard({ detail = false, row, manage, metadata, user, busy
     <div className="mb-3 flex flex-wrap gap-2 text-xs font-medium">
       <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-800">{categoryName(row.position.category)}</span>
       <span className="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">{t(row.attribution)}</span>
-      {manage && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-900">{t(row.status)} Â· v{row.version}</span>}
+      {manage && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-900">{t(row.status)} · v{row.version}</span>}
       {row.position.status !== 'active' && <span className="rounded-full bg-red-50 px-2.5 py-1 text-red-700">{t(row.position.status)}</span>}
     </div>
     <Link href={'/organizations/' + row.position.organization.slug + '?tab=tab_positions'} className="mb-3 flex items-center gap-3 text-sm font-semibold text-gray-700 hover:text-blue-700 hover:underline" aria-label={row.position.organization.name}><span aria-hidden="true"><OrgAvatar org={row.position.organization} size="h-12 w-16" /></span><span>{row.position.organization.name}</span></Link>
     {detail ? <h1 className="text-2xl font-bold">{row.title}</h1> : <h3 className="text-lg font-semibold leading-snug">{row.status === 'published' && row.position.status === 'active' ? <Link className="text-blue-800 underline decoration-blue-200 underline-offset-4 hover:decoration-current" href={`/positions/${row.positionId}`}>{row.title}</Link> : row.title}</h3>}
-    <p className="mt-2 text-xs font-medium text-gray-600">{sourceYears.length ? t('source_years', { years: sourceYears.join(', ') }) : t('unknown_date')}</p>
-    <p className={`mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-700 ${detail || manage || row.body.length < 360 ? '' : 'line-clamp-5'}`}>{row.body}</p>
+
+    <p className={`mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-700 ${expanded ? '' : 'line-clamp-3'}`}>{row.body}</p>
     {row.position.topics.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{row.position.topics.map(topic => <Link href={'/topics/' + topic.slug} key={topic.id} className="text-xs text-blue-700 hover:underline">#{topic.name}</Link>)}</div>}
-    <div className="mt-4 border-t border-gray-100 pt-3"><SourceLinks sources={row.sources} t={t} formatDate={formatDate} /></div>
-    <div className="mt-auto pt-5">
+    {expanded && <div className="mt-4 border-t border-gray-100 pt-3"><SourceLinks sources={row.sources} t={t} formatDate={formatDate} /></div>}
+    <div className="mt-auto pt-3">
       <div className="mb-2 flex items-center justify-between gap-2 text-sm"><strong>{approval === null ? t('no_votes') : total < 10 ? t('vote_totals', { support: row.support, oppose: row.oppose }) : t('approval_percent', { percent: approval })}</strong><span className="text-gray-500">{t('vote_count', { count: total })}</span></div>
-      {total > 0 && total < 10 && <p className="mb-3 text-xs text-gray-500">{t("low_participation")}</p>}
+      {expanded && total > 0 && total < 10 && <p className="mb-3 text-xs text-gray-500">{t("low_participation")}</p>}
       {total >= 10 && <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-gray-100" aria-hidden="true"><div className="h-full bg-emerald-500" style={{ width: (approval || 0) + '%' }} /></div>}
       {row.status === 'published' && row.position.status === 'active' && <div className="flex flex-wrap gap-2">
         {[1, -1].map(value => {
@@ -132,19 +132,19 @@ export function PositionCard({ detail = false, row, manage, metadata, user, busy
             className={buttonClass + ' inline-flex min-h-11 flex-1 justify-center items-center gap-2 ' + (selected ? 'ring-2 ring-blue-500 bg-blue-50 text-blue-800' : '')}>
             <Icon className="h-4 w-4" />{t(value === 1 ? 'support' : 'oppose')}
             <span>{value === 1 ? row.support : row.oppose}</span>
-            {selected && <span aria-hidden="true">âœ“</span>}
+            {selected && <span aria-hidden="true">&#10003;</span>}
           </button>;
         })}
       </div>}
       {!user && row.status === 'published' && <LoginLink className="mt-2 block text-sm text-blue-700 hover:underline">{t('sign_in')}</LoginLink>}
-      {user && row.status === 'published' && <div className="mt-2 min-h-14 text-xs"><p className="text-gray-500">{t('vote_private')}</p><p role="status" className="mt-1 text-emerald-700">{voting ? t('saving') : voteMessage}</p>{voteError && <p role="alert" className="mt-1 text-red-700">{voteError}</p>}</div>}
-      <details className="mt-4"><summary className="cursor-pointer text-xs font-medium text-gray-600">{t("details")}</summary>
+      {user && row.status === 'published' && <div className="text-xs">{expanded && <p className="mt-2 text-gray-500">{t('vote_private')}</p>}<p role="status" className="text-emerald-700 empty:hidden">{voting ? t('saving') : voteMessage}</p>{voteError && <p role="alert" className="mt-1 text-red-700">{voteError}</p>}</div>}
+      {expanded && <details className="mt-4"><summary className="cursor-pointer text-xs font-medium text-gray-600">{t("details")}</summary>
       <p className="mt-2 text-xs text-gray-500">{t('source_context')}</p>
       {row.publishedAt && <p className="mt-2 text-xs text-gray-500">{t("published_date", { date: formatDate(row.publishedAt) })}</p>}
       <button type="button" disabled={historyLoading} onClick={toggleHistory} className="mt-4 text-xs font-medium text-gray-600 hover:underline">{historyLoading ? t('loading') : history ? t('hide_history') : t('history')}</button>
       {historyError && <p role="alert" className="mt-2 text-sm text-red-700">{historyError}</p>}
-      {history && <div className="mt-3 space-y-4 rounded-lg bg-gray-50 p-3">{history.length ? history.map(version => <div key={version.id} className="border-b border-gray-200 pb-3 last:border-0"><p className="text-xs font-semibold text-gray-500">v{version.version} Â· {t(version.status)}</p><h4 className="mt-1 text-sm font-semibold">{version.title}</h4><p className="my-2 whitespace-pre-wrap text-sm text-gray-600">{version.body}</p><SourceLinks sources={version.sources} t={t} formatDate={formatDate} /><p className="mt-2 text-xs">{t('support')}: {version.support} Â· {t('oppose')}: {version.oppose}</p></div>) : <p className="text-sm text-gray-500">{t('no_history')}</p>}</div>}
-      </details>
+      {history && <div className="mt-3 space-y-4 rounded-lg bg-gray-50 p-3">{history.length ? history.map(version => <div key={version.id} className="border-b border-gray-200 pb-3 last:border-0"><p className="text-xs font-semibold text-gray-500">v{version.version} · {t(version.status)}</p><h4 className="mt-1 text-sm font-semibold">{version.title}</h4><p className="my-2 whitespace-pre-wrap text-sm text-gray-600">{version.body}</p><SourceLinks sources={version.sources} t={t} formatDate={formatDate} /><p className="mt-2 text-xs">{t('support')}: {version.support} · {t('oppose')}: {version.oppose}</p></div>) : <p className="text-sm text-gray-500">{t('no_history')}</p>}</div>}
+      </details>}
       {manage && <div className="mt-4 space-y-3 border-t pt-4">
         {row.reviewNote && <p className="text-sm text-amber-800">{row.reviewNote}</p>}
         <div className="flex flex-wrap gap-2">
