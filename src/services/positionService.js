@@ -134,6 +134,12 @@ async function list(query, user) {
   if (organizationId) positionWhere.organizationId = organizationId;
   if (query.categoryId) positionWhere.categoryId = id(query.categoryId);
   const revisionWhere = { status: manage ? { [Op.in]: ['draft', 'in_review', 'rejected', 'published'] } : 'published' };
+  if (!manage && user && query.voteView && query.voteView !== 'all') {
+    if (!['unanswered', 'agree', 'disagree'].includes(query.voteView)) fail(400, 'Invalid vote view.');
+    const valueClause = query.voteView === 'unanswered' ? '' : query.voteView === 'agree' ? ' AND pv.value = 1' : ' AND pv.value = -1';
+    const exists = query.voteView === 'unanswered' ? 'NOT EXISTS' : 'EXISTS';
+    revisionWhere[Op.and] = literal(`${exists} (SELECT 1 FROM "PositionVotes" pv WHERE pv."revisionId" = "PositionRevision"."id" AND pv."userId" = ${sequelize.escape(user.id)}${valueClause})`);
+  }
   if (query.search) {
     const search = requiredText(query.search, 200);
     // POSITION/INSTR performs a literal substring match, including % and _.
@@ -187,7 +193,14 @@ async function list(query, user) {
     data.myVote = votes.get(data.id) || 0;
     return [data.id, data];
   }));
-  return { positions: revisionIds.map(revisionId => byId.get(revisionId)), pagination: { page, pages: Math.ceil(count / limit), total: count } };
+  let allAnswered = false;
+  if (!count && user && !manage && query.voteView === 'unanswered' &&
+      !organizationId && !query.topicId && !query.categoryId && !query.search && !query.positionId) {
+    allAnswered = Boolean(await PositionRevision.findOne({
+      attributes: ['id'], where: { status: 'published' }, include, subQuery: false,
+    }));
+  }
+  return { allAnswered, positions: revisionIds.map(revisionId => byId.get(revisionId)), pagination: { page, pages: Math.ceil(count / limit), total: count } };
 }
 
 async function create(organizationId, input, user) {

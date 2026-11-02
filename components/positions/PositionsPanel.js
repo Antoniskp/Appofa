@@ -199,9 +199,11 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
   const [result, setResult] = useState({ positions: [], pagination: {} });
   const [filters, setFilters] = useState({ categoryId: '', topicId: '', organizationId: '', sort: 'top', search: '' });
   const [search, setSearch] = useState('');
+  const [voteView, setVoteView] = useState('unanswered');
   const [comparison, setComparison] = useState(false);
   const [selectedOrganizations, setSelectedOrganizations] = useState([]);
   const [manage, setManage] = useState(false);
+  const personalView = standalone && user && !manage ? voteView : undefined;
   const [page, setPage] = useState(1);
   const [refresh, setRefresh] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -219,19 +221,33 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
   useEffect(() => {
     let cancelled = false;
     setLoading(true); setError('');
-    positionAPI.list({ ...filters, organizationId: organizationId || filters.organizationId, topicId: topicId || filters.topicId, manage: manage ? 'true' : undefined, page }).then(response => { if (!cancelled) setResult(response.data); }).catch(err => { if (!cancelled) { setError(err.message); setResult({ positions: [], pagination: {} }); } }).finally(() => { if (!cancelled) setLoading(false); });
+    positionAPI.list({ ...filters, voteView: personalView, organizationId: organizationId || filters.organizationId, topicId: topicId || filters.topicId, manage: manage ? 'true' : undefined, page }).then(response => { if (!cancelled) setResult(response.data); }).catch(err => { if (!cancelled) { setError(err.message); setResult({ positions: [], pagination: {} }); } }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [organizationId, topicId, filters, manage, page, refresh, user?.id]);
+  }, [organizationId, topicId, filters, personalView, manage, page, refresh, user?.id]);
   useEffect(() => {
     const timer = setTimeout(() => { setFilters(previous => previous.search === search.trim() ? previous : { ...previous, search: search.trim() }); setPage(1); }, 300);
     return () => clearTimeout(timer);
   }, [search]);
   const vote = async (revisionId, value) => {
     const data = await updateVote(setResult, revisionId, value);
+    if (personalView && personalView !== 'all') {
+      if (result.positions.length === 1 && page > 1) setPage(page - 1);
+      setNotice(t(value === 0 ? 'vote_removed' : 'vote_saved'));
+      setRefresh(previous => previous + 1);
+    }
     onChange?.();
     return data;
   };
   const filter = (key, value) => { setFilters(previous => ({ ...previous, [key]: value })); setPage(1); };
+  const hasFilters = filters.categoryId || filters.topicId || filters.organizationId || filters.search;
+  const showClearFilters = standalone && !manage && hasFilters;
+  const showReviewAnswers = personalView === 'unanswered' && !hasFilters && result.allAnswered;
+  const clearFilters = () => {
+    setSearch('');
+    setFilters(previous => ({ ...previous, categoryId: '', topicId: '', organizationId: '', search: '' }));
+    setPage(1);
+    setNotice('');
+  };
   const action = async operation => {
     setBusy(true); setError(''); setNotice('');
     try { await operation(); onChange?.(); setRefresh(value => value + 1); setNotice(t('saved')); return true; }
@@ -253,8 +269,11 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
     {editing && <PositionEditor key={editing.mode + (editing.row?.id || '')} editing={editing} metadata={metadata} onSave={save} onCancel={() => setEditing(null)} busy={busy} t={t} categoryName={categoryName} />}
     <div className="flex gap-2">
       <label className="min-w-0 flex-1"><span className="sr-only">{t('search')}</span><input type="search" maxLength={200} value={search} onChange={event => setSearch(event.target.value)} placeholder={t('search')} className={inputClass} /></label>
-      {standalone && !manage && <button type="button" aria-pressed={comparison} className={buttonClass} onClick={() => setComparison(!comparison)}>{t(comparison ? 'list_view' : 'compare')}</button>}
+      {standalone && !manage && <button type="button" aria-pressed={comparison} className={buttonClass} onClick={() => { if (comparison && personalView && personalView !== 'all') setRefresh(previous => previous + 1); setComparison(!comparison); }}>{t(comparison ? 'list_view' : 'compare')}</button>}
     </div>
+    {personalView && !comparison && <div role="group" aria-label={t('my_answers')} className="flex flex-wrap gap-2">
+      {['unanswered', 'agree', 'disagree', 'all'].map(view => <button type="button" key={view} aria-pressed={view === voteView} className={buttonClass + (view === voteView ? ' bg-blue-50 text-blue-800' : '')} onClick={() => { setVoteView(view); setPage(1); setNotice(''); }}>{t('view_' + view)}</button>)}
+    </div>}
     {!organizationId && !comparison && <label className="block max-w-md text-sm font-semibold text-gray-800">{t('party_filter')}
       <select className={inputClass + ' mt-1'} value={filters.organizationId} onChange={event => filter('organizationId', event.target.value)}>
         <option value="">{t('all_entities')}</option>
@@ -296,7 +315,11 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
       {!(filters.categoryId || filters.topicId || topicId) ? <p className="text-sm text-gray-600">{t('compare_scope')}</p> : <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">{selectedOrganizations.map(id => <ComparisonColumn key={id + JSON.stringify(filters)} refresh={refresh} organization={metadata.organizations.find(org => org.id === id)} filters={{ ...filters, topicId: topicId || filters.topicId }} cardProps={{ metadata, user, busy, onVote: (revisionId, value) => updateVote(setResult, revisionId, value), onEdit: setEditing, onAction: action, t, categoryName, formatDate }} />)}</div>}
     </>}
 
-    {(!comparison || manage) && (loading && !result.positions.length ? <div role="status" className="rounded-xl border border-gray-200 p-10 text-center text-gray-500">{t('loading')}</div> : result.positions.length ? <div className="grid items-start gap-5 lg:grid-cols-2">{result.positions.map(row => <PositionCard key={row.id + ':' + row.status} row={row} manage={manage} metadata={metadata} user={user} busy={busy} onVote={vote} onEdit={setEditing} onAction={action} t={t} categoryName={categoryName} formatDate={formatDate} />)}</div> : !error && <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center"><h3 className="font-semibold text-gray-800">{t('empty')}</h3><p className="mt-2 text-sm text-gray-500">{t(manage ? 'empty_manage' : 'empty_public')}</p></div>)}
+    {(!comparison || manage) && (loading && !result.positions.length ? <div role="status" className="rounded-xl border border-gray-200 p-10 text-center text-gray-500">{t('loading')}</div> : result.positions.length ? <div className="grid items-start gap-5 lg:grid-cols-2">{result.positions.map(row => <PositionCard key={row.id + ':' + row.status} row={row} manage={manage} metadata={metadata} user={user} busy={busy} onVote={vote} onEdit={setEditing} onAction={action} t={t} categoryName={categoryName} formatDate={formatDate} />)}</div> : !error && <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center"><h3 className="font-semibold text-gray-800">{t(showReviewAnswers ? 'all_answered' : 'empty')}</h3>
+      {showReviewAnswers ? <button type="button" className={buttonClass + ' mt-3'} onClick={() => { setVoteView('all'); setPage(1); setNotice(''); }}>{t('review_answers')}</button>
+        : <><p className="mt-2 text-sm text-gray-500">{t(manage ? 'empty_manage' : 'empty_public')}</p>
+          {showClearFilters && <button type="button" className={buttonClass + ' mt-3'} onClick={clearFilters}>{t('clear_position_filters')}</button>}</>}
+    </div>)}
     {(!comparison || manage) && result.pagination.pages > 1 && <nav className="flex items-center justify-center gap-4" aria-label={t('pagination')}><button type="button" className={buttonClass} disabled={page === 1 || loading} onClick={() => setPage(value => value - 1)}>{t('previous')}</button><span className="text-sm">{t('page_count', { page, pages: result.pagination.pages })}</span><button type="button" className={buttonClass} disabled={page >= result.pagination.pages || loading} onClick={() => setPage(value => value + 1)}>{t('next')}</button></nav>}
   </section>;
 }

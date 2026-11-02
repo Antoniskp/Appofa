@@ -25,6 +25,8 @@ describe('position cards retain their place after voting', () => {
   afterEach(async () => { await act(async () => root.unmount()); container.remove(); });
   const button = (card, label) => [...card.querySelectorAll('button')].find(element => element.textContent.startsWith(label));
   test('switch and remove update counts without refetching, moving or remounting cards', async () => {
+    expect(positionAPI.list).toHaveBeenCalledWith(expect.objectContaining({ voteView: 'unanswered' }));
+    await act(async () => button(container, 'view_all').click());
     const cards = [...container.querySelectorAll('article')];
     const reads = positionAPI.list.mock.calls.length;
     expect(cards[0].querySelector('img').getAttribute('src')).toBe('/party.png');
@@ -40,6 +42,21 @@ describe('position cards retain their place after voting', () => {
     expect(positionAPI.list).toHaveBeenCalledTimes(reads);
     expect(cards[0].textContent).toContain('vote_removed');
   });
+  test('review answers opens all positions when caught up', async () => {
+    await act(async () => button(container, 'view_all').click());
+    positionAPI.list.mockResolvedValueOnce({ data: { positions: [], pagination: { total: 0 }, allAnswered: true } });
+    await act(async () => button(container, 'view_unanswered').click());
+    expect(container.textContent).toContain('all_answered');
+    await act(async () => button(container, 'review_answers').click());
+    expect(positionAPI.list).toHaveBeenLastCalledWith(expect.objectContaining({ voteView: 'all', page: 1 }));
+  });
+  test('clearing an empty organization filter keeps the unanswered view', async () => {
+    positionAPI.list.mockResolvedValueOnce({ data: { positions: [], pagination: { total: 0 } } });
+    const select = container.querySelector('select');
+    await act(async () => { select.value = '1'; select.dispatchEvent(new Event('change', { bubbles: true })); });
+    await act(async () => button(container, 'clear_position_filters').click());
+    expect(positionAPI.list).toHaveBeenLastCalledWith(expect.objectContaining({ organizationId: '', voteView: 'unanswered', page: 1 }));
+  });
   test('failure leaves the vote intact and reports the error on that card', async () => {
     const card = container.querySelector('article');
     positionAPI.vote.mockRejectedValueOnce(new Error('Please retry'));
@@ -50,6 +67,7 @@ describe('position cards retain their place after voting', () => {
   });
   test('comparison votes stay in place and remain current when returning to the list', async () => {
     await act(async () => root.render(<PositionsPanel standalone topicId={1} />));
+    await act(async () => button(container, 'view_all').click());
     await act(async () => button(container, 'compare').click());
     await act(async () => container.querySelector('input[type="checkbox"]').click());
     const cards = [...container.querySelectorAll('article')];
