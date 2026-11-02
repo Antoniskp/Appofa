@@ -150,7 +150,7 @@ export default function OrganizationsPage() {
 
   const { items: organizations, loading, initialLoading, error, hasMore, loadMore } = useInfiniteData(
     async (page, limit) => {
-      const params = { page, limit };
+      const params = { page, limit, excludeParties: true };
       if (filters.search?.trim()) params.search = filters.search.trim();
       if (filters.type) params.type = filters.type;
       if (filters.isVerified) params.isVerified = true;
@@ -176,6 +176,7 @@ export default function OrganizationsPage() {
         <div className="mb-6 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="min-w-0 text-2xl font-bold text-gray-900">{t('title')}</h1>
           <div className="flex flex-wrap gap-2">
+            <Link href="/elections/political-parties" className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-blue-800 hover:underline"><FlagIcon className="h-4 w-4" />{t('parties')}</Link>
             {canCreateOrganization && (
               <Link
                 href="/organizations/new"
@@ -210,7 +211,7 @@ export default function OrganizationsPage() {
             className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">{t('all_types')}</option>
-            {ORGANIZATION_TYPES.map((type) => (
+            {ORGANIZATION_TYPES.filter(type => type !== 'party').map((type) => (
               <option key={type} value={type}>{t(`type_${type}`)}</option>
             ))}
           </select>

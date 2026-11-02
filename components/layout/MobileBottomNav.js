@@ -95,7 +95,7 @@ export default function MobileBottomNav() {
     participateButtonRef.current?.focus();
   }, []);
 
-  // ── Shared styles ──────────────────────────────────────────────────────────
+  // â”€â”€ Shared styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const tabClass = (active) =>
     [
       'flex flex-col items-center justify-center gap-0.5 flex-1 min-h-[44px] py-1 text-[11px] font-medium transition-colors',
@@ -107,7 +107,7 @@ export default function MobileBottomNav() {
 
   return (
     <>
-      {/* ── Fixed bottom bar ─────────────────────────────────────────────── */}
+      {/* â”€â”€ Fixed bottom bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <nav
         aria-label={t('bottom_nav_aria')}
         className="md:hidden fixed inset-x-0 bottom-0 z-30 bg-white border-t border-seafoam"
@@ -126,7 +126,7 @@ export default function MobileBottomNav() {
             <span aria-hidden="true">{t('bottom_explore')}</span>
           </Link>
 
-          {/* Participate – centre action */}
+          {/* Participate â€“ centre action */}
           <button
             ref={participateButtonRef}
             type="button"
@@ -190,7 +190,7 @@ export default function MobileBottomNav() {
         </div>
       </nav>
 
-      {/* ── Participate action sheet ──────────────────────────────────────── */}
+      {/* â”€â”€ Participate action sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {sheetOpen && (
         <>
           {/* Backdrop */}
@@ -271,6 +271,10 @@ export default function MobileBottomNav() {
                 <Link href="/positions" onClick={handleCloseSheet} className="flex min-h-[44px] items-center gap-3 rounded-xl bg-ivory px-4 py-3 text-sm font-medium text-charcoal hover:bg-sand">
                   <ClipboardDocumentListIcon className="h-5 w-5" aria-hidden="true" />
                   {tPositions('heading')}
+                </Link>
+                <Link href="/elections/political-parties" onClick={handleCloseSheet} className="flex min-h-[44px] items-center gap-3 rounded-xl bg-ivory px-4 py-3 text-sm font-medium text-charcoal hover:bg-sand">
+                  <BuildingOffice2Icon className="h-5 w-5" aria-hidden="true" />
+                  {tOrganizations('parties')}
                 </Link>
                 <Link href="/organizations" onClick={handleCloseSheet} className="flex min-h-[44px] items-center gap-3 rounded-xl bg-ivory px-4 py-3 text-sm font-medium text-charcoal hover:bg-sand">
                   <BuildingOffice2Icon className="h-5 w-5" aria-hidden="true" />

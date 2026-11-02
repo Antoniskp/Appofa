@@ -168,6 +168,11 @@ export default function TopNav() {
           mobileIcon: <ClipboardDocumentListIcon className="h-5 w-5" />,
         },
         {
+          id: 'parties', label: tOrganizations('parties'), href: '/elections/political-parties',
+          icon: <FlagIcon className="h-4 w-4" />,
+          mobileIcon: <FlagIcon className="h-5 w-5" />,
+        },
+        {
           id: 'organizations', label: tOrganizations('title'), href: '/organizations',
           icon: <BuildingOffice2Icon className="h-4 w-4" />,
           mobileIcon: <BuildingOffice2Icon className="h-5 w-5" />,

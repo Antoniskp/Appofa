@@ -78,7 +78,6 @@ function PositionEditor({ editing, metadata, onSave, onCancel, busy, t, category
 }
 
 export function PositionCard({ detail = false, row, manage, metadata, user, busy, onVote, onEdit, onAction, t, categoryName, formatDate }) {
-  const [expanded, setExpanded] = useState(detail);
   const [voting, setVoting] = useState(false);
   const [voteMessage, setVoteMessage] = useState('');
   const [voteError, setVoteError] = useState('');
@@ -111,14 +110,13 @@ export function PositionCard({ detail = false, row, manage, metadata, user, busy
     <div className="mb-3 flex flex-wrap gap-2 text-xs font-medium">
       <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-800">{categoryName(row.position.category)}</span>
       <span className="rounded-full bg-gray-100 px-2.5 py-1 text-gray-700">{t(row.attribution)}</span>
-      {manage && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-900">{t(row.status)} · v{row.version}</span>}
+      {manage && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-900">{t(row.status)} Â· v{row.version}</span>}
       {row.position.status !== 'active' && <span className="rounded-full bg-red-50 px-2.5 py-1 text-red-700">{t(row.position.status)}</span>}
     </div>
     <Link href={'/organizations/' + row.position.organization.slug + '?tab=tab_positions'} className="mb-3 flex items-center gap-3 text-sm font-semibold text-gray-700 hover:text-blue-700 hover:underline" aria-label={row.position.organization.name}><span aria-hidden="true"><OrgAvatar org={row.position.organization} size="h-12 w-16" /></span><span>{row.position.organization.name}</span></Link>
     {detail ? <h1 className="text-2xl font-bold">{row.title}</h1> : <h3 className="text-lg font-semibold leading-snug">{row.status === 'published' && row.position.status === 'active' ? <Link className="text-blue-800 underline decoration-blue-200 underline-offset-4 hover:decoration-current" href={`/positions/${row.positionId}`}>{row.title}</Link> : row.title}</h3>}
     <p className="mt-2 text-xs font-medium text-gray-600">{sourceYears.length ? t('source_years', { years: sourceYears.join(', ') }) : t('unknown_date')}</p>
-    <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-700">{!expanded && row.body.length > 180 ? row.body.slice(0, 180) + "…" : row.body}</p>
-    {row.body.length > 180 && <button type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)} className="mt-1 self-start text-sm text-blue-700 hover:underline">{t(expanded ? "read_less" : "read_more")}</button>}
+    <p className={`mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-700 ${detail || manage || row.body.length < 360 ? '' : 'line-clamp-5'}`}>{row.body}</p>
     {row.position.topics.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{row.position.topics.map(topic => <Link href={'/topics/' + topic.slug} key={topic.id} className="text-xs text-blue-700 hover:underline">#{topic.name}</Link>)}</div>}
     <div className="mt-4 border-t border-gray-100 pt-3"><SourceLinks sources={row.sources} t={t} formatDate={formatDate} /></div>
     <div className="mt-auto pt-5">
@@ -134,7 +132,7 @@ export function PositionCard({ detail = false, row, manage, metadata, user, busy
             className={buttonClass + ' inline-flex min-h-11 flex-1 justify-center items-center gap-2 ' + (selected ? 'ring-2 ring-blue-500 bg-blue-50 text-blue-800' : '')}>
             <Icon className="h-4 w-4" />{t(value === 1 ? 'support' : 'oppose')}
             <span>{value === 1 ? row.support : row.oppose}</span>
-            {selected && <span aria-hidden="true">✓</span>}
+            {selected && <span aria-hidden="true">âœ“</span>}
           </button>;
         })}
       </div>}
@@ -145,7 +143,7 @@ export function PositionCard({ detail = false, row, manage, metadata, user, busy
       {row.publishedAt && <p className="mt-2 text-xs text-gray-500">{t("published_date", { date: formatDate(row.publishedAt) })}</p>}
       <button type="button" disabled={historyLoading} onClick={toggleHistory} className="mt-4 text-xs font-medium text-gray-600 hover:underline">{historyLoading ? t('loading') : history ? t('hide_history') : t('history')}</button>
       {historyError && <p role="alert" className="mt-2 text-sm text-red-700">{historyError}</p>}
-      {history && <div className="mt-3 space-y-4 rounded-lg bg-gray-50 p-3">{history.length ? history.map(version => <div key={version.id} className="border-b border-gray-200 pb-3 last:border-0"><p className="text-xs font-semibold text-gray-500">v{version.version} · {t(version.status)}</p><h4 className="mt-1 text-sm font-semibold">{version.title}</h4><p className="my-2 whitespace-pre-wrap text-sm text-gray-600">{version.body}</p><SourceLinks sources={version.sources} t={t} formatDate={formatDate} /><p className="mt-2 text-xs">{t('support')}: {version.support} · {t('oppose')}: {version.oppose}</p></div>) : <p className="text-sm text-gray-500">{t('no_history')}</p>}</div>}
+      {history && <div className="mt-3 space-y-4 rounded-lg bg-gray-50 p-3">{history.length ? history.map(version => <div key={version.id} className="border-b border-gray-200 pb-3 last:border-0"><p className="text-xs font-semibold text-gray-500">v{version.version} Â· {t(version.status)}</p><h4 className="mt-1 text-sm font-semibold">{version.title}</h4><p className="my-2 whitespace-pre-wrap text-sm text-gray-600">{version.body}</p><SourceLinks sources={version.sources} t={t} formatDate={formatDate} /><p className="mt-2 text-xs">{t('support')}: {version.support} Â· {t('oppose')}: {version.oppose}</p></div>) : <p className="text-sm text-gray-500">{t('no_history')}</p>}</div>}
       </details>
       {manage && <div className="mt-4 space-y-3 border-t pt-4">
         {row.reviewNote && <p className="text-sm text-amber-800">{row.reviewNote}</p>}
@@ -257,6 +255,15 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
       <label className="min-w-0 flex-1"><span className="sr-only">{t('search')}</span><input type="search" maxLength={200} value={search} onChange={event => setSearch(event.target.value)} placeholder={t('search')} className={inputClass} /></label>
       {standalone && !manage && <button type="button" aria-pressed={comparison} className={buttonClass} onClick={() => setComparison(!comparison)}>{t(comparison ? 'list_view' : 'compare')}</button>}
     </div>
+    {!organizationId && !comparison && <label className="block max-w-md text-sm font-semibold text-gray-800">{t('party_filter')}
+      <select className={inputClass + ' mt-1'} value={filters.organizationId} onChange={event => filter('organizationId', event.target.value)}>
+        <option value="">{t('all_entities')}</option>
+        {[['parties', true], ['other_entities', false]].map(([label, parties]) => {
+          const options = metadata.organizations.filter(org => (org.type === 'party') === parties);
+          return options.length ? <optgroup key={label} label={t(label)}>{options.map(org => <option key={org.id} value={org.id}>{org.name}</option>)}</optgroup> : null;
+        })}
+      </select>
+    </label>}
     <div className="flex gap-2 overflow-x-auto pb-1" aria-label={t('category')}>
       <button type="button" aria-pressed={!filters.categoryId} className={buttonClass + ' shrink-0 ' + (!filters.categoryId ? 'bg-blue-50 text-blue-800' : '')} onClick={() => filter('categoryId', '')}>{t('all_categories')}</button>
       {metadata.categories.map(category => <button key={category.id} type="button" aria-pressed={String(category.id) === filters.categoryId} className={buttonClass + ' shrink-0 ' + (String(category.id) === filters.categoryId ? 'bg-blue-50 text-blue-800' : '')} onClick={() => filter('categoryId', String(category.id))}>{categoryName(category)}</button>)}
@@ -266,7 +273,7 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
     <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <label className="text-xs font-medium text-gray-600">{t('category')}<select className={inputClass + ' mt-1'} value={filters.categoryId} onChange={event => filter('categoryId', event.target.value)}><option value="">{t('all_categories')}</option>{metadata.categories.map(category => <option key={category.id} value={category.id}>{categoryName(category)}</option>)}</select></label>
       {!topicId && <label className="text-xs font-medium text-gray-600">{t('topic')}<select disabled={!metadata.topics.length} aria-describedby={!metadata.topics.length ? 'positions-no-topics' : undefined} className={inputClass + ' mt-1'} value={filters.topicId} onChange={event => filter('topicId', event.target.value)}><option value="">{t('all_topics')}</option>{metadata.topics.map(topic => <option key={topic.id} value={topic.id}>{topic.name}</option>)}</select></label>}
-      {!organizationId && !comparison && <label className="text-xs font-medium text-gray-600">{t('organization')}<select className={inputClass + ' mt-1'} value={filters.organizationId} onChange={event => filter('organizationId', event.target.value)}><option value="">{t('all_organizations')}</option>{metadata.organizations.map(organization => <option key={organization.id} value={organization.id}>{organization.name}</option>)}</select></label>}
+
       <label className="text-xs font-medium text-gray-600">{t('sort')}<select disabled={manage} className={inputClass + ' mt-1'} value={manage ? 'newest' : filters.sort} onChange={event => filter('sort', event.target.value)}>{['top', 'support', 'approval', 'divisive', 'newest'].map(sort => <option key={sort} value={sort}>{t('sort_' + sort)}</option>)}</select></label>
     </div>
       {!metadata.topics.length && !topicId && <p id="positions-no-topics" className="text-xs text-gray-500">{t('no_topics')}</p>}
@@ -278,7 +285,7 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
       {['categoryId', 'topicId', 'organizationId', 'search'].filter(key => filters[key] && !(comparison && key === 'organizationId')).map(key => {
         const item = (key === 'categoryId' ? metadata.categories : key === 'topicId' ? metadata.topics : metadata.organizations).find(item => String(item.id) === filters[key]);
         const label = key === 'search' ? filters.search : item ? key === 'categoryId' ? categoryName(item) : item.name : filters[key];
-        return <button type="button" key={key} className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-800" aria-label={t('remove_filter', { name: label })} onClick={() => { filter(key, ''); if (key === 'search') setSearch(''); }}>{label} ×</button>;
+        return <button type="button" key={key} className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-800" aria-label={t('remove_filter', { name: label })} onClick={() => { filter(key, ''); if (key === 'search') setSearch(''); }}>{label} Ã—</button>;
       })}
     </div>
     {comparison && !manage && <>

@@ -238,6 +238,7 @@ const organizationController = {
         }
         where.type = type;
       }
+      if (req.query.excludeParties === 'true') andConditions.push({ type: { [Op.ne]: 'party' } });
 
       const verifiedFilter = parseOptionalBoolean(req.query.isVerified ?? req.query.verified);
       if (verifiedFilter === null) {

@@ -627,7 +627,7 @@ export default function OrganizationProfilePage({ params }) {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-4xl mx-auto">
-        <Link href="/organizations" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← {t('title')}</Link>
+        <Link href={organization.type === 'party' ? '/elections/political-parties' : '/organizations'} className="text-sm text-blue-600 hover:underline mb-4 inline-block">← {t(organization.type === 'party' ? 'parties' : 'title')}</Link>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-6">
