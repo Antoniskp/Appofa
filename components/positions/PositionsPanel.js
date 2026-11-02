@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { HandThumbUpIcon, HandThumbDownIcon, ArrowTopRightOnSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
@@ -163,10 +163,24 @@ export function PositionCard({ detail = false, row, manage, metadata, user, busy
   </article>;
 }
 
+function PositionPagination({ page, pages, loading, onChange, t }) {
+  if (!(pages > 1)) return null;
+  return <nav className="flex flex-wrap items-center justify-center gap-3" aria-label={t('pagination')}>
+    <button type="button" className={buttonClass} disabled={page === 1 || loading} onClick={() => onChange(page - 1)}>{t('previous')}</button>
+    <span className="text-sm">{t('page_count', { page, pages })}</span>
+    <button type="button" className={buttonClass} disabled={page >= pages || loading} onClick={() => onChange(page + 1)}>{t('next')}</button>
+  </nav>;
+}
+
 function ComparisonColumn({ organization, filters, cardProps, refresh }) {
   const { t, user } = cardProps;
   const { categoryId, topicId, search, sort } = filters;
   const [page, setPage] = useState(1);
+  const resultsTop = useRef(null);
+  function changePage(nextPage) {
+    setPage(nextPage);
+    resultsTop.current?.scrollIntoView({ block: 'start' });
+  }
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -177,15 +191,16 @@ function ComparisonColumn({ organization, filters, cardProps, refresh }) {
     positionAPI.list({ categoryId, topicId, search, sort, organizationId: organization.id, page }).then(response => { if (!cancelled) setResult(response.data); }).catch(err => { if (!cancelled) setError(err.message); }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [organization.id, categoryId, topicId, search, sort, page, user?.id, retry, refresh]);
-  return <section className="min-w-0 space-y-3" aria-label={organization.name} aria-busy={loading}>
+  return <section ref={resultsTop} className="min-w-0 scroll-mt-24 space-y-3" aria-label={organization.name} aria-busy={loading}>
     <h2 className="border-b pb-2 text-lg font-semibold">{organization.name}</h2>
     {error ? <p role="alert" className="text-sm text-red-700">{error} <button className="underline" onClick={() => setRetry(value => value + 1)}>{t('retry')}</button></p> : !result ? <p role="status">{t('loading')}</p> : <>
       <p className="text-xs text-gray-600">{t('result_count', { count: result.pagination.total })}</p>
+      <PositionPagination page={page} pages={result.pagination.pages} loading={loading} onChange={changePage} t={t} />
       {result.positions.length ? result.positions.map(row => <PositionCard key={row.id} row={row} manage={false} {...cardProps} onVote={async (revisionId, value) => {
         const vote = await cardProps.onVote(revisionId, value);
         setResult(previous => applyVote(previous, revisionId, vote));
       }} />) : <p className="rounded-xl border border-dashed p-5 text-sm text-gray-600">{t(filters.search ? 'empty_public' : 'no_recorded_position')}</p>}
-      {result.pagination.pages > 1 && <nav className="flex flex-wrap items-center gap-2" aria-label={t('pagination')}><button className={buttonClass} disabled={page === 1 || loading} onClick={() => setPage(value => value - 1)}>{t('previous')}</button><span className="text-xs">{t('page_count', { page, pages: result.pagination.pages })}</span><button className={buttonClass} disabled={page >= result.pagination.pages || loading} onClick={() => setPage(value => value + 1)}>{t('next')}</button></nav>}
+      <PositionPagination page={page} pages={result.pagination.pages} loading={loading} onChange={changePage} t={t} />
     </>}
   </section>;
 }
@@ -205,6 +220,11 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
   const [manage, setManage] = useState(false);
   const personalView = standalone && user && !manage ? voteView : undefined;
   const [page, setPage] = useState(1);
+  const resultsTop = useRef(null);
+  function changePage(nextPage) {
+    setPage(nextPage);
+    resultsTop.current?.scrollIntoView({ block: 'start' });
+  }
   const [refresh, setRefresh] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -299,7 +319,7 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
       {!manage && <p className="text-xs text-gray-500">{t('ranking_note')}</p>}
       <p className="mt-2 text-xs text-gray-500">{t('participation_note')}</p>
     </details>
-    <div className="flex flex-wrap items-center gap-2" aria-live="polite">
+    <div ref={resultsTop} className="scroll-mt-24 flex flex-wrap items-center gap-2" aria-live="polite">
       {!comparison && !loading && !error && <span className="text-sm text-gray-600">{t('result_count', { count: result.pagination.total || 0 })}</span>}
       {['categoryId', 'topicId', 'organizationId', 'search'].filter(key => filters[key] && !(comparison && key === 'organizationId')).map(key => {
         const item = (key === 'categoryId' ? metadata.categories : key === 'topicId' ? metadata.topics : metadata.organizations).find(item => String(item.id) === filters[key]);
@@ -315,11 +335,12 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
       {!(filters.categoryId || filters.topicId || topicId) ? <p className="text-sm text-gray-600">{t('compare_scope')}</p> : <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">{selectedOrganizations.map(id => <ComparisonColumn key={id + JSON.stringify(filters)} refresh={refresh} organization={metadata.organizations.find(org => org.id === id)} filters={{ ...filters, topicId: topicId || filters.topicId }} cardProps={{ metadata, user, busy, onVote: (revisionId, value) => updateVote(setResult, revisionId, value), onEdit: setEditing, onAction: action, t, categoryName, formatDate }} />)}</div>}
     </>}
 
+    {(!comparison || manage) && <PositionPagination page={page} pages={result.pagination.pages} loading={loading} onChange={changePage} t={t} />}
     {(!comparison || manage) && (loading && !result.positions.length ? <div role="status" className="rounded-xl border border-gray-200 p-10 text-center text-gray-500">{t('loading')}</div> : result.positions.length ? <div className="grid items-start gap-5 lg:grid-cols-2">{result.positions.map(row => <PositionCard key={row.id + ':' + row.status} row={row} manage={manage} metadata={metadata} user={user} busy={busy} onVote={vote} onEdit={setEditing} onAction={action} t={t} categoryName={categoryName} formatDate={formatDate} />)}</div> : !error && <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center"><h3 className="font-semibold text-gray-800">{t(showReviewAnswers ? 'all_answered' : 'empty')}</h3>
       {showReviewAnswers ? <button type="button" className={buttonClass + ' mt-3'} onClick={() => { setVoteView('all'); setPage(1); setNotice(''); }}>{t('review_answers')}</button>
         : <><p className="mt-2 text-sm text-gray-500">{t(manage ? 'empty_manage' : 'empty_public')}</p>
           {showClearFilters && <button type="button" className={buttonClass + ' mt-3'} onClick={clearFilters}>{t('clear_position_filters')}</button>}</>}
     </div>)}
-    {(!comparison || manage) && result.pagination.pages > 1 && <nav className="flex items-center justify-center gap-4" aria-label={t('pagination')}><button type="button" className={buttonClass} disabled={page === 1 || loading} onClick={() => setPage(value => value - 1)}>{t('previous')}</button><span className="text-sm">{t('page_count', { page, pages: result.pagination.pages })}</span><button type="button" className={buttonClass} disabled={page >= result.pagination.pages || loading} onClick={() => setPage(value => value + 1)}>{t('next')}</button></nav>}
+    {(!comparison || manage) && <PositionPagination page={page} pages={result.pagination.pages} loading={loading} onChange={changePage} t={t} />}
   </section>;
 }

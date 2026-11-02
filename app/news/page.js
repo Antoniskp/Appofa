@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
@@ -31,8 +31,6 @@ function NewsContent() {
     totalPages,
     setTotalPages,
     handleFilterChange,
-    nextPage,
-    prevPage,
     goToPage,
     updateFilter,
   } = useFilters({
@@ -102,6 +100,16 @@ function NewsContent() {
     }
   );
 
+  const resultsTop = useRef(null);
+  function changePage(nextPage) {
+    goToPage(nextPage);
+    resultsTop.current?.scrollIntoView({ block: 'start' });
+  }
+  const pagination = (
+    <Pagination currentPage={page} totalPages={totalPages} onPageChange={changePage}
+      onPrevious={() => changePage(page - 1)} onNext={() => changePage(page + 1)} />
+  );
+
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
@@ -144,6 +152,8 @@ function NewsContent() {
           />
         </div>
 
+        <div ref={resultsTop} className="scroll-mt-24 empty:hidden pb-4">{pagination}</div>
+
         {loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <SkeletonLoader type="card" count={6} />
@@ -180,13 +190,7 @@ function NewsContent() {
           </div>
         )}
 
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={goToPage}
-          onPrevious={prevPage}
-          onNext={nextPage}
-        />
+        {pagination}
       </div>
     </div>
   );
