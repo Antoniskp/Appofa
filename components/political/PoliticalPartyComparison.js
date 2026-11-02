@@ -3,15 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import OrgAvatar from '@/components/organization/OrgAvatar';
-import {
-  ArrowTopRightOnSquareIcon,
-  BuildingOffice2Icon,
-  ArrowRightIcon,
-  CheckBadgeIcon,
-  GlobeAltIcon,
-  MagnifyingGlassIcon,
-  PlayCircleIcon,
-} from '@heroicons/react/24/outline';
+import { CheckBadgeIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { organizationAPI } from '@/lib/api';
 import { POSITION_LABELS } from '@/lib/utils/politicalParties';
 
@@ -39,46 +31,11 @@ function listFromResponse(response, key) {
 }
 
 function PartyLogo({ party }) {
-  return <OrgAvatar org={{ ...party, type: 'party' }} size="h-16 w-16" fallback={
-    <span className="flex h-16 w-16 items-center justify-center rounded-lg border border-gray-200 bg-gray-100 text-sm font-semibold text-gray-600">
+  return <OrgAvatar org={{ ...party, type: 'party' }} size="h-12 w-12" fallback={
+    <span className="flex h-12 w-12 items-center justify-center rounded-lg border border-gray-200 bg-gray-100 text-sm font-semibold text-gray-600">
       {getInitials(party.name)}
     </span>
   } />;
-}
-
-function PartyLinks({ party }) {
-  const videoHref = `/videos?search=${encodeURIComponent(party.name || '')}`;
-
-  return (
-    <div className="flex flex-wrap gap-2 text-sm">
-      <Link
-        href={`/organizations/${party.slug}`}
-        className="inline-flex items-center gap-1.5 rounded-md border border-blue-200 px-3 py-1.5 font-medium text-blue-700 hover:bg-blue-50"
-      >
-        <BuildingOffice2Icon className="h-4 w-4" />
-        Προφίλ
-      </Link>
-      <Link
-        href={videoHref}
-        className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 font-medium text-gray-700 hover:bg-gray-50"
-      >
-        <PlayCircleIcon className="h-4 w-4" />
-        Βίντεο
-      </Link>
-      {party.website && (
-        <a
-          href={party.website}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 font-medium text-gray-700 hover:bg-gray-50"
-        >
-          <GlobeAltIcon className="h-4 w-4" />
-          Ιστότοπος
-          <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
-        </a>
-      )}
-    </div>
-  );
 }
 
 export default function PoliticalPartyComparison() {
@@ -190,28 +147,27 @@ export default function PoliticalPartyComparison() {
         <p aria-live="polite" className="text-sm text-gray-600">Κόμματα: <strong>{filteredParties.length}</strong></p>
       </section>
       {filteredParties.length === 0 ? <p className="rounded-xl border border-dashed p-8 text-center text-gray-600">Δεν βρέθηκαν κόμματα με αυτά τα φίλτρα.</p> :
-        <section aria-label="Κάρτες κομμάτων" className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <section aria-label="Κάρτες κομμάτων" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredParties.map(party => {
             const profile = `/organizations/${party.slug}`;
             const stats = party.positionStats;
-            return <article key={party.id} className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md focus-within:shadow-md">
-              <div className="flex items-center gap-4 border-b border-slate-100 bg-slate-50 p-5">
+            return <article key={party.id} className="flex min-w-0 flex-col rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+              <Link href={profile} className="group flex items-center gap-3 rounded">
                 <span aria-hidden="true"><PartyLogo party={party} /></span>
                 <div className="min-w-0">
-                  <h2 className="break-words text-lg font-bold leading-tight text-slate-900"><Link className="hover:text-blue-800 hover:underline" href={profile}>{party.name}</Link></h2>
-                  {party.politicalPosition && <p className="mt-1 text-sm text-slate-600">{POSITION_LABELS[party.politicalPosition] || party.politicalPosition}</p>}
-                  {party.isVerified && <span className="mt-1 inline-flex items-center gap-1 text-xs text-blue-800"><CheckBadgeIcon className="h-4 w-4" />Επαληθευμένο</span>}
+                  <h2 className="break-words text-base font-semibold leading-snug text-gray-900 group-hover:text-blue-800 group-hover:underline">
+                    {party.name}
+                    {party.isVerified && <CheckBadgeIcon aria-label="Επαληθευμένο" role="img" className="ml-1 inline h-4 w-4 text-blue-700" />}
+                  </h2>
+                  {party.politicalPosition && <p className="text-xs text-gray-600">{POSITION_LABELS[party.politicalPosition] || party.politicalPosition}</p>}
                 </div>
-              </div>
-              <div className="flex flex-1 flex-col gap-4 p-5">
-                {party.description && <p className="line-clamp-3 text-sm leading-6 text-slate-700">{party.description}</p>}
-                <div className="mt-auto">
-                  {stats && <dl className="mb-4 grid grid-cols-3 gap-2 border-y border-slate-100 py-3">
-                    {[[stats.positions, 'Θέσεις', 'text-slate-900'], ['+' + stats.support, 'Ψήφοι υπέρ', 'text-emerald-800'], ['−' + stats.oppose, 'Ψήφοι κατά', 'text-rose-800']].map(([value, label, color]) => <div key={label} className="flex flex-col-reverse"><dt className="text-xs text-slate-600">{label}</dt><dd className={`text-xl font-bold tabular-nums ${color}`}>{value}</dd></div>)}
-                  </dl>}
-                  <Link href={profile + '?tab=tab_positions'} className="mb-3 flex items-center justify-between rounded-lg bg-blue-800 px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-blue-900">Πολιτικές θέσεις<ArrowRightIcon className="h-4 w-4" /></Link>
-                  <PartyLinks party={party} />
-                </div>
+              </Link>
+              {party.description && <p className="mt-2 line-clamp-2 text-sm leading-5 text-gray-600">{party.description}</p>}
+              <div className="mt-auto pt-3">
+                <Link href={profile + '?tab=tab_positions'} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-gray-100 pt-2 text-xs font-medium tabular-nums hover:underline">
+                  <span className="text-blue-800">{stats ? stats.positions + (stats.positions === 1 ? ' θέση' : ' θέσεις') : 'Πολιτικές θέσεις'}</span>
+                  {stats && <><span className="text-emerald-800">+{stats.support} υπέρ</span><span className="text-rose-800">−{stats.oppose} κατά</span></>}
+                </Link>
               </div>
             </article>;
           })}
