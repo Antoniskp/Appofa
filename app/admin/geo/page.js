@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -21,8 +21,8 @@ const PERIODS = [
 const LOG_RETENTION_OPTIONS = [1, 30, 90, 180];
 const TRAFFIC_FILTERS = [
   { key: 'human', label: 'Άνθρωποι / άγνωστο' },
-  { key: 'crawler', label: 'Crawlers' },
-  { key: 'all', label: 'All' },
+  { key: 'crawler', label: 'Ρομπότ' },
+  { key: 'all', label: 'Όλα' },
 ];
 
 const STATUS_META = {
@@ -85,6 +85,10 @@ function GeoAdminContent() {
   const [activeTab, setActiveTab] = useState('traffic');
   const [period, setPeriod] = useState('7d');
   const [trafficFilter, setTrafficFilter] = useState('human');
+  const [hideMine, setHideMine] = useState(false);
+  const [expanded, setExpanded] = useState(null);
+  const [detailPage, setDetailPage] = useState(0);
+  const [groupVisits, setGroupVisits] = useState(true);
   const [isFundingModalOpen, setIsFundingModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -120,13 +124,14 @@ function GeoAdminContent() {
 
   const { data: visits, loading: visitsLoading, refetch: refetchVisits } = useAsyncData(
     async () => {
-      const res = await geoAdminAPI.getVisits({ period });
+      const res = await geoAdminAPI.getVisits({ period, hideMine, trafficType: trafficFilter,
+        ...(groupVisits && expanded ? { expanded, detailPage } : {}) });
       if (!res?.success) throw new Error(res?.message || 'Αποτυχία φόρτωσης επισκεψιμότητας.');
       return res.data || {
         totalVisits: 0, byCountry: [], topPaths: [], recentVisits: [], trafficSummary: {}, crawlerGroups: [], ipGroups: [],
       };
     },
-    [period],
+    [period, hideMine, trafficFilter, groupVisits, expanded, detailPage],
     {
       initialData: {
         totalVisits: 0, byCountry: [], topPaths: [], recentVisits: [], trafficSummary: {}, crawlerGroups: [], ipGroups: [],
@@ -213,6 +218,14 @@ function GeoAdminContent() {
     if (trafficFilter === 'all') return rows;
     return rows.filter((row) => (row.trafficType || 'human') === trafficFilter);
   }, [trafficFilter, visits]);
+
+  function changeActivityFilter(setter, value) {
+    setExpanded(null);
+    setDetailPage(0);
+    setter(value);
+  }
+
+  const recentRows = groupVisits ? (visits?.activityGroups || []) : filteredRecentVisits;
 
   const accessRuleRows = useMemo(
     () => (countryRules || []).map((rule) => {
@@ -520,7 +533,7 @@ function GeoAdminContent() {
                 {PERIODS.map((item) => (
                   <button
                     key={item.key}
-                    onClick={() => setPeriod(item.key)}
+                    onClick={() => changeActivityFilter(setPeriod, item.key)}
                     aria-pressed={period === item.key}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       period === item.key
@@ -540,35 +553,10 @@ function GeoAdminContent() {
               >
                 {visitsLoading ? 'Φόρτωση...' : 'Ανανέωση'}
               </button>
-              <div className="ml-auto flex items-center gap-2">
-                <label htmlFor="clear-old-logs-days" className="text-sm text-gray-600">Καθαρισμός logs:</label>
-                <select
-                  id="clear-old-logs-days"
-                  value={clearOlderThanDays}
-                  onChange={(e) => setClearOlderThanDays(e.target.value)}
-                  className="px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 bg-white"
-                >
-                  {LOG_RETENTION_OPTIONS.map((days) => (
-                    <option key={days} value={days}>
-                      {days} ημέρες
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleClearOldLogs}
-                  disabled={isClearingLogs}
-                  className="px-3 py-2 rounded-lg text-sm font-medium border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
-                >
-                  {isClearingLogs ? 'Διαγραφή...' : 'Καθαρισμός παλιών logs'}
-                </button>
-                <button
-                  onClick={handleClearAllLogs}
-                  disabled={isClearingAllLogs}
-                  className="px-3 py-2 rounded-lg text-sm font-medium border border-red-500 text-red-700 bg-red-50 hover:bg-red-100 disabled:opacity-50"
-                >
-                  {isClearingAllLogs ? 'Διαγραφή...' : 'Διαγραφή Όλων'}
-                </button>
-              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={hideMine} onChange={(event) => changeActivityFilter(setHideMine, event.target.checked)} />
+                Απόκρυψη της συνδεδεμένης δραστηριότητάς μου
+              </label>
             </div>
 
             <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 space-y-2">
@@ -582,7 +570,7 @@ function GeoAdminContent() {
               {[
                 { label: 'Καταγεγραμμένες προβολές', value: summary.totalVisits },
                 { label: 'Άνθρωποι / άγνωστο', value: summary.realTraffic },
-                { label: 'Known crawlers', value: summary.crawlerTraffic },
+                { label: 'Αναγνωρισμένα ρομπότ', value: summary.crawlerTraffic },
                 { label: 'Μοναδικές Χώρες', value: summary.uniqueCountries },
               ].map((card) => (
                 <div key={card.label} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
@@ -598,6 +586,131 @@ function GeoAdminContent() {
               </div>
             ) : (
               <>
+                <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="font-semibold">Δραστηριότητα επισκεπτών</div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {groupVisits
+                          ? `Εμφανίζονται ${recentRows.length} από ${visits?.activityGroupCount || 0} ομάδες της περιόδου (έως 100). Οι προβολές μετρώνται για ολόκληρη την περίοδο.`
+                          : `Εμφανίζονται ${filteredRecentVisits.length} από τις ${visits?.recentVisits?.length || 0} πιο πρόσφατες εγγραφές (έως 100).`}
+                        {' '}Το φίλτρο τύπου αφορά μόνο αυτόν τον πίνακα, όχι τα σύνολα παραπάνω.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2" aria-label="Traffic filter">
+                      <label className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" checked={groupVisits} onChange={(event) => changeActivityFilter(setGroupVisits, event.target.checked)} />
+                        Ομαδοποίηση ανά λογαριασμό ή ανώνυμη IP
+                      </label>
+                      {TRAFFIC_FILTERS.map((option) => (
+                        <button
+                          key={option.key}
+                          type="button"
+                          onClick={() => changeActivityFilter(setTrafficFilter, option.key)}
+                          aria-pressed={trafficFilter === option.key}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
+                            trafficFilter === option.key
+                              ? 'border-blue-600 bg-blue-50 text-blue-700'
+                              : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Χώρα</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Χρήστης</th>
+                          {groupVisits && <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Προβολές</th>}
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{groupVisits ? 'Τελευταία διαδρομή' : 'Διαδρομή'}</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Τύπος</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ημερομηνία</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ενέργεια</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {recentRows.map((row, index) => (
+                          <Fragment key={row.key ?? index}>
+                          <tr key={`${row.createdAt || 'no-date'}-${row.ipAddress || 'no-ip'}-${index}`} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-900">
+                              <CountryFlag code={row.countryCode} /> {resolveCountryLabel(row.countryCode, row.countryName)}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700">
+                              {row.username ? (
+                                <span className="font-medium text-blue-700">{row.username}</span>
+                              ) : row.isAuthenticated ? (
+                                <span className="text-gray-500">(συνδεδεμένος)</span>
+                              ) : (
+                                <span className="text-gray-400 italic">Ανώνυμος</span>
+                              )}
+                            </td>
+                            {groupVisits && <td className="px-4 py-3 text-sm tabular-nums">{row.viewCount}</td>}
+                            <td className="px-4 py-3 text-sm text-gray-700">
+                              <span className="block max-w-[420px] truncate whitespace-nowrap" title={row.path || '—'}>
+                                {row.path || '—'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-xs text-gray-700 font-mono tracking-tight whitespace-nowrap">{row.ipAddress || '—'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                              {row.trafficType === 'crawler' ? (
+                                <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800">{row.crawlerLabel}</span>
+                              ) : (
+                                <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800">Άνθρωποι / άγνωστο</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                              {row.createdAt ? new Date(row.createdAt).toLocaleString('el-GR') : '—'}
+                            </td>
+                            <td className="px-4 py-3">
+                              <button type="button" aria-expanded={expanded === (row.key ?? index)}
+                                className="text-sm text-blue-700" onClick={() => {
+                                  setDetailPage(0);
+                                  setExpanded(expanded === (row.key ?? index) ? null : (row.key ?? index));
+                                }}>
+                                Λεπτομέρειες
+                              </button>
+                            </td>
+                          </tr>
+                          {expanded === (row.key ?? index) && (
+                            <tr><td colSpan={groupVisits ? 8 : 7} className="bg-gray-50 p-4">
+                              <ul className="space-y-2">
+                                {(groupVisits ? (row.details || []) : [row]).map((visit, visitIndex) => (
+                                  <li key={visitIndex} className="flex flex-wrap items-center gap-3 text-sm">
+                                    <time>{new Date(visit.createdAt).toLocaleString('el-GR')}</time>
+                                    <span className="break-all">{visit.path || '—'}</span>
+                                    <span className="font-mono">{visit.ipAddress || '—'}</span>
+                                    <button type="button" className="text-red-700" disabled={!visit.ipAddress || isBlockingIp === visit.ipAddress || blockedIps.has(visit.ipAddress)}
+                                      onClick={() => handleBlockIp(visit.ipAddress)}>
+                                      {blockedIps.has(visit.ipAddress) ? 'Αποκλεισμένο' : 'Αποκλεισμός IP'}
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                              {groupVisits && row.viewCount > 50 && (
+                                <div className="mt-3 flex gap-3">
+                                  <button disabled={!detailPage} onClick={() => setDetailPage(detailPage - 1)}>Προηγούμενες</button>
+                                  <span>{detailPage + 1} / {Math.ceil(row.viewCount / 50)}</span>
+                                  <button disabled={(detailPage + 1) * 50 >= row.viewCount} onClick={() => setDetailPage(detailPage + 1)}>Επόμενες</button>
+                                </div>
+                              )}
+                            </td></tr>
+                          )}
+                          </Fragment>
+                        ))}
+                        {recentRows.length === 0 && (
+                          <tr>
+                            <td colSpan={groupVisits ? 8 : 7} className="px-4 py-6 text-center text-sm text-gray-500">Δεν υπάρχουν επισκέψεις για αυτό το φίλτρο.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                   <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-100 font-semibold">Χώρες</div>
@@ -668,15 +781,15 @@ function GeoAdminContent() {
                 </div>
 
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                  <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                    <div className="px-4 py-3 border-b border-gray-100 font-semibold">Crawler groups</div>
+                  <details className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                    <summary className="px-4 py-3 border-b border-gray-100 font-semibold">Ομάδες αυτοματοποιημένης κίνησης</summary>
                     <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                           <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Group</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visits</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last seen</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ομάδα</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Προβολές</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Τελευταία εμφάνιση</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -697,24 +810,24 @@ function GeoAdminContent() {
                           ))}
                           {(visits?.crawlerGroups || []).length === 0 && (
                             <tr>
-                              <td colSpan={3} className="px-4 py-6 text-center text-sm text-gray-500">No traffic groups yet.</td>
+                              <td colSpan={3} className="px-4 py-6 text-center text-sm text-gray-500">Δεν υπάρχουν ομάδες κίνησης.</td>
                             </tr>
                           )}
                         </tbody>
                       </table>
                     </div>
-                  </div>
+                  </details>
 
-                  <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                    <div className="px-4 py-3 border-b border-gray-100 font-semibold">Top IP groups</div>
+                  <details className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                    <summary className="px-4 py-3 border-b border-gray-100 font-semibold">Διευθύνσεις IP με τις περισσότερες προβολές</summary>
                     <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                           <tr>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visits</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Country</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Τύπος</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Προβολές</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Χώρα</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -722,7 +835,7 @@ function GeoAdminContent() {
                             <tr key={row.ipAddress || 'no-ip'} className="hover:bg-gray-50">
                               <td className="px-4 py-3 text-xs text-gray-700 font-mono tracking-tight whitespace-nowrap">{row.ipAddress || '—'}</td>
                               <td className="px-4 py-3 text-sm text-gray-700">
-                                {row.trafficType === 'crawler' ? row.crawlerLabel : 'Real / unknown'}
+                                {row.trafficType === 'crawler' ? row.crawlerLabel : 'Άνθρωποι / άγνωστο'}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-700">{row.visits || 0}</td>
                               <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
@@ -732,116 +845,48 @@ function GeoAdminContent() {
                           ))}
                           {(visits?.ipGroups || []).length === 0 && (
                             <tr>
-                              <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-500">No IP groups yet.</td>
+                              <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-500">Δεν υπάρχουν διευθύνσεις IP.</td>
                             </tr>
                           )}
                         </tbody>
                       </table>
                     </div>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <div className="font-semibold">Πρόσφατες προβολές</div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Εμφανίζονται {filteredRecentVisits.length} από τις {(visits?.recentVisits || []).length} πιο πρόσφατες εγγραφές (έως 100).
-                        {' '}Το φίλτρο τύπου αφορά μόνο αυτόν τον πίνακα, όχι τα σύνολα παραπάνω.
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2" aria-label="Traffic filter">
-                      {TRAFFIC_FILTERS.map((option) => (
-                        <button
-                          key={option.key}
-                          type="button"
-                          onClick={() => setTrafficFilter(option.key)}
-                          aria-pressed={trafficFilter === option.key}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
-                            trafficFilter === option.key
-                              ? 'border-blue-600 bg-blue-50 text-blue-700'
-                              : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Χώρα</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Χρήστης</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Διαδρομή</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ημερομηνία</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ενέργεια</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {filteredRecentVisits.map((row, index) => (
-                          <tr key={`${row.createdAt || 'no-date'}-${row.ipAddress || 'no-ip'}-${index}`} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 text-sm text-gray-900">
-                              <CountryFlag code={row.countryCode} /> {resolveCountryLabel(row.countryCode, row.countryName)}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-700">
-                              {row.username ? (
-                                <span className="font-medium text-blue-700">{row.username}</span>
-                              ) : row.isAuthenticated ? (
-                                <span className="text-gray-500">(συνδεδεμένος)</span>
-                              ) : (
-                                <span className="text-gray-400 italic">Ανώνυμος</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-700">
-                              <span className="block max-w-[420px] truncate whitespace-nowrap" title={row.path || '—'}>
-                                {row.path || '—'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-xs text-gray-700 font-mono tracking-tight whitespace-nowrap">{row.ipAddress || '—'}</td>
-                            <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                              {row.trafficType === 'crawler' ? (
-                                <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800">{row.crawlerLabel}</span>
-                              ) : (
-                                <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800">Real / unknown</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                              {row.createdAt ? new Date(row.createdAt).toLocaleString('el-GR') : '—'}
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <button
-                                onClick={() => handleBlockIp(row.ipAddress)}
-                                disabled={!row.ipAddress || isBlockingIp === row.ipAddress || blockedIps.has(row.ipAddress)}
-                                className={`px-3 py-1.5 text-xs font-medium rounded-lg border disabled:opacity-50 ${
-                                  blockedIps.has(row.ipAddress)
-                                    ? 'border-gray-300 text-gray-500 bg-gray-50'
-                                    : 'border-red-300 text-red-700 hover:bg-red-50'
-                                }`}
-                              >
-                                {isBlockingIp === row.ipAddress
-                                  ? 'Αποκλεισμός...'
-                                  : blockedIps.has(row.ipAddress)
-                                    ? '✓ Αποκλεισμένο'
-                                    : 'Αποκλεισμός IP'}
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                        {filteredRecentVisits.length === 0 && (
-                          <tr>
-                            <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500">No visits match this filter.</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                  </details>
                 </div>
               </>
             )}
+            <details className="rounded-xl border bg-white p-4">
+              <summary className="cursor-pointer font-semibold">Συντήρηση αρχείων καταγραφής</summary>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <label htmlFor="clear-old-logs-days" className="text-sm text-gray-600">Καθαρισμός logs:</label>
+                <select
+                  id="clear-old-logs-days"
+                  value={clearOlderThanDays}
+                  onChange={(e) => setClearOlderThanDays(e.target.value)}
+                  className="px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 bg-white"
+                >
+                  {LOG_RETENTION_OPTIONS.map((days) => (
+                    <option key={days} value={days}>
+                      {days} ημέρες
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleClearOldLogs}
+                  disabled={isClearingLogs}
+                  className="px-3 py-2 rounded-lg text-sm font-medium border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                >
+                  {isClearingLogs ? 'Διαγραφή...' : 'Καθαρισμός παλιών logs'}
+                </button>
+                <button
+                  onClick={handleClearAllLogs}
+                  disabled={isClearingAllLogs}
+                  className="px-3 py-2 rounded-lg text-sm font-medium border border-red-500 text-red-700 bg-red-50 hover:bg-red-100 disabled:opacity-50"
+                >
+                  {isClearingAllLogs ? 'Διαγραφή...' : 'Διαγραφή Όλων'}
+                </button>
+              </div>
+            </details>
           </div>
         ) : activeTab === 'access-rules' ? (
           <div className="space-y-6">

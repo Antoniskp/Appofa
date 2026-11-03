@@ -200,6 +200,30 @@ describe('Geo Stats Admin API', () => {
     expect(visitWithUser.username).toBe('geo_visitor');
   });
 
+  it('counts the full period before limiting activity and excludes only the requesting account', async () => {
+    const read = (params) => request(app).get('/api/admin/geo-stats/visits')
+      .query({ period: '7d', ...params }).set('Authorization', `Bearer ${adminToken}`);
+    const path = '/grouping-test';
+    await GeoVisit.bulkCreate(Array.from({ length: 105 }, (_, index) => ({
+      userId: adminId, isAuthenticated: true, path, ipAddress: `192.0.2.${1 + index % 2}`,
+    })));
+    try {
+      const key = `account:${adminId}`;
+      const { body } = await read({ expanded: key, detailPage: 2 });
+      expect(body.data.recentVisits).toHaveLength(100);
+      const group = body.data.activityGroups.find(row => row.key === key);
+      expect(group.viewCount).toBe(105);
+      expect(group.details).toHaveLength(5);
+      expect(body.data.activityGroups.some(row => !row.isAuthenticated)).toBe(true);
+      const hidden = await read({ hideMine: true });
+      expect(hidden.body.data.totalVisits).toBe(3);
+      expect(hidden.body.data.activityGroups.some(row => row.key === key)).toBe(false);
+      expect(hidden.body.data.topPaths.some(row => row.path === path)).toBe(false);
+    } finally {
+      await GeoVisit.destroy({ where: { path } });
+    }
+  });
+
   it('DELETE /visits validates olderThanDays query', async () => {
     const invalidRes = await request(app)
       .delete('/api/admin/geo-stats/visits')

@@ -149,8 +149,13 @@ const mockResponseByHookOrder = [
 
 const setupAsyncDataMocks = () => {
   let callCount = 0;
-  useAsyncDataMock.mockImplementation(() => {
+  useAsyncDataMock.mockImplementation((fetcher, deps) => {
     callCount += 1;
+    if ((callCount - 1) % mockResponseByHookOrder.length === 0) {
+      const activityGroups = visitsData.recentVisits.filter(row => row.trafficType === deps[2])
+        .map(row => ({ ...row, key: row.ipAddress, viewCount: 1 }));
+      return { ...mockResponseByHookOrder[0], data: { ...visitsData, activityGroups, activityGroupCount: activityGroups.length } };
+    }
     return mockResponseByHookOrder[(callCount - 1) % mockResponseByHookOrder.length];
   });
 };
@@ -211,16 +216,16 @@ describe('Admin geo page traffic tables', () => {
       await flushPromises();
     });
 
-    expect(container.textContent).toContain('Known crawlers');
+    expect(container.textContent).toContain('Αναγνωρισμένα ρομπότ');
     expect(container.textContent).toContain('Καταγεγραμμένες προβολές');
-    expect(container.textContent).toContain('Εμφανίζονται 1 από τις 2');
+    expect(container.textContent).toContain('Εμφανίζονται 1 από 1 ομάδες');
     expect(container.textContent).toContain('έως 100');
     expect(container.textContent).toContain('Google');
-    expect(container.textContent).toContain('Top IP groups');
+    expect(container.textContent).toContain('Διευθύνσεις IP με τις περισσότερες προβολές');
     expect(container.textContent).toContain('66.249.66.1');
     expect(container.textContent).not.toContain('/robots.txt');
 
-    const crawlersButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent === 'Crawlers');
+    const crawlersButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent === 'Ρομπότ');
     await act(async () => {
       crawlersButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       await flushPromises();

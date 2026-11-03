@@ -245,6 +245,9 @@ router.get('/visits', apiLimiter, authMiddleware, checkRole('admin'), async (req
   try {
     const period = VALID_PERIODS.has(req.query.period) ? req.query.period : '7d';
     const where = {};
+    if (req.query.hideMine === 'true') {
+      where[Op.or] = [{ userId: null }, { userId: { [Op.ne]: req.user.id } }];
+    }
 
     const dateFilter = getDateFilterForPeriod(period);
     if (dateFilter) {
@@ -258,9 +261,10 @@ router.get('/visits', apiLimiter, authMiddleware, checkRole('admin'), async (req
     const [totalVisits, allVisitRows, byCountryRows, topPathRows, recentVisitRows] = await Promise.all([
       GeoVisit.count({ where }),
       GeoVisit.findAll({
-        attributes: ['ipAddress', 'path', 'countryCode', 'countryName', 'createdAt', 'isAuthenticated', 'userAgent'],
+        attributes: ['id', 'userId', 'ipAddress', 'path', 'countryCode', 'countryName', 'createdAt', 'isAuthenticated', 'userAgent'],
+        include: [{ model: User, as: 'user', attributes: ['username'], required: false }],
         where,
-        order: [['createdAt', 'DESC']],
+        order: [['createdAt', 'DESC'], ['id', 'DESC']],
       }),
       GeoVisit.findAll({
         attributes: [
@@ -302,10 +306,35 @@ router.get('/visits', apiLimiter, authMiddleware, checkRole('admin'), async (req
     const trafficTypeCounts = { human: 0, crawler: 0 };
     const crawlerGroupMap = new Map();
     const ipGroupMap = new Map();
+    const activityGroups = new Map();
 
     allVisitRows.forEach((row) => {
       const classification = classifyUserAgent(row.userAgent);
       trafficTypeCounts[classification.trafficType] += 1;
+      if (!req.query.trafficType || req.query.trafficType === 'all' || req.query.trafficType === classification.trafficType) {
+        let key = `visit:${row.id}`;
+        if (row.userId) key = `account:${row.userId}`;
+        else if (!row.isAuthenticated && row.ipAddress) key = `ip:${classification.trafficType}:${row.ipAddress}`;
+        let group = activityGroups.get(key);
+        if (!group) {
+          group = { key, viewCount: 0 };
+          activityGroups.set(key, group);
+        }
+        group.viewCount += 1;
+        // Keep the latest visit for visible groups. Fetch individual pages on expansion.
+        if ((group.viewCount === 1 && activityGroups.size <= 100) || key === req.query.expanded) {
+          const visit = { ...classification, path: row.path, createdAt: row.createdAt,
+            ipAddress: row.ipAddress, countryCode: row.countryCode, countryName: row.countryName,
+            username: row.user?.username, isAuthenticated: row.isAuthenticated, userId: row.userId };
+          if (group.viewCount === 1) group.latest = visit;
+          if (key === req.query.expanded) {
+            const offset = Math.max(0, Number(req.query.detailPage) || 0) * 50;
+            if (group.viewCount > offset && group.viewCount <= offset + 50) {
+              (group.details ||= []).push(visit);
+            }
+          }
+        }
+      }
 
       bumpGroup(
         crawlerGroupMap,
@@ -345,6 +374,9 @@ router.get('/visits', apiLimiter, authMiddleware, checkRole('admin'), async (req
       success: true,
       data: {
         period,
+        activityGroupCount: activityGroups.size,
+        activityGroups: Array.from(activityGroups.values()).slice(0, 100).map(({ key, latest, viewCount, details }) =>
+          ({ ...latest, key, viewCount, details })),
         totalVisits,
         byCountry: byCountryRows.map((row) => ({
           countryCode: row.countryCode,
