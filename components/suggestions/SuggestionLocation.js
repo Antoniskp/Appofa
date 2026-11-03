@@ -24,11 +24,16 @@ function coordinate(value, limit) {
   return Number.isFinite(number) && Math.abs(number) <= limit ? number : null;
 }
 
-export default function SuggestionLocation({ suggestion }) {
+export default function SuggestionLocation({ suggestion, preview = false }) {
   const lat = coordinate(suggestion.mapLat, 90);
   const lng = coordinate(suggestion.mapLng, 180);
   const hasPin = lat !== null && lng !== null;
   const location = suggestion.location;
+  if (preview) {
+    return hasPin ? <BaseMap key={`${lat},${lng}`} center={[lat, lng]} zoom={17}
+      interactive={false} markers={[{ lat, lng, iconColor: MAP_ISSUE_TYPE_COLORS[suggestion.mapIssueType] || MAP_ISSUE_TYPE_COLORS.other }]}
+      className="mb-3 h-40 w-full overflow-hidden rounded-lg" /> : null;
+  }
   if (!hasPin && !location) return null;
 
   return (

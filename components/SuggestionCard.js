@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
+import SuggestionLocation from '@/components/suggestions/SuggestionLocation';
 import { useTranslations } from 'next-intl';
 import Badge from '@/components/ui/Badge';
 import { TruncatedTextTooltip } from '@/components/ui/Tooltip';
@@ -25,6 +27,8 @@ const TYPE_VARIANTS = {
 
 export default function SuggestionCard({ suggestion }) {
   const tCommon = useTranslations('common');
+  const [failedPhotos, setFailedPhotos] = useState([]);
+  const photo = suggestion.photos?.find(item => item?.url && !failedPhotos.includes(item.url));
 
   const organizationIdentity = suggestion.organization
     && (suggestion.organization.name || suggestion.organization.logo)
@@ -34,7 +38,11 @@ export default function SuggestionCard({ suggestion }) {
 
   return (
     <div className="bg-white border border-brand-border rounded-2xl p-6 hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
+      {!photo && <SuggestionLocation suggestion={suggestion} preview />}
       <Link href={`/suggestions/${suggestion.id}`} className="block flex-1">
+        {photo && <img src={photo.url} alt={photo.caption || ''} loading="lazy"
+          className="mb-3 h-40 w-full rounded-lg object-cover"
+          onError={() => setFailedPhotos(urls => [...urls, photo.url])} />}
         <div className="flex flex-wrap gap-2 mb-3">
           <Badge variant="default">
             {TYPE_LABELS[suggestion.type] || suggestion.type}
