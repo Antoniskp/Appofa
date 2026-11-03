@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeftIcon, NewspaperIcon, ChatBubbleLeftRightIcon, ChartBarIcon, LinkIcon } from '@heroicons/react/24/outline';
@@ -119,10 +119,7 @@ export default function TopicDetailPage() {
     };
   }, [slug]);
 
-  const topicTagQuery = useMemo(() => {
-    if (!topic?.name) return '';
-    return encodeURIComponent(topic.name);
-  }, [topic?.name]);
+  const topicTagQuery = encodeURIComponent(topic?.tagName || topic?.name || '');
 
   if (loading) {
     return (
@@ -193,7 +190,7 @@ export default function TopicDetailPage() {
           </div>
         </header>
 
-        <div className="mb-10"><PositionsPanel topicId={topic.id} /></div>
+        {topic.id != null && <PositionsPanel key={topic.id} topicId={topic.id} />}
         {topic.externalLinks?.length > 0 && (
           <Section title="External links" icon={LinkIcon} count={topic.externalLinks.length}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

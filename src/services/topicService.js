@@ -234,11 +234,7 @@ async function getTopicBySlug(slug, { includeHidden = false, userId = null } = {
   const normalizedSlug = slugifyTopic(decodeURIComponent(String(slug || '')));
   if (!normalizedSlug) return null;
 
-  const topic = await Topic.findOne({
-    where: {
-      slug: normalizedSlug,
-      ...(includeHidden ? {} : { status: 'active' })
-    },
+  const options = {
     include: [
       { model: Tag, as: 'tag', required: false, attributes: ['id', 'name'] },
       {
@@ -250,9 +246,18 @@ async function getTopicBySlug(slug, { includeHidden = false, userId = null } = {
         order: [['order', 'ASC'], ['createdAt', 'DESC']]
       }
     ]
-  });
+  };
+  let topic = await Topic.findOne({ ...options, where: { slug: normalizedSlug } });
+  let tag;
+  if (!topic) {
+    const tags = await Tag.findAll({ order: [['name', 'ASC']] });
+    tag = tags.find((item) => slugifyTopic(item.name) === normalizedSlug);
+    if (!tag) return null;
+    topic = await Topic.findOne({ ...options, where: { tagId: tag.id } });
+  }
 
   if (topic) {
+    if (!includeHidden && topic.status !== 'active') return null;
     const countsByTagId = topic.tagId ? await getCountsForTagIds([topic.tagId]) : {};
     const followStates = await getFollowStates([topic.id], userId);
     return topicDto(
@@ -263,9 +268,6 @@ async function getTopicBySlug(slug, { includeHidden = false, userId = null } = {
     );
   }
 
-  const tags = await Tag.findAll({ order: [['name', 'ASC']] });
-  const tag = tags.find((item) => slugifyTopic(item.name) === normalizedSlug);
-  if (!tag) return null;
   const countsByTagId = await getCountsForTagIds([tag.id]);
   const fallback = fallbackTopicDto(tag, countsByTagId[tag.id]);
   return fallback.count > 0 ? fallback : null;
@@ -301,7 +303,7 @@ async function ensureTopicForSlug(slug, userId = null) {
     });
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
-      return Topic.findOne({ where: { slug: normalizedSlug } });
+      return Topic.findOne({ where: { [Op.or]: [{ slug: normalizedSlug }, { tagId: tag.id }] } });
     }
     throw error;
   }
@@ -449,7 +451,7 @@ async function followTopic(slug, userId) {
 
   try {
     const topic = await ensureTopicForSlug(slug, userId);
-    if (!topic || topic.status === 'hidden') {
+    if (!topic || topic.status !== 'active') {
       return { success: false, status: 404, message: 'Topic not found.' };
     }
 

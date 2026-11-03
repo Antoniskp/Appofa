@@ -278,7 +278,8 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
     const succeeded = await action(() => editing.mode === 'edit' ? positionAPI.save(editing.row.id, form) : editing.mode === 'revise' ? positionAPI.revise(editing.row.positionId, form) : positionAPI.create(organizationId, form));
     if (succeeded) { setEditing(null); setManage(true); setPage(1); }
   };
-  return <section className="space-y-5" aria-label={t('heading')}>
+  if (topicId && !result.positions.length && !hasFilters && !error && !manage && !comparison && page === 1) return null;
+  return <section className={topicId ? 'mb-10 space-y-5' : 'space-y-5'} aria-label={t('heading')}>
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div><Heading className={standalone ? 'text-3xl font-bold text-gray-900' : 'text-2xl font-bold text-gray-900'}>{t('heading')}</Heading><p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600">{t('description')}</p></div>
       <div className="flex flex-wrap gap-2">{!standalone && <Link href="/positions" className={buttonClass}>{t('compare_all')}</Link>}{metadata.canManage && <><button type="button" className={buttonClass} onClick={() => { setManage(!manage); setPage(1); setEditing(null); }}>{t(manage ? 'public_view' : 'manage')}</button><button type="button" className={primaryClass + ' inline-flex items-center gap-1'} onClick={() => setEditing({ mode: 'create' })}><PlusIcon className="h-4 w-4" />{t('add_position')}</button></>}</div>
