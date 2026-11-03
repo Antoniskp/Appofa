@@ -160,6 +160,11 @@ describe('Organization positions workflow', () => {
       const created = await service.create(org.id, input({ title: 'Additional proposal ' + index }), owner);
       await publish(created.revisionId);
     }
+    const shuffled = async (seed, page = 1) => (await service.list({ organizationId: org.id, sort: 'shuffle', seed, page }, viewer)).positions.map(row => row.id);
+    const pageOne = await shuffled(12345);
+    expect(await shuffled(12345)).toEqual(pageOne);
+    expect(new Set([...pageOne, ...await shuffled(12345, 2)]).size).toBe(13);
+    expect(await shuffled(2147483646)).not.toEqual(pageOne);
     const first = await service.list({ organizationId: org.id, sort: 'support' }, viewer);
     const second = await service.list({ organizationId: org.id, sort: 'support', page: 2 }, viewer);
     expect(first.pagination).toEqual({ page: 1, pages: 2, total: 13 });

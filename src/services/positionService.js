@@ -167,8 +167,14 @@ async function list(query, user) {
   }];
   const orderSql = { top: topSql, support: supportSql, approval: 'CASE WHEN ' + totalSql + ' >= 10 THEN ' + proportionSql + ' ELSE -1 END', divisive: 'CASE WHEN ' + totalSql + ' >= 10 THEN 1 - ABS(2 * ' + proportionSql + ' - 1) ELSE -1 END' };
   const sort = query.sort || 'top';
-  if (!['top', 'support', 'approval', 'divisive', 'newest'].includes(sort)) fail(400, 'Invalid sort.');
-  const order = sort === 'newest' || manage ? [['createdAt', 'DESC'], ['id', 'DESC']] : [[literal(orderSql[sort]), 'DESC'], [literal(totalSql), 'DESC'], ['id', 'DESC']];
+  if (!['shuffle', 'top', 'support', 'approval', 'divisive', 'newest'].includes(sort)) fail(400, 'Invalid sort.');
+  if (sort === 'shuffle') {
+    const seed = Number(query.seed);
+    if (!Number.isInteger(seed) || seed < 1 || seed > 2147483646) fail(400, 'Invalid shuffle seed.');
+    // Permute IDs modulo a prime, with a visit-specific offset and stride.
+    orderSql.shuffle = '(((CAST("PositionRevision"."id" AS BIGINT) % 2147483647) * ' + seed + ' + ' + ((seed * 48271) % 2147483647) + ') % 2147483647)';
+  }
+  const order = sort === 'newest' || manage ? [['createdAt', 'DESC'], ['id', 'DESC']] : [[literal(orderSql[sort]), 'DESC'], ...(sort === 'shuffle' ? [] : [[literal(totalSql), 'DESC']]), ['id', 'DESC']];
   // A required many-to-many topic join needs subQuery:false. Fetch distinct IDs first
   // to avoid pagination counting duplicate topic rows.
   const count = await PositionRevision.count({ where: revisionWhere, include, distinct: true, col: 'id' });

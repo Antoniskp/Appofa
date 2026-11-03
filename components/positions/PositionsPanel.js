@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { HandThumbUpIcon, HandThumbDownIcon, ArrowTopRightOnSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { HandThumbUpIcon, HandThumbDownIcon, ArrowTopRightOnSquareIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { positionAPI } from '@/lib/api/positions';
 import { useAuth } from '@/lib/auth-context';
 import LoginLink from '@/components/ui/LoginLink';
@@ -174,7 +174,7 @@ function PositionPagination({ page, pages, loading, onChange, t }) {
 
 function ComparisonColumn({ organization, filters, cardProps, refresh }) {
   const { t, user } = cardProps;
-  const { categoryId, topicId, search, sort } = filters;
+  const { categoryId, topicId, search, sort, seed } = filters;
   const [page, setPage] = useState(1);
   const resultsTop = useRef(null);
   function changePage(nextPage) {
@@ -188,9 +188,9 @@ function ComparisonColumn({ organization, filters, cardProps, refresh }) {
   useEffect(() => {
     let cancelled = false;
     setLoading(true); setError('');
-    positionAPI.list({ categoryId, topicId, search, sort, organizationId: organization.id, page }).then(response => { if (!cancelled) setResult(response.data); }).catch(err => { if (!cancelled) setError(err.message); }).finally(() => { if (!cancelled) setLoading(false); });
+    positionAPI.list({ categoryId, topicId, search, sort, seed, organizationId: organization.id, page }).then(response => { if (!cancelled) setResult(response.data); }).catch(err => { if (!cancelled) setError(err.message); }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [organization.id, categoryId, topicId, search, sort, page, user?.id, retry, refresh]);
+  }, [organization.id, categoryId, topicId, search, sort, seed, page, user?.id, retry, refresh]);
   return <section ref={resultsTop} className="min-w-0 scroll-mt-24 space-y-3" aria-label={organization.name} aria-busy={loading}>
     <h2 className="border-b pb-2 text-lg font-semibold">{organization.name}</h2>
     {error ? <p role="alert" className="text-sm text-red-700">{error} <button className="underline" onClick={() => setRetry(value => value + 1)}>{t('retry')}</button></p> : !result ? <p role="status">{t('loading')}</p> : <>
@@ -212,7 +212,7 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
   const { user } = useAuth();
   const [metadata, setMetadata] = useState({ categories: [], topics: [], organizations: [] });
   const [result, setResult] = useState({ positions: [], pagination: {} });
-  const [filters, setFilters] = useState({ categoryId: '', topicId: '', organizationId: '', sort: 'top', search: '' });
+  const [filters, setFilters] = useState(() => ({ categoryId: '', topicId: '', organizationId: '', sort: standalone ? 'shuffle' : 'top', seed: Math.floor(Math.random() * 2147483646) + 1, search: '' }));
   const [search, setSearch] = useState('');
   const [voteView, setVoteView] = useState('unanswered');
   const [comparison, setComparison] = useState(false);
@@ -313,7 +313,7 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
       <label className="text-xs font-medium text-gray-600">{t('category')}<select className={inputClass + ' mt-1'} value={filters.categoryId} onChange={event => filter('categoryId', event.target.value)}><option value="">{t('all_categories')}</option>{metadata.categories.map(category => <option key={category.id} value={category.id}>{categoryName(category)}</option>)}</select></label>
       {!topicId && <label className="text-xs font-medium text-gray-600">{t('topic')}<select disabled={!metadata.topics.length} aria-describedby={!metadata.topics.length ? 'positions-no-topics' : undefined} className={inputClass + ' mt-1'} value={filters.topicId} onChange={event => filter('topicId', event.target.value)}><option value="">{t('all_topics')}</option>{metadata.topics.map(topic => <option key={topic.id} value={topic.id}>{topic.name}</option>)}</select></label>}
 
-      <label className="text-xs font-medium text-gray-600">{t('sort')}<select disabled={manage} className={inputClass + ' mt-1'} value={manage ? 'newest' : filters.sort} onChange={event => filter('sort', event.target.value)}>{['top', 'support', 'approval', 'divisive', 'newest'].map(sort => <option key={sort} value={sort}>{t('sort_' + sort)}</option>)}</select></label>
+      <label className="text-xs font-medium text-gray-600">{t('sort')}<select disabled={manage} className={inputClass + ' mt-1'} value={manage ? 'newest' : filters.sort} onChange={event => filter('sort', event.target.value)}>{[...(standalone ? ['shuffle'] : []), 'top', 'support', 'approval', 'divisive', 'newest'].map(sort => <option key={sort} value={sort}>{t('sort_' + sort)}</option>)}</select></label>
     </div>
       {!metadata.topics.length && !topicId && <p id="positions-no-topics" className="text-xs text-gray-500">{t('no_topics')}</p>}
       {!manage && <p className="text-xs text-gray-500">{t('ranking_note')}</p>}
@@ -324,7 +324,7 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
       {['categoryId', 'topicId', 'organizationId', 'search'].filter(key => filters[key] && !(comparison && key === 'organizationId')).map(key => {
         const item = (key === 'categoryId' ? metadata.categories : key === 'topicId' ? metadata.topics : metadata.organizations).find(item => String(item.id) === filters[key]);
         const label = key === 'search' ? filters.search : item ? key === 'categoryId' ? categoryName(item) : item.name : filters[key];
-        return <button type="button" key={key} className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-800" aria-label={t('remove_filter', { name: label })} onClick={() => { filter(key, ''); if (key === 'search') setSearch(''); }}>{label} Ã—</button>;
+        return <button type="button" key={key} className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-800" aria-label={t('remove_filter', { name: label })} onClick={() => { filter(key, ''); if (key === 'search') setSearch(''); }}>{label} <XMarkIcon aria-hidden="true" className="inline h-3 w-3" /></button>;
       })}
     </div>
     {comparison && !manage && <>
