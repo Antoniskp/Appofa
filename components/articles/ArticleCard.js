@@ -1,4 +1,5 @@
 'use client';
+import { defaultArticleImage, articleBannerImage } from '@/lib/utils/articleImage';
 
 import { editorialPreview } from '@/lib/utils/editorialPreview';
 import { ImageCard, ImageTopCard } from '@/components/ui/Card';
@@ -68,8 +69,8 @@ export function stripMarkdown(text) {
 export default function ArticleCard({ article, variant = 'grid' }) {
   const tArticles = useTranslations('articles');
   const tCommon = useTranslations('common');
-  const defaultBannerImageUrl = '/images/branding/news default.png';
-  const bannerImageUrl = article.coverImage?.variants?.thumbnail?.url || article.bannerImageUrl || defaultBannerImageUrl;
+  const defaultBannerImageUrl = defaultArticleImage(article);
+  const bannerImageUrl = article.coverImage?.variants?.thumbnail?.url || articleBannerImage(article);
   const bannerAltText = article.bannerImageAltText || (article.title ? `${article.title} banner` : 'Article banner');
   const createdAt = new Date(article.createdAt);
   const formattedDate = createdAt.toLocaleDateString('el-GR');
@@ -96,8 +97,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
   if (isVideoArticle) {
     const thumbnailUrl =
       article.sourceMeta?.thumbnailUrl ||
-      article.bannerImageUrl ||
-      defaultBannerImageUrl;
+      articleBannerImage(article);
     const isYouTube = article.sourceProvider === 'youtube';
     const providerLabel = isYouTube ? 'YouTube' : article.sourceProvider === 'tiktok' ? 'TikTok' : null;
     // Red left accent for YouTube, near-black for TikTok

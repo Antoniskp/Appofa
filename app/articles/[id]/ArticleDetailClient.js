@@ -1,4 +1,5 @@
 'use client';
+import { defaultArticleImage, articleBannerImage } from '@/lib/utils/articleImage';
 import { editorialPreview } from '@/lib/utils/editorialPreview';
 
 import { useParams, useRouter, usePathname } from 'next/navigation';
@@ -182,8 +183,8 @@ export default function ArticleDetailPage() {
     );
   }
 
-  const defaultBannerImageUrl = '/images/branding/news default.png';
-  const bannerImageUrl = article.coverImage?.variants?.articleCover?.url || article.bannerImageUrl || defaultBannerImageUrl;
+  const defaultBannerImageUrl = defaultArticleImage(article);
+  const bannerImageUrl = article.coverImage?.variants?.articleCover?.url || articleBannerImage(article);
   const handleBannerError = (event) => {
     event.currentTarget.onerror = null;
     event.currentTarget.src = defaultBannerImageUrl;

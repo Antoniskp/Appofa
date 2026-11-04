@@ -1,4 +1,5 @@
 'use client';
+import { defaultArticleImage, articleBannerImage } from '@/lib/utils/articleImage';
 
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -154,8 +155,8 @@ export default function NewsDetailPage() {
     );
   }
 
-  const defaultBannerImageUrl = '/images/branding/news default.png';
-  const bannerImageUrl = article.coverImage?.variants?.articleCover?.url || article.bannerImageUrl || defaultBannerImageUrl;
+  const defaultBannerImageUrl = defaultArticleImage(article);
+  const bannerImageUrl = article.coverImage?.variants?.articleCover?.url || articleBannerImage(article);
   const handleBannerError = (event) => {
     event.currentTarget.onerror = null;
     event.currentTarget.src = defaultBannerImageUrl;

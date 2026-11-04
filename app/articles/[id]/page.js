@@ -1,3 +1,4 @@
+import { articleBannerImage } from '@/lib/utils/articleImage';
 import { SITE_URL, DEFAULT_OG_IMAGE, serializeJsonLd } from '@/lib/seo';
 import ArticleDetailClient from './ArticleDetailClient';
 import { idSlug } from '@/lib/utils/slugify';
@@ -40,7 +41,7 @@ export async function generateMetadata({ params }) {
 
   const slug = idSlug(article.id, article.title);
   const canonicalUrl = `${SITE_URL}/articles/${slug}`;
-  const image = absoluteImageUrl(article.bannerImageUrl);
+  const image = absoluteImageUrl(article.coverImage?.variants?.articleCover?.url || articleBannerImage(article));
   const description = article.summary || article.content?.substring(0, 160) || '';
 
   return {
@@ -75,7 +76,7 @@ export default async function ArticleDetailPage({ params }) {
         '@type': 'Article',
         headline: article.title,
         description: article.summary || article.content?.substring(0, 160) || '',
-        image: absoluteImageUrl(article.bannerImageUrl),
+        image: absoluteImageUrl(article.coverImage?.variants?.articleCover?.url || articleBannerImage(article)),
         datePublished: article.publishedAt || article.createdAt,
         dateModified: article.updatedAt || article.createdAt,
         author: !article.hideAuthor && article.author?.username
