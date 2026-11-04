@@ -291,23 +291,33 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
       <label className="min-w-0 flex-1"><span className="sr-only">{t('search')}</span><input type="search" maxLength={200} value={search} onChange={event => setSearch(event.target.value)} placeholder={t('search')} className={inputClass} /></label>
       {standalone && !manage && <button type="button" aria-pressed={comparison} className={buttonClass} onClick={() => { if (comparison && personalView && personalView !== 'all') setRefresh(previous => previous + 1); setComparison(!comparison); }}>{t(comparison ? 'list_view' : 'compare')}</button>}
     </div>
-    {personalView && !comparison && <div role="group" aria-label={t('my_answers')} className="flex flex-wrap gap-2">
-      {['unanswered', 'agree', 'disagree', 'all'].map(view => <button type="button" key={view} aria-pressed={view === voteView} className={buttonClass + (view === voteView ? ' bg-blue-50 text-blue-800' : '')} onClick={() => { setVoteView(view); setPage(1); setNotice(''); }}>{t('view_' + view)}</button>)}
-    </div>}
-    <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-4" role="group" aria-label={t('filters')}>
-      <div className={`grid gap-4 sm:grid-cols-2 ${!organizationId && !comparison ? 'lg:grid-cols-3' : ''}`}>
-        {!organizationId && !comparison && <label className="min-w-0 text-sm font-medium text-gray-700">{t('party_filter')}
-          <select className={inputClass + ' mt-1'} value={filters.organizationId} onChange={event => filter('organizationId', event.target.value)}>
-            <option value="">{t('all_entities')}</option>
-            {[['parties', true], ['other_entities', false]].map(([label, parties]) => {
-              const options = metadata.organizations.filter(org => (org.type === 'party') === parties);
-              return options.length ? <optgroup key={label} label={t(label)}>{options.map(org => <option key={org.id} value={org.id}>{org.name}</option>)}</optgroup> : null;
-            })}
-          </select>
-        </label>}
-          <label className="min-w-0 text-sm font-medium text-gray-700">{t('category')}<select className={inputClass + ' mt-1'} value={filters.categoryId} onChange={event => filter('categoryId', event.target.value)}><option value="">{t('all_categories')}</option>{metadata.categories.map(category => <option key={category.id} value={category.id}>{categoryName(category)}</option>)}</select></label>
-        <label className="min-w-0 text-sm font-medium text-gray-700">{t('sort')}<select disabled={manage} className={inputClass + ' mt-1'} value={manage ? 'newest' : filters.sort} onChange={event => filter('sort', event.target.value)}>{[...(standalone ? ['shuffle'] : []), 'top', 'support', 'approval', 'divisive', 'newest'].map(sort => <option key={sort} value={sort}>{t('sort_' + sort)}</option>)}</select></label>
-      </div>
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      {personalView && !comparison && <div role="group" aria-label={t('my_answers')} className="flex flex-wrap gap-2">
+        {['unanswered', 'agree', 'disagree', 'all'].map(view => <button type="button" key={view} aria-pressed={view === voteView} className={buttonClass + (view === voteView ? ' bg-blue-50 text-blue-800' : '')} onClick={() => { setVoteView(view); setPage(1); setNotice(''); }}>{t('view_' + view)}</button>)}
+      </div>}
+      <label className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-medium text-gray-600 sm:ml-auto">
+        {t('sort')}
+        <select disabled={manage} className={inputClass + ' !w-auto max-w-full'} value={manage ? 'newest' : filters.sort} onChange={event => filter('sort', event.target.value)}>{[...(standalone ? ['shuffle'] : []), 'top', 'support', 'approval', 'divisive', 'newest'].map(sort => <option key={sort} value={sort}>{t('sort_' + sort)}</option>)}</select>
+      </label>
+    </div>
+    <div className="min-w-0 space-y-4" role="group" aria-label={t('filters')}>
+      {!organizationId && !comparison && <fieldset className="min-w-0">
+        <legend className="mb-2 text-sm font-semibold text-gray-700">{t('party_filter')}</legend>
+        <div className="flex gap-2 overflow-x-auto px-1 py-1">
+          <button type="button" aria-pressed={!filters.organizationId} className={buttonClass + ' shrink-0 ' + (!filters.organizationId ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'bg-white')} onClick={() => filter('organizationId', '')}>{t('all_entities')}</button>
+          {[...metadata.organizations.filter(org => org.type === 'party'), ...metadata.organizations.filter(org => org.type !== 'party')].map(org => <button key={org.id} type="button" aria-pressed={String(org.id) === filters.organizationId} className={buttonClass + ' inline-flex shrink-0 items-center gap-2 ' + (String(org.id) === filters.organizationId ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'bg-white')} onClick={() => filter('organizationId', String(org.id))}>
+            <span aria-hidden="true"><OrgAvatar org={org} size="h-8 w-10" /></span>
+            <span>{org.name}</span>
+          </button>)}
+        </div>
+      </fieldset>}
+      <fieldset className="min-w-0">
+        <legend className="mb-2 text-sm font-semibold text-gray-700">{t('category')}</legend>
+        <div className="flex gap-2 overflow-x-auto px-1 py-1">
+          <button type="button" aria-pressed={!filters.categoryId} className={buttonClass + ' shrink-0 ' + (!filters.categoryId ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'bg-white')} onClick={() => filter('categoryId', '')}>{t('all_categories')}</button>
+          {metadata.categories.map(category => <button key={category.id} type="button" aria-pressed={String(category.id) === filters.categoryId} className={buttonClass + ' shrink-0 ' + (String(category.id) === filters.categoryId ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'bg-white')} onClick={() => filter('categoryId', String(category.id))}>{categoryName(category)}</button>)}
+        </div>
+      </fieldset>
       {!manage && <p className="text-xs leading-relaxed text-gray-500">{t('ranking_note')}</p>}
     </div>
     <div ref={resultsTop} className="scroll-mt-24 flex flex-wrap items-center gap-2" aria-live="polite">
