@@ -45,6 +45,7 @@ function LocationManagementContent() {
     page,
     totalPages,
     setTotalPages,
+    setPage,
     updateFilter,
     updateFilters,
     goToPage,
@@ -78,7 +79,7 @@ function LocationManagementContent() {
   const [submitting, setSubmitting] = useState(false);
   const [requestStatusFilter, setRequestStatusFilter] = useState('pending');
 
-  const { data: locations, loading, refetch } = useAsyncData(
+  const { data: locationResults, loading, refetch } = useAsyncData(
     async () => {
       const params = {
         limit: PAGE_SIZE,
@@ -89,17 +90,17 @@ function LocationManagementContent() {
       if (filters.parent_id) params.parent_id = filters.parent_id;
 
       const response = await locationAPI.getAll(params);
-      if (response.success) {
-        const total = Number(response.pagination?.total || 0);
-        setTotalPages(Math.max(1, Math.ceil(total / PAGE_SIZE)));
-        return response.locations || [];
-      }
-      setTotalPages(1);
-      return [];
+      if (!response.success) throw new Error(response.message || 'Failed to load locations');
+      return { rows: response.locations || [], total: Number(response.pagination?.total || 0) };
     },
     [filters.search, filters.type, filters.parent_id, page],
     {
-      initialData: [],
+      initialData: { rows: [], total: 0 },
+      onSuccess: ({ total }) => {
+        const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        setTotalPages(lastPage);
+        if (page > lastPage) setPage(lastPage);
+      },
       onError: (err) => {
         toastError(err || 'Failed to load locations');
       }
@@ -285,14 +286,6 @@ function LocationManagementContent() {
     }
   };
 
-  if (loading && activeTab === 'locations') {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <p className="text-gray-600">Loading locations...</p>
-      </div>
-    );
-  }
-
   const pendingRequestsCount = locationRequests.filter(r => r.status === 'pending').length;
   const locationParentFilterType = filters.type ? PARENT_TYPE_MAP[filters.type] : null;
 
@@ -391,8 +384,12 @@ function LocationManagementContent() {
 
           <AdminTable
             columns={[
-              { key: 'name', header: 'Name' },
-              { key: 'name_local', header: 'Local Name' },
+              { key: 'name', header: 'Location', className: 'whitespace-normal', render: (loc) => (
+                <>
+                  <div className="font-medium">{loc.name}</div>
+                  {loc.name_local && loc.name_local !== loc.name && <div className="text-gray-600">{loc.name_local}</div>}
+                </>
+              ) },
               {
                 key: 'type',
                 header: 'Type',
@@ -412,19 +409,19 @@ function LocationManagementContent() {
                 key: 'coordinates',
                 header: 'Coordinates',
                 render: (loc) => (
-                  loc.lat && loc.lng ? `${loc.lat}, ${loc.lng}` : '-'
+                  loc.lat != null && loc.lng != null ? `${Number(loc.lat).toFixed(4)}, ${Number(loc.lng).toFixed(4)}` : '-'
                 )
               },
             ]}
-            data={locations}
+            data={locationResults.rows}
             onEdit={handleOpenModal}
             onDelete={handleDelete}
             loading={loading}
-            emptyMessage="No locations found. Create one to get started."
+            emptyMessage={filters.search || filters.type || filters.parent_id ? 'No locations match these filters.' : 'No locations found.'}
           />
           <div className="px-6 py-4 border-t border-gray-200 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-gray-500">
-              Page {page} of {totalPages}
+              {locationResults.total} locations · Page {page} of {totalPages}
             </p>
             <Pagination
               currentPage={page}
