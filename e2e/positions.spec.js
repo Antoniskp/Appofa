@@ -58,8 +58,9 @@ test('create, review, compare, vote and revise an organization position', async 
     await dismissCookies(voterPage);
     await expect(voterPage.getByRole('heading', { name: title, exact: true })).toBeVisible();
     await voterPage.screenshot({ path: testInfo.outputPath('positions-first-screen.png') });
-    await voterPage.getByText(t.filters, { exact: true }).click();
-    await voterPage.getByRole('combobox', { name: t.topic, exact: true }).selectOption({ label: 'Public housing' });
+    await expect(voterPage.getByRole('combobox', { name: t.category, exact: true })).toHaveCount(1);
+    await expect(voterPage.getByRole('combobox', { name: t.topic, exact: true })).toHaveCount(0);
+    await voterPage.getByRole('combobox', { name: t.category, exact: true }).selectOption({ label: 'Housing' });
     let voterCard = voterPage.locator('article').filter({ hasText: title });
     await voterCard.getByRole('button', { name: 'Support 0', exact: true }).click();
     await expect(voterCard.getByRole('button', { name: 'Support 1', exact: true })).toHaveAttribute('aria-pressed', 'true');

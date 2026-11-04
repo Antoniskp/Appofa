@@ -212,7 +212,7 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
   const { user } = useAuth();
   const [metadata, setMetadata] = useState({ categories: [], topics: [], organizations: [] });
   const [result, setResult] = useState({ positions: [], pagination: {} });
-  const [filters, setFilters] = useState(() => ({ categoryId: '', topicId: '', organizationId: '', sort: standalone ? 'shuffle' : 'top', seed: Math.floor(Math.random() * 2147483646) + 1, search: '' }));
+  const [filters, setFilters] = useState(() => ({ categoryId: '', organizationId: '', sort: standalone ? 'shuffle' : 'top', seed: Math.floor(Math.random() * 2147483646) + 1, search: '' }));
   const [search, setSearch] = useState('');
   const [voteView, setVoteView] = useState('unanswered');
   const [comparison, setComparison] = useState(false);
@@ -241,7 +241,7 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
   useEffect(() => {
     let cancelled = false;
     setLoading(true); setError('');
-    positionAPI.list({ ...filters, voteView: personalView, organizationId: organizationId || filters.organizationId, topicId: topicId || filters.topicId, manage: manage ? 'true' : undefined, page }).then(response => { if (!cancelled) setResult(response.data); }).catch(err => { if (!cancelled) { setError(err.message); setResult({ positions: [], pagination: {} }); } }).finally(() => { if (!cancelled) setLoading(false); });
+    positionAPI.list({ ...filters, voteView: personalView, organizationId: organizationId || filters.organizationId, topicId, manage: manage ? 'true' : undefined, page }).then(response => { if (!cancelled) setResult(response.data); }).catch(err => { if (!cancelled) { setError(err.message); setResult({ positions: [], pagination: {} }); } }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [organizationId, topicId, filters, personalView, manage, page, refresh, user?.id]);
   useEffect(() => {
@@ -259,12 +259,11 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
     return data;
   };
   const filter = (key, value) => { setFilters(previous => ({ ...previous, [key]: value })); setPage(1); };
-  const hasFilters = filters.categoryId || filters.topicId || filters.organizationId || filters.search;
-  const showClearFilters = standalone && !manage && hasFilters;
+  const hasFilters = filters.categoryId || filters.organizationId || filters.search;
   const showReviewAnswers = personalView === 'unanswered' && !hasFilters && result.allAnswered;
   const clearFilters = () => {
     setSearch('');
-    setFilters(previous => ({ ...previous, categoryId: '', topicId: '', organizationId: '', search: '' }));
+    setFilters(previous => ({ ...previous, categoryId: '', organizationId: '', search: '' }));
     setPage(1);
     setNotice('');
   };
@@ -295,52 +294,44 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
     {personalView && !comparison && <div role="group" aria-label={t('my_answers')} className="flex flex-wrap gap-2">
       {['unanswered', 'agree', 'disagree', 'all'].map(view => <button type="button" key={view} aria-pressed={view === voteView} className={buttonClass + (view === voteView ? ' bg-blue-50 text-blue-800' : '')} onClick={() => { setVoteView(view); setPage(1); setNotice(''); }}>{t('view_' + view)}</button>)}
     </div>}
-    {!organizationId && !comparison && <label className="block max-w-md text-sm font-semibold text-gray-800">{t('party_filter')}
-      <select className={inputClass + ' mt-1'} value={filters.organizationId} onChange={event => filter('organizationId', event.target.value)}>
-        <option value="">{t('all_entities')}</option>
-        {[['parties', true], ['other_entities', false]].map(([label, parties]) => {
-          const options = metadata.organizations.filter(org => (org.type === 'party') === parties);
-          return options.length ? <optgroup key={label} label={t(label)}>{options.map(org => <option key={org.id} value={org.id}>{org.name}</option>)}</optgroup> : null;
-        })}
-      </select>
-    </label>}
-    <div className="flex gap-2 overflow-x-auto pb-1" aria-label={t('category')}>
-      <button type="button" aria-pressed={!filters.categoryId} className={buttonClass + ' shrink-0 ' + (!filters.categoryId ? 'bg-blue-50 text-blue-800' : '')} onClick={() => filter('categoryId', '')}>{t('all_categories')}</button>
-      {metadata.categories.map(category => <button key={category.id} type="button" aria-pressed={String(category.id) === filters.categoryId} className={buttonClass + ' shrink-0 ' + (String(category.id) === filters.categoryId ? 'bg-blue-50 text-blue-800' : '')} onClick={() => filter('categoryId', String(category.id))}>{categoryName(category)}</button>)}
+    <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-4" role="group" aria-label={t('filters')}>
+      <div className={`grid gap-4 sm:grid-cols-2 ${!organizationId && !comparison ? 'lg:grid-cols-3' : ''}`}>
+        {!organizationId && !comparison && <label className="min-w-0 text-sm font-medium text-gray-700">{t('party_filter')}
+          <select className={inputClass + ' mt-1'} value={filters.organizationId} onChange={event => filter('organizationId', event.target.value)}>
+            <option value="">{t('all_entities')}</option>
+            {[['parties', true], ['other_entities', false]].map(([label, parties]) => {
+              const options = metadata.organizations.filter(org => (org.type === 'party') === parties);
+              return options.length ? <optgroup key={label} label={t(label)}>{options.map(org => <option key={org.id} value={org.id}>{org.name}</option>)}</optgroup> : null;
+            })}
+          </select>
+        </label>}
+          <label className="min-w-0 text-sm font-medium text-gray-700">{t('category')}<select className={inputClass + ' mt-1'} value={filters.categoryId} onChange={event => filter('categoryId', event.target.value)}><option value="">{t('all_categories')}</option>{metadata.categories.map(category => <option key={category.id} value={category.id}>{categoryName(category)}</option>)}</select></label>
+        <label className="min-w-0 text-sm font-medium text-gray-700">{t('sort')}<select disabled={manage} className={inputClass + ' mt-1'} value={manage ? 'newest' : filters.sort} onChange={event => filter('sort', event.target.value)}>{[...(standalone ? ['shuffle'] : []), 'top', 'support', 'approval', 'divisive', 'newest'].map(sort => <option key={sort} value={sort}>{t('sort_' + sort)}</option>)}</select></label>
+      </div>
+      {!manage && <p className="text-xs leading-relaxed text-gray-500">{t('ranking_note')}</p>}
     </div>
-    <details className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-      <summary className="cursor-pointer text-sm font-medium">{t('filters')}</summary>
-    <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <label className="text-xs font-medium text-gray-600">{t('category')}<select className={inputClass + ' mt-1'} value={filters.categoryId} onChange={event => filter('categoryId', event.target.value)}><option value="">{t('all_categories')}</option>{metadata.categories.map(category => <option key={category.id} value={category.id}>{categoryName(category)}</option>)}</select></label>
-      {!topicId && <label className="text-xs font-medium text-gray-600">{t('topic')}<select disabled={!metadata.topics.length} aria-describedby={!metadata.topics.length ? 'positions-no-topics' : undefined} className={inputClass + ' mt-1'} value={filters.topicId} onChange={event => filter('topicId', event.target.value)}><option value="">{t('all_topics')}</option>{metadata.topics.map(topic => <option key={topic.id} value={topic.id}>{topic.name}</option>)}</select></label>}
-
-      <label className="text-xs font-medium text-gray-600">{t('sort')}<select disabled={manage} className={inputClass + ' mt-1'} value={manage ? 'newest' : filters.sort} onChange={event => filter('sort', event.target.value)}>{[...(standalone ? ['shuffle'] : []), 'top', 'support', 'approval', 'divisive', 'newest'].map(sort => <option key={sort} value={sort}>{t('sort_' + sort)}</option>)}</select></label>
-    </div>
-      {!metadata.topics.length && !topicId && <p id="positions-no-topics" className="text-xs text-gray-500">{t('no_topics')}</p>}
-      {!manage && <p className="text-xs text-gray-500">{t('ranking_note')}</p>}
-      <p className="mt-2 text-xs text-gray-500">{t('participation_note')}</p>
-    </details>
     <div ref={resultsTop} className="scroll-mt-24 flex flex-wrap items-center gap-2" aria-live="polite">
       {!comparison && !loading && !error && <span className="text-sm text-gray-600">{t('result_count', { count: result.pagination.total || 0 })}</span>}
-      {['categoryId', 'topicId', 'organizationId', 'search'].filter(key => filters[key] && !(comparison && key === 'organizationId')).map(key => {
-        const item = (key === 'categoryId' ? metadata.categories : key === 'topicId' ? metadata.topics : metadata.organizations).find(item => String(item.id) === filters[key]);
+      {['categoryId', 'organizationId', 'search'].filter(key => filters[key] && !(comparison && key === 'organizationId')).map(key => {
+        const item = (key === 'categoryId' ? metadata.categories : metadata.organizations).find(item => String(item.id) === filters[key]);
         const label = key === 'search' ? filters.search : item ? key === 'categoryId' ? categoryName(item) : item.name : filters[key];
         return <button type="button" key={key} className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-800" aria-label={t('remove_filter', { name: label })} onClick={() => { filter(key, ''); if (key === 'search') setSearch(''); }}>{label} <XMarkIcon aria-hidden="true" className="inline h-3 w-3" /></button>;
       })}
+      {hasFilters && <button type="button" className="ml-auto text-sm font-medium text-blue-700 hover:underline" onClick={clearFilters}>{t('clear_position_filters')}</button>}
     </div>
     {comparison && !manage && <>
       <fieldset className="rounded-xl border p-3"><legend className="px-1 text-sm font-medium">{t('compare_choose')}</legend>
         <p className="mb-2 text-xs text-gray-600">{t('compare_hint')}</p>
         <div className="flex max-h-40 flex-wrap gap-3 overflow-y-auto">{metadata.organizations.map(org => <label key={org.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedOrganizations.includes(org.id)} disabled={selectedOrganizations.length >= 3 && !selectedOrganizations.includes(org.id)} onChange={event => setSelectedOrganizations(previous => event.target.checked ? [...previous, org.id] : previous.filter(id => id !== org.id))} />{org.name}</label>)}</div>
       </fieldset>
-      {!(filters.categoryId || filters.topicId || topicId) ? <p className="text-sm text-gray-600">{t('compare_scope')}</p> : <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">{selectedOrganizations.map(id => <ComparisonColumn key={id + JSON.stringify(filters)} refresh={refresh} organization={metadata.organizations.find(org => org.id === id)} filters={{ ...filters, topicId: topicId || filters.topicId }} cardProps={{ metadata, user, busy, onVote: (revisionId, value) => updateVote(setResult, revisionId, value), onEdit: setEditing, onAction: action, t, categoryName, formatDate }} />)}</div>}
+      {!(filters.categoryId || topicId) ? <p className="text-sm text-gray-600">{t('compare_scope')}</p> : <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">{selectedOrganizations.map(id => <ComparisonColumn key={id + JSON.stringify(filters)} refresh={refresh} organization={metadata.organizations.find(org => org.id === id)} filters={{ ...filters, topicId }} cardProps={{ metadata, user, busy, onVote: (revisionId, value) => updateVote(setResult, revisionId, value), onEdit: setEditing, onAction: action, t, categoryName, formatDate }} />)}</div>}
     </>}
 
     {(!comparison || manage) && <PositionPagination page={page} pages={result.pagination.pages} loading={loading} onChange={changePage} t={t} />}
     {(!comparison || manage) && (loading && !result.positions.length ? <div role="status" className="rounded-xl border border-gray-200 p-10 text-center text-gray-500">{t('loading')}</div> : result.positions.length ? <div className="grid items-start gap-5 lg:grid-cols-2">{result.positions.map(row => <PositionCard key={row.id + ':' + row.status} row={row} manage={manage} metadata={metadata} user={user} busy={busy} onVote={vote} onEdit={setEditing} onAction={action} t={t} categoryName={categoryName} formatDate={formatDate} />)}</div> : !error && <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center"><h3 className="font-semibold text-gray-800">{t(showReviewAnswers ? 'all_answered' : 'empty')}</h3>
       {showReviewAnswers ? <button type="button" className={buttonClass + ' mt-3'} onClick={() => { setVoteView('all'); setPage(1); setNotice(''); }}>{t('review_answers')}</button>
         : <><p className="mt-2 text-sm text-gray-500">{t(manage ? 'empty_manage' : 'empty_public')}</p>
-          {showClearFilters && <button type="button" className={buttonClass + ' mt-3'} onClick={clearFilters}>{t('clear_position_filters')}</button>}</>}
+</>}
     </div>)}
     {(!comparison || manage) && <PositionPagination page={page} pages={result.pagination.pages} loading={loading} onChange={changePage} t={t} />}
   </section>;

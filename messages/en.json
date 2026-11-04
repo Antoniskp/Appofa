@@ -1198,8 +1198,8 @@
     "result_count": "{count, plural, one {# proposal} other {# proposals}}",
     "remove_filter": "Remove filter: {name}",
     "compare_choose": "Choose up to 3 organizations",
-    "compare_hint": "Compare proposals within the same category or topic. Missing records do not mean an organization has no policy.",
-    "compare_scope": "Choose a category or topic to start comparing.",
+    "compare_hint": "Compare proposals in the same category. No recorded position does not mean an organization has no policy.",
+    "compare_scope": "Choose a category to start comparing.",
     "no_recorded_position": "No position recorded for this selection.",
 
     "heading": "Positions & proposals",
