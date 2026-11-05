@@ -70,7 +70,7 @@ export default function HomePageClient({ initialPayload = null }) {
     <div className="bg-ivory">
       <CountryEntryPopup isAuthenticated={Boolean(user)} />
       <HomeHero />
-      <ParticipationRow user={user} topic={articleTags[0]}
+      <ParticipationRow user={user} analysis={data.latestAnalysis?.[0]}
         featuredPoll={shouldShowFeaturedPoll ? featuredPoll : null}
         featuredPollLoading={shouldShowFeaturedPoll && featuredPollLoading}
       />

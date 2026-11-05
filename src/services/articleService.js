@@ -447,6 +447,7 @@ const getAllArticles = async (queryParams, user) => {
     let sortField = 'updatedAt';
     if (orderBy === 'title') sortField = 'title';
     else if (orderBy === 'createdAt') sortField = 'createdAt';
+    else if (orderBy === 'publishedAt') sortField = 'publishedAt';
     else if (orderBy === 'updatedAt') sortField = 'updatedAt';
     else if (orderBy === 'newsApprovedAt') sortField = 'newsApprovedAt';
     let sortDirection = 'DESC';

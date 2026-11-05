@@ -277,6 +277,7 @@ async function buildHomepagePayload(req, sections = HOMEPAGE_SECTIONS) {
   let settingsPromise;
   const settings = () => (settingsPromise ||= getOrCreateSettings());
   const loaders = {
+    latestAnalysis: () => listData(articleService.getAllArticles({ status: 'published', type: 'analysis', orderBy: 'publishedAt', order: 'desc', limit: 1, page: 1 }, user), 'articles'),
     latestArticles: () => listData(articleService.getAllArticles({ status: 'published', type: 'articles', orderBy: 'createdAt', order: 'desc', limit: 3, page: 1, ...(locationId ? { locationId } : {}) }, user), 'articles'),
     latestNews: () => listData(articleService.getAllArticles({ status: 'published', type: 'news', newsApproved: true, orderBy: 'newsApprovedAt', order: 'desc', limit: 3, page: 1, ...(locationId ? { locationId } : {}) }, user), 'articles'),
     videos: () => listData(articleService.getAllArticles({ type: 'video', status: 'published', limit: 6, orderBy: 'createdAt', order: 'desc' }, user), 'articles'),

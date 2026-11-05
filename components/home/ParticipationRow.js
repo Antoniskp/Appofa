@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import ArticleCard from '@/components/articles/ArticleCard';
 import Link from 'next/link';
 import { positionAPI } from '@/lib/api/positions';
 import { buildAuthPath } from '@/lib/auth-redirect';
@@ -61,15 +62,15 @@ function PolicyVote({ user }) {
   </article>;
 }
 
-export default function ParticipationRow({ user, featuredPoll, featuredPollLoading, topic }) {
-  return <section aria-label="Συμμετοχή και επικαιρότητα" className="app-container grid gap-4 py-6 lg:grid-cols-3">
+export default function ParticipationRow({ user, featuredPoll, featuredPollLoading, analysis }) {
+  return <section aria-label="Συμμετοχή και επικαιρότητα" className={`app-container grid gap-4 py-6 ${analysis ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
     <PolicyVote key={user?.id || 'guest'} user={user?.id} />
     {featuredPoll || featuredPollLoading
       ? <div className="rounded-xl bg-slate-900 text-white"><FeaturedLivePoll poll={featuredPoll} loading={featuredPollLoading} user={user} /></div>
       : <article className={card}><p className={label}>Ψηφοφορίες</p><h2 className="mb-4 text-xl font-bold">Σε ποια θέματα θέλεις να ψηφίσεις;</h2><Link className={button} href="/polls">Δες τις ψηφοφορίες</Link></article>}
-    <article className={card}><p className={label}>{topic ? 'Δημοφιλές θέμα' : 'Επικαιρότητα'}</p>
-      <h2 className="mb-4 text-xl font-bold">{topic || 'Οι τελευταίες ειδήσεις'}</h2>
-      <Link className={button} href={topic ? '/articles?tag=' + encodeURIComponent(topic) : '/news'}>{topic ? 'Διάβασε τα σχετικά άρθρα' : 'Δες τις ειδήσεις'}</Link>
-    </article>
+    {analysis && <div className="min-w-0">
+      <h2 className={label}>Τελευταία ανάλυση</h2>
+      <ArticleCard article={analysis} variant="grid" />
+    </div>}
   </section>;
 }

@@ -7,7 +7,7 @@ afterEach(() => jest.resetAllMocks());
 test('server rendering requests only public editorial sections, with a timeout and no caching', async () => {
   homepageAPI.get.mockResolvedValue({ success: true, data: { latestNews: [{ id: 1 }] } });
   expect(await getPublicHomepage()).toEqual({ data: { latestNews: [{ id: 1 }] }, errors: {} });
-  expect(homepageAPI.get).toHaveBeenCalledWith(undefined, ['latestArticles', 'latestNews', 'videos', 'prefectures'], expect.objectContaining({ cache: 'no-store', signal: expect.any(AbortSignal) }));
+  expect(homepageAPI.get).toHaveBeenCalledWith(undefined, ['latestArticles', 'latestAnalysis', 'latestNews', 'videos', 'prefectures'], expect.objectContaining({ cache: 'no-store', signal: expect.any(AbortSignal) }));
   expect(homepageAPI.get.mock.calls[0][2].headers).toBeUndefined();
 });
 
