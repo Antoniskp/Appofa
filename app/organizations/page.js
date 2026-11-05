@@ -91,7 +91,7 @@ function OrganizationCard({ organization, t }) {
           } />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-base font-semibold text-gray-900 truncate">{organization.name}</h2>
+              <h2 className="text-base font-semibold text-gray-900 break-words">{organization.name}</h2>
               <OrganizationTypeBadge type={organization.type} t={t} />
               {organization.isVerified && (
                 <CheckBadgeIcon className="h-4 w-4 text-green-600" aria-label={t('verified_badge')} />
@@ -200,12 +200,14 @@ export default function OrganizationsPage() {
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
           <input
             type="text"
+            aria-label={t('search_placeholder')}
             placeholder={t('search_placeholder')}
             value={filters.search}
             onChange={(e) => updateFilter('search', e.target.value)}
             className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <select
+            aria-label={t('all_types')}
             value={filters.type}
             onChange={(e) => updateFilter('type', e.target.value)}
             className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"

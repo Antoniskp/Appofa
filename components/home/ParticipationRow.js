@@ -38,22 +38,20 @@ function PolicyVote({ user }) {
   }
   const { policy } = state;
   return <article id="policy-vote" className={card} aria-live="polite">
-    <p className={label}>Ψήφος σε πολιτική θέση</p>
+    <h2 className="text-xl font-bold">Συμφωνείς με τη θέση;</h2>
+    <p className="my-4">Διάβασε μια πολιτική θέση και διάλεξε αν συμφωνείς ή διαφωνείς. Μετά θα δεις από ποιο κόμμα ή την ομάδα του Appofasi προέρχεται.</p>
     {!user ? <>
-      <h2 className="text-xl font-bold">Συμφωνείς με τη θέση;</h2>
-      <p className="my-4">Διάβασε μια τυχαία θέση, ψήφισε και ανακάλυψε ποιος τη στηρίζει.</p>
       <div className="flex flex-wrap gap-2">{[['/login', 'Σύνδεση'], ['/register', 'Εγγραφή']].map(([path, title]) =>
         <Link className={button} key={path} href={buildAuthPath(path, '/#policy-vote')}>{title}</Link>)}</div>
     </> : state.loading ? <p>Αναζήτηση θέσης…</p> : state.loadError ? <>
       <p>Η θέση δεν φορτώθηκε.</p><button className={button} onClick={next}>Δοκίμασε ξανά</button>
     </> : !policy ? <p>Δεν υπάρχουν άλλες θέσεις για να ψηφίσεις τώρα.</p> : <>
-      <h2 className="text-xl font-bold">{policy.title}</h2>
+      <h3 className="text-lg font-bold">{policy.title}</h3>
       <p className="my-3 max-h-48 overflow-y-auto whitespace-pre-line">{policy.body}</p>
       {state.revealed ? <>
         <p className="mb-3">Η θέση αποδίδεται σε: <strong>{policy.position.organization.name}</strong></p>
         <button className={button} onClick={next}>Επόμενη θέση →</button>
       </> : <>
-        <p className="mb-2 font-semibold">Συμφωνείς με αυτή τη θέση;</p>
         <div className="flex flex-wrap gap-2">{[[1, 'Συμφωνώ'], [-1, 'Διαφωνώ']].map(([value, title]) =>
           <button disabled={state.saving} className={button} key={value} onClick={() => vote(value)}>{title}</button>)}</div>
         {state.voteError && <p role="alert">Η ψήφος δεν καταχωρίστηκε. Δοκίμασε ξανά.</p>}

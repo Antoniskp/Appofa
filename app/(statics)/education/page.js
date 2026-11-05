@@ -1,4 +1,5 @@
 import Link from 'next/link';
+
 import StaticPageLayout from '@/components/StaticPageLayout';
 
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
@@ -33,18 +34,15 @@ export default function EducationPage() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold mb-3">Το Εκπαιδευτικό Σύστημα στην Ελλάδα</h2>
-        <div className="space-y-4">
-          <p className="text-gray-700">
-            Η δημόσια εκπαίδευση στην Ελλάδα είναι υποχρεωτική για 11 χρόνια και δωρεάν σε όλες τις
-            βαθμίδες, από το νηπιαγωγείο ως το λύκειο. Το ελληνικό κράτος διαθέτει επίσης δίκτυο
-            δημόσιων πανεπιστημίων και ΤΕΙ.
-          </p>
-          <p className="text-gray-700">
-            Παρά τη διαθεσιμότητά του, το σύστημα αντιμετωπίζει χρόνιες προκλήσεις: υποχρηματοδότηση,
-            αναντιστοιχία δεξιοτήτων με αγορά εργασίας, και ανισότητες μεταξύ αστικών και αγροτικών
-            περιοχών.
-          </p>
+        <h2 className="text-2xl font-semibold mb-3">Βρες σχολείο ή πανεπιστήμιο</h2>
+        <div className="space-y-5">
+          <div>
+            <h3 className="text-lg font-semibold">Σχολεία</h3>
+            <p className="text-gray-700">Αναζήτησε νηπιαγωγείο, δημοτικό, γυμνάσιο ή λύκειο στην περιοχή σου στον{' '}
+              <a className="text-indigo-700 underline" href="https://maps.sch.gr/">χάρτη του Πανελλήνιου Σχολικού Δικτύου</a>.
+            </p>
+          </div>
+          <Link href="/organizations" className="text-indigo-700 underline">Βρες πανεπιστήμια στον κατάλογο οργανισμών</Link>
         </div>
       </section>
 
@@ -70,7 +68,7 @@ export default function EducationPage() {
           <div className="bg-white border border-gray-200 rounded-lg p-5">
             <h3 className="text-lg font-semibold mb-2 text-indigo-700">🎓 Τριτοβάθμια</h3>
             <p className="text-gray-700 text-sm">
-              Πανεπιστήμια, ΤΕΙ (νυν Πανεπιστήμια μετά τον Ν. 4610/2019) και Μεταπτυχιακά
+              Προπτυχιακά, μεταπτυχιακά και διδακτορικά
               προγράμματα. Εξειδίκευση σε επιστημονικά και τεχνικά πεδία.
             </p>
           </div>
