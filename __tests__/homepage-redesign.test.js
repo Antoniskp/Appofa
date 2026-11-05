@@ -23,11 +23,15 @@ jest.mock('@/components/GovernmentSnapshotSection', () => () => require('react')
 jest.mock('@/components/SuggestionCard', () => ({ suggestion }) => require('react').createElement('p', null, suggestion.title));
 jest.mock('@/components/polls/PollCard', () => ({ poll }) => require('react').createElement('p', null, poll.title));
 jest.mock('@/components/articles/ArticleCard', () => ({ article }) => require('react').createElement('p', null, article.title));
+const mockPositions = jest.fn();
+const mockVote = jest.fn();
+jest.mock('@/lib/api/positions', () => ({ positionAPI: { list: (...args) => mockPositions(...args), vote: (...args) => mockVote(...args) } }));
 const Home = require('../components/home/HomePageClient').default;
 const payload = { suggestions: [{ id: 1, title: 'Public sample proposal' }], polls: [], latestNews: [{ id: 2, title: 'Local news', type: 'news' }], latestArticles: [{ id: 3, title: 'Community article', type: 'articles' }], videos: [{ id: 4, title: 'Community video' }], prefectures: [{ id: 12, name: 'Attica' }], manifestData: [{ slug: 'public-commitment', title: 'Public commitment', randomSupporters: [] }] };
 describe('Restored map homepage', () => {
   let container, root;
   beforeEach(() => {
+    mockPositions.mockReset().mockResolvedValue({ data: { positions: [] } });
     mockUser = null;
     mockGet.mockReset().mockResolvedValue({ success: true, data: payload });
     container = document.createElement('div');
@@ -42,9 +46,11 @@ describe('Restored map homepage', () => {
     expect(container.querySelector('[data-testid="government"]')).toBeNull();
     expect(container.textContent).not.toContain('Τι έγινε μετά τη συμμετοχή;');
     const sections = container.querySelectorAll('section');
-    expect(sections[0].textContent).toContain('Local news');
-    expect(sections[1].textContent).toContain('Δημοφιλείς δημοσκοπήσεις');
-    expect(sections[1].compareDocumentPosition(container.querySelector('[data-testid="action-lanes"]')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(sections[0].querySelector('#policy-vote')).toBeTruthy();
+    expect(mockPositions).not.toHaveBeenCalled();
+    expect(sections[1].textContent).toContain('Local news');
+    expect(sections[2].textContent).toContain('Δημοφιλείς δημοσκοπήσεις');
+    expect(sections[2].compareDocumentPosition(container.querySelector('[data-testid="action-lanes"]')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     for (const text of ['Attica', 'Local news', 'Community article', 'Community video', 'Public commitment']) expect(container.textContent).toContain(text);
     expect(container.querySelector('#home-area')).toBeNull();
   });
@@ -52,20 +58,35 @@ describe('Restored map homepage', () => {
     mockUser = { id: 1, homeLocation: { id: 42, slug: 'athens' } };
     await render();
     expect(mockGet).toHaveBeenCalledWith(42, ['latestNews', 'latestArticles', 'suggestions', 'polls']);
-    expect(container.querySelector('section').getAttribute('aria-label')).toBe('Στην περιοχή σου');
-    expect(container.querySelector('section a').getAttribute('href')).toBe('/locations/athens');
+    expect(container.querySelectorAll('section')[1].getAttribute('aria-label')).toBe('Στην περιοχή σου');
+    expect(container.querySelectorAll('section')[1].querySelector('a').getAttribute('href')).toBe('/locations/athens');
+    mockPositions.mockReset().mockResolvedValue({ data: { positions: [] } });
     mockUser = null;
     await render();
     expect(container.querySelector('section[aria-label="Στην περιοχή σου"]')).toBeNull();
   });
 
+  test('reveals attribution after a saved vote and fetches another unanswered position', async () => {
+    mockUser = { id: 17 };
+    mockPositions.mockResolvedValueOnce({ data: { positions: [{ id: 9, title: 'Sample policy', body: 'Policy text', position: { organization: { name: 'Sample party' } } }] } });
+    await render();
+    const card = container.querySelector('#policy-vote');
+    expect(card.textContent).toContain('Sample policy');
+    expect(card.textContent).not.toContain('Sample party');
+    await act(async () => card.querySelector('button').click());
+    expect(mockVote).toHaveBeenCalledWith(9, 1);
+    expect(card.textContent).toContain('Sample party');
+    await act(async () => card.querySelector('button').click());
+    expect(mockPositions).toHaveBeenLastCalledWith(expect.objectContaining({ voteView: 'unanswered', pool: 'home' }));
+    expect(card.textContent).toContain('Δεν υπάρχουν άλλες θέσεις');
+  });
   test('preserves featured-poll audience settings', async () => {
     mockGet.mockResolvedValue({ success: true, data: { ...payload, featuredPoll: { title: 'Members poll' }, homepageSettings: { featuredPoll: { enabled: true, audience: 'registered' } } } });
     await render();
-    expect(container.querySelector('[data-testid="original-hero"]').textContent).not.toContain('Members poll');
+    expect(container.querySelector('section').textContent).not.toContain('Members poll');
     mockUser = { id: 1, username: 'member' };
     await render();
-    expect(container.querySelector('[data-testid="original-hero"]').textContent).toContain('Members poll');
+    expect(container.querySelector('section').textContent).toContain('Members poll');
   });
   test('shows a loading failure instead of silently rendering an empty response', async () => {
     mockGet.mockResolvedValue({ success: false, message: 'Homepage unavailable' });
@@ -100,6 +121,7 @@ describe('Restored map homepage', () => {
     mockUser = { id: 7 };
     mockGet.mockReturnValueOnce(new Promise(resolve => { resolveOld = resolve; }));
     await render();
+    mockPositions.mockReset().mockResolvedValue({ data: { positions: [] } });
     mockUser = null;
     await render();
     await act(async () => resolveOld({ success: true, data: { suggestions: [{ id: 1, title: 'Private proposal' }] } }));

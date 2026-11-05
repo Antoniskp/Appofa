@@ -19,7 +19,7 @@ const DEFAULT_SUBTITLE = 'Όρισε την περιοχή σου στο προ�
 const GUEST_TITLE = 'Η περιοχή σου. Τα θέματα που σε αφορούν. Η δική σου φωνή.';
 const GUEST_SUBTITLE = 'Ανακάλυψε προτάσεις και ψηφοφορίες για την περιοχή σου. Δημιούργησε λογαριασμό για να ακολουθείς όσα σε ενδιαφέρουν και να καταθέτεις τις δικές σου προτάσεις.';
 
-function FeaturedLivePoll({ poll, loading, user }) {
+export function FeaturedLivePoll({ poll, loading, user }) {
   const [currentPoll, setCurrentPoll] = useState(poll);
   const [selectedOptionId, setSelectedOptionId] = useState(poll?.userVote?.optionId || null);
   const [submittingOptionId, setSubmittingOptionId] = useState(null);
@@ -174,7 +174,7 @@ function FeaturedLivePoll({ poll, loading, user }) {
   );
 }
 
-export default function HomeHero({ featuredPoll = null, featuredPollLoading = false }) {
+export default function HomeHero() {
   const { user, loading: authLoading } = useAuth();
   const area = user?.homeLocation;
   const areaKey = area?.slug || area?.id || user?.homeLocationId;
@@ -221,7 +221,7 @@ export default function HomeHero({ featuredPoll = null, featuredPollLoading = fa
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ivory to-transparent pointer-events-none" />
 
         <div className={`relative app-container py-6 ${areaKey ? 'md:py-6' : 'md:py-10'}`}>
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] lg:items-center animate-fade-in">
+          <div className="grid gap-8 lg:items-center animate-fade-in">
 
             {/* Left – text & actions */}
             <div className="min-w-0 max-w-3xl">
@@ -247,20 +247,7 @@ export default function HomeHero({ featuredPoll = null, featuredPollLoading = fa
                 <Link href="/progress">Δες την πρόοδο των προτάσεων</Link>
               </nav>
 
-              {(featuredPoll || featuredPollLoading) && (
-                <div className="lg:hidden">
-                  <FeaturedLivePoll poll={featuredPoll} loading={featuredPollLoading} user={user} />
-                </div>
-              )}
-
             </div>
-
-            {(featuredPoll || featuredPollLoading) && (
-              <div className="relative hidden lg:block">
-                <FeaturedLivePoll poll={featuredPoll} loading={featuredPollLoading} user={user} />
-              </div>
-            )}
-
           </div>
         </div>
       </section>

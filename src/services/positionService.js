@@ -159,7 +159,7 @@ async function list(query, user) {
     model: OrganizationPosition, as: 'position', required: true, where: positionWhere,
     include: [
       { model: Organization, as: 'organization', required: true, attributes: ['id', 'name', 'slug', 'type', 'logo'],
-        where: organizationId ? {} : { isPublic: true } },
+        where: organizationId ? {} : { isPublic: true, ...(query.pool === 'home' ? { [Op.or]: [{ type: 'party' }, { slug: 'appofasi' }] } : {}) } },
       { model: PolicyCategory, as: 'category' },
       { model: Topic, as: 'topics', through: { attributes: [] }, attributes: ['id', 'name', 'slug'],
         ...(query.topicId ? { where: { id: id(query.topicId) }, required: true } : {}) },

@@ -6,6 +6,7 @@ import PollTopics from '@/components/home/PollTopics';
 import { useTranslations } from 'next-intl';
 import { useHomepageData } from '@/hooks/useHomepageData';
 import { useAuth } from '@/lib/auth-context';
+import ParticipationRow from '@/components/home/ParticipationRow';
 import HomeHero from '@/components/HomeHero';
 import HomeActionLanes from '@/components/HomeActionLanes';
 import ArticleCard from '@/components/articles/ArticleCard';
@@ -68,7 +69,8 @@ export default function HomePageClient({ initialPayload = null }) {
   return (
     <div className="bg-ivory">
       <CountryEntryPopup isAuthenticated={Boolean(user)} />
-      <HomeHero
+      <HomeHero />
+      <ParticipationRow user={user} topic={articleTags[0]}
         featuredPoll={shouldShowFeaturedPoll ? featuredPoll : null}
         featuredPollLoading={shouldShowFeaturedPoll && featuredPollLoading}
       />

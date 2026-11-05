@@ -38,6 +38,7 @@ const { useAuth } = require('@/lib/auth-context');
 const { pollAPI } = require('@/lib/api');
 const HomeHero = require('../components/layout/HomeHero').default;
 
+const { FeaturedLivePoll } = require('../components/layout/HomeHero');
 const buildSlide = (linkUrl, linkText = 'Δες τώρα') => ({
   id: 1,
   title: 'Slide title',
@@ -65,7 +66,7 @@ const renderHero = async (slide, props = {}) => {
   const root = createRoot(container);
 
   await act(async () => {
-    root.render(React.createElement(HomeHero, props));
+    root.render(props.featuredPoll ? React.createElement(FeaturedLivePoll, { poll: props.featuredPoll }) : React.createElement(HomeHero));
   });
 
   return { container, root };
