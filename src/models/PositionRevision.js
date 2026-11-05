@@ -13,6 +13,7 @@ module.exports = sequelize.define('PositionRevision', {
   positionId: fk('OrganizationPositions'),
   version: { type: S.INTEGER, allowNull: false, validate: { min: 1 } },
   title: { type: S.STRING(200), allowNull: false, validate: { len: [5, 200] } },
+  explanation: { type: S.TEXT },
   body: { type: S.TEXT, allowNull: false, validate: { notEmpty: true } },
   attribution: choice(['sourced', 'official', 'community'], 'sourced'),
   status: choice(['draft', 'in_review', 'published', 'superseded', 'rejected'], 'draft'),

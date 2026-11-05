@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { HandThumbUpIcon, HandThumbDownIcon, ArrowTopRightOnSquareIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { positionAPI } from '@/lib/api/positions';
 import { useAuth } from '@/lib/auth-context';
+import PolicyExplanation from './PolicyExplanation';
 import LoginLink from '@/components/ui/LoginLink';
 import OrgAvatar from '@/components/organization/OrgAvatar';
 
@@ -13,7 +14,7 @@ const inputClass = 'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 
 const buttonClass = 'rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50';
 const primaryClass = 'rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50';
 const blankSource = () => ({ provider: 'website', sourceUrl: '', originalSourceUrl: '', sourcePublishedAt: '' });
-const blankForm = () => ({ title: '', body: '', attribution: 'sourced', categoryId: '', topicIds: [], sources: [blankSource()] });
+const blankForm = () => ({ title: '', body: '', explanation: '', attribution: 'sourced', categoryId: '', topicIds: [], sources: [blankSource()] });
 
 function publisherGroups(organizations) {
   const groups = { foundations: [], political_parties: [], other_publishers: [] };
@@ -40,7 +41,7 @@ function publisherName(org, t) {
 
 function applyVote(result, revisionId, vote) {
   return result && { ...result, positions: result.positions.map(row =>
-    row.id === revisionId ? { ...row, support: vote.support, oppose: vote.oppose, myVote: vote.value } : row
+    row.id === revisionId ? { ...row, support: vote.support, oppose: vote.oppose, unsure: vote.unsure, myVote: vote.value } : row
   ) };
 }
 
@@ -65,7 +66,7 @@ function SourceLinks({ sources, t, formatDate }) {
 
 function PositionEditor({ editing, metadata, onSave, onCancel, busy, t, categoryName }) {
   const [form, setForm] = useState(() => editing.row ? {
-    title: editing.row.title, body: editing.row.body, attribution: editing.row.attribution,
+    title: editing.row.title, body: editing.row.body, explanation: editing.row.explanation || '', attribution: editing.row.attribution,
     categoryId: String(editing.row.position.categoryId),
     topicIds: editing.row.position.topics.map(topic => topic.id),
     sources: editing.row.sources.map(source => ({ ...source, sourcePublishedAt: source.sourcePublishedAt?.slice(0, 10) || '' })),
@@ -77,6 +78,7 @@ function PositionEditor({ editing, metadata, onSave, onCancel, busy, t, category
     <p className="text-sm text-gray-600">{t('editor_hint')}</p>
     <label className="block text-sm font-medium">{t('title_label')}<input required minLength={5} maxLength={200} className={inputClass + ' mt-1'} value={form.title} onChange={event => set('title', event.target.value)} /></label>
     <label className="block text-sm font-medium">{t('body_label')}<textarea required maxLength={20000} rows={5} className={inputClass + ' mt-1'} value={form.body} onChange={event => set('body', event.target.value)} /></label>
+    <label className="block text-sm font-medium">{t('explanation_label')}<textarea maxLength={2000} rows={3} className={inputClass} value={form.explanation} onChange={event => set('explanation', event.target.value)} /></label>
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="block text-sm font-medium">{t('category')}<select required disabled={!!editing.row} className={inputClass + ' mt-1'} value={form.categoryId} onChange={event => set('categoryId', event.target.value)}><option value="">{t('choose_category')}</option>{metadata.categories.map(category => <option key={category.id} value={category.id}>{categoryName(category)}</option>)}</select></label>
       <label className="block text-sm font-medium">{t('attribution')}<select className={inputClass + ' mt-1'} value={form.attribution} onChange={event => set('attribution', event.target.value)}><option value="sourced">{t('sourced')}</option><option value="community">{t('community')}</option>{(metadata.canPublishOfficial || form.attribution === 'official') && <option value="official" disabled={!metadata.canPublishOfficial}>{t('official')}</option>}</select></label>
@@ -117,7 +119,7 @@ export function PositionCard({ detail = false, row, manage, metadata, user, busy
   const [reviewing, setReviewing] = useState(false);
   const [checked, setChecked] = useState(false);
   const [reviewNote, setReviewNote] = useState('');
-  const total = row.support + row.oppose;
+  const total = row.support + row.oppose + (row.unsure || 0);
   const expanded = detail || manage;
   const approval = total ? Math.round(row.support / total * 100) : null;
   const editable = ['draft', 'in_review', 'rejected'].includes(row.status);
@@ -144,21 +146,23 @@ export function PositionCard({ detail = false, row, manage, metadata, user, busy
     {expanded && <div className="mt-4 border-t border-gray-100 pt-3"><SourceLinks sources={row.sources} t={t} formatDate={formatDate} /></div>}
     <div className="mt-auto pt-3">
       <div className="mb-2 flex items-center justify-between gap-2 text-sm"><strong>{approval === null ? t('no_votes') : total < 10 ? t('vote_totals', { support: row.support, oppose: row.oppose }) : t('approval_percent', { percent: approval })}</strong><span className="text-gray-500">{t('vote_count', { count: total })}</span></div>
+      {row.unsure > 0 && <p className="mb-2 text-xs text-gray-600">{t('view_unsure')} � {Math.round(row.unsure / total * 100)}%</p>}
       {expanded && total > 0 && total < 10 && <p className="mb-3 text-xs text-gray-500">{t("low_participation")}</p>}
       {total >= 10 && <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-gray-100" aria-hidden="true"><div className="h-full bg-emerald-500" style={{ width: (approval || 0) + '%' }} /></div>}
       {row.status === 'published' && row.position.status === 'active' && <div className="flex flex-wrap gap-2">
-        {[1, -1].map(value => {
-          const Icon = value === 1 ? HandThumbUpIcon : HandThumbDownIcon;
+        {[1, -1, 2].map(value => {
+          const Icon = value === 2 ? null : value === 1 ? HandThumbUpIcon : HandThumbDownIcon;
           const selected = row.myVote === value;
           return <button key={value} type="button" disabled={busy || voting || !user} aria-pressed={selected}
             onClick={() => vote(selected ? 0 : value)}
             className={buttonClass + ' inline-flex min-h-11 flex-1 justify-center items-center gap-2 ' + (selected ? 'ring-2 ring-blue-500 bg-blue-50 text-blue-800' : '')}>
-            <Icon className="h-4 w-4" />{t(value === 1 ? 'support' : 'oppose')}
-            <span>{value === 1 ? row.support : row.oppose}</span>
+            {Icon && <Icon className="h-4 w-4" />}{t(value === 1 ? 'support' : value === 2 ? 'view_unsure' : 'oppose')}
+            <span>{value === 1 ? row.support : value === 2 ? row.unsure || 0 : row.oppose}</span>
             {selected && <span aria-hidden="true">&#10003;</span>}
           </button>;
         })}
       </div>}
+      {row.status === 'published' && <PolicyExplanation policy={row} />}
       {!user && row.status === 'published' && <LoginLink className="mt-2 block text-sm text-blue-700 hover:underline">{t('sign_in')}</LoginLink>}
       {user && row.status === 'published' && <div className="text-xs">{expanded && <p className="mt-2 text-gray-500">{t('vote_private')}</p>}<p role="status" className="text-emerald-700 empty:hidden">{voting ? t('saving') : voteMessage}</p>{voteError && <p role="alert" className="mt-1 text-red-700">{voteError}</p>}</div>}
       {expanded && <details className="mt-4"><summary className="cursor-pointer text-xs font-medium text-gray-600">{t("details")}</summary>
@@ -166,7 +170,7 @@ export function PositionCard({ detail = false, row, manage, metadata, user, busy
       {row.publishedAt && <p className="mt-2 text-xs text-gray-500">{t("published_date", { date: formatDate(row.publishedAt) })}</p>}
       <button type="button" disabled={historyLoading} onClick={toggleHistory} className="mt-4 text-xs font-medium text-gray-600 hover:underline">{historyLoading ? t('loading') : history ? t('hide_history') : t('history')}</button>
       {historyError && <p role="alert" className="mt-2 text-sm text-red-700">{historyError}</p>}
-      {history && <div className="mt-3 space-y-4 rounded-lg bg-gray-50 p-3">{history.length ? history.map(version => <div key={version.id} className="border-b border-gray-200 pb-3 last:border-0"><p className="text-xs font-semibold text-gray-500">v{version.version} · {t(version.status)}</p><h4 className="mt-1 text-sm font-semibold">{version.title}</h4><p className="my-2 whitespace-pre-wrap text-sm text-gray-600">{version.body}</p><SourceLinks sources={version.sources} t={t} formatDate={formatDate} /><p className="mt-2 text-xs">{t('support')}: {version.support} · {t('oppose')}: {version.oppose}</p></div>) : <p className="text-sm text-gray-500">{t('no_history')}</p>}</div>}
+      {history && <div className="mt-3 space-y-4 rounded-lg bg-gray-50 p-3">{history.length ? history.map(version => <div key={version.id} className="border-b border-gray-200 pb-3 last:border-0"><p className="text-xs font-semibold text-gray-500">v{version.version} · {t(version.status)}</p><h4 className="mt-1 text-sm font-semibold">{version.title}</h4><p className="my-2 whitespace-pre-wrap text-sm text-gray-600">{version.body}</p><SourceLinks sources={version.sources} t={t} formatDate={formatDate} /><p className="mt-2 text-xs">{t('support')}: {version.support} · {t('oppose')}: {version.oppose} · {t('view_unsure')}: {version.unsure || 0}</p></div>) : <p className="text-sm text-gray-500">{t('no_history')}</p>}</div>}
       </details>}
       {manage && <div className="mt-4 space-y-3 border-t pt-4">
         {row.reviewNote && <p className="text-sm text-amber-800">{row.reviewNote}</p>}
@@ -316,7 +320,7 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
     </div>
     <div className="flex flex-wrap items-center justify-between gap-3">
       {personalView && !comparison && <div role="group" aria-label={t('my_answers')} className="flex flex-wrap gap-2">
-        {['unanswered', 'agree', 'disagree', 'all'].map(view => <button type="button" key={view} aria-pressed={view === voteView} className={buttonClass + (view === voteView ? ' bg-blue-50 text-blue-800' : '')} onClick={() => { setVoteView(view); setPage(1); setNotice(''); }}>{t('view_' + view)}</button>)}
+        {['unanswered', 'agree', 'disagree', 'unsure', 'all'].map(view => <button type="button" key={view} aria-pressed={view === voteView} className={buttonClass + (view === voteView ? ' bg-blue-50 text-blue-800' : '')} onClick={() => { setVoteView(view); setPage(1); setNotice(''); }}>{t('view_' + view)}</button>)}
       </div>}
       <label className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-medium text-gray-600 sm:ml-auto">
         {t('sort')}

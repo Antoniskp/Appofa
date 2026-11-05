@@ -65,6 +65,9 @@ describe('Organization positions workflow', () => {
     await service.vote(created.revisionId, -1, viewer);
     result = await service.list({ organizationId: org.id }, viewer);
     expect(result.positions[0]).toMatchObject({ support: 0, oppose: 1, myVote: -1 });
+    expect(await service.vote(created.revisionId, 2, viewer)).toMatchObject({ support: 0, oppose: 0, unsure: 1 });
+    const undecided = await service.list({ voteView: 'unsure' }, viewer);
+    expect(undecided.positions[0]).toMatchObject({ myVote: 2, unsure: 1 });
     await service.vote(created.revisionId, 0, viewer);
     expect(await PositionVote.count({ where: { revisionId: created.revisionId } })).toBe(0);
   });

@@ -74,7 +74,7 @@ function content(input, permissions) {
     };
   });
   if (attribution !== 'community' && !sources.length) fail(400, 'Sourced and official positions require a source.');
-  return { title, body, attribution, sources };
+  return { title, body, explanation: input.explanation ? requiredText(input.explanation, 2000) : null, attribution, sources };
 }
 async function classification(input, transaction) {
   const categoryId = id(input.categoryId);
@@ -101,6 +101,7 @@ async function metadata(organizationId, user) {
 // Fixed SQL expressions only: user input is passed through Sequelize's where clauses.
 const supportSql = '(SELECT COUNT(*) FROM "PositionVotes" pv WHERE pv."revisionId" = "PositionRevision"."id" AND pv."value" = 1)';
 const opposeSql = '(SELECT COUNT(*) FROM "PositionVotes" pv WHERE pv."revisionId" = "PositionRevision"."id" AND pv."value" = -1)';
+const unsureSql = '(SELECT COUNT(*) FROM "PositionVotes" pv WHERE pv."revisionId" = "PositionRevision"."id" AND pv."value" = 2)';
 const totalSql = '(' + supportSql + ' + ' + opposeSql + ')';
 const proportionSql = '(1.0 * ' + supportSql + ' / NULLIF(' + totalSql + ', 0))';
 const topSql = 'COALESCE((' + proportionSql + ' + 1.9208 / NULLIF(' + totalSql + ', 0) - 1.96 * SQRT((' + proportionSql + ' * (1 - ' + proportionSql + ') + 0.9604 / NULLIF(' + totalSql + ', 0)) / NULLIF(' + totalSql + ', 0))) / (1 + 3.8416 / NULLIF(' + totalSql + ', 0)), 0)';
@@ -135,8 +136,8 @@ async function list(query, user) {
   if (query.categoryId) positionWhere.categoryId = id(query.categoryId);
   const revisionWhere = { status: manage ? { [Op.in]: ['draft', 'in_review', 'rejected', 'published'] } : 'published' };
   if (!manage && user && query.voteView && query.voteView !== 'all') {
-    if (!['unanswered', 'agree', 'disagree'].includes(query.voteView)) fail(400, 'Invalid vote view.');
-    const valueClause = query.voteView === 'unanswered' ? '' : query.voteView === 'agree' ? ' AND pv.value = 1' : ' AND pv.value = -1';
+    if (!['unanswered', 'agree', 'disagree', 'unsure'].includes(query.voteView)) fail(400, 'Invalid vote view.');
+    const valueClause = query.voteView === 'unanswered' ? '' : query.voteView === 'agree' ? ' AND pv.value = 1' : query.voteView === 'unsure' ? ' AND pv.value = 2' : ' AND pv.value = -1';
     const exists = query.voteView === 'unanswered' ? 'NOT EXISTS' : 'EXISTS';
     revisionWhere[Op.and] = literal(`${exists} (SELECT 1 FROM "PositionVotes" pv WHERE pv."revisionId" = "PositionRevision"."id" AND pv."userId" = ${sequelize.escape(user.id)}${valueClause})`);
   }
@@ -165,7 +166,7 @@ async function list(query, user) {
         ...(query.topicId ? { where: { id: id(query.topicId) }, required: true } : {}) },
     ],
   }];
-  const orderSql = { top: topSql, support: supportSql, approval: 'CASE WHEN ' + totalSql + ' >= 10 THEN ' + proportionSql + ' ELSE -1 END', divisive: 'CASE WHEN ' + totalSql + ' >= 10 THEN 1 - ABS(2 * ' + proportionSql + ' - 1) ELSE -1 END' };
+  const orderSql = { top: topSql, support: supportSql, approval: 'CASE WHEN (' + totalSql + ' + ' + unsureSql + ') >= 10 THEN 1.0 * ' + supportSql + ' / (' + totalSql + ' + ' + unsureSql + ')' + ' ELSE -1 END', divisive: 'CASE WHEN ' + totalSql + ' >= 10 THEN 1 - ABS(2 * ' + proportionSql + ' - 1) ELSE -1 END' };
   const sort = query.sort || 'top';
   if (!['shuffle', 'top', 'support', 'approval', 'divisive', 'newest'].includes(sort)) fail(400, 'Invalid sort.');
   if (sort === 'shuffle') {
@@ -186,8 +187,8 @@ async function list(query, user) {
   const revisionIds = ids.map(row => row.id);
   const rows = revisionIds.length ? await PositionRevision.findAll({
     where: { id: revisionIds },
-    attributes: ['id', 'positionId', 'version', 'title', 'body', 'attribution', 'status', 'publishedAt', 'createdAt', ...(manage ? ['reviewNote'] : []),
-      [literal(supportSql), 'support'], [literal(opposeSql), 'oppose']],
+    attributes: ['id', 'positionId', 'version', 'title', 'body', 'explanation', 'attribution', 'status', 'publishedAt', 'createdAt', ...(manage ? ['reviewNote'] : []),
+      [literal(supportSql), 'support'], [literal(opposeSql), 'oppose'], [literal(unsureSql), 'unsure']],
     include: [...include, { model: PositionSource, as: 'sources', attributes: ['id', 'provider', 'sourceUrl', 'originalSourceUrl', 'sourcePublishedAt', 'retrievedAt', 'externalId', 'originalTopic', 'reviewStatus'] }],
   }) : [];
   const ownVotes = user && revisionIds.length ? await PositionVote.findAll({ where: { revisionId: revisionIds, userId: user.id }, attributes: ['revisionId', 'value'] }) : [];
@@ -195,6 +196,7 @@ async function list(query, user) {
   const byId = new Map(rows.map(row => {
     const data = row.toJSON();
     data.support = Number(data.support);
+    data.unsure = Number(data.unsure);
     data.oppose = Number(data.oppose);
     data.myVote = votes.get(data.id) || 0;
     return [data.id, data];
@@ -216,7 +218,7 @@ async function create(organizationId, input, user) {
     const { categoryId, topicIds } = await classification(input, transaction);
     const position = await OrganizationPosition.create({ organizationId: id(organizationId), categoryId, createdByUserId: user.id }, { transaction });
     await PositionTopic.bulkCreate(topicIds.map(topicId => ({ positionId: position.id, topicId })), { transaction });
-    const revision = await PositionRevision.create({ positionId: position.id, version: 1, title: draft.title, body: draft.body, attribution: draft.attribution, createdByUserId: user.id }, { transaction });
+    const revision = await PositionRevision.create({ positionId: position.id, version: 1, title: draft.title, body: draft.body, explanation: draft.explanation, attribution: draft.attribution, createdByUserId: user.id }, { transaction });
     await saveSources(revision.id, draft.sources, transaction);
     return { positionId: position.id, revisionId: revision.id };
   });
@@ -232,7 +234,7 @@ async function revise(positionId, input, user) {
     const { position, permissions } = await lockedPosition(positionId, user, transaction);
     const draft = content(input, permissions);
     const version = (await PositionRevision.max('version', { where: { positionId: position.id }, transaction })) + 1;
-    const revision = await PositionRevision.create({ positionId: position.id, version, title: draft.title, body: draft.body, attribution: draft.attribution, createdByUserId: user.id }, { transaction });
+    const revision = await PositionRevision.create({ positionId: position.id, version, title: draft.title, body: draft.body, explanation: draft.explanation, attribution: draft.attribution, createdByUserId: user.id }, { transaction });
     await saveSources(revision.id, draft.sources, transaction);
     return { positionId: position.id, revisionId: revision.id };
   });
@@ -246,7 +248,7 @@ async function mutateRevision(revisionId, input, user, action) {
     if (!['draft', 'in_review', 'rejected'].includes(revision.status)) fail(409, 'Published versions cannot be edited. Create a new version.');
     if (action === 'save') {
       const draft = content(input, permissions);
-      await revision.update({ title: draft.title, body: draft.body, attribution: draft.attribution, status: 'draft', reviewedByUserId: null, reviewedAt: null, reviewNote: null }, { transaction });
+      await revision.update({ title: draft.title, body: draft.body, explanation: draft.explanation, attribution: draft.attribution, status: 'draft', reviewedByUserId: null, reviewedAt: null, reviewNote: null }, { transaction });
       await saveSources(revision.id, draft.sources, transaction);
     } else if (action === 'publish') {
       if (position.status !== 'active') fail(409, 'Reactivate the position before publishing.');
@@ -272,7 +274,7 @@ async function changeStatus(positionId, status, user) {
   });
 }
 async function vote(revisionId, value, user) {
-  if (![0, 1, -1].includes(value)) fail(400, 'Vote must be support, oppose, or removed.');
+  if (![0, 1, -1, 2].includes(value)) fail(400, 'Vote must be support, oppose, unsure, or removed.');
   const existing = await PositionRevision.findByPk(id(revisionId), { attributes: ['positionId'] });
   if (!existing) fail(404, 'Revision not found.');
   return sequelize.transaction(async transaction => {
@@ -284,7 +286,8 @@ async function vote(revisionId, value, user) {
     else await PositionVote.upsert({ ...where, value, identityVisibility: 'anonymous' }, { transaction });
     const support = await PositionVote.count({ where: { revisionId: revision.id, value: 1 }, transaction });
     const oppose = await PositionVote.count({ where: { revisionId: revision.id, value: -1 }, transaction });
-    return { value, support, oppose };
+    const unsure = await PositionVote.count({ where: { revisionId: revision.id, value: 2 }, transaction });
+    return { value, support, oppose, unsure };
   });
 }
 async function history(positionId, user) {
@@ -293,7 +296,7 @@ async function history(positionId, user) {
   await access(position.organizationId, user);
   return PositionRevision.findAll({
     where: { positionId: position.id, status: { [Op.in]: ['published', 'superseded'] } },
-    attributes: ['id', 'version', 'title', 'body', 'status', 'publishedAt', [literal(supportSql), 'support'], [literal(opposeSql), 'oppose']],
+    attributes: ['id', 'version', 'title', 'body', 'status', 'publishedAt', [literal(supportSql), 'support'], [literal(opposeSql), 'oppose'], [literal(unsureSql), 'unsure']],
     include: [{ model: PositionSource, as: 'sources', attributes: ['provider', 'sourceUrl', 'originalSourceUrl', 'sourcePublishedAt'] }],
     order: [['version', 'DESC']],
   });

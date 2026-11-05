@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import PolicyExplanation from '@/components/positions/PolicyExplanation';
 import ArticleCard from '@/components/articles/ArticleCard';
 import Link from 'next/link';
 import { positionAPI } from '@/lib/api/positions';
@@ -39,7 +40,7 @@ function PolicyVote({ user }) {
   const { policy } = state;
   return <article id="policy-vote" className={card} aria-live="polite">
     <h2 className="text-xl font-bold">Συμφωνείς με τη θέση;</h2>
-    <p className="my-4">Διάβασε μια πολιτική θέση και διάλεξε αν συμφωνείς ή διαφωνείς. Μετά θα δεις από ποιο κόμμα ή την ομάδα του Appofasi προέρχεται.</p>
+    <p className="my-4">Διάβασε μια πολιτική θέση και διάλεξε την απάντησή σου. Μετά θα δεις από ποιο κόμμα ή την ομάδα του Appofasi προέρχεται.</p>
     {!user ? <>
       <div className="flex flex-wrap gap-2">{[['/login', 'Σύνδεση'], ['/register', 'Εγγραφή']].map(([path, title]) =>
         <Link className={button} key={path} href={buildAuthPath(path, '/#policy-vote')}>{title}</Link>)}</div>
@@ -52,8 +53,9 @@ function PolicyVote({ user }) {
         <p className="mb-3">Η θέση αποδίδεται σε: <strong>{policy.position.organization.name}</strong></p>
         <button className={button} onClick={next}>Επόμενη θέση →</button>
       </> : <>
-        <div className="flex flex-wrap gap-2">{[[1, 'Συμφωνώ'], [-1, 'Διαφωνώ']].map(([value, title]) =>
+        <div className="flex flex-wrap gap-2">{[[1, 'Συμφωνώ'], [-1, 'Διαφωνώ'], [2, 'Δεν έχω αποφασίσει ακόμη']].map(([value, title]) =>
           <button disabled={state.saving} className={button} key={value} onClick={() => vote(value)}>{title}</button>)}</div>
+        <PolicyExplanation key={policy.id} policy={policy} />
         {state.voteError && <p role="alert">Η ψήφος δεν καταχωρίστηκε. Δοκίμασε ξανά.</p>}
       </>}
     </>}

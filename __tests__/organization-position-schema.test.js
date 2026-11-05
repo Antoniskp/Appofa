@@ -23,6 +23,18 @@ describe('Organization position migration', () => {
   });
   afterEach(async () => { await db.close(); });
 
+  test('expanded responses preserve votes and the one-answer constraint', async () => {
+    const expansion = require('../src/migrations/20261106000000-expand-policy-responses');
+    await insert('PositionVotes', { revisionId: 1, userId: 1, value: -1 });
+    await expansion.up(qi);
+    const [rows] = await db.query('SELECT value FROM PositionVotes');
+    expect(rows[0].value).toBe(-1);
+    await qi.bulkUpdate('PositionVotes', { value: 2 }, { revisionId: 1 });
+    await expect(insert('PositionVotes', { revisionId: 1, userId: 1, value: 1 })).rejects.toThrow();
+    await expansion.down(qi);
+    await expect(insert('PositionVotes', { revisionId: 1, userId: 1, value: 2 })).rejects.toThrow();
+  });
+
   test('imports default to drafts with pending source review', async () => {
     await insert('PositionSources', {
       revisionId: 1, provider: 'vouliwatch', sourceUrl: 'https://vouliwatch.gr/policies',

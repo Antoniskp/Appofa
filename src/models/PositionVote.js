@@ -12,7 +12,7 @@ const choice = (values, defaultValue) => ({
 module.exports = sequelize.define('PositionVote', {
   revisionId: fk('PositionRevisions'),
   userId: fk('Users'),
-  value: { type: S.SMALLINT, allowNull: false, validate: { isIn: [[-1, 1]] } },
+  value: { type: S.SMALLINT, allowNull: false, validate: { isIn: [[-1, 1, 2]] } },
   identityVisibility: choice(['anonymous', 'public'], 'anonymous')
 }, { tableName: 'PositionVotes', timestamps: true, indexes: [{"unique":true,"fields":["revisionId","userId"]}] });
 

@@ -24,7 +24,7 @@ export default function PositionPage({ params }) {
   }, [id, user?.id]);
   const vote = async (revisionId, value) => {
     const { data } = await positionAPI.vote(revisionId, value);
-    setRow(previous => previous?.id === revisionId ? { ...previous, support: data.support, oppose: data.oppose, myVote: data.value } : previous);
+    setRow(previous => previous?.id === revisionId ? { ...previous, support: data.support, oppose: data.oppose, unsure: data.unsure, myVote: data.value } : previous);
   };
   return <main className="mx-auto max-w-3xl space-y-5 px-4 py-8">
     {error ? <p role="alert">{error}</p> : !row ? <p role="status">{t('loading')}</p> : <>
