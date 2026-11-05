@@ -15,6 +15,29 @@ const primaryClass = 'rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold tex
 const blankSource = () => ({ provider: 'website', sourceUrl: '', originalSourceUrl: '', sourcePublishedAt: '' });
 const blankForm = () => ({ title: '', body: '', attribution: 'sourced', categoryId: '', topicIds: [], sources: [blankSource()] });
 
+function publisherGroups(organizations) {
+  const groups = { foundations: [], political_parties: [], other_publishers: [] };
+  for (const org of organizations) {
+    if (org.slug === 'organization' && org.type === 'institution') groups.foundations.push(org);
+    else if (org.type === 'party') groups.political_parties.push(org);
+    else groups.other_publishers.push(org);
+  }
+  return Object.entries(groups).filter(([, members]) => members.length);
+}
+
+function PublisherGroups({ organizations, t, children }) {
+  return publisherGroups(organizations).map(([key, members]) => (
+    <fieldset key={key} className="mt-3 min-w-0">
+      <legend className="text-xs font-semibold text-gray-600">{t(key)}</legend>
+      <div className="flex flex-wrap gap-2 py-1">{members.map(children)}</div>
+    </fieldset>
+  ));
+}
+
+function publisherName(org, t) {
+  return org.type === 'institution' && org.slug === 'organization' ? t('foundation_name', { name: org.name }) : org.name;
+}
+
 function applyVote(result, revisionId, vote) {
   return result && { ...result, positions: result.positions.map(row =>
     row.id === revisionId ? { ...row, support: vote.support, oppose: vote.oppose, myVote: vote.value } : row
@@ -113,7 +136,7 @@ export function PositionCard({ detail = false, row, manage, metadata, user, busy
       {manage && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-900">{t(row.status)} · v{row.version}</span>}
       {row.position.status !== 'active' && <span className="rounded-full bg-red-50 px-2.5 py-1 text-red-700">{t(row.position.status)}</span>}
     </div>
-    <Link href={'/organizations/' + row.position.organization.slug + '?tab=tab_positions'} className="mb-3 flex items-center gap-3 text-sm font-semibold text-gray-700 hover:text-blue-700 hover:underline" aria-label={row.position.organization.name}><span aria-hidden="true"><OrgAvatar org={row.position.organization} size="h-12 w-16" /></span><span>{row.position.organization.name}</span></Link>
+    <Link href={'/organizations/' + row.position.organization.slug + '?tab=tab_positions'} className="mb-3 flex items-center gap-3 text-sm font-semibold text-gray-700 hover:text-blue-700 hover:underline" aria-label={publisherName(row.position.organization, t)}><span aria-hidden="true"><OrgAvatar org={row.position.organization} size="h-12 w-16" /></span><span>{publisherName(row.position.organization, t)}</span></Link>
     {detail ? <h1 className="text-2xl font-bold">{row.title}</h1> : <h3 className="text-lg font-semibold leading-snug">{row.status === 'published' && row.position.status === 'active' ? <Link className="text-blue-800 underline decoration-blue-200 underline-offset-4 hover:decoration-current" href={`/positions/${row.positionId}`}>{row.title}</Link> : row.title}</h3>}
 
     <p className={`mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-700 ${expanded ? '' : 'line-clamp-3'}`}>{row.body}</p>
@@ -192,7 +215,7 @@ function ComparisonColumn({ organization, filters, cardProps, refresh }) {
     return () => { cancelled = true; };
   }, [organization.id, categoryId, topicId, search, sort, seed, page, user?.id, retry, refresh]);
   return <section ref={resultsTop} className="min-w-0 scroll-mt-24 space-y-3" aria-label={organization.name} aria-busy={loading}>
-    <h2 className="border-b pb-2 text-lg font-semibold">{organization.name}</h2>
+    <h2 className="border-b pb-2 text-lg font-semibold">{publisherName(organization, t)}</h2>
     {error ? <p role="alert" className="text-sm text-red-700">{error} <button className="underline" onClick={() => setRetry(value => value + 1)}>{t('retry')}</button></p> : !result ? <p role="status">{t('loading')}</p> : <>
       <p className="text-xs text-gray-600">{t('result_count', { count: result.pagination.total })}</p>
       <PositionPagination page={page} pages={result.pagination.pages} loading={loading} onChange={changePage} t={t} />
@@ -303,12 +326,12 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
     <div className="min-w-0 space-y-4" role="group" aria-label={t('filters')}>
       {!organizationId && !comparison && <fieldset className="min-w-0">
         <legend className="mb-2 text-sm font-semibold text-gray-700">{t('party_filter')}</legend>
-        <div className="flex gap-2 overflow-x-auto px-1 py-1">
+        <div>
           <button type="button" aria-pressed={!filters.organizationId} className={buttonClass + ' shrink-0 ' + (!filters.organizationId ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'bg-white')} onClick={() => filter('organizationId', '')}>{t('all_entities')}</button>
-          {[...metadata.organizations.filter(org => org.type === 'party'), ...metadata.organizations.filter(org => org.type !== 'party')].map(org => <button key={org.id} type="button" aria-pressed={String(org.id) === filters.organizationId} className={buttonClass + ' inline-flex shrink-0 items-center gap-2 ' + (String(org.id) === filters.organizationId ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'bg-white')} onClick={() => filter('organizationId', String(org.id))}>
+          <PublisherGroups organizations={metadata.organizations} t={t}>{org => <button key={org.id} type="button" aria-pressed={String(org.id) === filters.organizationId} className={buttonClass + ' inline-flex shrink-0 items-center gap-2 ' + (String(org.id) === filters.organizationId ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'bg-white')} onClick={() => filter('organizationId', String(org.id))}>
             <span aria-hidden="true"><OrgAvatar org={org} size="h-8 w-10" /></span>
             <span>{org.name}</span>
-          </button>)}
+          </button>}</PublisherGroups>
         </div>
       </fieldset>}
       <fieldset className="min-w-0">
@@ -332,7 +355,7 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
     {comparison && !manage && <>
       <fieldset className="rounded-xl border p-3"><legend className="px-1 text-sm font-medium">{t('compare_choose')}</legend>
         <p className="mb-2 text-xs text-gray-600">{t('compare_hint')}</p>
-        <div className="flex max-h-40 flex-wrap gap-3 overflow-y-auto">{metadata.organizations.map(org => <label key={org.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedOrganizations.includes(org.id)} disabled={selectedOrganizations.length >= 3 && !selectedOrganizations.includes(org.id)} onChange={event => setSelectedOrganizations(previous => event.target.checked ? [...previous, org.id] : previous.filter(id => id !== org.id))} />{org.name}</label>)}</div>
+        <PublisherGroups organizations={metadata.organizations} t={t}>{org => <label key={org.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedOrganizations.includes(org.id)} disabled={selectedOrganizations.length >= 3 && !selectedOrganizations.includes(org.id)} onChange={event => setSelectedOrganizations(previous => event.target.checked ? [...previous, org.id] : previous.filter(id => id !== org.id))} />{org.name}</label>}</PublisherGroups>
       </fieldset>
       {!(filters.categoryId || topicId) ? <p className="text-sm text-gray-600">{t('compare_scope')}</p> : <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">{selectedOrganizations.map(id => <ComparisonColumn key={id + JSON.stringify(filters)} refresh={refresh} organization={metadata.organizations.find(org => org.id === id)} filters={{ ...filters, topicId }} cardProps={{ metadata, user, busy, onVote: (revisionId, value) => updateVote(setResult, revisionId, value), onEdit: setEditing, onAction: action, t, categoryName, formatDate }} />)}</div>}
     </>}
