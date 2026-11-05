@@ -146,7 +146,7 @@ export function PositionCard({ detail = false, row, manage, metadata, user, busy
     {expanded && <div className="mt-4 border-t border-gray-100 pt-3"><SourceLinks sources={row.sources} t={t} formatDate={formatDate} /></div>}
     <div className="mt-auto pt-3">
       <div className="mb-2 flex items-center justify-between gap-2 text-sm"><strong>{approval === null ? t('no_votes') : total < 10 ? t('vote_totals', { support: row.support, oppose: row.oppose }) : t('approval_percent', { percent: approval })}</strong><span className="text-gray-500">{t('vote_count', { count: total })}</span></div>
-      {row.unsure > 0 && <p className="mb-2 text-xs text-gray-600">{t('view_unsure')} · {Math.round(row.unsure / total * 100)}%</p>}
+      {row.unsure > 0 && <p className="mb-2 text-xs text-gray-600">{t('view_unsure')} Â· {Math.round(row.unsure / total * 100)}%</p>}
       {expanded && total > 0 && total < 10 && <p className="mb-3 text-xs text-gray-500">{t("low_participation")}</p>}
       {total >= 10 && <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-gray-100" aria-hidden="true"><div className="h-full bg-emerald-500" style={{ width: (approval || 0) + '%' }} /></div>}
       {row.status === 'published' && row.position.status === 'active' && <div className="flex flex-wrap gap-2">
