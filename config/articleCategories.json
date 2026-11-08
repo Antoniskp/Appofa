@@ -6,7 +6,7 @@
       "labelEl": "Ανάλυση",
       "description": "Evidence-based analysis of the economy and public issues, with sources and possible solutions",
       "categoryRequired": false,
-      "categories": ["Οικονομία", "Ενέργεια", "Στέγαση", "Δημόσιες Υπηρεσίες", "Υποδομές & Μεταφορές", "Περιβάλλον", "Πολιτική & Κοινωνία"]
+      "categories": ["Οικονομία", "Ενέργεια", "Στέγαση", "Δημόσιες Υπηρεσίες", "Υποδομές & Μεταφορές", "Περιβάλλον", "Πολιτική & Κοινωνία", "Auto-moto"]
     },
     "personal": {
       "value": "personal",
@@ -25,6 +25,7 @@
       "categories": [
         "Για το Appofasi.gr",
         "Γενικά",
+        "Auto-moto",
         "Επιστήμη & Τεχνολογία",
         "Τεχνολογία & Προγραμματισμός",
         "Οικονομία & Επιχειρηματικότητα",
@@ -83,6 +84,7 @@
         "Σύστημα",
         "Γενικά",
         "Πολιτική",
+        "Auto-moto",
         "Sports",
         "Τεχνολογία",
         "Ψυχαγωγία",
