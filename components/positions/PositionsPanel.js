@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { HandThumbUpIcon, HandThumbDownIcon, ArrowTopRightOnSquareIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
@@ -242,6 +242,8 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
   const [filters, setFilters] = useState(() => ({ categoryId: '', organizationId: '', sort: standalone ? 'shuffle' : 'top', seed: Math.floor(Math.random() * 2147483646) + 1, search: '' }));
   const [search, setSearch] = useState('');
   const [voteView, setVoteView] = useState('unanswered');
+  const answerViewId = useId();
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [comparison, setComparison] = useState(false);
   const [selectedOrganizations, setSelectedOrganizations] = useState([]);
   const [manage, setManage] = useState(false);
@@ -285,8 +287,9 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
     onChange?.();
     return data;
   };
-  const filter = (key, value) => { setFilters(previous => ({ ...previous, [key]: value })); setPage(1); };
+  const filter = (key, value) => { setFilters(previous => ({ ...previous, [key]: value })); setPage(1); setFiltersOpen(false); };
   const hasFilters = filters.categoryId || filters.organizationId || filters.search;
+  const activeFilterCount = Number(Boolean(filters.categoryId)) + Number(Boolean(filters.organizationId)) + Number(Boolean(filters.search));
   const showReviewAnswers = personalView === 'unanswered' && !hasFilters && result.allAnswered;
   const clearFilters = () => {
     setSearch('');
@@ -319,23 +322,36 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
       {standalone && !manage && <button type="button" aria-pressed={comparison} className={buttonClass} onClick={() => { if (comparison && personalView && personalView !== 'all') setRefresh(previous => previous + 1); setComparison(!comparison); }}>{t(comparison ? 'list_view' : 'compare')}</button>}
     </div>
     <div className="flex flex-wrap items-center justify-between gap-3">
-      {personalView && !comparison && <div role="group" aria-label={t('my_answers')} className="flex flex-wrap gap-2">
-        {['unanswered', 'agree', 'disagree', 'unsure', 'all'].map(view => <button type="button" key={view} aria-pressed={view === voteView} className={buttonClass + (view === voteView ? ' bg-blue-50 text-blue-800' : '')} onClick={() => { setVoteView(view); setPage(1); setNotice(''); }}>{t('view_' + view)}</button>)}
-      </div>}
+      {personalView && !comparison && <fieldset aria-describedby={answerViewId + '-hint'} className="min-w-0">
+        <legend className="mb-2 text-sm font-semibold text-gray-700">{t('my_answers')}</legend>
+        <div className="flex flex-wrap gap-1 rounded-xl border border-gray-200 bg-gray-100 p-1">
+          {['unanswered', 'agree', 'disagree', 'unsure', 'all'].map(view => <label key={view} className="relative flex min-w-0 cursor-pointer">
+            <input type="radio" name={answerViewId} value={view} checked={view === voteView} className="peer sr-only" onChange={() => { setVoteView(view); setPage(1); setNotice(''); }} />
+            <span className="flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-white peer-checked:bg-white peer-checked:text-blue-800 peer-checked:shadow-sm peer-checked:ring-1 peer-checked:ring-blue-500 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue-600">{t('view_' + view)}</span>
+          </label>)}
+        </div>
+        <p id={answerViewId + '-hint'} className="mt-2 max-w-2xl text-xs leading-relaxed text-gray-600">{t('answer_view_hint')}</p>
+      </fieldset>}
       <label className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-medium text-gray-600 sm:ml-auto">
         {t('sort')}
         <select disabled={manage} className={inputClass + ' !w-auto max-w-full'} value={manage ? 'newest' : filters.sort} onChange={event => filter('sort', event.target.value)}>{[...(standalone ? ['shuffle'] : []), 'top', 'support', 'approval', 'divisive', 'newest'].map(sort => <option key={sort} value={sort}>{t('sort_' + sort)}</option>)}</select>
       </label>
     </div>
-    <div className="min-w-0 space-y-4" role="group" aria-label={t('filters')}>
+    {standalone && !manage && <button type="button" aria-expanded={filtersOpen} aria-controls="position-filter-options" onClick={() => setFiltersOpen(open => !open)} className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-3 text-left text-sm font-semibold text-gray-800 shadow-sm md:hidden">
+      <span>{t(filtersOpen ? 'hide_filters' : 'show_filters')}</span>
+      <span className="flex items-center gap-2 text-xs font-medium text-gray-600">{activeFilterCount > 0 && <span>{t('active_filter_count', { count: activeFilterCount })}</span>}<span aria-hidden="true">{filtersOpen ? '−' : '+'}</span></span>
+    </button>}
+    <div id="position-filter-options" className={`min-w-0 space-y-4 ${standalone && !manage && !filtersOpen ? 'hidden md:block' : ''}`} role="group" aria-label={t('filters')}>
       {!organizationId && !comparison && <fieldset className="min-w-0">
         <legend className="mb-2 text-sm font-semibold text-gray-700">{t('party_filter')}</legend>
         <div>
           <button type="button" aria-pressed={!filters.organizationId} className={buttonClass + ' shrink-0 ' + (!filters.organizationId ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'bg-white')} onClick={() => filter('organizationId', '')}>{t('all_entities')}</button>
+          <div className="mt-1 max-h-56 overflow-y-auto overscroll-contain pr-1">
           <PublisherGroups organizations={metadata.organizations} t={t}>{org => <button key={org.id} type="button" aria-pressed={String(org.id) === filters.organizationId} className={buttonClass + ' inline-flex shrink-0 items-center gap-2 ' + (String(org.id) === filters.organizationId ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'bg-white')} onClick={() => filter('organizationId', String(org.id))}>
             <span aria-hidden="true"><OrgAvatar org={org} size="h-8 w-10" /></span>
             <span>{org.name}</span>
           </button>}</PublisherGroups>
+          </div>
         </div>
       </fieldset>}
       <fieldset className="min-w-0">
