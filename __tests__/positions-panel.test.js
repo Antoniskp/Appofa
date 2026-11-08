@@ -53,7 +53,11 @@ describe('position cards retain their place after voting', () => {
   });
   test('clearing an empty organization filter keeps the unanswered view', async () => {
     positionAPI.list.mockResolvedValueOnce({ data: { positions: [], pagination: { total: 0 } } });
-    await act(async () => button(container, 'Test party').click());
+    await act(async () => {
+      const select = [...container.querySelectorAll('select')].find(element => element.closest('label').textContent.includes('party_filter'));
+      select.value = '1';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    });
     await act(async () => button(container, 'clear_position_filters').click());
     expect(positionAPI.list).toHaveBeenLastCalledWith(expect.objectContaining({ organizationId: '', voteView: 'unanswered', page: 1 }));
   });

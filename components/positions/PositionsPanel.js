@@ -341,26 +341,25 @@ export default function PositionsPanel({ organizationId, topicId, onChange, stan
       <span>{t(filtersOpen ? 'hide_filters' : 'show_filters')}</span>
       <span className="flex items-center gap-2 text-xs font-medium text-gray-600">{activeFilterCount > 0 && <span>{t('active_filter_count', { count: activeFilterCount })}</span>}<span aria-hidden="true">{filtersOpen ? '−' : '+'}</span></span>
     </button>}
-    <div id="position-filter-options" className={`min-w-0 space-y-4 ${standalone && !manage && !filtersOpen ? 'hidden md:block' : ''}`} role="group" aria-label={t('filters')}>
-      {!organizationId && !comparison && <fieldset className="min-w-0">
-        <legend className="mb-2 text-sm font-semibold text-gray-700">{t('party_filter')}</legend>
-        <div>
-          <button type="button" aria-pressed={!filters.organizationId} className={buttonClass + ' shrink-0 ' + (!filters.organizationId ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'bg-white')} onClick={() => filter('organizationId', '')}>{t('all_entities')}</button>
-          <div className="mt-1 max-h-56 overflow-y-auto overscroll-contain pr-1">
-          <PublisherGroups organizations={metadata.organizations} t={t}>{org => <button key={org.id} type="button" aria-pressed={String(org.id) === filters.organizationId} className={buttonClass + ' inline-flex shrink-0 items-center gap-2 ' + (String(org.id) === filters.organizationId ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'bg-white')} onClick={() => filter('organizationId', String(org.id))}>
-            <span aria-hidden="true"><OrgAvatar org={org} size="h-8 w-10" /></span>
-            <span>{org.name}</span>
-          </button>}</PublisherGroups>
-          </div>
-        </div>
-      </fieldset>}
-      <fieldset className="min-w-0">
-        <legend className="mb-2 text-sm font-semibold text-gray-700">{t('category')}</legend>
-        <div className="flex gap-2 overflow-x-auto px-1 py-1">
-          <button type="button" aria-pressed={!filters.categoryId} className={buttonClass + ' shrink-0 ' + (!filters.categoryId ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'bg-white')} onClick={() => filter('categoryId', '')}>{t('all_categories')}</button>
-          {metadata.categories.map(category => <button key={category.id} type="button" aria-pressed={String(category.id) === filters.categoryId} className={buttonClass + ' shrink-0 ' + (String(category.id) === filters.categoryId ? 'bg-blue-50 text-blue-800 ring-1 ring-blue-500' : 'bg-white')} onClick={() => filter('categoryId', String(category.id))}>{categoryName(category)}</button>)}
-        </div>
-      </fieldset>
+    <div id="position-filter-options" className={`min-w-0 space-y-3 rounded-xl border border-gray-200 bg-white p-4 ${standalone && !manage && !filtersOpen ? 'hidden md:block' : ''}`} role="group" aria-label={t('filters')}>
+      <div className={`grid min-w-0 gap-4 ${!organizationId && !comparison ? 'md:grid-cols-2' : ''}`}>
+        {!organizationId && !comparison && <label className="block min-w-0 text-sm font-semibold text-gray-700">
+          {t('party_filter')}
+          <select className={inputClass + ' mt-2 min-h-11'} value={filters.organizationId} onChange={event => filter('organizationId', event.target.value)}>
+            <option value="">{t('all_entities')}</option>
+            {publisherGroups(metadata.organizations).map(([key, members]) => <optgroup key={key} label={t(key)}>
+              {members.map(org => <option key={org.id} value={String(org.id)}>{publisherName(org, t)}</option>)}
+            </optgroup>)}
+          </select>
+        </label>}
+        <label className="block min-w-0 text-sm font-semibold text-gray-700">
+          {t('category')}
+          <select className={inputClass + ' mt-2 min-h-11'} value={filters.categoryId} onChange={event => filter('categoryId', event.target.value)}>
+            <option value="">{t('all_categories')}</option>
+            {metadata.categories.map(category => <option key={category.id} value={String(category.id)}>{categoryName(category)}</option>)}
+          </select>
+        </label>
+      </div>
       {!manage && <p className="text-xs leading-relaxed text-gray-500">{t('ranking_note')}</p>}
     </div>
     <div ref={resultsTop} className="scroll-mt-24 flex flex-wrap items-center gap-2" aria-live="polite">
