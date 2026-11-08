@@ -3,7 +3,7 @@ import HomePageClient from '@/components/home/HomePageClient';
 import { getPublicHomepage } from '@/lib/api/homepage-server';
 
 export const metadata = pageMetadata(
-  'Απόφαση — Προτάσεις πολιτών και δημόσια συμμετοχή',
+  'Προτάσεις πολιτών και δημόσια συμμετοχή',
   'Ενημερωθείτε, καταθέστε προτάσεις, συμμετέχετε σε δημοσκοπήσεις και παρακολουθήστε τις αποφάσεις που επηρεάζουν την κοινότητά σας.',
   '/',
 );

@@ -54,7 +54,7 @@ export default function VideoThumbnailCard({ article }) {
 
   const isTikTok = sourceProvider === 'tiktok';
 
-  const videoTitle = sourceMeta?.title || title || tArticles('video');
+  const videoTitle = title || sourceMeta?.title || tArticles('video');
   const thumbnail = sourceMeta?.thumbnailUrl || null;
   const authorName = sourceMeta?.authorName || author?.username || null;
   const articleHref = `/videos/${idSlug(id, title)}`;

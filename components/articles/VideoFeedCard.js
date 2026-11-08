@@ -191,7 +191,7 @@ export default function VideoFeedCard({ article, onPlay }) {
     tags,
   } = article;
 
-  const videoTitle = sourceMeta?.title || title || tArticles('video');
+  const videoTitle = title || sourceMeta?.title || tArticles('video');
   const authorName = sourceMeta?.authorName;
   const postingUser = author?.username;
   const articleHref = `/articles/${idSlug(id, title)}`;
