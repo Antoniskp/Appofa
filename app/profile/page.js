@@ -16,7 +16,7 @@ import CandidatesTab from '@/app/profile/tabs/CandidatesTab';
 const PROFILE_TABS = [
   { id: 'profile', labelKey: 'tab_profile' },
   { id: 'location-politics', labelKey: 'tab_location_politics' },
-  { id: 'candidates', label: 'Candidates' },
+  { id: 'candidates', labelKey: 'tab_candidates' },
   { id: 'skills', labelKey: 'tab_skills_interests' },
   { id: 'settings', labelKey: 'tab_settings' },
 ];

@@ -286,7 +286,9 @@ const normalizeInteger = (value, fieldLabel, minValue, maxValue) => {
     return { error: `${fieldLabel} is required.` };
   }
   
-  const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
+  const numValue = typeof value === 'string'
+    ? (/^[+-]?\d+$/.test(value.trim()) ? Number(value.trim()) : NaN)
+    : value;
   
   if (!Number.isInteger(numValue)) {
     return { error: `${fieldLabel} must be an integer.` };

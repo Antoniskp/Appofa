@@ -17,9 +17,12 @@ const isValidIp = (ip) => {
   if (v4.test(ip)) {
     return ip.split('.').every((octet) => parseInt(octet, 10) <= 255);
   }
-  // IPv6 (covers full, compressed, and loopback forms)
-  const v6 = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(:[0-9a-fA-F]{1,4}){1,6}|:(:[0-9a-fA-F]{1,4}){1,7}|::)$/;
-  return v6.test(ip);
+  // Let the URL parser validate IPv6 syntax, including embedded IPv4 forms.
+  try {
+    return new URL(`http://[${ip}]/`).hostname !== '';
+  } catch {
+    return false;
+  }
 };
 
 const EMPTY_FORM = { ip: '', type: 'blacklist', reason: '' };
