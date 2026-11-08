@@ -5,6 +5,12 @@
 :root {
   --background: #F7F5F0;
   --foreground: #252627;
+  --surface: #FFFFFF;
+  --surface-muted: #F1EEE8;
+  --border: #DCD8D0;
+  --brand: #80462F;
+  --brand-hover: #693A28;
+  --focus: #955438;
 }
 
 body {
@@ -13,6 +19,7 @@ body {
   font-family: var(--font-noto-sans), Arial, Helvetica, sans-serif;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 html { scroll-behavior: smooth; scroll-padding-top: 2rem; }
@@ -48,16 +55,16 @@ select:-webkit-autofill:focus {
 @layer components {
   /* Button Styles */
   .btn-primary {
-    @apply inline-block bg-charcoal text-white px-6 py-3 rounded-lg font-semibold hover:bg-black transition;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 bg-charcoal text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:bg-black hover:shadow-md transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-copper;
   }
   
   .btn-secondary {
-    @apply inline-block bg-white text-charcoal px-6 py-3 rounded-lg font-semibold hover:bg-sand transition border border-brand-border;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 bg-white text-charcoal px-5 py-2.5 rounded-xl font-semibold hover:bg-ivory transition-all duration-200 border border-brand-border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-copper;
   }
 
   /* Card Styles */
   .card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-150;
+    @apply bg-white rounded-2xl shadow-sm border border-brand-border overflow-hidden hover:shadow-lg hover:-translate-y-0.5 hover:border-copper/40 transition-all duration-200;
   }
 
   /* Pros / Cons semantic card tints */
@@ -71,11 +78,11 @@ select:-webkit-autofill:focus {
 
   /* Typography */
   .section-title {
-    @apply text-3xl font-bold mb-8 text-black;
+    @apply text-2xl sm:text-3xl font-bold tracking-tight mb-6 text-charcoal;
   }
 
   .headline {
-    @apply text-xl font-semibold mb-2 text-black;
+    @apply text-lg sm:text-xl font-semibold tracking-tight mb-2 text-charcoal;
   }
 
   .body-copy {
@@ -85,6 +92,14 @@ select:-webkit-autofill:focus {
   /* Layout */
   .app-container {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .surface-card {
+    @apply rounded-2xl border border-brand-border bg-white shadow-sm transition-all duration-200;
+  }
+
+  .surface-card-interactive {
+    @apply hover:-translate-y-0.5 hover:border-copper/40 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-copper;
   }
 }
 

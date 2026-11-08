@@ -28,11 +28,11 @@ export default function HomepageSection({
   const r = useTranslations('redesign');
   const t = useTranslations('homeRecovery');
   return (
-    <section aria-label={title} aria-busy={Boolean(loading)} className={`${bgColor} border-t border-gray-200`}>
-      <div className="app-container py-8 sm:py-10">
-        <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <section aria-label={title} aria-busy={Boolean(loading)} className={`${bgColor} border-t border-brand-border/70`}>
+      <div className="app-container py-10 sm:py-14">
+        <div className="mb-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0">
-            <div className="mb-2 h-1 w-12 rounded-full bg-copper" />
+            <div className="mb-3 h-1 w-12 rounded-full bg-copper" />
             <h2 className="section-title !mb-0">{title}</h2>
             {subtitle && <p className="mt-2 max-w-3xl text-base leading-relaxed text-[#62666A]">{subtitle}</p>}
           </div>
@@ -42,7 +42,7 @@ export default function HomepageSection({
             )}
             <Link
               href={linkHref}
-              className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-blue-600 bg-white px-3 py-1.5 text-sm font-semibold text-blue-700 shadow-sm transition-colors hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-brand-border bg-white px-4 py-2 text-sm font-semibold text-charcoal shadow-sm transition-all hover:border-copper/50 hover:bg-ivory hover:shadow focus:outline-none focus:ring-2 focus:ring-copper"
             >
               {r('viewAll')}
               <ArrowRightIcon className="h-4 w-4" />
@@ -52,7 +52,7 @@ export default function HomepageSection({
         {introSlot}
         {mapSlot && !loading && <div className="mb-6">{mapSlot}</div>}
         {loading && items.length === 0 && (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
             <SkeletonLoader type="card" count={skeletonCount} variant="grid" />
           </div>
         )}
@@ -74,7 +74,7 @@ export default function HomepageSection({
           />
         )}
         {items.length > 0 && (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
             {items.map(renderItem)}
           </div>
         )}

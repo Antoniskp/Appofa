@@ -158,10 +158,10 @@ function ActionCard({ action }) {
   return (
     <Link
       href={action.href}
-      className="group flex h-full flex-col rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="group flex h-full flex-col rounded-2xl border border-brand-border bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-copper/40 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-copper"
     >
       <div className="flex items-start justify-between gap-4">
-        <div className={`flex h-11 w-11 items-center justify-center rounded-lg border ${toneClasses[action.tone]}`}>
+        <div className={`flex h-12 w-12 items-center justify-center rounded-xl border ${toneClasses[action.tone]}`}>
           <Icon className="h-5 w-5" />
         </div>
         <span className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700">
@@ -169,7 +169,7 @@ function ActionCard({ action }) {
           <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
         </span>
       </div>
-      <h3 className="mt-2 text-base font-bold text-gray-900">{action.title}</h3>
+      <h3 className="mt-4 text-base font-bold tracking-tight text-charcoal">{action.title}</h3>
       <p className="mt-2 text-sm leading-6 text-gray-600">{action.description}</p>
     </Link>
   );
@@ -180,7 +180,7 @@ function GuestRegistrationBridge() {
   const handleAuthClick = () => saveReturnTo();
 
   return (
-    <div className="mt-5 rounded-lg border border-blue-200 bg-blue-50 px-5 py-5 text-gray-900 sm:px-6">
+    <div className="mt-5 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white px-5 py-5 text-gray-900 shadow-sm sm:px-6">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
@@ -228,7 +228,7 @@ export default function HomeActionLanes({ user }) {
 
   return (
     <section aria-labelledby="home-actions-title" className="border-t border-gray-200 bg-white">
-      <div className="app-container py-6">
+      <div className="app-container py-10 sm:py-14">
 
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
@@ -253,12 +253,12 @@ export default function HomeActionLanes({ user }) {
             ))}
           </div>
         </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
           {actions.map((action) => (
             <ActionCard key={action.href} action={action} />
           ))}
         </div>
-        <details className="mt-4 rounded-lg border border-gray-200 p-3">
+        <details className="mt-5 rounded-2xl border border-brand-border bg-ivory/70 p-4 sm:p-5">
           <summary className="cursor-pointer rounded font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">{t('more')}</summary>
         {!user && <GuestRegistrationBridge />}
         <div className="mt-6 border-y border-blue-100 bg-gradient-to-r from-blue-50 via-white to-blue-50 py-8 text-gray-900">
