@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import Card from '@/components/ui/Card';
 import ProfileLocationSection from '@/components/profile/ProfileLocationSection';
 import ProfilePoliticsSection from '@/components/profile/ProfilePoliticsSection';
+import ProfilePartyAlignment from '@/components/profile/ProfilePartyAlignment';
 
 export default function LocationPoliticsTab({
   profileData,
@@ -45,6 +46,8 @@ export default function LocationPoliticsTab({
           manifestLoading={manifestLoading}
         />
       </Card>
+
+      <ProfilePartyAlignment />
     </div>
   );
 }
