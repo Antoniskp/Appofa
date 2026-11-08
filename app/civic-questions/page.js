@@ -31,7 +31,7 @@ export default function CivicQuestionsPage() {
     updateFilter,
     updateFilters,
     resetFilters,
-  } = useFilters({ status: '', sourceType: '', category: '', location: '', sortBy: 'newest', search: '', myArea: '', closingSoon: '' });
+  } = useFilters({ status: 'open', sourceType: '', category: '', location: '', sortBy: 'newest', search: '', myArea: '', closingSoon: '' });
 
   const [filterBarOpen, setFilterBarOpen] = useState(false);
   const [total, setTotal] = useState(0);
@@ -41,16 +41,19 @@ export default function CivicQuestionsPage() {
     { transform: (response) => response.success ? response.data : null }
   );
   const activeFilters = Object.entries(filters).filter(([key, value]) => value && !(key === 'sortBy' && value === 'newest'));
+  const showAllIssues = () => updateFilters({
+    status: '', sourceType: '', category: '', location: '', sortBy: 'newest', search: '', myArea: '', closingSoon: '',
+  });
 
-  const { data: civicQuestions, loading, error } = useAsyncData(
+  const { data: civicQuestions, loading, error, refetch } = useAsyncData(
     async () => {
       const params = { page, limit: 12, ...filters };
       Object.keys(params).forEach((key) => {
         if (!params[key]) delete params[key];
       });
       const response = await civicQuestionAPI.getAll(params);
-      if (response.success) return response;
-      return { data: [], pagination: { totalPages: 1 } };
+      if (!response.success) throw new Error(response.message || t('list.error_description'));
+      return response;
     },
     [page, filters],
     {
@@ -70,6 +73,9 @@ export default function CivicQuestionsPage() {
           <h1 className="text-3xl font-bold text-gray-900">{t('list.title')}</h1>
           <p className="mt-3 text-gray-700">{t('list.intro')}</p>
           <p className="mt-2 text-sm text-gray-600">{t('list.advisory')}</p>
+          <Link href="#issue-list" onClick={() => updateFilters({ status: 'open', closingSoon: '', myArea: '' })} className="mt-4 inline-flex rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700">
+            {t('list.browse_open_action')}
+          </Link>
         </header>
         {!featuredLoading && !featuredError && featured && (
           <section aria-labelledby="featured-issue" className="mb-8 rounded-xl border border-blue-200 bg-blue-50 p-5 sm:p-8">
@@ -83,8 +89,11 @@ export default function CivicQuestionsPage() {
             </div>
           </section>
         )}
-        <section aria-labelledby="participation-guide" className="mb-8 rounded-xl border border-blue-100 bg-white p-5 sm:p-6">
-          <h2 id="participation-guide" className="text-xl font-semibold text-gray-900">{t('guide.title')}</h2>
+        {!featuredLoading && !featuredError && !featured && (
+          <p className="mb-6 text-sm text-gray-600">{t('featured.empty')}</p>
+        )}
+        <details className="mb-6 rounded-xl border border-blue-100 bg-white p-5 sm:p-6">
+          <summary id="participation-guide" className="cursor-pointer text-lg font-semibold text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">{t('guide.title')}</summary>
           <ol className="mt-5 grid gap-5 md:grid-cols-3">
             {['read', 'participate', 'results'].map((step, index) => (
               <li key={step} className="flex items-start gap-3">
@@ -107,8 +116,9 @@ export default function CivicQuestionsPage() {
               ))}
             </dl>
           </details>
-        </section>
-        <h2 className="text-xl font-semibold text-gray-900">{t('guide.browse_title')}</h2>
+        </details>
+        <section id="issue-list" aria-labelledby="issue-list-heading" className="scroll-mt-6">
+        <h2 id="issue-list-heading" className="text-xl font-semibold text-gray-900">{t('guide.browse_title')}</h2>
         <p className="mb-4 mt-2 text-sm text-gray-600">{t('guide.browse_description')}</p>
         <div className="flex flex-wrap gap-2 mb-5" aria-label={t('list.quick_filters')}>
           {[
@@ -207,8 +217,9 @@ export default function CivicQuestionsPage() {
             )
           }
         />
+        </section>
         <div className="mb-5 flex flex-wrap items-center gap-2 text-sm" aria-live="polite">
-          {!loading && !error && <span className="font-medium text-gray-700">{t('list.result_count', { count: total })}</span>}
+          {loading ? <span role="status" className="font-medium text-gray-600">{t('list.loading')}</span> : !error && <span className="font-medium text-gray-700">{t('list.result_count', { count: total })}</span>}
           {activeFilters.map(([key, value]) => {
             const label = key === 'status' ? t(`status.${value}`)
               : key === 'sourceType' ? t(`source_types.${value}`)
@@ -232,6 +243,7 @@ export default function CivicQuestionsPage() {
             type="error"
             title={t('list.error_title')}
             description={error}
+            action={{ text: t('list.retry'), onClick: refetch }}
           />
         )}
 
@@ -240,7 +252,9 @@ export default function CivicQuestionsPage() {
             type="empty"
             title={t('list.empty_title')}
             description={t('list.empty_description')}
-            action={user ? { label: t('list.create_action'), href: '/civic-questions/create' } : undefined}
+            action={activeFilters.length > 0
+              ? { text: t('list.clear'), onClick: showAllIssues }
+              : user ? { text: t('list.create_action'), href: '/civic-questions/create' } : undefined}
           />
         )}
 

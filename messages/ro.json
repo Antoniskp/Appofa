@@ -2290,7 +2290,9 @@
       "deadline": "Încheierea participării",
       "no_deadline": "Nu a fost stabilit un termen de participare",
       "published": "Publicat",
-      "read_question": "Citește subiectul și vezi opțiunile de participare"
+      "read_question": "Citește subiectul",
+      "participate": "Participă",
+      "source_checked": "Sursă verificată"
     },
     "results": {
       "leading": "Leading",
@@ -2365,14 +2367,18 @@
       "sort_most_voted": "Most voted",
       "new_civic_question": "Subiect public nou",
       "error_title": "Subiectele publice nu au putut fi încărcate",
+      "error_description": "Încearcă din nou peste câteva momente.",
+      "retry": "Încearcă din nou",
+      "loading": "Se încarcă subiectele…",
       "empty_title": "Nu s-au găsit subiecte publice",
-      "empty_description": "Încearcă altă căutare sau elimină filtrele.",
+      "empty_description": "Încearcă altă căutare sau elimină filtrele. Alege «Toate» pentru a include subiectele închise și arhivate.",
       "create_action": "Adaugă un subiect public",
       "title": "Subiecte publice",
       "intro": "Subiecte din Parlament, consiliile locale și Europa. Informează-te, descoperă argumentele și spune-ți părerea.",
       "advisory": "Participarea este consultativă. Rezultatele reflectă opiniile participanților și nu obligă Parlamentul sau alte autorități.",
       "all": "Toate",
       "open": "Deschise",
+      "browse_open_action": "Vezi subiectele deschise",
       "my_area": "În zona mea",
       "quick_filters": "Filtre rapide",
       "filters": "Filtre",
@@ -2457,7 +2463,8 @@
       "title": "În prim-plan",
       "reason": "Subiectul deschis cu cei mai mulți participanți noi în ultimele 7 zile.",
       "action": "Vezi subiectul",
-      "participants": "{count, plural, one {# participant în ultimele 7 zile} few {# participanți în ultimele 7 zile} other {# de participanți în ultimele 7 zile}}"
+      "participants": "{count, plural, one {# participant în ultimele 7 zile} few {# participanți în ultimele 7 zile} other {# de participanți în ultimele 7 zile}}",
+      "empty": "Momentan nu există niciun subiect în prim-plan. Vezi mai jos subiectele deschise."
     }
   },
   "candidates": {

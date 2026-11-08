@@ -11,6 +11,7 @@ export default function CivicQuestionCard({ civicQuestion }) {
   const createdAt = new Date(civicQuestion.dateAsked || civicQuestion.createdAt).toLocaleDateString(locale);
   const lifecycleStatus = getCivicQuestionLifecycleStatus(civicQuestion);
   const deadlineDate = civicQuestion.deadline ? new Date(civicQuestion.deadline).toLocaleDateString(locale) : null;
+  const sourceCheckedDate = civicQuestion.sourceCheckedAt ? new Date(civicQuestion.sourceCheckedAt).toLocaleDateString(locale) : null;
   const locationName = locale === 'el' ? (civicQuestion.location?.name_local || civicQuestion.location?.name) : civicQuestion.location?.name;
 
   return (
@@ -37,9 +38,10 @@ export default function CivicQuestionCard({ civicQuestion }) {
         {locationName && <span>📍 {locationName}</span>}
         {deadlineDate && <span>⏱ {t('card.deadline')}: {deadlineDate}</span>}
         {!deadlineDate && lifecycleStatus === 'open' && <span>{t('card.no_deadline')}</span>}
+        {sourceCheckedDate && <span>{t('card.source_checked')}: {sourceCheckedDate}</span>}
         <span>{t(civicQuestion.dateAsked ? 'detail.date_asked' : 'card.published')}: {createdAt}</span>
       </div>
-      <p className="mt-4 text-sm font-semibold text-blue-700">{t('card.read_question')} <span aria-hidden="true">→</span></p>
+      <p className="mt-4 text-sm font-semibold text-blue-700">{t('card.read_question')}{lifecycleStatus === 'open' ? ` · ${t('card.participate')}` : ''} <span aria-hidden="true">→</span></p>
     </Link>
   );
 }

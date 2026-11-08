@@ -2290,7 +2290,9 @@
       "deadline": "Participation closes",
       "no_deadline": "No participation deadline set",
       "published": "Published",
-      "read_question": "Read the issue and see participation options"
+      "read_question": "Read issue",
+      "participate": "Participate",
+      "source_checked": "Source checked"
     },
     "results": {
       "leading": "Leading",
@@ -2365,14 +2367,18 @@
       "sort_most_voted": "Most voted",
       "new_civic_question": "New public issue",
       "error_title": "Failed to load public issues",
+      "error_description": "Please try again in a moment.",
+      "retry": "Try again",
+      "loading": "Loading issues…",
       "empty_title": "No public issues found",
-      "empty_description": "Try another search or remove some filters.",
+      "empty_description": "Try another search or remove some filters. Choose All to include closed and archived issues.",
       "create_action": "Add a public issue",
       "title": "Public issues",
       "intro": "Issues from Parliament, local councils and Europe. Get informed, explore the arguments and share your view.",
       "advisory": "Participation is advisory. Results reflect participants and do not bind Parliament or any other authority.",
       "all": "All",
       "open": "Open",
+      "browse_open_action": "Browse open issues",
       "my_area": "My area",
       "quick_filters": "Quick filters",
       "filters": "Filters",
@@ -2457,7 +2463,8 @@
       "title": "In focus",
       "reason": "The open issue with the most new participants over the last 7 days.",
       "action": "Explore the issue",
-      "participants": "{count, plural, one {# participant in the last 7 days} other {# participants in the last 7 days}}"
+      "participants": "{count, plural, one {# participant in the last 7 days} other {# participants in the last 7 days}}",
+      "empty": "No issue is featured right now. Browse open issues below."
     }
   },
   "candidates": {
