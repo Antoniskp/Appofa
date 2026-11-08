@@ -165,6 +165,9 @@ export default function LocationRoles({
                   <>{user?.username && user.username.toLowerCase() !== 'unknown' && <p className="text-xs text-gray-500 truncate">@{user.username}</p>}</>
                 </div>
               </div>
+              {user?.bio && (
+                <p className="mt-3 text-sm leading-5 text-gray-600 line-clamp-3">{user.bio}</p>
+              )}
               {profileHref && (
                 <Link
                   href={profileHref}

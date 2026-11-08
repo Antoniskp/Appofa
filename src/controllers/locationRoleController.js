@@ -97,7 +97,7 @@ exports.getRoles = async (req, res) => {
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'slug', 'photo'],
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'slug', 'photo', 'bio'],
           required: false,
         },
       ],
