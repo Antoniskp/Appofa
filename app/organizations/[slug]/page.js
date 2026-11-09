@@ -13,7 +13,7 @@ import {
   PencilSquareIcon, UserCircleIcon, PlusIcon, ChevronUpIcon, TrashIcon,
 } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
-import { organizationAPI } from '@/lib/api';
+import { organizationAPI, personAPI } from '@/lib/api';
 import organizationContentConfig from '@/config/organizationContent.json';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useAuth } from '@/lib/auth-context';
@@ -150,6 +150,33 @@ export default function OrganizationProfilePage({ params }) {
   );
 
   const members = membersData?.members || [];
+
+  const { data: parliamentariansData } = useAsyncData(
+    async () => {
+      if (!organization?.id || organization.type !== 'party') return { profiles: [] };
+      const firstPage = await personAPI.getAll({ page: 1, limit: 100 });
+      const result = firstPage?.data || {};
+      const profiles = [...(result.profiles || [])];
+      const totalPages = Math.min(10, Number(result.pagination?.totalPages || 1));
+      for (let page = 2; page <= totalPages; page += 1) {
+        const response = await personAPI.getAll({ page, limit: 100 });
+        profiles.push(...(response?.data?.profiles || []));
+      }
+      return {
+        profiles: profiles.filter((profile) => {
+          const partyAffiliation = (profile.politicalAffiliations || []).some((affiliation) =>
+            String(affiliation.organizationId || affiliation.organization?.id) === String(organization.id)
+          );
+          const positions = profile.politicalPositions;
+          const positionText = typeof positions === 'string' ? positions : JSON.stringify(positions || '');
+          return partyAffiliation && /parliament|βουλευ/i.test(positionText);
+        }),
+      };
+    },
+    [organization?.id, organization?.type],
+    { initialData: { profiles: [] } }
+  );
+  const parliamentarians = parliamentariansData?.profiles || [];
 
   const myMembership = useMemo(() => {
     if (!user?.id) return null;
@@ -805,6 +832,22 @@ export default function OrganizationProfilePage({ params }) {
 
             {activeTab === 'tab_roles' && (
               <div className="space-y-4">
+                {organization.type === 'party' && parliamentarians.length > 0 && (
+                  <section className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                    <h3 className="text-base font-semibold text-gray-900">{t('parliamentarians')}</h3>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {parliamentarians.map((person) => {
+                        const name = person.fullName || [person.firstNameNative, person.lastNameNative].filter(Boolean).join(' ') || person.username;
+                        return (
+                          <Link key={person.id} href={`/persons/${person.slug}`} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 hover:border-blue-300 hover:shadow-sm">
+                            <RolePersonPhoto person={person} name={name} />
+                            <span className="font-medium text-gray-900">{name}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
                 {roleActionError && <AlertMessage message={roleActionError} />}
                 {roleActionSuccess && <AlertMessage tone="success" message={roleActionSuccess} />}
 
