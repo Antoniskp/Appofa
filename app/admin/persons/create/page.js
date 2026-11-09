@@ -60,7 +60,7 @@ function CreatePersonProfilePageContent() {
   const [politicalForm, setPoliticalForm] = useState({
     position: '',
     manifesto: '',
-    partyId: '',
+    partyOrganizationSlug: '',
   });
   const [politicalPositions, setPoliticalPositions] = useState([{ key: '', value: '' }]);
   const [partyOrganizations, setPartyOrganizations] = useState([]);
@@ -194,7 +194,7 @@ function CreatePersonProfilePageContent() {
       // Political section
       if (hasPoliticalInfo) {
         if (politicalForm.position) payload.position = politicalForm.position;
-        if (politicalForm.partyId) payload.partyId = politicalForm.partyId;
+        if (politicalForm.partyOrganizationSlug) payload.partyOrganizationSlug = politicalForm.partyOrganizationSlug;
         const constId = constituencyId || constSelectedPrefectureId || undefined;
         if (constId) payload.constituencyId = parseInt(constId, 10);
         if (politicalForm.manifesto) payload.manifesto = politicalForm.manifesto;
@@ -474,8 +474,8 @@ function CreatePersonProfilePageContent() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Κόμμα</label>
                   <select
-                    value={politicalForm.partyId}
-                    onChange={(e) => handlePoliticalChange('partyId', e.target.value)}
+                    value={politicalForm.partyOrganizationSlug}
+                    onChange={(e) => handlePoliticalChange('partyOrganizationSlug', e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Κανένα / Ανεξάρτητος</option>

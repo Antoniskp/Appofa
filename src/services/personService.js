@@ -25,12 +25,8 @@ const {
 } = require('../utils/professionTaxonomy');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
 const { PROFILE_VISIBILITY, getDiscoverableVisibilities } = require('../utils/profileVisibility');
-const politicalParties = require('../../config/politicalParties.json');
 
 const CLAIM_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
-// Legacy hardcoded party IDs — kept to validate existing User.partyId values during the
-// transition period while organizations are used as the new source of truth
-const LEGACY_PARTY_IDS = new Set(politicalParties.parties.map((p) => p.id));
 
 function professionalQueryMatches(profile, query) {
   if (!query) return true;
@@ -178,22 +174,31 @@ function validateExpertiseArea(expertiseArea) {
   }
 }
 
-// ─── Party ID validation helper ──────────────────────────────────────────────
+// ─── Party organization helpers ───────────────────────────────────────────────
 
-async function validatePartyId(partyId) {
-  if (partyId === undefined || partyId === null || partyId === '') return null;
-  if (typeof partyId !== 'string' || partyId.length > 100) {
+async function findPartyOrganization(slug) {
+  if (slug === undefined || slug === null || slug === '') return null;
+  if (typeof slug !== 'string' || slug.length > 100) {
     throw new ServiceError(400, 'Invalid political party.');
   }
-  // Accept legacy config IDs
-  if (LEGACY_PARTY_IDS.has(partyId)) return partyId;
-  // Accept organization slugs (type='party') from DB
-  const org = await Organization.findOne({
-    where: { slug: partyId, type: 'party' },
-    attributes: ['id', 'slug'],
+  const organization = await Organization.findOne({
+    where: { slug, type: 'party' },
+    attributes: ['id'],
   });
-  if (!org) throw new ServiceError(400, 'Invalid political party.');
-  return partyId;
+  if (!organization) throw new ServiceError(400, 'Invalid political party.');
+  return organization;
+}
+
+async function setPartyOrganization(userId, slug) {
+  const organization = await findPartyOrganization(slug);
+  await UserPoliticalAffiliation.destroy({ where: { userId } });
+  if (organization) {
+    await UserPoliticalAffiliation.create({
+      userId,
+      organizationId: organization.id,
+      endorsementLevel: 'active',
+    });
+  }
 }
 
 // ─── Where clause for name search ────────────────────────────────────────────
@@ -420,14 +425,14 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
   const {
     firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname,
     locationId, constituencyId, bio, photo, contactEmail, socialLinks,
-    politicalPositions, manifesto, expertiseArea, partyId, nationality, countryCode
+    politicalPositions, manifesto, expertiseArea, partyOrganizationSlug, nationality, countryCode
   } = data;
 
   if (!firstNameEn || !firstNameEn.trim()) throw new ServiceError(400, 'English first name is required.');
   if (!lastNameEn || !lastNameEn.trim()) throw new ServiceError(400, 'English last name is required.');
 
   const validatedExpertiseArea = validateExpertiseArea(expertiseArea);
-  const validatedPartyId = await validatePartyId(partyId);
+  const partyOrganization = await findPartyOrganization(partyOrganizationSlug);
 
   const base = generateSlug(firstNameEn.trim(), lastNameEn.trim());
   const slug = await ensureUniqueSlug(base);
@@ -456,11 +461,18 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     politicalPositions: politicalPositions || null,
     manifesto: manifesto || null,
     expertiseArea: validatedExpertiseArea,
-    partyId: validatedPartyId,
     nationality: nationality || null,
     countryCode: countryCode ? countryCode.toUpperCase() : null,
     source: 'moderator'
   });
+
+  if (partyOrganization) {
+    await UserPoliticalAffiliation.create({
+      userId: profile.id,
+      organizationId: partyOrganization.id,
+      endorsementLevel: 'active',
+    });
+  }
 
   if (locationId) {
     const [link, created] = await LocationLink.findOrCreate({
@@ -658,12 +670,12 @@ async function updateProfile(requestingUserId, requestingRole, profileId, data) 
     updates.expertiseArea = validateExpertiseArea(data.expertiseArea);
   }
 
-  if (data.partyId !== undefined) {
-    updates.partyId = await validatePartyId(data.partyId);
-  }
-
   const previousHomeLocationId = profile.homeLocationId;
   await profile.update(updates);
+
+  if (isModerator && Object.prototype.hasOwnProperty.call(data, 'partyOrganizationSlug')) {
+    await setPartyOrganization(profile.id, data.partyOrganizationSlug);
+  }
 
   if (data.homeLocationId !== undefined || data.locationId !== undefined) {
     const newLocationId = profile.homeLocationId;

@@ -67,7 +67,7 @@ function EditPersonProfilePageContent({ params }) {
   const [politicalForm, setPoliticalForm] = useState({
     position: '',
     manifesto: '',
-    partyId: '',
+    partyOrganizationSlug: '',
   });
   const [politicalPositions, setPoliticalPositions] = useState([{ key: '', value: '' }]);
   const [partyOrganizations, setPartyOrganizations] = useState([]);
@@ -193,7 +193,8 @@ function EditPersonProfilePageContent({ params }) {
     setPoliticalPositions(ppPairs.length > 0 ? ppPairs : [{ key: '', value: '' }]);
 
     // Political fields — auto-enable section if profile has any political data
-    const hasPolitical = !!(profile.manifesto || profile.partyId || profile.constituencyId ||
+    const partyOrganizationSlug = profile.politicalAffiliations?.[0]?.organization?.slug || '';
+    const hasPolitical = !!(profile.manifesto || partyOrganizationSlug || profile.constituencyId ||
       (profile.politicalPositions && Object.keys(profile.politicalPositions).length > 0) ||
       profile.position);
     setHasPoliticalInfo(hasPolitical);
@@ -201,7 +202,7 @@ function EditPersonProfilePageContent({ params }) {
     setPoliticalForm({
       position: profile.position || '',
       manifesto: profile.manifesto || '',
-      partyId: profile.partyId || '',
+      partyOrganizationSlug,
     });
     if (profile.constituencyId) {
       setConstituencyId(String(profile.constituencyId));
@@ -317,7 +318,7 @@ function EditPersonProfilePageContent({ params }) {
 
       // Political fields — only include if section is enabled
       if (hasPoliticalInfo) {
-        payload.partyId = politicalForm.partyId || null;
+        payload.partyOrganizationSlug = politicalForm.partyOrganizationSlug || null;
         if (politicalForm.position) payload.position = politicalForm.position;
         const constId = constituencyId || constSelectedPrefectureId || undefined;
         if (constId) payload.constituencyId = parseInt(constId, 10);
@@ -325,7 +326,7 @@ function EditPersonProfilePageContent({ params }) {
         const ppObj = pairsToObject(politicalPositions);
         if (Object.keys(ppObj).length > 0) payload.politicalPositions = ppObj;
       } else {
-        payload.partyId = null;
+        payload.partyOrganizationSlug = null;
         payload.position = null;
         payload.manifesto = null;
         payload.politicalPositions = null;
@@ -606,8 +607,8 @@ function EditPersonProfilePageContent({ params }) {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Κόμμα</label>
                   <select
-                    value={politicalForm.partyId}
-                    onChange={(e) => handlePoliticalChange('partyId', e.target.value)}
+                    value={politicalForm.partyOrganizationSlug}
+                    onChange={(e) => handlePoliticalChange('partyOrganizationSlug', e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Κανένα / Ανεξάρτητος</option>
