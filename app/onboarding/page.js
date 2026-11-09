@@ -381,7 +381,10 @@ function OnboardingContent() {
         } else {
           setPhase('choose');
         }
-        if (!data.homeLocationId || new URLSearchParams(window.location.search).get('step') === 'location') setPhase('location');
+        // Let people choose a participation goal before asking them to add a
+        // location. The profile checklist can guide them there later; an
+        // explicit location deep link still opens the location step directly.
+        if (new URLSearchParams(window.location.search).get('step') === 'location') setPhase('location');
       }
       // Record onboarding viewed (idempotent)
       onboardingEventAPI.record({ eventType: 'onboarding_viewed' }).catch(() => {});

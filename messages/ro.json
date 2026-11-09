@@ -504,7 +504,7 @@
     "verify_email_resend_fallback_success": "E-mail de verificare trimis.",
     "verify_email_resend_fallback_error": "Retrimiterea e-mailului de verificare a eșuat.",
     "gdpr_consent_required": "Sunt de acord cu Termenii de utilizare și Politica de confidențialitate",
-    "gdpr_consent_marketing": "Sunt de acord să primesc comunicări de marketing (opțional)",
+    "gdpr_consent_marketing": "Vreau să primesc ocazional noutăți civice, informații locale și anunțuri importante de la Appofasi (opțional). Mă pot dezabona oricând.",
     "gdpr_consent_error": "Trebuie să accepți termenii pentru a te înregistra."
   },
   "articles": {
@@ -862,7 +862,7 @@
     "brand_description": "Propune soluții, discută cu comunitatea ta și urmărește parcursul de la participare la implementare.",
     "discord_label": "Intră pe Discord",
     "newsletter_title": "Newsletter",
-    "newsletter_description": "Primește actualizări civice, noutăți și anunțuri importante de la Appofasi.",
+    "newsletter_description": "Noutăți civice ocazionale, informații locale și anunțuri importante de la Appofasi. Te poți dezabona din linkul inclus în fiecare e-mail.",
     "newsletter_name_placeholder": "Nume (opțional)",
     "newsletter_email_placeholder": "Adresă de e-mail",
     "newsletter_submit": "Abonează-te",

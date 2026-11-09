@@ -7,7 +7,7 @@ import {
   EyeIcon,
   EyeSlashIcon,
 } from '@heroicons/react/24/outline';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import FormInput from '@/components/ui/FormInput';
@@ -66,6 +66,7 @@ function PasswordInput({
 
 function RegisterForm() {
   const t = useTranslations('auth');
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { register, user, loading: authLoading } = useAuth();
@@ -163,6 +164,8 @@ function RegisterForm() {
     const isDiaspora = Boolean(registerData.isDiaspora);
     return {
       ...registerData,
+      newsletterOptIn: Boolean(gdprMarketing),
+      locale,
       isDiaspora,
       residenceCountryCode: isDiaspora ? (registerData.residenceCountryCode || null) : null,
       nationality: registerData.nationality || null,

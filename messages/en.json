@@ -504,7 +504,7 @@
     "verify_email_resend_fallback_success": "Verification email sent.",
     "verify_email_resend_fallback_error": "Failed to resend verification email.",
     "gdpr_consent_required": "I agree to the Terms of Use and Privacy Policy",
-    "gdpr_consent_marketing": "I agree to receive marketing communications (optional)",
+    "gdpr_consent_marketing": "Email me occasional civic updates, local highlights, and important Appofasi announcements (optional). I can unsubscribe anytime.",
     "gdpr_consent_error": "You must accept the terms to register."
   },
   "articles": {
@@ -862,7 +862,7 @@
     "brand_description": "Propose solutions, discuss with your community and follow the journey from participation to delivery.",
     "discord_label": "Join our Discord",
     "newsletter_title": "Newsletter",
-    "newsletter_description": "Get civic updates, highlights, and important announcements from Appofasi.",
+    "newsletter_description": "Occasional civic updates, local highlights, and important Appofasi announcements. Unsubscribe anytime using the link in each email.",
     "newsletter_name_placeholder": "Name (optional)",
     "newsletter_email_placeholder": "Email address",
     "newsletter_submit": "Subscribe",

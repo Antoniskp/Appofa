@@ -504,7 +504,7 @@
     "verify_email_resend_fallback_success": "Το email επιβεβαίωσης στάλθηκε.",
     "verify_email_resend_fallback_error": "Αποτυχία επαναποστολής email επιβεβαίωσης.",
     "gdpr_consent_required": "Συμφωνώ με τους Όρους Χρήσης και την Πολιτική Απορρήτου",
-    "gdpr_consent_marketing": "Συμφωνώ να λαμβάνω διαφημιστικές επικοινωνίες (προαιρετικό)",
+    "gdpr_consent_marketing": "Θέλω να λαμβάνω περιστασιακές ενημερώσεις για τα κοινά, τοπικά νέα και σημαντικές ανακοινώσεις του Appofasi (προαιρετικό). Μπορώ να διαγραφώ ανά πάσα στιγμή.",
     "gdpr_consent_error": "Πρέπει να αποδεχτείτε τους όρους για να εγγραφείτε."
   },
   "articles": {
@@ -862,7 +862,7 @@
     "brand_description": "Πρότεινε λύσεις, συζήτησε με την κοινότητά σου και παρακολούθησε την πορεία από τη συμμετοχή στην υλοποίηση.",
     "discord_label": "Μπες στο Discord μας",
     "newsletter_title": "Newsletter",
-    "newsletter_description": "Λάβετε ενημερώσεις, σημαντικές ανακοινώσεις και highlights από το Appofasi.",
+    "newsletter_description": "Περιστασιακές ενημερώσεις για τα κοινά, τοπικά νέα και σημαντικές ανακοινώσεις του Appofasi. Μπορείτε να διαγραφείτε από τον σύνδεσμο σε κάθε email.",
     "newsletter_name_placeholder": "Όνομα (προαιρετικό)",
     "newsletter_email_placeholder": "Διεύθυνση email",
     "newsletter_submit": "Εγγραφή",

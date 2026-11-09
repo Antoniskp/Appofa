@@ -5,6 +5,7 @@ const { User } = require('../models');
 const { PROFILE_VISIBILITY, isValidProfileVisibility } = require('../utils/profileVisibility');
 const { getJwtExpiresIn } = require('../config/session');
 const { sendMail } = require('./mailService');
+const newsletterService = require('./newsletterService');
 const {
   normalizeRequiredText,
   normalizeOptionalText,
@@ -139,7 +140,9 @@ async function registerUser({
   profileVisibility,
   isDiaspora,
   residenceCountryCode,
-  homeLocationId
+  homeLocationId,
+  newsletterOptIn,
+  locale
 }) {
   const usernameResult = normalizeRequiredText(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
   if (usernameResult.error) throw new ServiceError(400, usernameResult.error);
@@ -213,6 +216,16 @@ async function registerUser({
       await sendVerificationEmail(user.email, rawToken);
     } catch (error) {
       console.error('[registerUser] SMTP send failed:', error);
+    }
+  }
+
+  // Newsletter consent is optional and independent from creating an account.
+  // Keep registration successful if newsletter persistence is temporarily unavailable.
+  if (newsletterOptIn === true && user.email) {
+    try {
+      await newsletterService.subscribePublic({ email: user.email, name: user.username, locale });
+    } catch (error) {
+      console.error('[registerUser] Newsletter opt-in could not be saved:', error?.message || error);
     }
   }
 
