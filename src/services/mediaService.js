@@ -867,6 +867,48 @@ async function getAdminMediaStats(user) {
   if (user.role !== 'admin') return { success: false, status: 403, message: 'Admin access required.' };
 
   const whereActive = { status: 'active', deletedAt: null };
+  const legacyStats = async (originalError) => {
+    console.warn('mediaService.getAdminMediaStats falling back to legacy MediaAssets schema:', originalError.message);
+    const assets = await MediaAsset.findAll({
+      attributes: LEGACY_MEDIA_ATTRIBUTES,
+      where: { status: 'active' },
+      order: [['size', 'DESC'], ['id', 'ASC']],
+    });
+    const totalBytes = assets.reduce((sum, asset) => sum + (Number(asset.size) || 0), 0);
+    const uploaderTotals = new Map();
+    for (const asset of assets) {
+      const current = uploaderTotals.get(asset.uploadedByUserId) || { assetCount: 0, totalBytes: 0 };
+      current.assetCount += 1;
+      current.totalBytes += Number(asset.size) || 0;
+      uploaderTotals.set(asset.uploadedByUserId, current);
+    }
+    const uploaderIds = [...uploaderTotals.keys()];
+    const uploaders = uploaderIds.length
+      ? await User.findAll({ where: { id: { [Op.in]: uploaderIds } }, attributes: ['id', 'username'], raw: true })
+      : [];
+    const userById = new Map(uploaders.map((u) => [u.id, u]));
+    return {
+      success: true,
+      stats: {
+        totalAssetCount: assets.length,
+        totalStoredBytes: totalBytes,
+        orphanedAssetCount: 0,
+        orphanedStoredBytes: 0,
+        quotaConfig: { maxFileBytes: MAX_IMAGE_BYTES, userQuotaBytes: USER_QUOTA_BYTES },
+        largestAssets: assets.slice(0, 5).map((asset) => serializeMediaAsset(asset)),
+        largestUploaders: [...uploaderTotals.entries()]
+          .map(([userId, totals]) => ({
+            userId,
+            username: userById.get(userId)?.username || null,
+            ...totals,
+          }))
+          .sort((a, b) => b.totalBytes - a.totalBytes)
+          .slice(0, 10),
+      },
+    };
+  };
+
+  try {
   const [totalCount, totalBytes, orphanCount, orphanBytes] = await Promise.all([
     MediaAsset.count({ where: whereActive }),
     MediaAsset.sum('size', { where: whereActive }),
@@ -921,6 +963,10 @@ async function getAdminMediaStats(user) {
       })),
     },
   };
+  } catch (error) {
+    if (!isLegacyMediaSchemaError(error)) throw error;
+    return legacyStats(error);
+  }
 }
 
 async function getAdminCleanupReport(user, query = {}) {
