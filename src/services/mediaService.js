@@ -978,10 +978,18 @@ async function getAdminMediaSchemaHealth(user) {
 
   if (dialect === 'postgres') {
     const rows = await MediaAsset.sequelize.query(`
-      SELECT enumlabel AS value
-      FROM pg_enum
-      WHERE enumtypid = 'enum_MediaAssets_usageType'::regtype
-      ORDER BY enumsortorder
+      SELECT e.enumlabel AS value
+      FROM pg_catalog.pg_attribute a
+      JOIN pg_catalog.pg_class c ON c.oid = a.attrelid
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      JOIN pg_catalog.pg_type t ON t.oid = a.atttypid
+      JOIN pg_catalog.pg_enum e ON e.enumtypid = t.oid
+      WHERE c.relname = 'MediaAssets'
+        AND a.attname = 'usageType'
+        AND a.attnum > 0
+        AND NOT a.attisdropped
+        AND n.nspname = current_schema()
+      ORDER BY e.enumsortorder
     `, { type: Sequelize.QueryTypes.SELECT }).catch(() => []);
     usageTypeValues = rows.map((row) => row.value);
   } else {
