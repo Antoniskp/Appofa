@@ -27,6 +27,15 @@ const { getDescendantLocationIds } = require('../utils/locationUtils');
 const { PROFILE_VISIBILITY, getDiscoverableVisibilities } = require('../utils/profileVisibility');
 
 const CLAIM_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
+const PUBLIC_PERSON_POSITIONS = new Set(['mayor', 'prefect', 'parliamentary']);
+
+function validatePublicPersonPosition(position) {
+  if (position === undefined || position === null || position === '') return null;
+  if (typeof position !== 'string' || !PUBLIC_PERSON_POSITIONS.has(position)) {
+    throw new ServiceError(400, 'Invalid political position.');
+  }
+  return position;
+}
 
 function professionalQueryMatches(profile, query) {
   if (!query) return true;
@@ -425,7 +434,7 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
   const {
     firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname,
     locationId, constituencyId, bio, photo, contactEmail, socialLinks,
-    politicalPositions, manifesto, expertiseArea, partyOrganizationSlug, nationality, countryCode
+    politicalPositions, position, manifesto, expertiseArea, partyOrganizationSlug, nationality, countryCode
   } = data;
 
   if (!firstNameEn || !firstNameEn.trim()) throw new ServiceError(400, 'English first name is required.');
@@ -433,6 +442,7 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
 
   const validatedExpertiseArea = validateExpertiseArea(expertiseArea);
   const partyOrganization = await findPartyOrganization(partyOrganizationSlug);
+  const validatedPosition = validatePublicPersonPosition(position);
 
   const base = generateSlug(firstNameEn.trim(), lastNameEn.trim());
   const slug = await ensureUniqueSlug(base);
@@ -459,6 +469,7 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     contactEmail: contactEmail || null,
     socialLinks: socialLinks || null,
     politicalPositions: politicalPositions || null,
+    position: validatedPosition,
     manifesto: manifesto || null,
     expertiseArea: validatedExpertiseArea,
     nationality: nationality || null,
@@ -663,6 +674,9 @@ async function updateProfile(requestingUserId, requestingRole, profileId, data) 
   allowedFields.forEach((field) => {
     if (data[field] !== undefined) updates[field] = data[field];
   });
+  if (isModerator && data.position !== undefined) {
+    updates.position = validatePublicPersonPosition(data.position);
+  }
   // Support 'locationId' as alias for 'homeLocationId'
   if (data.locationId !== undefined) updates.homeLocationId = data.locationId;
 

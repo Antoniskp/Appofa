@@ -319,7 +319,7 @@ function EditPersonProfilePageContent({ params }) {
       // Political fields — only include if section is enabled
       if (hasPoliticalInfo) {
         payload.partyOrganizationSlug = politicalForm.partyOrganizationSlug || null;
-        if (politicalForm.position) payload.position = politicalForm.position;
+        payload.position = politicalForm.position || null;
         const constId = constituencyId || constSelectedPrefectureId || undefined;
         if (constId) payload.constituencyId = parseInt(constId, 10);
         if (politicalForm.manifesto) payload.manifesto = politicalForm.manifesto;

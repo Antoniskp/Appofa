@@ -323,6 +323,10 @@ const User = sequelize.define('User', {
       this.setDataValue('politicalPositions', val ? JSON.stringify(val) : null);
     }
   },
+  position: {
+    type: DataTypes.STRING(40),
+    allowNull: true,
+  },
   manifesto: {
     type: DataTypes.TEXT,
     allowNull: true

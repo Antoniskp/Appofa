@@ -151,7 +151,7 @@ export default function OrganizationProfilePage({ params }) {
 
   const members = membersData?.members || [];
 
-  const { data: parliamentariansData } = useAsyncData(
+  const { data: parliamentariansData, loading: parliamentariansLoading } = useAsyncData(
     async () => {
       if (!organization?.id || organization.type !== 'party') return { profiles: [] };
       const firstPage = await personAPI.getAll({ page: 1, limit: 100 });
@@ -169,7 +169,9 @@ export default function OrganizationProfilePage({ params }) {
           );
           const positions = profile.politicalPositions;
           const positionText = typeof positions === 'string' ? positions : JSON.stringify(positions || '');
-          return partyAffiliation && /parliament|βουλευ/i.test(positionText);
+          const isParliamentarian = String(profile.position || '').toLowerCase() === 'parliamentary'
+            || /parliament|βουλευ/i.test(positionText);
+          return partyAffiliation && isParliamentarian;
         }),
       };
     },
@@ -832,20 +834,29 @@ export default function OrganizationProfilePage({ params }) {
 
             {activeTab === 'tab_roles' && (
               <div className="space-y-4">
-                {organization.type === 'party' && parliamentarians.length > 0 && (
+                {organization.type === 'party' && (
                   <section className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
                     <h3 className="text-base font-semibold text-gray-900">{t('parliamentarians')}</h3>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {parliamentarians.map((person) => {
-                        const name = person.fullName || [person.firstNameNative, person.lastNameNative].filter(Boolean).join(' ') || person.username;
-                        return (
-                          <Link key={person.id} href={`/persons/${person.slug}`} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 hover:border-blue-300 hover:shadow-sm">
-                            <RolePersonPhoto person={person} name={name} />
-                            <span className="font-medium text-gray-900">{name}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
+                    {parliamentariansLoading ? (
+                      <p className="mt-2 text-sm text-gray-500">{t('parliamentarians_loading')}</p>
+                    ) : parliamentarians.length > 0 ? (
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {parliamentarians.map((person) => {
+                          const name = person.fullName || [person.firstNameNative, person.lastNameNative].filter(Boolean).join(' ') || person.username;
+                          return (
+                            <Link key={person.id} href={`/persons/${person.slug}`} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 hover:border-blue-300 hover:shadow-sm">
+                              <RolePersonPhoto person={person} name={name} />
+                              <span className="min-w-0">
+                                <span className="block font-medium text-gray-900">{name}</span>
+                                <span className="block text-sm text-gray-500">{t('parliamentarian_position')}</span>
+                              </span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm text-gray-500">{t('no_parliamentarians')}</p>
+                    )}
                   </section>
                 )}
                 {roleActionError && <AlertMessage message={roleActionError} />}
