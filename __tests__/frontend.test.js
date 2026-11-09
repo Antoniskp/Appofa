@@ -562,7 +562,7 @@ describe('Frontend smoke tests', () => {
     expect(registerMock).toHaveBeenCalledWith({
       username: 'newmember', email: 'member@example.com', password: 'secret123',
       profileVisibility: 'registered', isDiaspora: false, residenceCountryCode: null,
-      nationality: null, homeLocationId: null,
+      nationality: null, homeLocationId: null, locale: 'el', newsletterOptIn: false,
     });
     expect(mockRouter.push).toHaveBeenCalledWith(destination);
     expect(document.cookie).toContain('appofa_detected_country=' + countryCode);

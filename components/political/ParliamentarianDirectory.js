@@ -7,13 +7,12 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { personAPI, organizationAPI, locationAPI } from '@/lib/api';
 import regionsMetaData from '@/config/map-data/regions.metadata.json';
-import regionsGeoJson from '@/config/map-data/regions.geojson';
 
 const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false });
 const normalize = (value) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('el').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 const CENTER = [38.5, 23.8];
 
-export default function ParliamentarianDirectory() {
+export default function ParliamentarianDirectory({ regionsGeoJson }) {
   const searchParams = useSearchParams();
   const [profiles, setProfiles] = useState([]);
   const [parties, setParties] = useState([]);
@@ -95,7 +94,7 @@ export default function ParliamentarianDirectory() {
     styleFeature: (feature, style) => regionId === feature?.properties?.id ? { ...style, color: '#1d4ed8', weight: 2.5, fillColor: '#3b82f6', fillOpacity: 0.38 } : style,
     onFeatureClick: (feature) => setRegionId((current) => current === feature?.properties?.id ? '' : feature?.properties?.id || ''),
     getTooltip: (props) => `${props.name || ''} · ${regionCounts[props.id] || 0} βουλευτές`,
-  }], [regionId, regionCounts]);
+  }], [regionId, regionCounts, regionsGeoJson]);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

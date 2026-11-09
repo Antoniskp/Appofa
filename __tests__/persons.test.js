@@ -326,7 +326,7 @@ describe('Person Profile Tests (POST /api/persons)', () => {
       expect(res2.body.data.profile.slug).toBe('alice-test-2');
     });
 
-    it('creates a profile (position field removed in refactor) (201)', async () => {
+    it('creates a profile with an unset political position (201)', async () => {
       const res = await request(app)
         .post('/api/persons')
         .set(csrfHeaders(adminUserId, adminToken))
@@ -335,7 +335,7 @@ describe('Person Profile Tests (POST /api/persons)', () => {
           lastNameEn: 'Mayor',
         });
       expect(res.status).toBe(201);
-      expect(res.body.data.profile).not.toHaveProperty('position');
+      expect(res.body.data.profile).toHaveProperty('position', null);
     });
 
     it('creates a profile with social links (201)', async () => {
