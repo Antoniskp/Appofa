@@ -86,13 +86,6 @@ export default function TopNav() {
       menuId: 'desktop-nav-information-menu',
       items: [
         {
-          id: 'articles',
-          label: tNav('articles'),
-          href: '/articles',
-          icon: <DocumentTextIcon className="h-4 w-4" />,
-          mobileIcon: <DocumentTextIcon className="h-5 w-5" />
-        },
-        {
           id: 'news',
           label: tNav('news'),
           href: '/news',
@@ -103,6 +96,13 @@ export default function TopNav() {
           id: 'analyses',
           label: tNav('analyses'),
           href: '/analyses',
+          icon: <DocumentTextIcon className="h-4 w-4" />,
+          mobileIcon: <DocumentTextIcon className="h-5 w-5" />
+        },
+        {
+          id: 'articles',
+          label: tNav('articles'),
+          href: '/articles',
           icon: <DocumentTextIcon className="h-4 w-4" />,
           mobileIcon: <DocumentTextIcon className="h-5 w-5" />
         },
