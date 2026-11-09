@@ -1,8 +1,6 @@
 'use client';
-import { getPartyById } from '@/lib/utils/politicalParties';
-
-export default function PartyBadge({ partyId, className = '' }) {
-  const party = getPartyById(partyId);
+export default function PartyBadge({ affiliation, className = '' }) {
+  const party = affiliation?.organization;
   if (!party) return null;
 
   return (
@@ -10,12 +8,12 @@ export default function PartyBadge({ partyId, className = '' }) {
       title={party.name}
       aria-label={`Κόμμα: ${party.name}`}
       className={`inline-flex items-center justify-center rounded-full ring-2 ring-white overflow-hidden ${className}`}
-      style={{ backgroundColor: party.color }}
+      style={{ backgroundColor: '#64748b' }}
     >
       {party.logo ? (
         <img src={party.logo} alt={party.name} className="h-full w-full rounded-full object-cover" />
       ) : (
-        <span className="text-white text-[8px] font-bold leading-none">{party.abbreviation.charAt(0)}</span>
+        <span className="text-white text-[8px] font-bold leading-none">{party.name?.trim().charAt(0) || 'P'}</span>
       )}
     </span>
   );

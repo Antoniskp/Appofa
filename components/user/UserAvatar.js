@@ -96,8 +96,8 @@ export default function UserAvatar({ user, size = 'h-10 w-10', textSize = 'text-
           className={`absolute bottom-0 right-0 ${badgeSize}`}
         />
       ) : null}
-      {showBadges && user.partyId && (
-        <PartyBadge partyId={user.partyId} className="absolute -top-1 -right-1 h-5 w-5" />
+      {showBadges && user.politicalAffiliations?.[0] && (
+        <PartyBadge affiliation={user.politicalAffiliations[0]} className="absolute -top-1 -right-1 h-5 w-5" />
       )}
     </div>
   );

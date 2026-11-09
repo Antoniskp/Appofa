@@ -29,7 +29,6 @@ const INITIAL_PROFILE_DATA = {
   professions: [],
   interests: [],
   expertiseArea: [],
-  partyId: null,
   politicalAffiliationStatus: '',
   politicalAffiliationOtherText: '',
   nationality: '',
@@ -74,7 +73,6 @@ function normalizeProfileDataForComparison(data = {}) {
     professions: sortObjectKeys(data.professions || []),
     interests: sortObjectKeys(data.interests || []),
     expertiseArea: sortObjectKeys(data.expertiseArea || []),
-    partyId: data.partyId || null,
     politicalAffiliationStatus: normalizeOptionalString(data.politicalAffiliationStatus),
     politicalAffiliationOtherText: normalizeOptionalString(data.politicalAffiliationOtherText).trim(),
     nationality: normalizeOptionalString(data.nationality).trim(),
@@ -221,7 +219,6 @@ export function useProfileForm() {
           professions: professions || [],
           interests: interests || [],
           expertiseArea: expertiseArea || [],
-          partyId: userData.partyId || null,
           politicalAffiliationStatus: politicalAffiliationStatus || '',
           politicalAffiliationOtherText: politicalAffiliationOtherText || '',
           nationality: nationality || '',
@@ -310,7 +307,9 @@ export function useProfileForm() {
       .then((res) => {
         if (res?.data?.badges) setBadgeProgress(res.data.badges);
       })
-      .catch(() => {});
+      .catch((loadError) => {
+        console.warn('Could not load profile badge progress:', loadError);
+      });
   }, []);
 
   useEffect(() => {

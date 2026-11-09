@@ -21,7 +21,6 @@ const {
   getDiscoverableVisibilities,
   canViewProfile,
 } = require('../utils/profileVisibility');
-const politicalParties = require('../../config/politicalParties.json');
 
 const USERNAME_MIN_LENGTH = 3;
 const USERNAME_MAX_LENGTH = 50;
@@ -30,7 +29,6 @@ const MOBILE_TEL_MAX_LENGTH = 30;
 const BIO_MAX_LENGTH = 280;
 const VALID_HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
 const ALLOWED_SOCIAL_KEYS = new Set(['website', 'x', 'twitter', 'instagram', 'facebook', 'linkedin', 'github', 'youtube', 'tiktok']);
-const VALID_PARTY_IDS = new Set(politicalParties.parties.map((p) => p.id));
 const VALID_POLITICAL_AFFILIATION_STATUSES = new Set(['party', 'unaffiliated', 'prefer_not_to_say', 'other']);
 const POLITICAL_AFFILIATION_OTHER_MAX_LENGTH = 120;
 const MAX_PROFESSIONS = 5;
@@ -194,7 +192,7 @@ async function getUserProfile(userId) {
 }
 
 async function updateUserProfile(userId, data) {
-  const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor, homeLocationId, profileVisibility, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea, partyId, politicalAffiliationStatus, politicalAffiliationOtherText, nationality, twitchChannel } = data;
+  const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor, homeLocationId, profileVisibility, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea, politicalAffiliationStatus, politicalAffiliationOtherText, nationality, twitchChannel } = data;
 
   const user = await User.findByPk(userId);
   if (!user) throw new ServiceError(404, 'User not found.');
@@ -444,16 +442,6 @@ async function updateUserProfile(userId, data) {
     }
   }
 
-  if (partyId !== undefined) {
-    if (partyId === null || partyId === '') {
-      user.partyId = null;
-    } else if (!VALID_PARTY_IDS.has(partyId)) {
-      throw new ServiceError(400, 'Invalid political party.');
-    } else {
-      user.partyId = partyId;
-    }
-  }
-
   if (politicalAffiliationStatus !== undefined) {
     if (politicalAffiliationStatus === null || politicalAffiliationStatus === '') {
       user.politicalAffiliationStatus = null;
@@ -575,7 +563,6 @@ async function deleteUserAccount(userId, password, mode) {
       professions: null,
       interests: null,
       dateOfBirth: null,
-      partyId: null,
       politicalAffiliationStatus: null,
       politicalAffiliationOtherText: null
     }, { where: { id: user.id }, individualHooks: false });
@@ -1034,7 +1021,7 @@ async function getPublicUserProfile(userId, viewer = null) {
 
   const user = await User.findOne({
     where: { id: userId },
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'politicalAffiliationStatus', 'politicalAffiliationOtherText', 'twitchChannel', 'profileVisibility', 'profileCommentsEnabled', 'profileCommentsLocked', 'homeLocationId'],
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'politicalAffiliationStatus', 'politicalAffiliationOtherText', 'twitchChannel', 'profileVisibility', 'profileCommentsEnabled', 'profileCommentsLocked', 'homeLocationId'],
     include: [
       {
         model: Location,
@@ -1098,7 +1085,7 @@ async function getPublicUserProfileByUsername(username, viewer = null) {
 
   const user = await User.findOne({
     where: { username: username.trim() },
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'politicalAffiliationStatus', 'politicalAffiliationOtherText', 'twitchChannel', 'profileVisibility', 'profileCommentsEnabled', 'profileCommentsLocked', 'homeLocationId'],
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'politicalAffiliationStatus', 'politicalAffiliationOtherText', 'twitchChannel', 'profileVisibility', 'profileCommentsEnabled', 'profileCommentsLocked', 'homeLocationId'],
     include: [
       {
         model: Location,
@@ -1227,14 +1214,24 @@ async function searchUsers(search, page, limit, expertiseArea, locationId, taxon
   const userAttributes = [
     'id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn',
     'nickname', 'avatar', 'avatarColor', 'isVerified', 'claimStatus',
-    'professions', 'expertiseArea', 'partyId', 'politicalAffiliationStatus', 'politicalAffiliationOtherText', 'createdAt', 'displayBadgeSlug', 'displayBadgeTier',
+    'professions', 'expertiseArea', 'politicalAffiliationStatus', 'politicalAffiliationOtherText', 'createdAt', 'displayBadgeSlug', 'displayBadgeTier',
   ];
+  const affiliationInclude = [{
+    model: UserPoliticalAffiliation,
+    as: 'politicalAffiliations',
+    include: [{
+      model: Organization,
+      as: 'organization',
+      attributes: ['id', 'name', 'slug', 'type', 'logo', 'politicalPosition'],
+    }],
+  }];
 
   // When professional filtering is active, fetch matching rows for precise in-memory filtering/scoring then paginate.
   if (hasProfessionalFilter) {
     const allUsers = await User.findAll({
       where: whereClause,
       attributes: userAttributes,
+      include: affiliationInclude,
       order: [['username', 'ASC']],
     });
 
@@ -1275,6 +1272,8 @@ async function searchUsers(search, page, limit, expertiseArea, locationId, taxon
   const { count, rows: users } = await User.findAndCountAll({
     where: whereClause,
     attributes: userAttributes,
+    include: affiliationInclude,
+    distinct: true,
     order: [['username', 'ASC']],
     limit: limitNum,
     offset,

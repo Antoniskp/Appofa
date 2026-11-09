@@ -1277,7 +1277,15 @@ const createLocationRequest = async (requestData, userId) => {
 const getLocationRequests = async (queryParams) => {
   try {
     const { status, page = 1, limit = 20 } = queryParams;
-    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+    if (!Number.isInteger(pageNum) || pageNum < 1 || pageNum > 100000) {
+      return { success: false, status: 400, message: 'Page must be an integer between 1 and 100000.' };
+    }
+    if (!Number.isInteger(limitNum) || limitNum < 1 || limitNum > 100) {
+      return { success: false, status: 400, message: 'Limit must be an integer between 1 and 100.' };
+    }
+    const offset = (pageNum - 1) * limitNum;
 
     const whereClause = {};
     if (status) {
@@ -1291,7 +1299,7 @@ const getLocationRequests = async (queryParams) => {
         { model: User, as: 'reviewedBy', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative'] }
       ],
       order: [['createdAt', 'DESC']],
-      limit: parseInt(limit),
+      limit: limitNum,
       offset
     });
 
@@ -1299,8 +1307,8 @@ const getLocationRequests = async (queryParams) => {
       success: true,
       requests: rows,
       total: count,
-      page: parseInt(page),
-      totalPages: Math.ceil(count / parseInt(limit))
+      page: pageNum,
+      totalPages: Math.ceil(count / limitNum)
     };
   } catch (error) {
     console.error('Error fetching location requests:', error);

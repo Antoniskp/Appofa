@@ -2,7 +2,7 @@
 
 import Badge from '@/components/ui/Badge';
 import UserAvatar from '@/components/user/UserAvatar';
-import { getPartyById, formatPoliticalPosition } from '@/lib/utils/politicalParties';
+import { formatPoliticalPosition } from '@/lib/utils/politicalParties';
 import {
   POLITICAL_AFFILIATION_STATUS,
   formatPoliticalAffiliationStatus,
@@ -74,20 +74,7 @@ export default function PublicProfileHeader({
                   </span>
                 );
               })
-            : user?.partyId && (() => {
-                const party = getPartyById(user.partyId);
-                return party ? (
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${party.colorLight}`}
-                  >
-                    <span
-                      className="inline-block w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: party.color }}
-                    />
-                    {party.abbreviation}
-                  </span>
-                ) : null;
-              })()}
+            : null}
         </div>
 
         {user?.nickname && displayName && user.nickname !== displayName && (

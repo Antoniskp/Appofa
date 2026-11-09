@@ -232,10 +232,6 @@ const User = sequelize.define('User', {
       this.setDataValue('expertiseArea', val && val.length > 0 ? JSON.stringify(val) : null);
     }
   },
-  partyId: {
-    type: DataTypes.STRING(50),
-    allowNull: true
-  },
   politicalAffiliationStatus: {
     type: DataTypes.ENUM('party', 'unaffiliated', 'prefer_not_to_say', 'other'),
     allowNull: true

@@ -104,7 +104,7 @@ export default function ProfilePoliticsSection({
       ]);
       setParties(normalizeOrganizations(orgsRes));
       setAffiliations(normalizeAffiliations(affRes));
-    } catch (err) {
+    } catch {
       setError('Δεν μπορέσαμε να φορτώσουμε τις πολιτικές τοποθετήσεις. Δοκιμάστε ξανά.');
     } finally {
       setLoading(false);
@@ -122,7 +122,7 @@ export default function ProfilePoliticsSection({
   );
   const availableParties = parties.filter((p) => !affiliatedOrgIds.has(Number(p.id)));
   const politicalStatus = profileData?.politicalAffiliationStatus ||
-    (affiliations.length > 0 || profileData?.partyId ? POLITICAL_AFFILIATION_STATUS.PARTY : '');
+    (affiliations.length > 0 ? POLITICAL_AFFILIATION_STATUS.PARTY : '');
   const showPartyAffiliations = politicalStatus === POLITICAL_AFFILIATION_STATUS.PARTY;
   const explicitNonPartyStatus = politicalStatus && !showPartyAffiliations;
 
