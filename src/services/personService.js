@@ -97,7 +97,7 @@ async function ensureUniqueSlug(base) {
 
 const PROFILE_INCLUDE = [
   { model: Location, as: 'homeLocation', attributes: ['id', 'name', 'slug', 'type', 'parent_id'] },
-  { model: Location, as: 'constituency', attributes: ['id', 'name', 'slug'] },
+  { model: Location, as: 'constituency', attributes: ['id', 'name', 'slug', 'type', 'parent_id'] },
   {
     model: User,
     as: 'claimedBy',
@@ -242,6 +242,7 @@ async function getPersons({
   page = 1,
   limit = 12,
   constituencyId,
+  position,
   search,
   claimStatus,
   expertiseArea,
@@ -266,6 +267,7 @@ async function getPersons({
 
   // Only public person profiles (claimStatus IS NOT NULL)
   const where = { claimStatus: { [Op.ne]: null } };
+  if (position && PUBLIC_PERSON_POSITIONS.has(String(position))) where.position = String(position);
   if (independentOnly === true || independentOnly === 'true' || independentOnly === '1') {
     where.politicalAffiliationStatus = 'unaffiliated';
   }

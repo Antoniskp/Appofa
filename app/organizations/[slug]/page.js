@@ -836,7 +836,10 @@ export default function OrganizationProfilePage({ params }) {
               <div className="space-y-4">
                 {organization.type === 'party' && (
                   <section className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
-                    <h3 className="text-base font-semibold text-gray-900">{t('parliamentarians')}</h3>
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="text-base font-semibold text-gray-900">{t('parliamentarians')}</h3>
+                      <Link href={`/parliamentarians?party=${organization.id}`} className="text-sm font-medium text-blue-700 hover:underline">Προβολή όλων →</Link>
+                    </div>
                     {parliamentariansLoading ? (
                       <p className="mt-2 text-sm text-gray-500">{t('parliamentarians_loading')}</p>
                     ) : parliamentarians.length > 0 ? (

@@ -697,9 +697,14 @@ export default function UsersPage() {
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-          <p className="mt-1 text-gray-500">{t('subtitle')}</p>
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+            <p className="mt-1 text-gray-500">{t('subtitle')}</p>
+          </div>
+          <Link href="/parliamentarians" className="inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100">
+            Βουλευτές &amp; εκλογικός χάρτης
+          </Link>
         </div>
 
         {/* Stats strip */}
