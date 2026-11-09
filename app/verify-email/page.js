@@ -79,7 +79,7 @@ export default function VerifyEmailPage() {
               <div className="text-4xl">✅</div>
               <h1 className="text-xl font-semibold text-green-700">{t('verify_email_success_title')}</h1>
               <Link
-                href="/profile?verified=1"
+                href="/onboarding"
                 className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
               >
                 {t('verify_email_success_cta')}

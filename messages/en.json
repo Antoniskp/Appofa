@@ -495,7 +495,7 @@
     "login_again_cta": "Go to sign in",
     "verify_email_loading": "Verifying your email...",
     "verify_email_success_title": "Email verified successfully!",
-    "verify_email_success_cta": "Go to profile",
+    "verify_email_success_cta": "Continue onboarding",
     "verify_email_error_generic": "Failed to verify email.",
     "verify_email_expired_help": "Your verification link expired. You can request a new one.",
     "verify_email_resend_cta": "Resend verification email",

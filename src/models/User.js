@@ -56,6 +56,11 @@ const User = sequelize.define('User', {
     type: DataTypes.DATE,
     allowNull: true
   },
+  preferredLocale: {
+    type: DataTypes.STRING(5),
+    allowNull: false,
+    defaultValue: 'el'
+  },
   role: {
     type: DataTypes.ENUM('admin', 'moderator', 'editor', 'viewer', 'candidate'),
     defaultValue: 'viewer',
@@ -408,6 +413,14 @@ const User = sequelize.define('User', {
     defaultValue: false
   },
   onboardingCompletedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  onboardingFollowupClaimedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  onboardingFollowupSentAt: {
     type: DataTypes.DATE,
     allowNull: true
   },

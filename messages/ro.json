@@ -495,7 +495,7 @@
     "login_again_cta": "Mergi la conectare",
     "verify_email_loading": "Se verifică e-mailul...",
     "verify_email_success_title": "E-mail verificat cu succes!",
-    "verify_email_success_cta": "Mergi la profil",
+    "verify_email_success_cta": "Continuă configurarea",
     "verify_email_error_generic": "Verificarea e-mailului a eșuat.",
     "verify_email_expired_help": "Linkul de verificare a expirat. Poți solicita unul nou.",
     "verify_email_resend_cta": "Retrimite e-mailul de verificare",

@@ -24,7 +24,13 @@ const PASSWORD_RESET_GENERIC_SUCCESS_MESSAGE = 'If an account with that email ex
 const PASSWORD_RESET_EMAIL_SUBJECT = 'Appofasi password reset request';
 const EMAIL_VERIF_DEFAULT_TTL_HOURS = 24;
 const EMAIL_VERIF_TOKEN_BYTES = 32;
-const EMAIL_VERIF_SUBJECT = 'Please verify your Appofasi email address';
+const SUPPORTED_LOCALES = ['el', 'en', 'ro'];
+const verificationCopy = {
+  el: { subject: 'Επιβεβαίωσε το email σου για το Appofasi', welcome: 'Καλώς ήρθες στο Appofasi', intro: 'Επιβεβαίωσε τη διεύθυνση email σου για να συνεχίσεις.', action: 'Επιβεβαίωση email', expiry: 'Ο σύνδεσμος ισχύει για 24 ώρες.', next: 'Μετά την επιβεβαίωση, διάλεξε πώς θέλεις να συμμετέχεις και δες το επόμενο βήμα σου.', fallback: 'Αν το κουμπί δεν λειτουργεί, άνοιξε αυτόν τον σύνδεσμο:', ignore: 'Αν δεν δημιούργησες εσύ αυτόν τον λογαριασμό, αγνόησε αυτό το email.' },
+  en: { subject: 'Verify your Appofasi email address', welcome: 'Welcome to Appofasi', intro: 'Verify your email address to continue.', action: 'Verify email', expiry: 'This link is valid for 24 hours.', next: 'After verifying, choose how you want to take part and see your next step.', fallback: 'If the button does not work, open this link:', ignore: 'If you did not create this account, you can ignore this email.' },
+  ro: { subject: 'Confirmă adresa de e-mail pentru Appofasi', welcome: 'Bun venit pe Appofasi', intro: 'Confirmă adresa de e-mail pentru a continua.', action: 'Confirmă e-mailul', expiry: 'Linkul este valabil timp de 24 de ore.', next: 'După confirmare, alege cum vrei să participi și vezi care este următorul pas.', fallback: 'Dacă butonul nu funcționează, deschide acest link:', ignore: 'Dacă nu ai creat acest cont, poți ignora acest e-mail.' },
+};
+const normalizeLocale = (locale) => SUPPORTED_LOCALES.includes(String(locale || '').toLowerCase()) ? String(locale).toLowerCase() : 'el';
 
 class ServiceError extends Error {
   constructor(status, message) {
@@ -99,33 +105,37 @@ const sendPasswordResetEmail = async (email, token, expiresInMinutes) => {
   });
 };
 
-const sendVerificationEmail = async (email, token) => {
+const sendVerificationEmail = async (email, token, locale = 'el') => {
+  const copy = verificationCopy[normalizeLocale(locale)];
   const frontendUrl = getFrontendUrl();
   const verificationUrl = `${frontendUrl}/verify-email?token=${encodeURIComponent(token)}`;
   const safeVerificationUrl = escapeHtml(verificationUrl);
-  const verificationTtlText = `${EMAIL_VERIF_DEFAULT_TTL_HOURS} hours`;
 
   await sendMail({
     to: email,
-    subject: EMAIL_VERIF_SUBJECT,
+    subject: copy.subject,
     text: [
-      'Welcome to Appofasi!',
+      copy.welcome,
       '',
-      `Please verify your email address using this link (valid for ${verificationTtlText}):`,
+      copy.intro,
+      copy.expiry,
       verificationUrl,
       '',
-      'If you did not create this account, you can safely ignore this email.',
+      copy.next,
+      '',
+      copy.ignore,
     ].join('\n'),
     html: `
-      <p>Welcome to Appofasi!</p>
-      <p><strong>Please verify your email address within ${verificationTtlText}.</strong></p>
-      <p>
-        Click here to verify your email:<br />
-        <a href="${safeVerificationUrl}">${safeVerificationUrl}</a>
-      </p>
-      <p>If the button/link does not work, copy and paste this URL in your browser:</p>
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#172033;max-width:600px;margin:auto">
+      <h1 style="font-size:24px">${copy.welcome}</h1>
+      <p>${copy.intro}</p>
+      <p><a href="${safeVerificationUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold">${copy.action}</a></p>
+      <p>${copy.expiry}</p>
+      <p>${copy.next}</p>
+      <p>${copy.fallback}</p>
       <p>${safeVerificationUrl}</p>
-      <p>If you did not create this account, you can safely ignore this email.</p>
+      <p>${copy.ignore}</p>
+      </div>
     `,
   });
 };
@@ -204,6 +214,7 @@ async function registerUser({
     isDiaspora: Boolean(isDiaspora),
     residenceCountryCode: residenceCountryCode ? String(residenceCountryCode).trim().toUpperCase() : null,
     homeLocationId: normalizedHomeLocationId,
+    preferredLocale: normalizeLocale(locale),
   });
 
   if (user.email) {
@@ -213,7 +224,7 @@ async function registerUser({
     await user.save();
 
     try {
-      await sendVerificationEmail(user.email, rawToken);
+      await sendVerificationEmail(user.email, rawToken, user.preferredLocale);
     } catch (error) {
       console.error('[registerUser] SMTP send failed:', error);
     }
@@ -389,7 +400,7 @@ async function resendVerificationEmail(userId) {
   await user.save();
 
   try {
-    await sendVerificationEmail(user.email, rawToken);
+    await sendVerificationEmail(user.email, rawToken, user.preferredLocale);
   } catch (error) {
     console.error('[resendVerificationEmail] SMTP send failed:', error);
   }

@@ -133,9 +133,11 @@ const startServer = async () => {
     const { startNotificationCleanupJob } = require('./jobs/notificationCleanup');
     const { startNewsletterCampaignScheduler } = require('./jobs/newsletterCampaignScheduler');
     const { startProposalDigestScheduler } = require('./jobs/proposalDigestScheduler');
+    const { startOnboardingFollowupScheduler } = require('./jobs/onboardingFollowupScheduler');
     startNotificationCleanupJob();
     startNewsletterCampaignScheduler();
     startProposalDigestScheduler();
+    startOnboardingFollowupScheduler();
   } catch (error) {
     console.error('Unable to start server:', error);
     process.exit(1);

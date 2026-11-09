@@ -495,7 +495,7 @@
     "login_again_cta": "Μετάβαση στη σύνδεση",
     "verify_email_loading": "Επιβεβαίωση email...",
     "verify_email_success_title": "Το email επιβεβαιώθηκε επιτυχώς!",
-    "verify_email_success_cta": "Μετάβαση στο προφίλ",
+    "verify_email_success_cta": "Συνέχεια γνωριμίας",
     "verify_email_error_generic": "Αποτυχία επιβεβαίωσης email.",
     "verify_email_expired_help": "Ο σύνδεσμος επιβεβαίωσης έληξε. Μπορείτε να ζητήσετε νέο.",
     "verify_email_resend_cta": "Επαναποστολή email επιβεβαίωσης",
