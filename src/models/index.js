@@ -608,6 +608,7 @@ module.exports = {
   PositionSource,
   PositionVote,
   IssueFollow: require('./IssueFollow'),
+  ProposalDigestPreference: require('./ProposalDigestPreference'),
   sequelize,
   User,
   Article,

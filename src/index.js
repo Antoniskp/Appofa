@@ -132,8 +132,10 @@ const startServer = async () => {
     // Start background jobs
     const { startNotificationCleanupJob } = require('./jobs/notificationCleanup');
     const { startNewsletterCampaignScheduler } = require('./jobs/newsletterCampaignScheduler');
+    const { startProposalDigestScheduler } = require('./jobs/proposalDigestScheduler');
     startNotificationCleanupJob();
     startNewsletterCampaignScheduler();
+    startProposalDigestScheduler();
   } catch (error) {
     console.error('Unable to start server:', error);
     process.exit(1);

@@ -8,6 +8,7 @@ import ProfileDangerZone from '@/components/profile/ProfileDangerZone';
 import PushNotificationEnable from '@/components/notifications/PushNotificationEnable';
 import EmailPreferences from '@/components/onboarding/EmailPreferences';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
+import IssueDigestPreference from '@/components/IssueDigestPreference';
 
 export default function SettingsTab({
   profileData,
@@ -40,6 +41,7 @@ export default function SettingsTab({
       <Card>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">{tProfile('preferences')}</h2>
         <EmailPreferences />
+        <IssueDigestPreference />
         <div className="mb-4 border-t border-gray-100 pt-4">
           <p className="text-sm font-medium text-gray-700">{tProfile('push_notifications_title')}</p>
           <p className="text-xs text-gray-500 mt-0.5">

@@ -26,6 +26,7 @@ Review weekly: distinct contributors, repeat contributors, substantive proposals
 
 - Run the issue-follow migration before enabling the new API.
 - Following is opt-in and account-scoped, for public non-organization proposals and polls.
-- `/following` shows current state and proposal progress; it does not send email or push notifications. A digest is a separate opt-in feature, not implemented in this release.
+- `/following` shows current state and proposal progress. Weekly email digests for new public proposal progress are a separate opt-in from the Appofasi newsletter, available in profile settings. Each digest includes an unsubscribe link. Push notifications for followed issues are not enabled.
+- Apply migration `20261109000000-create-proposal-digest-preferences.js` before deploying the backend. The backend checks hourly by default; a newly enabled digest becomes eligible after seven days and sends only when there are new public proposal progress updates. Configure `PROPOSAL_DIGEST_SCHEDULER_INTERVAL_MS` to change the check interval.
 - Article previews suppress narrowly recognized accidental authoring prompts and the editor warns about them. This does not rewrite stored articles. Review article 155 and replace its summary with an accurate neutral editorial summary after checking the full text.
 - The homepage uses a static introduction. Existing admin-managed slides remain stored but no longer control the homepage hero.

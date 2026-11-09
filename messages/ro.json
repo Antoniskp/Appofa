@@ -1,4 +1,23 @@
 {
+  "proposalDigest": {
+    "title": "Actualizări săptămânale despre propunerile urmărite",
+    "description": "Un email pe săptămână cu actualizări publice noi despre propunerile pe care le urmărești. Este separat de newsletterul Appofasi.",
+    "enabled": "Trimite-mi rezumatul săptămânal al propunerilor",
+    "disabled": "Rezumatul săptămânal al propunerilor este dezactivat",
+    "verifyEmail": "Verifică adresa de email a contului înainte de activare.",
+    "loading": "Se încarcă preferința…",
+    "saving": "Se salvează preferința…",
+    "loadError": "Preferința de email nu a putut fi încărcată.",
+    "saveError": "Preferința de email nu a putut fi actualizată.",
+    "enabledMessage": "Rezumatul săptămânal al propunerilor a fost activat.",
+    "disabledMessage": "Rezumatul săptămânal al propunerilor a fost dezactivat.",
+    "unsubscribeLoadingTitle": "Se actualizează preferința de email",
+    "unsubscribeLoadingBody": "Așteaptă procesarea solicitării.",
+    "unsubscribedTitle": "Te-ai dezabonat",
+    "unsubscribedBody": "Nu vei mai primi rezumate săptămânale despre propuneri.",
+    "unsubscribeErrorTitle": "Preferința nu a putut fi actualizată",
+    "unsubscribeErrorBody": "Deschide setările profilului pentru a gestiona emailurile cu rezumate."
+  },
   "pollTopics": {
     "title": "Găsește sondaje care te interesează",
     "description": "Alege un subiect pentru a vedea toate sondajele sale.",

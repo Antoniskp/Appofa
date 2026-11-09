@@ -31,7 +31,7 @@ export default function IssueFollowButton({ entityType, entityId, onChanged }) {
   if (!user) return <Link href={`/login?next=${encodeURIComponent(`/${entityType === 'poll' ? 'polls' : 'suggestions'}/${entityId}`)}`} className="inline-flex min-h-11 items-center font-semibold text-teal-800 underline">Συνδέσου για να ακολουθήσεις το θέμα</Link>;
   return <div>
     <button type="button" aria-pressed={following} disabled={busy} onClick={toggle} className="min-h-11 rounded-lg border border-teal-700 bg-white px-4 py-2 font-semibold text-teal-800 disabled:opacity-50">{busy ? 'Φόρτωση…' : following ? 'Ακολουθείς το θέμα · Διακοπή' : 'Ακολούθησε το θέμα'}</button>
-    <p className="mt-2 text-sm text-gray-600">Οι εξελίξεις συγκεντρώνονται στα <Link href="/following" className="underline">θέματα που ακολουθείς</Link>. Δεν ενεργοποιούνται email ή ειδοποιήσεις push.</p>
+    <p className="mt-2 text-sm text-gray-600">Οι εξελίξεις συγκεντρώνονται στα <Link href="/following" className="underline">θέματα που ακολουθείς</Link>. Η εβδομαδιαία σύνοψη email ενεργοποιείται από τις ρυθμίσεις προφίλ.</p>
     {error && <p role="alert" className="mt-2 text-sm text-red-700">{error}</p>}
   </div>;
 }

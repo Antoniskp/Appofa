@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
 const { Poll, Suggestion } = require('../models');
 const IssueFollow = require('../models/IssueFollow');
+const proposalDigestService = require('../services/proposalDigestService');
 
 // Following is deliberately limited to public, non-organization content.
 // Recheck on every read: a later privacy change must not expose the target.
@@ -46,4 +47,33 @@ exports.list = async (req, res) => {
     }));
     res.json({ success: true, data: results.flat().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)), pagination: { currentPage: page, totalPages: Math.max(1, Math.ceil(count / 20)) } });
   } catch { res.status(500).json({ success: false, message: 'Unable to load followed issues.' }); }
+};
+
+exports.getDigestPreference = async (req, res) => {
+  try {
+    const data = await proposalDigestService.getPreference(req.user);
+    return res.json({ success: true, data });
+  } catch (error) {
+    console.error('Proposal digest preference read error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to load email preference.' });
+  }
+};
+
+exports.updateDigestPreference = async (req, res) => {
+  try {
+    const data = await proposalDigestService.updatePreference(req.user, req.body?.enabled, req.body?.locale);
+    return res.json({ success: true, data });
+  } catch (error) {
+    return res.status(error.status || 500).json({ success: false, message: error.status ? error.message : 'Unable to update email preference.' });
+  }
+};
+
+exports.unsubscribeDigest = async (req, res) => {
+  try {
+    await proposalDigestService.unsubscribe(req.body?.token);
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Proposal digest unsubscribe error:', error);
+    return res.status(500).json({ success: false, message: 'Unable to update email preference.' });
+  }
 };

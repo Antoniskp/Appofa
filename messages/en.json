@@ -1,4 +1,23 @@
 {
+  "proposalDigest": {
+    "title": "Weekly followed proposal updates",
+    "description": "One email each week with new public progress updates from proposals you follow. This is separate from the Appofasi newsletter.",
+    "enabled": "Send me the weekly proposal digest",
+    "disabled": "Weekly proposal digest is off",
+    "verifyEmail": "Verify your account email before turning this on.",
+    "loading": "Loading preference…",
+    "saving": "Saving preference…",
+    "loadError": "Could not load this email preference.",
+    "saveError": "Could not update this email preference.",
+    "enabledMessage": "Weekly proposal digest enabled.",
+    "disabledMessage": "Weekly proposal digest disabled.",
+    "unsubscribeLoadingTitle": "Updating your email preference",
+    "unsubscribeLoadingBody": "Please wait while we process your request.",
+    "unsubscribedTitle": "You are unsubscribed",
+    "unsubscribedBody": "You will no longer receive weekly proposal digests.",
+    "unsubscribeErrorTitle": "Could not update your preference",
+    "unsubscribeErrorBody": "Open your profile settings to manage proposal digest emails."
+  },
   "pollTopics": {
     "title": "Find polls that interest you",
     "description": "Choose a topic to explore all its polls.",
