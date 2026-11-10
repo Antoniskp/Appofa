@@ -10,6 +10,11 @@ import regionsMetaData from '@/config/map-data/regions.metadata.json';
 
 const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false });
 const normalize = (value) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('el').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+const normalizeRegionName = (value) => normalize(value).replace(/ και /g, ' ').trim();
+const findRegionLocation = (locations, region) => {
+  const searchNames = new Set([region?.locationSearch, region?.name].map(normalizeRegionName).filter(Boolean));
+  return locations.find((location) => [location.name, location.name_local].some((name) => searchNames.has(normalizeRegionName(name)))) || null;
+};
 const CENTER = [38.5, 23.8];
 
 export default function ParliamentarianDirectory({ regionsGeoJson }) {
@@ -62,7 +67,7 @@ export default function ParliamentarianDirectory({ regionsGeoJson }) {
   const regionLocationIds = useMemo(() => {
     if (!regionId) return null;
     const region = regionsMetaData.regions.find((item) => item.id === regionId);
-    const location = locations.find((item) => normalize(item.name) === normalize(region?.locationSearch));
+    const location = findRegionLocation(locations, region);
     if (!location) return new Set();
     return new Set([String(location.id), ...locations.filter((item) => String(item.parent_id) === String(location.id)).map((item) => String(item.id))]);
   }, [regionId, locations]);
@@ -79,7 +84,7 @@ export default function ParliamentarianDirectory({ regionsGeoJson }) {
   }), [profiles, search, partyId, regionLocationIds]);
 
   const regionCounts = useMemo(() => Object.fromEntries(regionsMetaData.regions.map((region) => {
-    const regionLocation = locations.find((item) => normalize(item.name) === normalize(region.locationSearch));
+    const regionLocation = findRegionLocation(locations, region);
     const childIds = new Set(regionLocation ? [String(regionLocation.id), ...locations.filter((item) => String(item.parent_id) === String(regionLocation.id)).map((item) => String(item.id))] : []);
     const count = profiles.filter((profile) => {
       const name = normalize([profile.firstNameNative, profile.lastNameNative, profile.firstNameEn, profile.lastNameEn, profile.nickname].filter(Boolean).join(' '));
