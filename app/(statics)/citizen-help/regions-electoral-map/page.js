@@ -25,6 +25,12 @@ export const metadata = {
 const sortedRegions = [...regionsMetaData.regions].sort((a, b) => b.totalSeats - a.totalSeats);
 const totalDistricts = districtsMetaData.electoralDistricts.length;
 const totalRegionSeats = sortedRegions.reduce((sum, region) => sum + region.totalSeats, 0);
+const districtsByRegion = sortedRegions.map((region) => ({
+  ...region,
+  districts: region.districtIds
+    .map((districtId) => districtsMetaData.electoralDistricts.find((district) => district.id === districtId))
+    .filter(Boolean),
+}));
 const regionsGeoJson = JSON.parse(
   fs.readFileSync(path.join(process.cwd(), 'config', 'map-data', 'regions.geojson'), 'utf8')
 );
@@ -56,6 +62,29 @@ export default function RegionsElectoralMapPage() {
           περιφέρειες με reusable αρχιτεκτονική (ξεχωριστά metadata + GeoJSON), ώστε τα πολύγωνα να μπορούν
           να βελτιωθούν στο μέλλον χωρίς αλλαγές στον UI κώδικα.
         </p>
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-semibold mb-3">Οι 59 Εκλογικές Περιφέρειες</h2>
+        <p className="text-gray-600 leading-relaxed mb-5">
+          Η παρακάτω λίστα οργανώνει τις βουλευτικές εκλογικές περιφέρειες ανά διοικητική Περιφέρεια.
+          Η ομαδοποίηση είναι μόνο για ευκολότερη περιήγηση· τα όρια των εκλογικών περιφερειών
+          είναι διαφορετικά από τα όρια των 13 διοικητικών Περιφερειών.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {districtsByRegion.map((region) => (
+            <section key={region.id} className="rounded-lg border border-gray-200 bg-white p-4">
+              <h3 className="font-semibold text-gray-800 mb-2">
+                {region.name} <span className="text-sm font-normal text-gray-500">({region.districts.length})</span>
+              </h3>
+              <ul className="space-y-1 text-sm text-gray-700">
+                {region.districts.map((district) => (
+                  <li key={district.id}>{district.name}</li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
       </section>
 
       <section>
