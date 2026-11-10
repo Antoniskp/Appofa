@@ -28,10 +28,10 @@ export default function ParliamentarianDirectory({ regionsGeoJson }) {
     (async () => {
       setLoading(true);
       try {
-        const [peopleResult, partyResult, locationResult] = await Promise.all([
+        const [peopleResult, partyResult, firstLocationResult] = await Promise.all([
           personAPI.getAll({ position: 'parliamentary', page: 1, limit: 100 }),
           organizationAPI.getAll({ type: 'party', limit: 100 }),
-          locationAPI.getAll({ limit: 1000 }),
+          locationAPI.getAll({ limit: 1000, offset: 0 }),
         ]);
         const peopleData = peopleResult?.data || {};
         const allProfiles = [...(peopleData.profiles || [])];
@@ -40,10 +40,16 @@ export default function ParliamentarianDirectory({ regionsGeoJson }) {
           const result = await personAPI.getAll({ position: 'parliamentary', page, limit: 100 });
           allProfiles.push(...(result?.data?.profiles || []));
         }
+        const allLocations = [...(firstLocationResult?.locations || firstLocationResult?.data?.locations || [])];
+        const locationTotal = Number(firstLocationResult?.pagination?.total || firstLocationResult?.data?.pagination?.total || allLocations.length);
+        for (let offset = 1000; offset < locationTotal; offset += 1000) {
+          const result = await locationAPI.getAll({ limit: 1000, offset });
+          allLocations.push(...(result?.locations || result?.data?.locations || []));
+        }
         if (!active) return;
         setProfiles(allProfiles);
         setParties(partyResult?.organizations || partyResult?.data?.organizations || []);
-        setLocations(locationResult?.locations || locationResult?.data?.locations || []);
+        setLocations(allLocations);
       } catch {
         if (active) setError('Δεν ήταν δυνατή η φόρτωση των βουλευτών. Δοκιμάστε ξανά αργότερα.');
       } finally {
@@ -137,7 +143,7 @@ export default function ParliamentarianDirectory({ regionsGeoJson }) {
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
             <div className="flex items-center justify-between px-4 py-3"><div><h2 className="font-semibold text-gray-900">Βουλευτές ανά περιφέρεια</h2><p className="text-xs text-gray-500">Επιλέξτε περιοχή για φιλτράρισμα</p></div>{regionId && <button type="button" onClick={() => setRegionId('')} className="text-sm text-blue-700 hover:underline">Όλες</button>}</div>
             <div className="h-[390px]"><BaseMap center={CENTER} zoom={6} polygonLayers={polygons} className="h-full w-full" scrollWheelZoom={false} interactive /></div>
-            <p className="px-4 py-2 text-xs text-gray-500">Η θέση βασίζεται στην καταχωρισμένη εκλογική περιφέρεια, όχι στη διεύθυνση κατοικίας. Τα όρια του χάρτη είναι ενδεικτικά.</p>
+            <p className="px-4 py-2 text-xs text-gray-500">Η κατανομή βασίζεται στην εκλογική περιφέρεια που έχει καταχωριστεί για κάθε βουλευτή. Όρια: <a href="https://www.geoboundaries.org/" target="_blank" rel="noreferrer" className="underline">geoBoundaries / EuroGeoGraphics (2016)</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer" className="underline">CC BY 4.0</a>.</p>
           </div>
         </aside>
       </section>

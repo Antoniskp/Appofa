@@ -128,8 +128,8 @@ export default function AnalyticalMappingExplorer({
           scrollWheelZoom={false}
           interactive={true}
         />
-        <div className="pointer-events-none absolute left-2 bottom-2 z-[1000] rounded bg-white/90 px-2 py-1 text-[11px] text-gray-500">
-          Γεωμετρία επίδειξης (GeoJSON) — έτοιμη για μελλοντική αντικατάσταση με ακριβέστερα όρια.
+        <div className="absolute left-2 bottom-2 z-[1000] rounded bg-white/90 px-2 py-1 text-[11px] text-gray-500">
+          Όρια Περιφερειών: <a href="https://www.geoboundaries.org/" target="_blank" rel="noreferrer" className="underline">geoBoundaries / EuroGeoGraphics (2016)</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer" className="underline">CC BY 4.0</a>. Τα όρια εκλογικών περιφερειών είναι ενδεικτικά.
         </div>
       </div>
 

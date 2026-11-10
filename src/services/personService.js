@@ -267,7 +267,26 @@ async function getPersons({
 
   // Only public person profiles (claimStatus IS NOT NULL)
   const where = { claimStatus: { [Op.ne]: null } };
-  if (position && PUBLIC_PERSON_POSITIONS.has(String(position))) where.position = String(position);
+  if (position && PUBLIC_PERSON_POSITIONS.has(String(position))) {
+    if (position === 'parliamentary') {
+      const isPostgres = dbConfig.getDialect() === 'postgres';
+      const likeOp = isPostgres ? Op.iLike : Op.like;
+      where[Op.and] = [
+        ...(where[Op.and] || []),
+        {
+          [Op.or]: [
+            { position: 'parliamentary' },
+            { politicalPositions: { [likeOp]: '%parliament%' } },
+            { politicalPositions: { [likeOp]: '%βουλευ%' } },
+            { politicalPositions: { [likeOp]: '%Βουλευ%' } },
+            { politicalPositions: { [likeOp]: '%ΒΟΥΛΕΥ%' } },
+          ],
+        },
+      ];
+    } else {
+      where.position = String(position);
+    }
+  }
   if (independentOnly === true || independentOnly === 'true' || independentOnly === '1') {
     where.politicalAffiliationStatus = 'unaffiliated';
   }

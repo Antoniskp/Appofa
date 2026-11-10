@@ -113,10 +113,9 @@ export default function RegionsElectoralMapPage() {
       <section className="bg-indigo-50 border border-indigo-200 rounded-lg p-5">
         <h2 className="text-xl font-semibold mb-2">Σημείωση για δεδομένα και γεωμετρία</h2>
         <p className="text-sm text-gray-700">
-          Τα metadata των πολιτικών ενοτήτων και τα GeoJSON πολύγωνα είναι ξεχωριστά αρχεία με stable IDs,
-          ώστε η ένωση δεδομένων να γίνεται με αξιόπιστο τρόπο. Τα γεωμετρικά όρια είναι προς το παρόν
-          απλοποιημένα/placeholder για άμεση παραγωγική χρήση και μπορούν να αντικατασταθούν με
-          επαληθευμένα δεδομένα χωρίς αλλαγή των components.
+          Οι 13 διοικητικές Περιφέρειες χρησιμοποιούν γεωμετρία <a href="https://www.geoboundaries.org/" className="text-blue-700 underline" target="_blank" rel="noreferrer">geoBoundaries GB Open</a> για την Ελλάδα (ADM2,
+          στοιχεία 2016), με άδεια <a href="https://creativecommons.org/licenses/by/4.0/" className="text-blue-700 underline" target="_blank" rel="noreferrer">CC BY 4.0</a> και πηγή EuroGeoGraphics / Regional IM Working Group - Europe.
+          Τα όρια των εκλογικών περιφερειών στον ξεχωριστό χάρτη παραμένουν ενδεικτικά.
         </p>
       </section>
     </StaticPageLayout>

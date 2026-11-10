@@ -92,6 +92,47 @@ describe('Person Profile Tests (POST /api/persons)', () => {
     });
   });
 
+  describe('GET /api/persons - political position filtering', () => {
+    let canonicalParliamentarianId;
+    let legacyParliamentarianId;
+    let mayorId;
+
+    beforeAll(async () => {
+      const canonical = await User.create({
+        claimStatus: 'unclaimed',
+        firstNameEn: 'Canonical',
+        lastNameEn: 'Parliamentarian',
+        position: 'parliamentary',
+      });
+      canonicalParliamentarianId = canonical.id;
+
+      const legacy = await User.create({
+        claimStatus: 'unclaimed',
+        firstNameEn: 'Legacy',
+        lastNameEn: 'Parliamentarian',
+        politicalPositions: { title: 'βουλευτής' },
+      });
+      legacyParliamentarianId = legacy.id;
+
+      const mayor = await User.create({
+        claimStatus: 'unclaimed',
+        firstNameEn: 'Test',
+        lastNameEn: 'Mayor',
+        position: 'mayor',
+      });
+      mayorId = mayor.id;
+    });
+
+    it('matches the current position field and existing Greek parliamentarian labels', async () => {
+      const res = await request(app).get('/api/persons?position=parliamentary');
+      expect(res.status).toBe(200);
+      const ids = res.body.data.profiles.map((profile) => profile.id);
+      expect(ids).toContain(canonicalParliamentarianId);
+      expect(ids).toContain(legacyParliamentarianId);
+      expect(ids).not.toContain(mayorId);
+    });
+  });
+
   describe('GET /api/persons - hierarchical location filtering', () => {
     let prefectureId, municipalityId, otherMunicipalityId;
     let personInMunicipalityId, personInPrefectureId, personInOtherMunicipalityId;
