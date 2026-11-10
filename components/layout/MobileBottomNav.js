@@ -20,7 +20,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 // Route groups that belong to the "Explore" tab
-const EXPLORE_ROOTS = ['/news', '/articles', '/videos', '/topics'];
+const EXPLORE_ROOTS = ['/news', '/articles', '/videos', '/topics', '/live'];
 
 // Route groups that belong to the "Participate" tab (used for active-state only)
 const PARTICIPATE_ROOTS = ['/polls', '/civic-questions', '/suggestions', '/dream-team', '/organizations', '/positions'];

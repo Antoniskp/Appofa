@@ -81,11 +81,11 @@ function mockTikTokOEmbed({ videoId = '1234567890123456789', title = 'Creator cl
 }
 
 describe('video pin service helpers', () => {
-  test('defaults live expiry to 24 hours', () => {
+  test('defaults live expiry to 1 hour', () => {
     const now = new Date('2026-08-02T10:00:00Z');
     const result = normalizeLiveExpiry('live', null, undefined, now);
-    expect(result.value.toISOString()).toBe('2026-08-03T10:00:00.000Z');
-    expect(DEFAULT_LIVE_EXPIRY_HOURS).toBe(24);
+    expect(result.value.toISOString()).toBe('2026-08-02T11:00:00.000Z');
+    expect(DEFAULT_LIVE_EXPIRY_HOURS).toBe(1);
   });
 
   test('rejects unreasonable live expiry durations', () => {

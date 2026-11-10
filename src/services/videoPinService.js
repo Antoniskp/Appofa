@@ -16,8 +16,9 @@ const STATUSES = VideoPin.STATUSES;
 const PUBLIC_VISIBLE_STATUSES = ['approved'];
 const TERMINAL_PUBLIC_LIVE_STATUSES = ['ended', 'broken', 'hidden', 'removed', 'expired'];
 const DEFAULT_CATEGORY = 'local-news';
-const DEFAULT_LIVE_EXPIRY_HOURS = 24;
-const MAX_LIVE_EXPIRY_HOURS = 72;
+const DEFAULT_LIVE_EXPIRY_HOURS = 1;
+const LIVE_EXPIRY_OPTIONS = [1, 2, 4, 8];
+const MAX_LIVE_EXPIRY_HOURS = 8;
 const TITLE_FALLBACK = 'Video pin';
 const TITLE_MAX = 255;
 const DESCRIPTION_MAX = 2000;
@@ -159,8 +160,8 @@ function normalizeLiveExpiry(contentType, expiresAt, expiresInHours, now = new D
     if (Number.isNaN(parsed.getTime())) return { error: 'expiresAt must be a valid date.' };
     if (parsed <= now) return { error: 'expiresAt must be in the future.' };
     const hoursAhead = (parsed.getTime() - now.getTime()) / (60 * 60 * 1000);
-    if (hoursAhead > MAX_LIVE_EXPIRY_HOURS) {
-      return { error: `Live pins can expire at most ${MAX_LIVE_EXPIRY_HOURS} hours in the future.` };
+    if (!LIVE_EXPIRY_OPTIONS.some((option) => Math.abs(option - hoursAhead) < 0.001)) {
+      return { error: `Live pins must expire in one of: ${LIVE_EXPIRY_OPTIONS.join(', ')} hours.` };
     }
     return { value: parsed };
   }
@@ -168,8 +169,8 @@ function normalizeLiveExpiry(contentType, expiresAt, expiresInHours, now = new D
   const hours = expiresInHours === undefined || expiresInHours === null || expiresInHours === ''
     ? DEFAULT_LIVE_EXPIRY_HOURS
     : Number(expiresInHours);
-  if (!Number.isFinite(hours) || hours <= 0 || hours > MAX_LIVE_EXPIRY_HOURS) {
-    return { error: `expiresInHours must be between 1 and ${MAX_LIVE_EXPIRY_HOURS}.` };
+  if (!LIVE_EXPIRY_OPTIONS.includes(hours)) {
+    return { error: `expiresInHours must be one of: ${LIVE_EXPIRY_OPTIONS.join(', ')}.` };
   }
   return { value: new Date(now.getTime() + hours * 60 * 60 * 1000) };
 }
@@ -273,7 +274,25 @@ async function getVideoPins(query = {}, user = null) {
     order: buildOrder(query.sort)
   });
 
-  return { success: true, data: { videoPins: pins.map(serializeVideoPin) } };
+  let approvedLivePinCount = 0;
+  if (user?.id) {
+    approvedLivePinCount = await VideoPin.count({
+      where: { submittedByUserId: user.id, contentType: 'live', status: 'approved' }
+    });
+  }
+  const maxDurationHours = isModeratorRole(user?.role)
+    ? 8
+    : approvedLivePinCount >= 20 ? 8
+      : approvedLivePinCount >= 8 ? 4
+        : approvedLivePinCount >= 3 ? 2 : 1;
+
+  return {
+    success: true,
+    data: {
+      videoPins: pins.map(serializeVideoPin),
+      trust: { approvedLivePinCount, maxDurationHours }
+    }
+  };
 }
 
 async function createVideoPin(user, input = {}) {
@@ -336,6 +355,23 @@ async function createVideoPin(user, input = {}) {
     || TITLE_FALLBACK;
   const expiryResult = normalizeLiveExpiry(contentTypeResult.value, input.expiresAt, input.expiresInHours);
   if (expiryResult.error) return { success: false, status: 400, message: expiryResult.error };
+
+  if (contentTypeResult.value === 'live') {
+    const approvedCount = await VideoPin.count({
+      where: { submittedByUserId: user.id, contentType: 'live', status: 'approved' }
+    });
+    const maxDurationHours = isModeratorRole(user.role)
+      ? 8
+      : approvedCount >= 20 ? 8 : approvedCount >= 8 ? 4 : approvedCount >= 3 ? 2 : 1;
+    const requestedHours = Number(input.expiresInHours || ((expiryResult.value.getTime() - Date.now()) / (60 * 60 * 1000)));
+    if (requestedHours > maxDurationHours + 0.001) {
+      return {
+        success: false,
+        status: 403,
+        message: `Your current trust level allows live pins for up to ${maxDurationHours} hour(s).`
+      };
+    }
+  }
 
   const canApprove = isModeratorRole(user.role);
   const now = new Date();

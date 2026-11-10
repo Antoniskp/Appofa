@@ -197,6 +197,13 @@ export default function TopNav() {
           mobileIcon: <VideoCameraIcon className="h-5 w-5" />
         },
         {
+          id: 'live-map',
+          label: tNav('live_map'),
+          href: '/live',
+          icon: <MapPinIcon className="h-4 w-4" />,
+          mobileIcon: <MapPinIcon className="h-5 w-5" />
+        },
+        {
           id: 'users',
           label: tNav('users'),
           href: '/users',
