@@ -66,9 +66,9 @@ function CreatePersonProfilePageContent() {
   const [partyOrganizations, setPartyOrganizations] = useState([]);
 
   // Constituency cascading picker (separate from person location)
-  const [constPrefectures, setConstPrefectures] = useState([]);
-  const [constMunicipalities, setConstMunicipalities] = useState([]);
-  const [constSelectedPrefectureId, setConstSelectedPrefectureId] = useState('');
+  const [constituencyParents, setConstituencyParents] = useState([]);
+  const [constituencyOptions, setConstituencyOptions] = useState([]);
+  const [constituencyParentId, setConstituencyParentId] = useState('');
   const [constituencyId, setConstituencyId] = useState('');
 
   const [saving, setSaving] = useState(false);
@@ -108,21 +108,26 @@ function CreatePersonProfilePageContent() {
       .catch(() => {});
   }, [personSelectedPrefectureId]);
 
-  // Load constituency prefectures when political section enabled
+  // Load regions and Greece as possible parents for electoral constituencies.
   useEffect(() => {
     if (!hasPoliticalInfo) return;
-    locationAPI.getAll({ type: 'prefecture', limit: 500 })
-      .then((res) => setConstPrefectures(res.locations || []))
+    locationAPI.getAll({ type: 'country', limit: 500 })
+      .then(async (countriesRes) => {
+        const greece = (countriesRes.locations || []).find((location) => location.name === 'Greece');
+        if (!greece) return;
+        const regionsRes = await locationAPI.getAll({ type: 'prefecture', parent_id: greece.id, limit: 500 });
+        setConstituencyParents([...(regionsRes.locations || []), greece]);
+      })
       .catch(() => {});
   }, [hasPoliticalInfo]);
 
-  // Load constituency municipalities when prefecture changes
+  // Load electoral districts under the selected region or Greece.
   useEffect(() => {
-    if (!constSelectedPrefectureId) { setConstMunicipalities([]); return; }
-    locationAPI.getAll({ type: 'municipality', parent_id: constSelectedPrefectureId, limit: 500 })
-      .then((res) => setConstMunicipalities(res.locations || []))
+    if (!constituencyParentId) { setConstituencyOptions([]); return; }
+    locationAPI.getAll({ type: 'electoral_district', parent_id: constituencyParentId, limit: 500 })
+      .then((res) => setConstituencyOptions(res.locations || []))
       .catch(() => {});
-  }, [constSelectedPrefectureId]);
+  }, [constituencyParentId]);
 
   const handleChange = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
   const handlePoliticalChange = (field, value) => setPoliticalForm((prev) => ({ ...prev, [field]: value }));
@@ -195,8 +200,7 @@ function CreatePersonProfilePageContent() {
       if (hasPoliticalInfo) {
         if (politicalForm.position) payload.position = politicalForm.position;
         if (politicalForm.partyOrganizationSlug) payload.partyOrganizationSlug = politicalForm.partyOrganizationSlug;
-        const constId = constituencyId || constSelectedPrefectureId || undefined;
-        if (constId) payload.constituencyId = parseInt(constId, 10);
+        if (constituencyId) payload.constituencyId = parseInt(constituencyId, 10);
         if (politicalForm.manifesto) payload.manifesto = politicalForm.manifesto;
         const ppObj = pairsToObject(politicalPositions);
         if (Object.keys(ppObj).length > 0) payload.politicalPositions = ppObj;
@@ -490,29 +494,32 @@ function CreatePersonProfilePageContent() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Εκλογική Περιφέρεια</label>
                   <div className="space-y-2">
                     <select
-                      value={constSelectedPrefectureId}
+                      value={constituencyParentId}
                       onChange={(e) => {
-                        setConstSelectedPrefectureId(e.target.value);
+                        setConstituencyParentId(e.target.value);
                         setConstituencyId('');
                       }}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value="">Επιλέξτε Περιφέρεια</option>
-                      {constPrefectures.map((loc) => (
+                      <option value="">Επιλέξτε Περιφέρεια / Επικράτεια</option>
+                      {constituencyParents.map((loc) => (
                         <option key={loc.id} value={loc.id}>{loc.name}</option>
                       ))}
                     </select>
-                    {constSelectedPrefectureId && (
+                    {constituencyParentId && (
                       <select
                         value={constituencyId}
                         onChange={(e) => setConstituencyId(e.target.value)}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="">Επιλέξτε Δήμο (προαιρετικό)</option>
-                        {constMunicipalities.map((loc) => (
+                        <option value="">Επιλέξτε Εκλογική Περιφέρεια</option>
+                        {constituencyOptions.map((loc) => (
                           <option key={loc.id} value={loc.id}>{loc.name}</option>
                         ))}
                       </select>
+                    )}
+                    {constituencyParentId && constituencyOptions.length === 0 && (
+                      <p className="text-xs text-gray-500">Δεν υπάρχουν καταχωρισμένες εκλογικές περιφέρειες.</p>
                     )}
                   </div>
                 </div>

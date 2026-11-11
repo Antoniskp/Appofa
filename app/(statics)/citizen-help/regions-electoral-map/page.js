@@ -142,9 +142,8 @@ export default function RegionsElectoralMapPage() {
       <section className="bg-indigo-50 border border-indigo-200 rounded-lg p-5">
         <h2 className="text-xl font-semibold mb-2">Σημείωση για δεδομένα και γεωμετρία</h2>
         <p className="text-sm text-gray-700">
-          Οι 13 διοικητικές Περιφέρειες χρησιμοποιούν γεωμετρία <a href="https://www.geoboundaries.org/" className="text-blue-700 underline" target="_blank" rel="noreferrer">geoBoundaries GB Open</a> για την Ελλάδα (ADM2,
-          στοιχεία 2016), με άδεια <a href="https://creativecommons.org/licenses/by/4.0/" className="text-blue-700 underline" target="_blank" rel="noreferrer">CC BY 4.0</a> και πηγή EuroGeoGraphics / Regional IM Working Group - Europe.
-          Τα όρια των εκλογικών περιφερειών στον ξεχωριστό χάρτη παραμένουν ενδεικτικά.
+          Τα όρια των 59 εκλογικών περιφερειών βασίζονται στα πολύγωνα νομών του <a href="https://github.com/codeforgermany/click_that_hood/blob/main/public/data/greece-prefectures.geojson" className="text-blue-700 underline" target="_blank" rel="noreferrer">Click That Hood / Eurostat</a> (© EuroGeographics για τα διοικητικά όρια).
+          Οι 10 περιφέρειες που χωρίζουν την Αττική και τη Θεσσαλονίκη σχηματίστηκαν από όρια δήμων του <a href="https://www.geoboundaries.org/api/current/gbOpen/GRC/ADM3/" className="text-blue-700 underline" target="_blank" rel="noreferrer">geoBoundaries GB Open ADM3</a> (<a href="https://creativecommons.org/publicdomain/zero/1.0/" className="text-blue-700 underline" target="_blank" rel="noreferrer">CC0 1.0</a>), σύμφωνα με την κατανομή δήμων του <a href="https://www.ypes.gr/statistika/ethnikes-ekloges/vouleutikes-ekloges/endiaferoyn-toys-syndyasmoys" className="text-blue-700 underline" target="_blank" rel="noreferrer">Υπουργείου Εσωτερικών</a>.
         </p>
       </section>
     </StaticPageLayout>
