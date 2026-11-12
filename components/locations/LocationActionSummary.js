@@ -22,7 +22,9 @@ export default function LocationActionSummary({ polls = [], suggestions = [], ne
       {loading ? <p role="status" className="py-6 text-sm text-gray-500">Φόρτωση δραστηριότητας…</p> : items.length ? (
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {items.map(item => <Link key={item.href} href={item.href} className="group block rounded-xl border border-gray-100 bg-white overflow-hidden transition hover:border-blue-200 hover:bg-blue-50/50">
-            {item.kind !== 'Πρόταση' && <LocationActivityImage item={item} poll={item.kind === 'Ανοιχτή ψηφοφορία'} />}
+            {(item.kind !== 'Πρόταση' || item.photos?.some((photo) => photo?.url)) && (
+              <LocationActivityImage item={item} poll={item.kind === 'Ανοιχτή ψηφοφορία'} />
+            )}
             <div className="p-4">
             <p className="text-xs text-gray-500">{item.kind}{item.createdAt && !Number.isNaN(Date.parse(item.createdAt)) ? ' · ' + new Date(item.createdAt).toLocaleDateString('el-GR') : ''}</p>
             <h3 className="mt-1 font-semibold text-gray-900 group-hover:text-blue-700">{item.title}</h3>

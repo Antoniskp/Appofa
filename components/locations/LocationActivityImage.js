@@ -7,7 +7,8 @@ import { ChartBarIcon } from '@heroicons/react/24/outline';
 
 export default function LocationActivityImage({ item, poll = false }) {
   const [failedSource, setFailedSource] = useState(null);
-  const source = item.coverImage?.variants?.thumbnail?.url || (item.bannerImageUrl ? articleBannerImage(item) : item.sourceMeta?.thumbnailUrl);
+  const suggestionPhoto = item.photos?.find((photo) => photo?.url);
+  const source = suggestionPhoto?.url || item.coverImage?.variants?.thumbnail?.url || (item.bannerImageUrl ? articleBannerImage(item) : item.sourceMeta?.thumbnailUrl);
   const image = source && source !== failedSource ? source : null;
 
   if (poll && !image) {
@@ -18,7 +19,7 @@ export default function LocationActivityImage({ item, poll = false }) {
 
   return <Image
     src={image || defaultArticleImage(item)}
-    alt=""
+    alt={suggestionPhoto?.caption || ''}
     width={640}
     height={320}
     sizes="(max-width: 768px) 100vw, 40vw"

@@ -490,6 +490,7 @@ export default function LocationTabs({
                       : (suggestion.author?.username ? `από ${suggestion.author.username}` : null),
                     formatMetaDate(suggestion.createdAt),
                   ].filter(Boolean)}
+                  media={suggestion.photos?.some((photo) => photo?.url) ? suggestion : null}
                 />
               ))}
             </div>
