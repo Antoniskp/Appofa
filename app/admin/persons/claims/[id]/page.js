@@ -1,7 +1,6 @@
 'use client';
 
 import { use, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -13,8 +12,7 @@ import { ConfirmDialog } from '@/components/ui/Modal';
 
 function ClaimDetailPageContent({ params }) {
   const { id } = use(params);
-  const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
+  const { loading: authLoading } = useAuth();
   const [reason, setReason] = useState('');
   const [processing, setProcessing] = useState(false);
   const [actionError, setActionError] = useState('');

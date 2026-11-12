@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef } from 'react';
+import Image from 'next/image';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AlertMessage from '@/components/ui/AlertMessage';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -361,9 +362,12 @@ function HeroSettingsContent() {
             />
             {safePreviewUrl && (
               <div className="mt-3 rounded-xl overflow-hidden border border-gray-200 h-40">
-                <img
+                <Image
                   src={safePreviewUrl}
                   alt="Hero background preview"
+                  width={1280}
+                  height={640}
+                  sizes="100vw"
                   className="w-full h-full object-cover"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />

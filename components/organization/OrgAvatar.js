@@ -1,6 +1,7 @@
 'use client';
 
 import { BuildingOffice2Icon } from '@heroicons/react/24/outline';
+import Image from 'next/image';
 import { useState } from 'react';
 
 export default function OrgAvatar({ org, size = 'h-6 w-6', fallback }) {
@@ -8,9 +9,11 @@ export default function OrgAvatar({ org, size = 'h-6 w-6', fallback }) {
   const src = org?.logo;
   if (src && failedSrc !== src) {
     return (
-      <img
+      <Image
         src={src}
         alt={org.name}
+        width={96}
+        height={96}
         onError={() => setFailedSrc(src)}
         className={`${size} rounded object-contain p-1 border border-gray-200 flex-shrink-0 bg-white`}
       />

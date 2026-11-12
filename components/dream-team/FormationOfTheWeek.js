@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { UserCircleIcon, HeartIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
@@ -38,7 +39,7 @@ function Skeleton() {
  *   onCompare(f) – compare handler (opens comparison tool)
  *   showToast    – toast function
  */
-export default function FormationOfTheWeek({ onLike, onCompare, showToast }) {
+export default function FormationOfTheWeek({ onLike, onCompare }) {
   const [formation, setFormation] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -98,7 +99,7 @@ export default function FormationOfTheWeek({ onLike, onCompare, showToast }) {
               {formation.authorName && (
                 <div className="flex items-center gap-1.5 mb-3">
                   {formation.authorAvatar ? (
-                    <img src={formation.authorAvatar} alt={formation.authorName} className="h-5 w-5 rounded-full object-cover" />
+                    <Image src={formation.authorAvatar} alt={formation.authorName} width={40} height={40} className="h-5 w-5 rounded-full object-cover" />
                   ) : (
                     <div className="h-5 w-5 rounded-full bg-blue-100 flex items-center justify-center">
                       <UserCircleIcon className="h-3.5 w-3.5 text-blue-400" />
@@ -162,9 +163,11 @@ export default function FormationOfTheWeek({ onLike, onCompare, showToast }) {
                   return (
                     <div key={idx} className="flex flex-col items-center gap-1.5 w-20">
                       {pick.photo || pick.avatar ? (
-                        <img
+                        <Image
                           src={pick.photo || pick.avatar}
                           alt={pick.personName || ''}
+                          width={112}
+                          height={112}
                           className="h-14 w-14 rounded-full object-cover border-2 border-amber-300 shadow-md"
                         />
                       ) : (

@@ -10,7 +10,6 @@ export default function TwitchEmbed({ channel }) {
   useEffect(() => {
     if (!channel) return;
     setStatus('loading');
-    let fallbackTimer;
     const parent = window.location.hostname;
     const containerId = `twitch-embed-${channel}`;
 
@@ -41,7 +40,7 @@ export default function TwitchEmbed({ channel }) {
       }
     };
 
-    fallbackTimer = window.setTimeout(() => {
+    const fallbackTimer = window.setTimeout(() => {
       setStatus((current) => current === 'loading' ? 'unavailable' : current);
     }, 12000);
 

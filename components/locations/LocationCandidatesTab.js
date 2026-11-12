@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { CheckBadgeIcon, MapPinIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 
@@ -40,7 +41,7 @@ export function CandidateRegistrationCard({ registration }) {
     <article className="rounded-lg border border-gray-200 bg-white p-4">
       <div className="flex items-start gap-4">
         {avatar ? (
-          <img src={avatar} alt={name} className="h-12 w-12 rounded-full object-cover flex-shrink-0" />
+          <Image src={avatar} alt={name} width={96} height={96} className="h-12 w-12 rounded-full object-cover flex-shrink-0" />
         ) : (
           <UserCircleIcon className="h-12 w-12 text-gray-300 flex-shrink-0" />
         )}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import FormInput from '@/components/ui/FormInput';
 import { DEFAULT_AVATAR_COLOR } from '@/lib/constants/profile';
 import { authAPI } from '@/lib/api';
@@ -157,9 +158,11 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
           {/* Avatar preview + upload */}
           <div className="flex items-center gap-3 mb-2">
             {profileData.avatar && (
-              <img
+              <Image
                 src={profileData.avatar}
                 alt="Current avatar"
+                width={96}
+                height={96}
                 className="w-12 h-12 rounded-full object-cover border border-gray-200 flex-shrink-0"
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />

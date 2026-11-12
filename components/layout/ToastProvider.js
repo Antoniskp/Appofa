@@ -60,9 +60,10 @@ export function ToastProvider({ children, position = 'top-right', maxToasts = 5 
   const fallbackCounterRef = useRef(0);
 
   useEffect(() => {
+    const timeouts = timeoutsRef.current;
     return () => {
-      timeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
-      timeoutsRef.current.clear();
+      timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+      timeouts.clear();
     };
   }, []);
 

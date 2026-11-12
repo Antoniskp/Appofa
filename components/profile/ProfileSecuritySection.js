@@ -1,6 +1,7 @@
 'use client';
 
 import FormInput from '@/components/ui/FormInput';
+import Image from 'next/image';
 
 // GitHub SVG icon
 function GithubIcon({ className }) {
@@ -260,9 +261,11 @@ export default function ProfileSecuritySection({
                         : 'border-gray-200 hover:border-blue-400 hover:bg-gray-50'
                     } disabled:opacity-60 disabled:cursor-not-allowed`}
                   >
-                    <img
+                    <Image
                       src={option.avatar}
                       alt={`${option.label} avatar`}
+                      width={80}
+                      height={80}
                       className="w-10 h-10 rounded-full object-cover border border-gray-200"
                     />
                     <div className="min-w-0">

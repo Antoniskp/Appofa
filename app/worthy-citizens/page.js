@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { endorsementAPI } from '@/lib/api';
 import { useInfiniteData } from '@/hooks/useInfiniteData';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -44,9 +45,11 @@ function UserLeaderboardCard({ user, rank }) {
         style={{ backgroundColor: user.avatarColor || DEFAULT_AVATAR_COLOR }}
       >
         {user.avatar ? (
-          <img
+          <Image
             src={user.avatar}
             alt={user.username}
+            width={96}
+            height={96}
             className="h-full w-full rounded-full object-cover"
           />
         ) : (

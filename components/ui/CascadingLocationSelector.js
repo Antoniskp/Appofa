@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { locationAPI } from '@/lib/api';
 
@@ -32,6 +32,7 @@ export default function CascadingLocationSelector({
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const loadSelectedLocationRef = useRef(null);
 
   // Load countries on mount
   useEffect(() => {
@@ -41,7 +42,7 @@ export default function CascadingLocationSelector({
   // Load selected location if value is provided
   useEffect(() => {
     if (value && value !== selectedMunicipality?.id && value !== selectedPrefecture?.id && value !== selectedCountry?.id) {
-      loadSelectedLocation(value);
+      loadSelectedLocationRef.current?.(value);
     } else if (!value) {
       // Clear all selections
       setSelectedCountry(null);
@@ -154,6 +155,7 @@ export default function CascadingLocationSelector({
       console.error('Failed to load selected location:', err);
     }
   };
+  loadSelectedLocationRef.current = loadSelectedLocation;
 
   const handleCountryChange = (e) => {
     const countryValue = e.target.value;
@@ -257,7 +259,7 @@ export default function CascadingLocationSelector({
             className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             disabled={loading}
           >
-            <option value="">{t('location_selector.select_country')}</option>
+            <option value="">{placeholder || t('location_selector.select_country')}</option>
             {countries.map((country) => (
               <option key={country.id} value={country.id}>
                 {formatLocationName(country)}

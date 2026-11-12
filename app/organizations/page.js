@@ -6,7 +6,6 @@ import { useTranslations } from 'next-intl';
 import {
   AcademicCapIcon,
   BuildingLibraryIcon,
-  BuildingOffice2Icon,
   BriefcaseIcon,
   FlagIcon,
   HomeModernIcon,

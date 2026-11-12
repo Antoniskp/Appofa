@@ -2,6 +2,7 @@
 
 import { use } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { UserCircleIcon, MapPinIcon, EnvelopeIcon, GlobeAltIcon, PencilSquareIcon, BuildingLibraryIcon } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon, ExclamationTriangleIcon, ClockIcon } from '@heroicons/react/24/solid';
 import { personAPI } from '@/lib/api';
@@ -87,7 +88,7 @@ export default function PersonProfilePage({ params }) {
           <div className="p-6">
             <div className="flex items-start gap-5">
               {profile.photo ? (
-                <img src={profile.photo} alt={`${profile.firstNameNative} ${profile.lastNameNative}`} className="w-20 h-20 rounded-full object-cover flex-shrink-0" />
+                <Image src={profile.photo} alt={`${profile.firstNameNative} ${profile.lastNameNative}`} width={160} height={160} className="w-20 h-20 rounded-full object-cover flex-shrink-0" />
               ) : (
                 <UserCircleIcon className="w-20 h-20 text-gray-300 flex-shrink-0" />
               )}
@@ -133,7 +134,7 @@ export default function PersonProfilePage({ params }) {
                            title={formatPoliticalPosition(org.politicalPosition) ?? undefined}
                          >
                            {org.logo && (
-                             <img src={org.logo} alt={org.name} className="h-3 w-3 rounded-full object-cover flex-shrink-0" />
+                             <Image src={org.logo} alt={org.name} width={12} height={12} className="h-3 w-3 rounded-full object-cover flex-shrink-0" />
                            )}
                            {org.name}
                          </span>

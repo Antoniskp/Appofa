@@ -1,6 +1,7 @@
 'use client';
 
 import FormInput from '@/components/ui/FormInput';
+import Image from 'next/image';
 import MediaAssetPicker from '@/components/media/MediaAssetPicker';
 
 export default function ArticleBannerImageField({
@@ -70,9 +71,12 @@ export default function ArticleBannerImageField({
 
       {value && (
         <div className="overflow-hidden rounded border border-gray-200 bg-gray-50">
-          <img
+          <Image
             src={value}
             alt={altText || t.previewAlt}
+            width={1280}
+            height={640}
+            sizes="100vw"
             className="h-40 w-full object-cover"
           />
         </div>

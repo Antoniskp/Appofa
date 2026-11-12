@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   PlusIcon,
@@ -252,7 +253,7 @@ function HolderPanel({ position, nationality, onRefresh }) {
       {allHolders.map((h) => (
         <div key={h.id} className="flex items-center gap-2 py-1 group">
           {h.person?.photo || h.user?.avatar
-            ? <img src={h.person?.photo || h.user?.avatar} alt="" className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
+            ? <Image src={h.person?.photo || h.user?.avatar} alt="" width={56} height={56} className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
             : <div className="h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0"><UserCircleIcon className="h-4 w-4 text-gray-400" /></div>}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-800 truncate">{holderDisplayName(h)}</p>

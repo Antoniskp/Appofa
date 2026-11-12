@@ -75,7 +75,6 @@ export default function ArticleCard({ article, variant = 'grid' }) {
   const createdAt = new Date(article.createdAt);
   const formattedDate = createdAt.toLocaleDateString('el-GR');
   const formattedTime = createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const authorLabel = article.hideAuthor ? tCommon('anonymous') : (article.author?.username || tCommon('unknown'));
   const articleHref = article.type === 'news'
     ? `/news/${idSlug(article.id, article.title)}`
     : `/articles/${idSlug(article.id, article.title)}`;

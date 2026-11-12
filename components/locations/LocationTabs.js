@@ -2,6 +2,7 @@ import LocationActivityImage from '@/components/locations/LocationActivityImage'
 import LocationActionSummary from '@/components/locations/LocationActionSummary';
 import CalendarView from '@/components/calendar/CalendarView';
 import Link from 'next/link';
+import Image from 'next/image';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { idSlug } from '@/lib/utils/slugify';
 import UserRow from '@/components/user/UserRow';
@@ -390,7 +391,7 @@ export default function LocationTabs({
                   const content = (
                     <div className="flex items-center gap-4 px-4 py-3">
                       {person.photo
-                        ? <img src={person.photo} alt={fullName} className="h-10 w-10 rounded-full object-cover flex-shrink-0" />
+                        ? <Image src={person.photo} alt={fullName} width={80} height={80} className="h-10 w-10 rounded-full object-cover flex-shrink-0" />
                         : <UserCircleIcon className="h-10 w-10 text-gray-300 flex-shrink-0" />
                       }
                       <div className="flex-1 min-w-0">

@@ -44,7 +44,9 @@ async function importParliamentQuestions({ apply = false, creatorId, backupPath,
         actions.push({ action: 'skip-reviewed', id: existing.id, title: existing.title });
         continue;
       }
-      const { lawId, matchTitle: _match, updateOnly: _only, ...content } = item;
+      const { lawId, ...content } = item;
+      delete content.matchTitle;
+      delete content.updateOnly;
       const values = {
         ...content,
         ...(lawId ? { originalLink, officialIdentifier: lawId, sourceCheckedAt: data.checkedAt } : {}),

@@ -12,8 +12,6 @@ import {
   HandThumbUpIcon,
   HandThumbDownIcon,
   MapPinIcon,
-  LightBulbIcon,
-  ExclamationTriangleIcon,
   PencilSquareIcon,
   TrashIcon,
   ShareIcon,

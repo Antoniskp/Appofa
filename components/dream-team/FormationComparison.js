@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { XMarkIcon, UserCircleIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
@@ -30,7 +31,7 @@ function PickCell({ pick, highlight }) {
       {hasPick ? (
         <>
           {pick.photo || pick.avatar ? (
-            <img src={pick.photo || pick.avatar} alt={pick.personName} className="h-6 w-6 rounded-full object-cover flex-shrink-0" />
+            <Image src={pick.photo || pick.avatar} alt={pick.personName} width={48} height={48} className="h-6 w-6 rounded-full object-cover flex-shrink-0" />
           ) : (
             <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
               <UserCircleIcon className="h-4 w-4 text-blue-400" />

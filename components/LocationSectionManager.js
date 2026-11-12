@@ -644,7 +644,7 @@ export default function LocationSectionManager({ locationId }) {
       if (res.success) {
         setSections(res.sections || []);
       }
-    } catch (err) {
+    } catch {
       toastError('Failed to load sections');
     } finally {
       setLoading(false);
@@ -715,7 +715,7 @@ export default function LocationSectionManager({ locationId }) {
         locationId,
         updated.map(s => ({ id: s.id, sortOrder: s.sortOrder }))
       );
-    } catch (err) {
+    } catch {
       toastError('Failed to save new order');
       loadSections(); // Restore from server
     }

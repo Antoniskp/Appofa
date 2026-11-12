@@ -49,7 +49,7 @@ function EditCivicQuestionContent() {
     if (questionId && user !== undefined) {
       fetchQuestion();
     }
-  }, [questionId, user]);
+  }, [questionId, user, t]);
 
   const handleSubmit = async (payload) => {
     setIsSubmitting(true);

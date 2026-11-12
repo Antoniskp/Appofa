@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Card from '@/components/ui/Card';
+import Image from 'next/image';
 import { badgeAPI } from '@/lib/api';
 
 const TIER_LABELS = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold' };
@@ -13,9 +14,11 @@ function BadgeImage({ slug, tier }) {
     return <span className="text-xl font-semibold text-gray-500">{TIER_LABELS[tier]?.slice(0, 1) || '*'}</span>;
   }
   return (
-    <img
+    <Image
       src={`/images/badges/${slug}-${tier}.svg`}
       alt={`${slug} ${tier}`}
+      width={80}
+      height={80}
       className="w-10 h-10 object-contain"
       onError={() => setImgError(true)}
     />

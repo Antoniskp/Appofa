@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { MapPinIcon, PencilIcon } from '@heroicons/react/24/outline';
 
@@ -25,7 +26,7 @@ export default function LocationHeader({ location, imageError, setImageError, ca
     <>
     <div className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <div className="flex items-center gap-4 min-w-0">
-        {image && !imageError && <img src={image} alt={name} className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl object-cover shrink-0" onError={() => setImageError(true)} />}
+        {image && !imageError && <Image src={image} alt={name} width={192} height={192} className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl object-cover shrink-0" onError={() => setImageError(true)} />}
         {(!image || imageError) && <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-blue-100/70 text-blue-700"><MapPinIcon className="h-9 w-9" aria-hidden="true" /></div>}
         <div className="min-w-0">
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-blue-700">Η τοπική σου κοινότητα</p>

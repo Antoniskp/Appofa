@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { DEFAULT_AVATAR_COLOR } from '@/lib/constants/profile';
 
@@ -40,9 +41,11 @@ export default function ProfileHeader({ username, firstNameNative, lastNameNativ
         style={{ backgroundColor: avatarColor || DEFAULT_AVATAR_COLOR }}
       >
         {avatar && !avatarLoadError ? (
-          <img
+          <Image
             src={avatar}
             alt={username || 'User'}
+            width={160}
+            height={160}
             className="h-full w-full rounded-full object-cover"
             onError={() => setAvatarLoadError(true)}
           />

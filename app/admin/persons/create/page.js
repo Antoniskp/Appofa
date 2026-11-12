@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { personAPI, locationAPI, organizationAPI } from '@/lib/api';
@@ -24,7 +25,7 @@ const SOCIAL_LINK_KEYS = [
 ];
 
 function CreatePersonProfilePageContent() {
-  const { user, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const router = useRouter();
   const photoFileRef = useRef(null);
 
@@ -301,7 +302,7 @@ function CreatePersonProfilePageContent() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Φωτογραφία</label>
               <div className="space-y-3">
                 {photoPreview && (
-                  <img src={photoPreview} alt="Preview" className="w-20 h-20 rounded-full object-cover border border-gray-200" />
+                  <Image src={photoPreview} alt="Preview" width={160} height={160} unoptimized className="w-20 h-20 rounded-full object-cover border border-gray-200" />
                 )}
                 <div className="flex items-center gap-3">
                   <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors">

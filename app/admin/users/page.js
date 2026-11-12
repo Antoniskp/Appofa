@@ -108,7 +108,7 @@ function AdminUsersContent() {
     }
   };
 
-  const canVerifyUser = (targetUser) => {
+  const canVerifyUser = () => {
     if (!user) return false;
     if (user.role === 'admin') return true;
     // Moderator can verify users if they have any location assignment
@@ -131,13 +131,6 @@ function AdminUsersContent() {
     }
   };
 
-  const ROLE_LABELS = {
-    admin: 'Διαχειριστής',
-    moderator: 'Συντονιστής',
-    editor: 'Αρθρογράφος',
-    viewer: 'Χρήστης',
-    candidate: 'Υποψήφιος',
-  };
 
   return (
     <AdminLayout>

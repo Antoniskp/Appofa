@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import Image from 'next/image';
 import { commentAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import CommentForm from './CommentForm';
@@ -22,9 +23,11 @@ function CommentAvatar({ author }) {
       style={{ backgroundColor: author?.avatarColor || DEFAULT_AVATAR_COLOR }}
     >
       {author?.avatar && !avatarError ? (
-        <img
+        <Image
           src={author.avatar}
           alt={author.username}
+          width={64}
+          height={64}
           className="h-full w-full object-cover"
           onError={() => setAvatarError(true)}
         />

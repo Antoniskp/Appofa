@@ -48,6 +48,8 @@ export function useAsyncData(
   const [error, setError] = useState(null);
   const isMountedRef = useRef(true);
   const fetchGenRef = useRef(0);
+  const latestOptionsRef = useRef({ fetchFunction, transform, onSuccess, onError });
+  latestOptionsRef.current = { fetchFunction, transform, onSuccess, onError };
 
   const fetchData = useCallback(async (...args) => {
     const gen = ++fetchGenRef.current;
@@ -55,18 +57,19 @@ export function useAsyncData(
     setError(null);
     
     try {
-      const response = await fetchFunction(...args);
+      const { fetchFunction: currentFetch, transform: currentTransform, onSuccess: currentOnSuccess } = latestOptionsRef.current;
+      const response = await currentFetch(...args);
       
       if (!isMountedRef.current) return;
       if (gen !== fetchGenRef.current) return;
       
-      const transformedData = transform(response);
+      const transformedData = currentTransform(response);
       if (transformedData !== undefined) {
         setData(transformedData);
       }
       
-      if (onSuccess) {
-        onSuccess(transformedData);
+      if (currentOnSuccess) {
+        currentOnSuccess(transformedData);
       }
     } catch (err) {
       if (!isMountedRef.current) return;
@@ -75,24 +78,29 @@ export function useAsyncData(
       const errorMessage = err.message || 'An error occurred';
       setError(errorMessage);
       
-      if (onError) {
-        onError(errorMessage);
+      const currentOnError = latestOptionsRef.current.onError;
+      if (currentOnError) {
+        currentOnError(errorMessage);
       }
     } finally {
       if (isMountedRef.current && gen === fetchGenRef.current) {
         setLoading(false);
       }
     }
-  }, [...dependencies]);
+  }, []);
 
   useEffect(() => {
     isMountedRef.current = true;
+    const fetchGenerationRef = fetchGenRef;
     fetchData();
     return () => {
       isMountedRef.current = false;
-      fetchGenRef.current++;
+      fetchGenerationRef.current++;
     };
-  }, [fetchData]);
+    // `dependencies` is the public trigger list for this hook; its callers pass
+    // values directly so the fetch runs again only when those values change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchData, ...dependencies]);
 
   const setDataAndInvalidateFetch = useCallback((value) => {
     fetchGenRef.current++;

@@ -26,7 +26,6 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [hasVoted, setHasVoted] = useState(false);
-  const [userVote, setUserVote] = useState(null);
   const [identityVisibility, setIdentityVisibility] = useState('anonymous');
   const [showRegisterCta, setShowRegisterCta] = useState(false);
   const [rateLimit, setRateLimit] = useState(null); // { retryAfter, resetTime }
@@ -44,7 +43,6 @@ export default function PollVoting({ poll, onVoteSuccess }) {
     // Check if user has already voted
     if (poll.userVote) {
       setHasVoted(true);
-      setUserVote(poll.userVote);
       setSelectedOptionId(poll.userVote.optionId);
       setIdentityVisibility(poll.userVote.identityVisibility || 'anonymous');
     }
@@ -117,7 +115,6 @@ export default function PollVoting({ poll, onVoteSuccess }) {
       if (response.success) {
         setSuccess(hasVoted ? 'Η ψήφος σας ενημερώθηκε επιτυχώς!' : 'Η ψήφος σας καταχωρήθηκε επιτυχώς!');
         setHasVoted(true);
-        setUserVote({ optionId: selectedOptionId, identityVisibility: response.data?.identityVisibility || identityVisibility });
         if (!user) {
           setShowRegisterCta(true);
         }
@@ -219,7 +216,6 @@ export default function PollVoting({ poll, onVoteSuccess }) {
               options={poll.options}
               selectedOptionId={selectedOptionId}
               isSubmitting={isSubmitting}
-              hasVoted={hasVoted}
               useCustomColors={poll.useCustomColors}
               onSelect={async (optionId) => {
                 setSelectedOptionId(optionId);
@@ -231,7 +227,6 @@ export default function PollVoting({ poll, onVoteSuccess }) {
                   if (response.success) {
                     setSuccess(hasVoted ? 'Η ψήφος σας ενημερώθηκε επιτυχώς!' : 'Η ψήφος σας καταχωρήθηκε επιτυχώς!');
                     setHasVoted(true);
-                    setUserVote({ optionId, identityVisibility: response.data?.identityVisibility || identityVisibility });
                     if (!user) setShowRegisterCta(true);
                     if (onVoteSuccess) {
                       setTimeout(() => onVoteSuccess(), 1000);
@@ -463,7 +458,7 @@ function hexWithLowOpacity(hex) {
  * Binary poll voting component — two large side-by-side buttons.
  * Submits the vote immediately on click (single-click vote).
  */
-function BinaryPollOptions({ options, selectedOptionId, isSubmitting, hasVoted, onSelect, useCustomColors }) {
+function BinaryPollOptions({ options, selectedOptionId, isSubmitting, onSelect, useCustomColors }) {
   const [justVoted, setJustVoted] = useState(null); // option id that triggered pop animation
   if (!options || options.length < 2) return null;
   const [yesOpt, noOpt] = [options[0], options[1]];

@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 export default function PartyBadge({ affiliation, className = '' }) {
   const party = affiliation?.organization;
   if (!party) return null;
@@ -11,7 +12,7 @@ export default function PartyBadge({ affiliation, className = '' }) {
       style={{ backgroundColor: '#64748b' }}
     >
       {party.logo ? (
-        <img src={party.logo} alt={party.name} className="h-full w-full rounded-full object-cover" />
+        <Image src={party.logo} alt={party.name} width={48} height={48} className="h-full w-full rounded-full object-cover" />
       ) : (
         <span className="text-white text-[8px] font-bold leading-none">{party.name?.trim().charAt(0) || 'P'}</span>
       )}

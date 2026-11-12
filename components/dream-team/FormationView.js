@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { UserCircleIcon, ArrowLeftIcon, ShareIcon, HeartIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
 import positionsData from '@/config/governmentPositions.json';
@@ -28,9 +29,11 @@ function PickCard({ position, pick }) {
         {hasPick ? (
           <div className="flex items-center gap-2 mt-0.5">
             {(pick.photo || pick.avatar) ? (
-              <img
+              <Image
                 src={pick.photo || pick.avatar}
                 alt={pick.personName}
+                width={48}
+                height={48}
                 className="h-6 w-6 rounded-full object-cover"
               />
             ) : (
@@ -107,9 +110,11 @@ export default function FormationView({ formation, onBack, showToast, onLike, on
             {formation.authorName && (
               <div className="flex items-center gap-2 mt-1">
                 {formation.authorAvatar ? (
-                  <img
+                  <Image
                     src={formation.authorAvatar}
                     alt={formation.authorName}
+                    width={48}
+                    height={48}
                     className="h-6 w-6 rounded-full object-cover"
                   />
                 ) : (

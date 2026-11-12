@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -52,7 +52,7 @@ export default function PollDetailPage() {
   // Support both numeric IDs and slug-prefixed IDs like "42-my-poll-title"
   const pollId = parseInt(params.id, 10);
 
-  const fetchPoll = async () => {
+  const fetchPoll = useCallback(async () => {
     setLoading(true);
     setError('');
     
@@ -66,13 +66,13 @@ export default function PollDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pollId]);
 
   useEffect(() => {
     if (pollId) {
       fetchPoll();
     }
-  }, [pollId]);
+  }, [pollId, fetchPoll]);
 
   // Redirect old numeric-only URLs to canonical slug URLs
   useEffect(() => {

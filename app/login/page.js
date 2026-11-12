@@ -17,7 +17,6 @@ import AlertMessage from '@/components/ui/AlertMessage';
 
 function LoginForm() {
   const tAuth = useTranslations('auth');
-  const tCommon = useTranslations('common');
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, user, loading: authLoading } = useAuth();

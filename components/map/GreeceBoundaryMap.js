@@ -31,6 +31,7 @@
  */
 
 import { useState, useMemo, useEffect, useCallback, memo } from 'react';
+import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -436,7 +437,7 @@ function RegionInfoCard({ region, onClose }) {
               <div key={registration.id || candidate.id || candidateName} className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50/80 p-2">
                 <Link href={profileHref} className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-blue-600 text-white">
                   {avatar ? (
-                    <img src={avatar} alt={candidateName} className="h-full w-full object-cover" />
+                    <Image src={avatar} alt={candidateName} width={72} height={72} className="h-full w-full object-cover" />
                   ) : (
                     <span className="flex h-full w-full items-center justify-center text-xs font-bold">
                       {getCandidateInitials(candidateName)}

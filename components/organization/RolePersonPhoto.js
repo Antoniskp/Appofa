@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
+import Image from 'next/image';
 
 export default function RolePersonPhoto({ person, name }) {
   const [failedSources, setFailedSources] = useState([]);
@@ -10,9 +11,11 @@ export default function RolePersonPhoto({ person, name }) {
   );
 
   return src ? (
-    <img
+    <Image
       src={src}
       alt={name}
+      width={192}
+      height={192}
       className="h-20 w-20 shrink-0 rounded-xl border border-gray-200 object-cover sm:h-24 sm:w-24"
       onError={() => setFailedSources(previous => [...previous, src])}
     />

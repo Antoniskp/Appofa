@@ -65,7 +65,9 @@ export function useInfiniteData(fetchFn, limit = 15, resetDeps = []) {
   // Reset when resetDeps change
   useEffect(() => {
     load(1, true);
-  }, resetDeps);
+    // `resetDeps` is intentionally part of this hook's public API.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [load, ...resetDeps]);
 
   const loadMore = useCallback(() => {
     if (!loading && !initialLoading && hasMore) {

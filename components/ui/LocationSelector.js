@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { locationAPI } from '@/lib/api';
 
 const LOCATION_TYPES = ['international', 'country', 'prefecture', 'electoral_district', 'municipality'];
@@ -22,20 +22,7 @@ export default function LocationSelector({
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchLocations();
-  }, [filterType, filterParentId]);
-
-  useEffect(() => {
-    // Load selected location details if value is provided
-    if (value && !selectedLocation) {
-      loadSelectedLocation(value);
-    } else if (!value && selectedLocation) {
-      setSelectedLocation(null);
-    }
-  }, [value]);
-
-  const fetchLocations = async () => {
+  const fetchLocations = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -52,9 +39,9 @@ export default function LocationSelector({
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterType, filterParentId]);
 
-  const loadSelectedLocation = async (locationId) => {
+  const loadSelectedLocation = useCallback(async (locationId) => {
     try {
       const response = await locationAPI.getById(locationId);
       if (response.success) {
@@ -63,7 +50,19 @@ export default function LocationSelector({
     } catch (err) {
       console.error('Failed to load selected location:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchLocations();
+  }, [fetchLocations]);
+
+  useEffect(() => {
+    if (value && !selectedLocation) {
+      loadSelectedLocation(value);
+    } else if (!value && selectedLocation) {
+      setSelectedLocation(null);
+    }
+  }, [value, selectedLocation, loadSelectedLocation]);
 
   const handleSelect = (location) => {
     setSelectedLocation(location);

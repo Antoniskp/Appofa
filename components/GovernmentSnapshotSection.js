@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI';
@@ -20,9 +21,11 @@ const iconMap = positionsConfig.positions.reduce((acc, p) => {
 function SmallAvatar({ photo, name, avatarColor, indigo = false }) {
   if (photo) {
     return (
-      <img
+      <Image
         src={photo}
         alt={name || ''}
+        width={56}
+        height={56}
         className="h-7 w-7 rounded-full object-cover flex-shrink-0"
       />
     );

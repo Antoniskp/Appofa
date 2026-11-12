@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   MagnifyingGlassIcon,
   UserCircleIcon,
@@ -84,9 +85,11 @@ function PersonCard({ profile, t }) {
     >
       <div className="flex min-w-0 items-start gap-3 sm:gap-4">
         {photo ? (
-          <img
+          <Image
             src={photo}
             alt={displayName}
+            width={112}
+            height={112}
             className="w-14 h-14 rounded-full object-cover flex-shrink-0 border border-gray-100"
           />
         ) : (

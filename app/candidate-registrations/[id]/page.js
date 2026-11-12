@@ -2,6 +2,7 @@
 
 import { use } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { CheckBadgeIcon, MapPinIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { candidateRegistrationAPI } from '@/lib/api';
@@ -91,7 +92,7 @@ export default function CandidateRegistrationDetailPage({ params }) {
           <div className="border-b border-gray-100 p-6">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
               {avatar ? (
-                <img src={avatar} alt={name} className="h-24 w-24 rounded-full object-cover" />
+                <Image src={avatar} alt={name} width={192} height={192} className="h-24 w-24 rounded-full object-cover" />
               ) : (
                 <UserCircleIcon className="h-24 w-24 text-gray-300" />
               )}

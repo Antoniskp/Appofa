@@ -11,7 +11,7 @@ module.exports = {
     await queryInterface.addIndex('Formations', ['userId', 'isPrimary']);
   },
 
-  down: async (queryInterface, Sequelize) => {
+  down: async (queryInterface, _Sequelize) => {
     await queryInterface.removeIndex('Formations', ['userId', 'isPrimary']);
     await queryInterface.removeColumn('Formations', 'isPrimary');
   }

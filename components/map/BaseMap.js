@@ -311,6 +311,7 @@ export default function BaseMap({
   focusTarget,
   resizeKey,
 }) {
+  const initialMapOptionsRef = useRef({ scrollWheelZoom, interactive, tileMode });
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   // Layer groups for dynamic updates
@@ -330,17 +331,18 @@ export default function BaseMap({
 
   // Initialise the map once on mount
   useEffect(() => {
+    const initialOptions = initialMapOptionsRef.current;
     if (!mapContainerRef.current) return;
     if (mapInstanceRef.current) return;
 
     const map = L.map(mapContainerRef.current, {
-      scrollWheelZoom,
-      zoomControl: interactive,
-      dragging: interactive,
-      touchZoom: interactive,
-      doubleClickZoom: interactive,
-      boxZoom: interactive,
-      keyboard: interactive,
+      scrollWheelZoom: initialOptions.scrollWheelZoom,
+      zoomControl: initialOptions.interactive,
+      dragging: initialOptions.interactive,
+      touchZoom: initialOptions.interactive,
+      doubleClickZoom: initialOptions.interactive,
+      boxZoom: initialOptions.interactive,
+      keyboard: initialOptions.interactive,
     });
 
     mapInstanceRef.current = map;
@@ -348,7 +350,7 @@ export default function BaseMap({
     // Tile layer — shared OpenStreetMap defaults, or the selected satellite layer.
     // Attribution is required by both OSM (ODbL) and CARTO's terms of service.
     // We remove the default "Leaflet" prefix to keep it minimal while staying compliant.
-    const initialTile = getTileModeConfig(tileMode);
+    const initialTile = getTileModeConfig(initialOptions.tileMode);
     tileLayerRef.current = L.tileLayer(initialTile.url, initialTile).addTo(map);
 
     // Remove the default "Leaflet" prefix — attribution links remain (legally required).
@@ -610,7 +612,7 @@ export default function BaseMap({
           featureLayer.on('mouseover', () => {
             featureLayer.setStyle(hoverStyle);
             // bringToFront is not supported by all renderers; swallow silently
-            try { featureLayer.bringToFront(); } catch (_) { /* no-op */ }
+            try { featureLayer.bringToFront(); } catch { /* no-op */ }
             if (layerDef.onFeatureHover) {
               layerDef.onFeatureHover(feature);
             }
@@ -652,7 +654,7 @@ export default function BaseMap({
             const fl = slugToLayer.get(id);
             if (fl) {
               fl.setStyle(hoverStyle);
-              try { fl.bringToFront(); } catch (_) { /* no-op */ }
+              try { fl.bringToFront(); } catch { /* no-op */ }
             }
           },
           unhighlight: (id) => {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { personAPI } from '@/lib/api/persons.js';
 
@@ -205,7 +206,7 @@ export default function PersonSearch({
                 className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-gray-50 cursor-pointer transition-colors"
               >
                 {photo
-                  ? <img src={photo} alt="" className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
+                  ? <Image src={photo} alt="" width={56} height={56} className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
                   : <div className="h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0"><UserCircleIcon className="h-4 w-4 text-gray-400" /></div>}
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{displayName}</p>

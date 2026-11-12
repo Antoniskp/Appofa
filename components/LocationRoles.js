@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { locationRoleAPI } from '@/lib/api';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
 
@@ -146,9 +147,11 @@ export default function LocationRoles({
               </div>
               <div className="flex items-center gap-3">
                 {photo ? (
-                  <img
+                  <Image
                     src={photo}
                     alt={name}
+                    width={88}
+                    height={88}
                     className="w-11 h-11 rounded-full object-cover flex-shrink-0"
                   />
                 ) : (

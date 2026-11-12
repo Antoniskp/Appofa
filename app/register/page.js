@@ -131,7 +131,7 @@ function RegisterForm() {
     }, USERNAME_CHECK_DELAY_MS);
 
     return () => window.clearTimeout(timeout);
-  }, [formData.username]);
+  }, [formData.username, t]);
 
   const passwordScore = useMemo(() => {
     let score = 0;
@@ -160,7 +160,9 @@ function RegisterForm() {
   };
 
   const prepareRegistrationData = (data = {}) => {
-    const { confirmPassword, gdprConsent, gdprMarketing, ...registerData } = data;
+    const { gdprMarketing, ...registerData } = data;
+    delete registerData.confirmPassword;
+    delete registerData.gdprConsent;
     const isDiaspora = Boolean(registerData.isDiaspora);
     return {
       ...registerData,

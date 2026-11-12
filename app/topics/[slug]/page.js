@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { ArrowLeftIcon, NewspaperIcon, ChatBubbleLeftRightIcon, ChartBarIcon, LinkIcon } from '@heroicons/react/24/outline';
 import { articleAPI, pollAPI, suggestionAPI, topicAPI } from '@/lib/api';
@@ -45,9 +46,12 @@ function ExternalLinkCard({ link }) {
       className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition flex flex-col"
     >
       {link.thumbnailUrl ? (
-        <img
+        <Image
           src={link.thumbnailUrl}
           alt={link.title || 'Topic link'}
+          width={1280}
+          height={720}
+          sizes="(max-width: 768px) 100vw, 50vw"
           className="h-36 w-full object-cover bg-gray-100"
           loading="lazy"
         />

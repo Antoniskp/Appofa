@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import {
   ArrowRightIcon,
@@ -138,9 +139,11 @@ function IndependentCard({ profile, selectedManifestSlug, t }) {
     >
       <div className="flex items-start gap-4">
         {photo ? (
-          <img
+          <Image
             src={photo}
             alt={name}
+            width={128}
+            height={128}
             className="h-16 w-16 flex-shrink-0 rounded-full border border-gray-100 object-cover"
           />
         ) : (

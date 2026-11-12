@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, Suspense } from 'react';
+import { useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
@@ -52,7 +52,7 @@ function DreamTeamPageInner() {
     [],
   );
 
-  const countries = countriesData?.data || [];
+  const countries = useMemo(() => countriesData?.data || [], [countriesData?.data]);
 
   // Auto-redirect to user's own country when available.
   // Fallback to single-country auto redirect for compatibility.

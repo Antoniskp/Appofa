@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @next/next/no-img-element -- Webcam feeds and third-party favicons can use arbitrary hosts or HTTP and must load directly. */
 
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

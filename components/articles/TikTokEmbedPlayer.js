@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { buildTikTokEmbedUrl, extractTikTokVideoId } from '@/lib/utils/tiktokEmbed';
 
@@ -34,9 +35,11 @@ function FallbackLink({ sourceUrl, thumbnailUrl, title, authorName, variant, cla
   return (
     <div className={`${className} rounded-lg border border-gray-200 p-4 flex items-center gap-4 bg-gray-50`}>
       {thumbnailUrl && (
-        <img
+        <Image
           src={thumbnailUrl}
           alt={tArticles('tiktok_thumbnail')}
+          width={192}
+          height={192}
           className="w-24 h-24 object-cover rounded flex-shrink-0"
           loading="lazy"
         />
@@ -127,9 +130,12 @@ export default function TikTokEmbedPlayer({
           }}
         >
           {thumbnailUrl ? (
-            <img
+            <Image
               src={thumbnailUrl}
               alt={title || tArticles('tiktok_video_thumbnail')}
+              width={720}
+              height={1280}
+              sizes="(max-width: 768px) 100vw, 50vw"
               className="w-full object-cover"
               style={previewStyle}
               loading="lazy"

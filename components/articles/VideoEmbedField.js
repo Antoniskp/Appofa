@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { linkPreviewAPI } from '@/lib/api';
 import TikTokEmbedPlayer from '@/components/articles/TikTokEmbedPlayer';
@@ -212,9 +213,11 @@ export default function VideoEmbedField({
         <div className="rounded-lg border border-green-200 bg-green-50 p-3">
           <div className="flex items-start gap-3">
             {preview.thumbnailUrl && preview.provider === 'youtube' && (
-              <img
+              <Image
                 src={preview.thumbnailUrl}
                 alt={tArticles('video_thumbnail')}
+                width={192}
+                height={128}
                 className="w-24 h-16 object-cover rounded flex-shrink-0"
                 loading="lazy"
               />

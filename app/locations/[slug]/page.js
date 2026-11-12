@@ -687,13 +687,14 @@ export default function LocationDetailPage() {
           <>
             <LocationPageNav items={pageNavItems} />
 
-            {/* Keep hierarchy navigation directly under the page header. */}
+            {/* Compact hierarchy links stay near the top; the map remains below. */}
             <LocationChildrenExplorer
               location={location}
               parent={location.parent}
               siblings={siblings}
               children={children}
               loading={secondaryLoading}
+              compactNavigation
             />
 
             <LocationDashboard
@@ -909,6 +910,15 @@ export default function LocationDetailPage() {
                 />
               </div>
             )}
+
+            <LocationChildrenExplorer
+              location={location}
+              parent={location.parent}
+              siblings={siblings}
+              children={children}
+              loading={secondaryLoading}
+              hideChildrenList
+            />
 
           </>
         )}

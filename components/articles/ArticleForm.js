@@ -1,6 +1,7 @@
 'use client';
 
 import { editorialPreview, hasAuthoringPrompt } from '@/lib/utils/editorialPreview';
+import Image from 'next/image';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { InformationCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { ConfirmDialog } from '@/components/ui/Modal';
@@ -69,7 +70,7 @@ export default function ArticleForm({
   const [isTitleDirty, setIsTitleDirty] = useState(false);
   const [isSummaryDirty, setIsSummaryDirty] = useState(false);
   // Embed preview data from VideoEmbedField
-  const [embedPreview, setEmbedPreview] = useState(null);
+  const [, setEmbedPreview] = useState(null);
 
   // Initialize form data from article prop (edit mode)
   useEffect(() => {
@@ -674,10 +675,14 @@ export default function ArticleForm({
             {mediaPreviews.map((media, index) => {
               if (media.type === 'image' && isImageUrl(media.src)) {
                 return (
-                  <img
+                  <Image
                     key={`${media.src}-${index}`}
                     src={media.src}
                     alt={media.alt}
+                    width={960}
+                    height={540}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    unoptimized
                     className="w-full max-h-48 object-cover rounded border border-gray-200"
                   />
                 );

@@ -30,7 +30,6 @@ function NewsContent() {
     page,
     totalPages,
     setTotalPages,
-    handleFilterChange,
     goToPage,
     updateFilter,
   } = useFilters({

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const BADGE_TIER_EMOJI = { bronze: '🥉', silver: '🥈', gold: '🥇' };
 
@@ -11,9 +12,11 @@ function BadgeTierImage({ slug, tier, size = 'w-6 h-6' }) {
     return <span className="text-base">{BADGE_TIER_EMOJI[tier] || '🏅'}</span>;
   }
   return (
-    <img
+    <Image
       src={`/images/badges/${slug}-${tier}.svg`}
       alt={`${slug} ${tier}`}
+      width={48}
+      height={48}
       className={`${size} object-contain`}
       onError={() => setImgError(true)}
     />

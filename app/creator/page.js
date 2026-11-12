@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
@@ -71,7 +70,7 @@ function statusColor(type, status) {
   return SUGGESTION_STATUS_COLORS[status] || DEFAULT_STATUS_COLOR;
 }
 
-function ContributionList({ type, items = [], total = 0, t, onLoadMore, loading }) {
+function ContributionList({ type, items = [], total = 0, t }) {
   const cfg = TYPE_CONFIG[type];
   if (!cfg) return null;
   const Icon = cfg.icon;

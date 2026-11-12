@@ -3,7 +3,7 @@
 const { sequelize, Location, LocationLink, Article, User, UserLocationRole, Poll, LocationRequest, MunicipalityDistrictMap, CandidateRegistration } = require('../models');
 const { Op, fn, col, where, QueryTypes } = require('sequelize');
 const { fetchWikipediaData } = require('../utils/wikipediaFetcher');
-const { getDescendantLocationIds, getAncestorLocationIds, getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
+const { getDescendantLocationIds, getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
 const { PROFILE_VISIBILITY, getDiscoverableVisibilities } = require('../utils/profileVisibility');
 
 // ---------------------------------------------------------------------------

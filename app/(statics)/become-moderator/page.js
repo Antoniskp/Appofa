@@ -97,7 +97,7 @@ function ApplicationStatusCard({ application, t }) {
 export default function BecomeModeratorPage() {
   const t = useTranslations('onboarding');
   const { user, loading: authLoading } = useAuth();
-  const [appState, setAppState] = useState(null); // null = loading, 'ready' = done
+  const [, setAppState] = useState(null); // null = loading, 'ready' = done
   const [applicationData, setApplicationData] = useState(null);
   const [isApprovedModerator, setIsApprovedModerator] = useState(false);
   const [submitted, setSubmitted] = useState(false);

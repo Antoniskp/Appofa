@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useParams } from 'next/navigation';
+import Image from 'next/image';
+import { useParams } from 'next/navigation';
 import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -34,8 +35,7 @@ function AdminPersonDetailPageContent() {
     prefect: 'Περιφερειάρχης',
     parliamentary: 'Βουλευτής',
   };
-  const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
+  const { loading: authLoading } = useAuth();
   const params = useParams();
   const id = params?.id;
 
@@ -83,7 +83,7 @@ function AdminPersonDetailPageContent() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-start gap-4">
             {profile.photo && (
-              <img src={profile.photo} alt={`${profile.firstNameNative} ${profile.lastNameNative}`} className="w-20 h-20 rounded-full object-cover border border-gray-200 flex-shrink-0" />
+              <Image src={profile.photo} alt={`${profile.firstNameNative} ${profile.lastNameNative}`} width={160} height={160} className="w-20 h-20 rounded-full object-cover border border-gray-200 flex-shrink-0" />
             )}
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl font-bold text-gray-900">{profile.firstNameNative} {profile.lastNameNative}</h1>

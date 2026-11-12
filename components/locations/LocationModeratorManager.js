@@ -15,6 +15,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import {
   UserCircleIcon,
   MagnifyingGlassIcon,
@@ -112,7 +113,7 @@ function UserSearchPicker({ onSelect, onClose }) {
                 className="w-full text-left px-2 py-2 hover:bg-blue-50 flex items-center gap-2 text-sm transition-colors"
               >
                 {u.avatar ? (
-                  <img src={u.avatar} alt="" className="h-6 w-6 rounded-full object-cover flex-shrink-0" />
+                  <Image src={u.avatar} alt="" width={48} height={48} className="h-6 w-6 rounded-full object-cover flex-shrink-0" />
                 ) : (
                   <UserCircleIcon className="h-6 w-6 text-gray-300 flex-shrink-0" />
                 )}
@@ -231,9 +232,11 @@ export default function LocationModeratorManager({ locationId }) {
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-800 border border-blue-200"
             >
               {a.user?.avatar ? (
-                <img
+                <Image
                   src={a.user.avatar}
                   alt=""
+                  width={40}
+                  height={40}
                   className="h-5 w-5 rounded-full object-cover flex-shrink-0"
                 />
               ) : (

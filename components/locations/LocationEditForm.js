@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import LocationSectionManager from '@/components/LocationSectionManager';
@@ -196,9 +197,12 @@ export default function LocationEditForm({
         <h3 className="text-sm font-semibold text-gray-900 mb-3">Location Image</h3>
         <div className="flex items-start gap-4">
           {displayImage && (
-            <img
+            <Image
               src={displayImage}
               alt={`${location.name} image`}
+              width={192}
+              height={128}
+              unoptimized
               className="w-24 h-16 rounded-md object-cover border border-gray-200 flex-shrink-0 bg-gray-100"
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />

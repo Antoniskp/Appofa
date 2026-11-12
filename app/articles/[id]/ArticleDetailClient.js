@@ -5,6 +5,7 @@ import { editorialPreview } from '@/lib/utils/editorialPreview';
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ShareIcon, BookmarkIcon, PrinterIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
 import { bookmarkAPI } from '@/lib/api';
@@ -215,9 +216,13 @@ export default function ArticleDetailPage() {
               <VideoEmbed article={article} autoplay={true} compact={false} />
             </div>
           ) : (
-            <img
+            <Image
               src={bannerImageUrl}
                 alt={bannerAltText}
+              width={1600}
+              height={900}
+              sizes="100vw"
+              priority
               className="w-full h-64 object-cover"
               onError={handleBannerError}
             />

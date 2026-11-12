@@ -1,6 +1,7 @@
 'use client';
 
 import Badge from '@/components/ui/Badge';
+import Image from 'next/image';
 import UserAvatar from '@/components/user/UserAvatar';
 import { formatPoliticalPosition } from '@/lib/utils/politicalParties';
 import {
@@ -68,7 +69,7 @@ export default function PublicProfileHeader({
                     title={formatPoliticalPosition(org.politicalPosition) ?? undefined}
                   >
                     {org.logo && (
-                      <img src={org.logo} alt={org.name} className="h-3 w-3 rounded-full object-cover flex-shrink-0" />
+                      <Image src={org.logo} alt={org.name} width={12} height={12} className="h-3 w-3 rounded-full object-cover flex-shrink-0" />
                     )}
                     {org.name}
                   </span>

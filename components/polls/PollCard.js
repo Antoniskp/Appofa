@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import Image from 'next/image';
 import Link from 'next/link';
 import Card from '@/components/ui/Card';
 import { ImageTopCard } from '@/components/ui/Card';
@@ -20,7 +21,7 @@ import OrgAvatar from '@/components/organization/OrgAvatar';
  * @param {Object} poll - Poll object with title, description, type, status, etc.
  * @param {string} variant - 'grid' for grid layout (compact) or 'list' for list layout (detailed)
  */
-export default function PollCard({ poll, variant = 'grid', onVoted }) {
+export default function PollCard({ poll, onVoted }) {
   const tPolls = useTranslations('polls');
   const { user } = useAuth();
   const { isAdmin } = usePermissions();
@@ -29,13 +30,13 @@ export default function PollCard({ poll, variant = 'grid', onVoted }) {
   const createdAt = new Date(poll.createdAt);
   const formattedDate = createdAt.toLocaleDateString('el-GR');
   const formattedTime = createdAt.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
-  const creatorLabel = poll.hideCreator ? 'Ανώνυμος' : (poll.creator?.username || 'Άγνωστος');
   const isOfficialOrgPoll = Boolean(poll.isOfficialPost && poll.organization);
   
   const isPollActive = poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date());
   const r = useTranslations('redesign');
   const locale = useLocale();
   const totalVotes = poll.totalVotes || 0;
+  const [bannerError, setBannerError] = useState(false);
 
   // ── Inline voting state ───────────────────────────────────────────────────
   const initialVotedId = poll.userVote?.optionId ?? null;
@@ -607,11 +608,14 @@ export default function PollCard({ poll, variant = 'grid', onVoted }) {
       <Card hoverable padding="none" className="overflow-hidden h-full flex flex-col">
         <Link href={pollHref} className="block">
           {poll.bannerImageUrl ? (
-            <img
-              src={poll.bannerImageUrl}
+            <Image
+              src={bannerError ? defaultPollImage : poll.bannerImageUrl}
               alt={`${poll.title} banner`}
+              width={1280}
+              height={720}
+              sizes="(max-width: 768px) 100vw, 40vw"
               className="w-full h-32 object-cover"
-              onError={(e) => { e.currentTarget.src = defaultPollImage; }}
+              onError={() => setBannerError(true)}
             />
           ) : (
             renderInfoPanel()

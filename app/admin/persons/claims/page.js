@@ -2,10 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { personAPI } from '@/lib/api';
-import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import Pagination from '@/components/ui/Pagination';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -15,8 +13,6 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import Modal, { ConfirmDialog } from '@/components/ui/Modal';
 
 function AdminClaimsPageContent() {
-  const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
   const { addToast } = useToast();
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);

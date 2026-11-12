@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronDownIcon, ChevronUpIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import Image from 'next/image';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
 
 const REFRESH_INTERVAL_MS = 60000;
@@ -113,9 +114,11 @@ export default function ActivityFeed() {
                       {/* Dot / Avatar */}
                       <div className="flex-shrink-0 relative z-10">
                         {activity.authorAvatar ? (
-                          <img
+                          <Image
                             src={activity.authorAvatar}
                             alt={activity.authorName}
+                            width={64}
+                            height={64}
                             className="h-8 w-8 rounded-full object-cover border-2 border-white shadow-sm"
                           />
                         ) : (

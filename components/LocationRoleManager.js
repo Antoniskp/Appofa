@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import { locationRoleAPI } from '@/lib/api';
 import { apiRequest } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
@@ -107,7 +108,7 @@ function AssigneePicker({ onSelect, onClose }) {
               className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded hover:bg-blue-50 text-sm"
             >
               {r.photo ? (
-                <img src={r.photo} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                <Image src={r.photo} alt="" width={56} height={56} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
               ) : (
                 <UserCircleIcon className="w-7 h-7 text-gray-400 flex-shrink-0" />
               )}
@@ -184,7 +185,7 @@ function RoleSlotRow({ definition, assignment, onChange, tCommon }) {
             assignedUsers.map((u) => (
               <div key={u.userId} className="flex items-center gap-2">
                 {u.photo ? (
-                  <img src={u.photo} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                  <Image src={u.photo} alt="" width={64} height={64} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                 ) : (
                   <UserCircleIcon className="w-8 h-8 text-gray-400 flex-shrink-0" />
                 )}
@@ -237,7 +238,7 @@ function RoleSlotRow({ definition, assignment, onChange, tCommon }) {
           {user ? (
             <>
               {photo ? (
-                <img src={photo} alt="" className="w-8 h-8 rounded-full object-cover" />
+                <Image src={photo} alt="" width={64} height={64} className="w-8 h-8 rounded-full object-cover" />
               ) : (
                 <UserCircleIcon className="w-8 h-8 text-gray-400" />
               )}
@@ -283,7 +284,7 @@ function RoleSlotRow({ definition, assignment, onChange, tCommon }) {
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
-export default function LocationRoleManager({ locationId, locationType }) {
+export default function LocationRoleManager({ locationId }) {
   const [rolesData, setRolesData] = useState(null);
   const [localAssignments, setLocalAssignments] = useState({});
   const [loading, setLoading] = useState(true);
@@ -318,7 +319,7 @@ export default function LocationRoleManager({ locationId, locationType }) {
         }
         setLocalAssignments(map);
       }
-    } catch (err) {
+    } catch {
       toastError('Failed to load location roles');
     } finally {
       setLoading(false);

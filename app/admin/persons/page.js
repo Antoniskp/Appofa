@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { PlusIcon, PencilSquareIcon, TrashIcon, CheckBadgeIcon } from '@heroicons/react/24/outline';
 import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -36,8 +35,7 @@ function ClaimBadge({ status }) {
 
 
 function AdminPersonsPageContent() {
-  const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   const { addToast } = useToast();
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);

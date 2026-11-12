@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import { UserCircleIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
 
@@ -24,18 +25,18 @@ function SkeletonRow() {
  * Props:
  *   currentUserId – id of the logged-in user (to highlight their row)
  */
-export default function Leaderboard({ currentUserId }) {
+export default function Leaderboard() {
   const [expanded, setExpanded] = useState(true);
   const [entries, setEntries] = useState([]);
   const [currentUserRank, setCurrentUserRank] = useState(null);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [offset, setOffset] = useState(0);
+  const offsetRef = useRef(0);
   const LIMIT = 10;
 
   const loadData = useCallback(async (reset = true) => {
-    const currentOffset = reset ? 0 : offset;
+    const currentOffset = reset ? 0 : offsetRef.current;
     if (reset) setLoading(true); else setLoadingMore(true);
     try {
       const res = await dreamTeamAPI.getLeaderboard({ limit: LIMIT, offset: currentOffset });
@@ -47,18 +48,18 @@ export default function Leaderboard({ currentUserId }) {
         }
         setHasMore(res.hasMore || false);
         setCurrentUserRank(res.currentUserRank || null);
-        setOffset(currentOffset + LIMIT);
+        offsetRef.current = currentOffset + LIMIT;
       }
     } catch {
       // Non-critical
     } finally {
       if (reset) setLoading(false); else setLoadingMore(false);
     }
-  }, [offset]);
+  }, []);
 
   useEffect(() => {
     loadData(true);
-  }, []);
+  }, [loadData]);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-6">
@@ -98,7 +99,7 @@ export default function Leaderboard({ currentUserId }) {
 
                     {/* Avatar */}
                     {entry.avatar ? (
-                      <img src={entry.avatar} alt={entry.username} className="h-8 w-8 rounded-full object-cover flex-shrink-0" />
+                      <Image src={entry.avatar} alt={entry.username} width={64} height={64} className="h-8 w-8 rounded-full object-cover flex-shrink-0" />
                     ) : (
                       <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center flex-shrink-0">
                         <UserCircleIcon className="h-5 w-5 text-blue-400" />

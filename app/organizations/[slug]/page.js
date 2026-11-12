@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useState, use } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import Image from 'next/image';
 import OrgAvatar from '@/components/organization/OrgAvatar';
 import RolePersonPhoto from '@/components/organization/RolePersonPhoto';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   AcademicCapIcon, BuildingLibraryIcon, BuildingOffice2Icon, BriefcaseIcon, FlagIcon,
-  GlobeAltIcon, EnvelopeIcon, HomeModernIcon, MapPinIcon, MegaphoneIcon,
+  GlobeAltIcon, EnvelopeIcon, HomeModernIcon, MapPinIcon,
   PencilSquareIcon, UserCircleIcon, PlusIcon, ChevronUpIcon, TrashIcon,
 } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
@@ -149,7 +150,7 @@ export default function OrganizationProfilePage({ params }) {
     { initialData: { members: [] } }
   );
 
-  const members = membersData?.members || [];
+  const members = useMemo(() => membersData?.members || [], [membersData?.members]);
 
   const { data: parliamentariansData, loading: parliamentariansLoading } = useAsyncData(
     async () => {
@@ -1188,7 +1189,7 @@ export default function OrganizationProfilePage({ params }) {
                     {members.map((member) => (
                       <div key={member.id} className="flex flex-wrap items-center gap-3 p-3 rounded-lg border border-gray-200">
                         {member.user?.avatar ? (
-                          <img src={member.user.avatar} alt={member.user.username} className="h-10 w-10 rounded-full object-cover" />
+                          <Image src={member.user.avatar} alt={member.user.username} width={80} height={80} className="h-10 w-10 rounded-full object-cover" />
                         ) : (
                           <UserCircleIcon className="h-10 w-10 text-gray-300" style={{ color: member.user?.avatarColor || undefined }} />
                         )}

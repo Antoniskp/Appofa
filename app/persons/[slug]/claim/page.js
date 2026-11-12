@@ -3,6 +3,7 @@
 import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -81,7 +82,7 @@ export default function ClaimProfilePage({ params }) {
 
           <div className="flex items-center gap-3 mb-5 p-3 bg-gray-50 rounded-lg border border-gray-200">
             {profile.photo ? (
-              <img src={profile.photo} alt={profile.fullName} className="w-10 h-10 rounded-full object-cover" />
+              <Image src={profile.photo} alt={profile.fullName} width={80} height={80} className="w-10 h-10 rounded-full object-cover" />
             ) : (
               <UserCircleIcon className="w-10 h-10 text-gray-300" />
             )}

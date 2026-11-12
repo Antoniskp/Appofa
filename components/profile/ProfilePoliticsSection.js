@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { organizationAPI, politicalAffiliationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { ENDORSEMENT_LABELS, formatPoliticalPosition } from '@/lib/utils/politicalParties';
@@ -20,9 +21,11 @@ const ENDORSEMENT_OPTIONS = [
 function PartyAvatar({ organization }) {
   if (organization?.logo) {
     return (
-      <img
+      <Image
         src={organization.logo}
         alt={organization.name || 'Κόμμα'}
+        width={80}
+        height={80}
         className="h-10 w-10 rounded-full border border-gray-200 bg-white object-cover flex-shrink-0"
       />
     );

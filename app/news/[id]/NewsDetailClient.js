@@ -4,6 +4,7 @@ import { defaultArticleImage, articleBannerImage } from '@/lib/utils/articleImag
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ShareIcon, BookmarkIcon, PrinterIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
 import { bookmarkAPI } from '@/lib/api';
@@ -194,9 +195,13 @@ export default function NewsDetailPage() {
               <VideoEmbed article={article} autoplay />
             </div>
           ) : (
-            <img
+            <Image
               src={bannerImageUrl}
               alt={bannerAltText}
+              width={1600}
+              height={900}
+              sizes="100vw"
+              priority
               className="w-full h-64 object-cover"
               onError={handleBannerError}
             />

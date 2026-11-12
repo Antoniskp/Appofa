@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import StaticPageLayout from '@/components/StaticPageLayout';
 import positionTypesData from '@/config/governmentPositionTypes.json';
 import positionsConfig from '@/config/governmentPositions.json';
@@ -115,9 +116,11 @@ function HolderAvatar({ photo, name, avatarColor, size = 'md' }) {
     : 'h-10 w-10 text-sm';
   if (photo) {
     return (
-      <img
+      <Image
         src={photo}
         alt={name || ''}
+        width={128}
+        height={128}
         className={`${sizes} rounded-full object-cover flex-shrink-0 border-2 border-white shadow-sm`}
       />
     );

@@ -2,6 +2,7 @@
 
 import { useState, forwardRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 /**
  * Reusable card component for consistent layouts
@@ -45,7 +46,7 @@ const Card = forwardRef(function Card({
     lg: 'p-8'
   };
   
-  const hoverClasses = hoverable || href || onClick 
+  const hoverClasses = hoverable || clickable || href || onClick
     ? variant === 'elevated' ? 'hover:shadow-lg hover:-translate-y-0.5 hover:border-copper/40 transition-all duration-200 cursor-pointer' : 'hover:shadow-md hover:-translate-y-0.5 hover:border-copper/40 transition-all duration-200 cursor-pointer'
     : '';
   
@@ -143,10 +144,13 @@ export function ImageCard({
   
   const content = (
     <div className="flex">
-      <div className={`flex-shrink-0 overflow-hidden ${imageClassName}`}>
-        <img 
+      <div className={`relative flex-shrink-0 overflow-hidden ${imageClassName}`}>
+        <Image
           src={imageSrc} 
           alt={imageAlt} 
+          width={1280}
+          height={720}
+          sizes="(max-width: 768px) 100vw, 40vw"
           className="w-full h-full object-cover"
           loading="lazy"
           onError={(_e) => {
@@ -196,9 +200,12 @@ export function ImageTopCard({
   const content = (
     <>
       <div className={`relative overflow-hidden ${imageClassName}`}>
-        <img 
+        <Image
           src={imageSrc} 
           alt={imageAlt} 
+          width={1280}
+          height={720}
+          sizes="100vw"
           className="w-full h-full object-cover"
           loading="lazy"
           onError={(_e) => {

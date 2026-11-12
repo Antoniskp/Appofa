@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @next/next/no-img-element -- Article body images are author-provided arbitrary URLs and retain their natural ratio. */
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';

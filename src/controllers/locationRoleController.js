@@ -1,6 +1,6 @@
 const { LocationRole, Location, User, GovernmentPosition, GovernmentCurrentHolder, UserLocationRole } = require('../models');
 const locationRolesConfig = require('../../config/locationRoles.json');
-const { getDescendantLocationIds, getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
+const { getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
 
 // Maps LocationRole roleKey → universal positionTypeKey used in GovernmentPositions.
 // This allows the sync to work for any country dynamically — the countryCode is read

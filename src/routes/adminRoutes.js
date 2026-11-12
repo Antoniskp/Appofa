@@ -7,7 +7,6 @@ const checkRole = require('../middleware/checkRole');
 const { apiLimiter } = require('../middleware/rateLimiter');
 const csrfProtection = require('../middleware/csrfProtection');
 const dreamTeamController = require('../controllers/dreamTeamController');
-const workerClientService = require('../services/workerClientService');
 const workerTokenService = require('../services/workerTokenService');
 const { sendRequest, sendTaskToWorker, getConnectedWorkers, getFirstConnectedWorkerId } = require('../websocket/workerWsServer');
 

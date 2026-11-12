@@ -8,7 +8,6 @@ import { candidateRegistrationAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import Button from '@/components/ui/Button';
-import { POSITION_TYPE_LABELS } from '@/components/locations/LocationCandidatesTab';
 
 const POSITION_OPTIONS_BY_LOCATION_TYPE = {
   international: ['other'],

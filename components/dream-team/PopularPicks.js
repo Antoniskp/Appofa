@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
 
@@ -63,9 +64,11 @@ export default function PopularPicks() {
           {picks.map((pick) => (
             <div key={pick.positionSlug} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
               {pick.photo || pick.avatar ? (
-                <img
+                <Image
                   src={pick.photo || pick.avatar}
                   alt={pick.personName || ''}
+                  width={80}
+                  height={80}
                   className="h-10 w-10 rounded-full object-cover flex-shrink-0 border-2 border-white shadow-sm"
                 />
               ) : (

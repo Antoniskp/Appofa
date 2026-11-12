@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { manifestAPI } from '@/lib/api';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import AlertMessage from '@/components/ui/AlertMessage';
@@ -183,9 +184,11 @@ function ManifestSupportersContent() {
                               style={{ backgroundColor: supporter.avatarColor || '#dbeafe' }}
                             >
                               {supporter.avatar ? (
-                                <img
+                                <Image
                                   src={supporter.avatar}
                                   alt={supporter.username}
+                                  width={80}
+                                  height={80}
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
@@ -195,9 +198,11 @@ function ManifestSupportersContent() {
                               )}
                             </div>
                             {supporter.displayBadgeSlug && supporter.displayBadgeTier && (
-                              <img
+                              <Image
                                 src={`/images/badges/${supporter.displayBadgeSlug}-${supporter.displayBadgeTier}.svg`}
                                 alt=""
+                                width={32}
+                                height={32}
                                 className="absolute -bottom-1 -right-1 w-4 h-4"
                               />
                             )}

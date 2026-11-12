@@ -1,6 +1,7 @@
 'use client';
 
 import { UserCircleIcon } from '@heroicons/react/24/outline';
+import Image from 'next/image';
 import { TrophyIcon } from '@heroicons/react/24/solid';
 import positionsData from '@/config/governmentPositions.json';
 
@@ -47,9 +48,11 @@ function WinnerCard({ item }) {
       {/* Photo */}
       <div className="relative">
         {winner?.photo || winner?.avatar ? (
-          <img
+          <Image
             src={winner.photo || winner.avatar}
             alt={winner.personName}
+            width={192}
+            height={192}
             className="h-24 w-24 rounded-full object-cover border-4 border-white shadow-md"
           />
         ) : (

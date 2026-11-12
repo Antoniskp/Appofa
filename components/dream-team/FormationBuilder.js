@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Image from 'next/image';
 import { ArrowLeftIcon, CheckIcon, GlobeAltIcon, LockClosedIcon, ShareIcon } from '@heroicons/react/24/outline';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
 import PersonSearch from './PersonSearch';
@@ -49,7 +50,7 @@ const EMPTY_VOTES = [];
  *   myVotes        – user's current votes array (only passed when isPrimary)
  *   onVotesChanged() – callback after picks→votes sync (only passed when isPrimary)
  */
-export default function FormationBuilder({ formation, communityResults = [], onSave, onBack, showToast, isPrimary = false, positions = EMPTY_POSITIONS, myVotes = EMPTY_VOTES, onVotesChanged }) {
+export default function FormationBuilder({ formation, onSave, onBack, showToast, isPrimary = false, positions = EMPTY_POSITIONS, myVotes = EMPTY_VOTES, onVotesChanged }) {
   const isNew = !formation?.id;
 
   const [name, setName] = useState(formation?.name || '');
@@ -248,9 +249,11 @@ export default function FormationBuilder({ formation, communityResults = [], onS
           {hasPick ? (
             <div className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2">
               {(pick.photo || pick.avatar) ? (
-                <img
+                <Image
                   src={pick.photo || pick.avatar}
                   alt={pick.personName}
+                  width={48}
+                  height={48}
                   className="h-6 w-6 rounded-full object-cover flex-shrink-0"
                 />
               ) : (

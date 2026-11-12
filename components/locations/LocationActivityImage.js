@@ -1,6 +1,7 @@
 'use client';
 
 import { defaultArticleImage, articleBannerImage } from '@/lib/utils/articleImage';
+import Image from 'next/image';
 import { useState } from 'react';
 import { ChartBarIcon } from '@heroicons/react/24/outline';
 
@@ -15,10 +16,12 @@ export default function LocationActivityImage({ item, poll = false }) {
     </div>;
   }
 
-  return <img
+  return <Image
     src={image || defaultArticleImage(item)}
     alt=""
-    loading="lazy"
+    width={640}
+    height={320}
+    sizes="(max-width: 768px) 100vw, 40vw"
     className="h-40 w-full object-cover"
     onError={() => { if (image) setFailedSource(source); }}
   />;

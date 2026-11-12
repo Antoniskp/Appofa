@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Image from 'next/image';
 import { mediaAPI } from '@/lib/api';
 
 export default function SuggestionPhotos({ photos = [], onChange, onBusyChange, disabled = false }) {
@@ -21,7 +22,7 @@ export default function SuggestionPhotos({ photos = [], onChange, onBusyChange, 
   return <section className="my-4 space-y-3" aria-label="Φωτογραφίες αναφοράς">
     <h2 className="font-semibold">Φωτογραφίες αναφοράς και αποκατάστασης</h2>
     <div className="grid gap-3 sm:grid-cols-2">{photos.map((photo, index) => <figure key={photo.id} className="space-y-2 rounded-lg border p-2">
-      <a href={photo.url} target="_blank" rel="noopener noreferrer"><img src={photo.url} alt={photo.caption || (photo.kind === 'repair' ? 'Φωτογραφία αποκατάστασης' : 'Φωτογραφία προβλήματος')} className="h-44 w-full rounded object-cover" /></a>
+      <a href={photo.url} target="_blank" rel="noopener noreferrer"><Image src={photo.url} alt={photo.caption || (photo.kind === 'repair' ? 'Φωτογραφία αποκατάστασης' : 'Φωτογραφία προβλήματος')} width={800} height={440} sizes="(max-width: 768px) 100vw, 50vw" className="h-44 w-full rounded object-cover" /></a>
       {onChange ? <fieldset disabled={disabled || busy} className="space-y-2">
         <label className="block text-sm">Στάδιο <select value={photo.kind} onChange={event => onChange(photos.map((item, i) => i === index ? { ...item, kind: event.target.value } : item))}><option value="report">Αναφορά</option><option value="repair">Αποκατάσταση</option></select></label>
         <input aria-label="Λεζάντα φωτογραφίας" value={photo.caption} maxLength={300} placeholder="Λεζάντα" className="w-full rounded border p-2 text-sm" onChange={event => onChange(photos.map((item, i) => i === index ? { ...item, caption: event.target.value } : item))} />

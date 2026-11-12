@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import VerifiedBadge from '@/components/VerifiedBadge';
 import PartyBadge from '@/components/PartyBadge';
 
@@ -29,9 +30,11 @@ function DisplayBadgeOverlay({ slug, tier, size }) {
 
   if (!imgError) {
     return (
-      <img
+      <Image
         src={`/images/badges/${slug}-${tier}.svg`}
         alt={`${slug} ${tier}`}
+        width={32}
+        height={32}
         className={`absolute bottom-0 right-0 ${size} object-contain`}
         onError={() => setImgError(true)}
       />
@@ -78,9 +81,11 @@ export default function UserAvatar({ user, size = 'h-10 w-10', textSize = 'text-
         style={{ backgroundColor: user.avatarColor || DEFAULT_AVATAR_COLOR }}
       >
         {user.avatar && !avatarLoadError ? (
-          <img
+          <Image
             src={user.avatar}
             alt={user.username}
+            width={128}
+            height={128}
             className="h-full w-full rounded-full object-cover"
             onError={() => setAvatarLoadError(true)}
           />

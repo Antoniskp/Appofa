@@ -1,6 +1,7 @@
 'use client';
 
 import { use, useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { personAPI, locationAPI, organizationAPI } from '@/lib/api';
@@ -422,9 +423,11 @@ function EditPersonProfilePageContent({ params }) {
               <label className="block text-sm font-medium text-gray-700 mb-1">Φωτογραφία</label>
               <div className="space-y-3">
                 {(photoPreview || form.photo) && (
-                  <img
+                  <Image
                     src={photoPreview || (photoTimestamp ? `${form.photo}?v=${photoTimestamp}` : form.photo)}
                     alt="Τρέχουσα φωτογραφία"
+                    width={160}
+                    height={160}
                     className="w-20 h-20 rounded-full object-cover border border-gray-200"
                   />
                 )}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { UserCircleIcon, PencilIcon, TrashIcon, ShareIcon, HeartIcon, LockClosedIcon, GlobeAltIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
 import ShareModal from './ShareModal';
@@ -29,7 +30,7 @@ const TOTAL_POSITIONS = 22;
  *   onClick    – optional click handler for the card body
  *   matchScore – optional number (0–100) showing similarity with user's Primary Formation
  */
-export default function FormationCard({ formation, onEdit, onDelete, onLike, onCompare, onShareCopy, isOwner = false, isPrimary = false, showToast, onClick, matchScore }) {
+export default function FormationCard({ formation, onEdit, onDelete, onLike, onCompare, isOwner = false, isPrimary = false, showToast, onClick, matchScore }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -130,9 +131,11 @@ export default function FormationCard({ formation, onEdit, onDelete, onLike, onC
             {topPicks.map((pick, idx) => (
               <div key={idx} className="flex flex-col items-center gap-1 flex-1">
                 {pick.photo || pick.avatar ? (
-                  <img
+                  <Image
                     src={pick.photo || pick.avatar}
                     alt={pick.personName || ''}
+                    width={72}
+                    height={72}
                     className="h-9 w-9 rounded-full object-cover border-2 border-white shadow-sm"
                   />
                 ) : (

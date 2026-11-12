@@ -130,6 +130,8 @@ export default function LocationChildrenExplorer({
   siblings = [],
   children = [],
   loading = false,
+  compactNavigation = false,
+  hideChildrenList = false,
 }) {
   const router = useRouter();
   const [hoveredChildId, setHoveredChildId] = useState(null);
@@ -253,10 +255,44 @@ export default function LocationChildrenExplorer({
   const mapCenter = useMemo(() => computeMapCenter(location, children), [location, children]);
   const mapZoom = location?.map_default_zoom ? Number(location.map_default_zoom) : 7;
   const showMap = !loading && hasGeometry && mapCenter;
-  const showPills = !loading && children.length > 0;
+  const showPills = !hideChildrenList && !loading && children.length > 0;
   const useDesktopSplitLayout = showMap && showPills;
   const visibleSiblings = siblings.slice(0, 8);
   const hasRelatedLocations = Boolean(parent || visibleSiblings.length > 0);
+
+  if (hideChildrenList && !showMap) return null;
+
+  if (compactNavigation) {
+    if (!loading && children.length === 0 && !parent) return null;
+
+    return (
+      <nav aria-label="Πλοήγηση περιοχών" className="mb-6 rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          {parent && (
+            <Link
+              href={`/locations/${parent.slug || parent.id}`}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-800 transition-colors hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              aria-label={`Μετάβαση ένα επίπεδο πάνω: ${parent.name_local || parent.name}`}
+            >
+              <span aria-hidden="true">↑</span>
+              {parent.name_local || parent.name}
+            </Link>
+          )}
+          {loading ? (
+            <span className="text-sm text-gray-500">Φόρτωση περιοχών…</span>
+          ) : children.map((child) => (
+            <Link
+              key={child.id}
+              href={`/locations/${child.slug || child.id}`}
+              className="inline-flex min-h-9 items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-800 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              {child.name_local || child.name}
+            </Link>
+          ))}
+        </div>
+      </nav>
+    );
+  }
 
   // Don't render anything when there is no hierarchy context to show.
   if (!loading && children.length === 0 && !hasRelatedLocations) return null;
@@ -270,7 +306,7 @@ export default function LocationChildrenExplorer({
             {childTerms.label}{!loading && children.length > 0 ? ` (${children.length})` : ''}
           </h2>
         </div>
-        {parent && (
+        {parent && !hideChildrenList && (
           <Link
             href={`/locations/${parent.slug || parent.id}`}
             className="inline-flex min-h-10 items-center gap-2 self-start rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-blue-800 shadow-sm transition-colors hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:self-auto"
@@ -367,7 +403,7 @@ export default function LocationChildrenExplorer({
           </div>
         )}
 
-        {!loading && hasRelatedLocations && (
+        {!hideChildrenList && !loading && hasRelatedLocations && (
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
             <div className="grid gap-3 md:grid-cols-2">
               {parent && (

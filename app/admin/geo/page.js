@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -47,11 +48,11 @@ function CountryFlag({ code }) {
   }
   const upper = String(code).toUpperCase();
   return (
-    <img
+    <Image
       src={`https://flagcdn.com/16x12/${upper.toLowerCase()}.png`}
-      srcSet={`https://flagcdn.com/32x24/${upper.toLowerCase()}.png 2x`}
       width={16}
       height={12}
+      sizes="16px"
       alt={`Σημαία ${upper}`}
       title={upper}
       aria-label={`Σημαία ${upper}`}

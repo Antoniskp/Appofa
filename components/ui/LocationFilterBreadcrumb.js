@@ -5,7 +5,7 @@ import { locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
-export default function LocationFilterBreadcrumb({ value, onChange }) {
+export default function LocationFilterBreadcrumb({ onChange }) {
   const { user, loading: authLoading } = useAuth();
   const [selections, setSelections] = useState([]);
   const [children, setChildren] = useState([]);

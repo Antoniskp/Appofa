@@ -6,7 +6,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI } from '@/lib/api';
-import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import ArticleForm from '@/components/articles/ArticleForm';
 import { useFetchArticle } from '@/hooks/useFetchArticle';
@@ -16,9 +15,8 @@ function EditArticlePageContent() {
   const tArticles = useTranslations('articles');
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
   const { success, error } = useToast();
-  const { article, loading, error: loadError, refetch } = useFetchArticle(params.id);
+  const { article, loading, error: loadError } = useFetchArticle(params.id);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const { canEditArticle, canDeleteArticle } = usePermissions();
@@ -28,14 +26,14 @@ function EditArticlePageContent() {
     if (!loading && loadError) {
       error(tArticles('not_found'));
     }
-  }, [loading, loadError, error]);
+  }, [loading, loadError, error, tArticles]);
 
   // Show permission error toast only once when permission check fails
   useEffect(() => {
     if (!loading && article && !canEditArticle(article)) {
       error(tArticles('no_edit_permission'));
     }
-  }, [loading, article, canEditArticle, error]);
+  }, [loading, article, canEditArticle, error, tArticles]);
 
   const handleSubmit = async (formData) => {
     setSubmitting(true);

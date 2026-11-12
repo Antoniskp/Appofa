@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import { idSlug } from '@/lib/utils/slugify';
 import { useTranslations } from 'next-intl';
@@ -80,9 +81,12 @@ export default function VideoThumbnailCard({ article }) {
       {/* Thumbnail area */}
       <div className="relative overflow-hidden bg-gray-900" style={aspectStyle}>
         {thumbnail ? (
-          <img
+          <Image
             src={thumbnail}
             alt={videoTitle}
+            width={1280}
+            height={720}
+            sizes="(max-width: 768px) 100vw, 33vw"
             className="w-full h-full object-cover"
             loading="lazy"
           />

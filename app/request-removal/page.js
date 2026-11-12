@@ -49,7 +49,7 @@ export default function RequestRemovalPage() {
       } else {
         setError(res.message || 'Failed to submit request. Please try again.');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to submit request. Please try again.');
     } finally {
       setLoading(false);

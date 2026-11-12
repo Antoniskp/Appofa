@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
 import { LockClosedIcon } from '@heroicons/react/24/outline';
 import positionTypesData from '@/config/governmentPositionTypes.json';
@@ -36,9 +37,11 @@ function PersonAvatar({ photo, name, avatarColor, size = 'md' }) {
   };
   if (photo) {
     return (
-      <img
+      <Image
         src={photo}
         alt={name || ''}
+        width={128}
+        height={128}
         className={`${sizes[size]} rounded-full object-cover flex-shrink-0`}
       />
     );
@@ -256,7 +259,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
                     <div className="flex items-center justify-between text-xs mb-1">
                       <div className="flex items-center gap-1.5 flex-1 mr-2 min-w-0">
                         {photo ? (
-                          <img src={photo} alt="" className="h-5 w-5 rounded-full object-cover flex-shrink-0" />
+                          <Image src={photo} alt="" width={40} height={40} className="h-5 w-5 rounded-full object-cover flex-shrink-0" />
                         ) : (
                           <PersonAvatar photo={null} name={v.personName} avatarColor={avatarColor} size="sm" />
                         )}

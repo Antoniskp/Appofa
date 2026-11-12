@@ -48,14 +48,14 @@ function isValidCoord(value, min, max) {
 }
 
 export default function LocationPickerMap({ lat, lng, onChange, className }) {
+  const hasCoords =
+    isValidCoord(lat, -90, 90) && isValidCoord(lng, -180, 180);
   const containerRef = useRef(null);
   const mapRef = useRef(null);
+  const initialCoordinatesRef = useRef({ hasCoords, lat, lng });
   const markerRef = useRef(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
-
-  const hasCoords =
-    isValidCoord(lat, -90, 90) && isValidCoord(lng, -180, 180);
 
   // Initialise the Leaflet map exactly once on mount.
   // `lat`/`lng` are intentionally NOT in the dependency array: this effect must run only
@@ -64,6 +64,7 @@ export default function LocationPickerMap({ lat, lng, onChange, className }) {
   // `hasCoords`/`lat`/`lng` captured here are only used to set the *initial* view and
   // place the *initial* marker — subsequent changes are handled by the sync effect.
   useEffect(() => {
+    const initialCoordinates = initialCoordinatesRef.current;
     if (!containerRef.current || mapRef.current) return;
 
     const map = L.map(containerRef.current, {
@@ -77,15 +78,15 @@ export default function LocationPickerMap({ lat, lng, onChange, className }) {
     map.attributionControl?.setPrefix(false);
 
     // Set initial view
-    if (hasCoords) {
-      map.setView([Number(lat), Number(lng)], 13);
+    if (initialCoordinates.hasCoords) {
+      map.setView([Number(initialCoordinates.lat), Number(initialCoordinates.lng)], 13);
     } else {
       map.setView(GREECE_CENTER, GREECE_ZOOM);
     }
 
     // Place initial marker if coordinates exist
-    if (hasCoords) {
-      const marker = L.marker([Number(lat), Number(lng)], {
+    if (initialCoordinates.hasCoords) {
+      const marker = L.marker([Number(initialCoordinates.lat), Number(initialCoordinates.lng)], {
         icon: PICKER_ICON,
         draggable: true,
       }).addTo(map);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ShareIcon } from '@heroicons/react/24/outline';
@@ -41,7 +41,7 @@ export default function CivicQuestionDetailClient() {
 
   const questionId = parseInt(params.id, 10);
 
-  const fetchQuestion = async () => {
+  const fetchQuestion = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -54,11 +54,11 @@ export default function CivicQuestionDetailClient() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [questionId, t]);
 
   useEffect(() => {
     if (questionId) fetchQuestion();
-  }, [questionId]);
+  }, [questionId, fetchQuestion]);
 
   if (loading) {
     return (

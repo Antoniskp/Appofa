@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminHeader from '@/components/admin/AdminHeader';
@@ -104,7 +104,7 @@ function AdminTopicsContent() {
     return a.name.localeCompare(b.name);
   }), [topics]);
 
-  const loadTopics = async () => {
+  const loadTopics = useCallback(async () => {
     setLoading(true);
     try {
       const [topicRes, tagRes] = await Promise.all([
@@ -118,11 +118,11 @@ function AdminTopicsContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [addToast]);
 
   useEffect(() => {
     loadTopics();
-  }, []);
+  }, [loadTopics]);
 
   const updateField = (name, value) => {
     setForm((prev) => ({ ...prev, [name]: value }));

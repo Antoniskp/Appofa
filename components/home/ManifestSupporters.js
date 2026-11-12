@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 
 export default function ManifestSupporters({ manifestData }) {
@@ -43,9 +44,11 @@ export default function ManifestSupporters({ manifestData }) {
                               style={{ backgroundColor: supporter.avatarColor || '#dbeafe' }}
                             >
                               {supporter.avatar ? (
-                                <img
+                                <Image
                                   src={supporter.avatar}
                                   alt={supporter.username}
+                                  width={112}
+                                  height={112}
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
@@ -55,9 +58,11 @@ export default function ManifestSupporters({ manifestData }) {
                               )}
                             </div>
                             {supporter.displayBadgeSlug && supporter.displayBadgeTier && (
-                              <img
+                              <Image
                                 src={`/images/badges/${supporter.displayBadgeSlug}-${supporter.displayBadgeTier}.svg`}
                                 alt=""
+                                width={32}
+                                height={32}
                                 className="absolute -bottom-1 -right-1 w-5 h-5"
                               />
                             )}

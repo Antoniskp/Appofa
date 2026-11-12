@@ -76,7 +76,7 @@ function EditPollContent() {
       if (response.success) {
         router.push('/polls');
       }
-    } catch (err) {
+    } catch {
       alert('Σφάλμα κατά τη διαγραφή της δημοσκόπησης');
     }
   };

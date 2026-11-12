@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { EXPERTISE_TAG_GROUPS, getExpertiseTagLabel } from '@/lib/utils/professionTaxonomy';
 
@@ -17,7 +17,7 @@ import { EXPERTISE_TAG_GROUPS, getExpertiseTagLabel } from '@/lib/utils/professi
  */
 export default function ProfileExpertiseSection({ expertiseArea, onAdd, onRemove }) {
   const t = useTranslations('profile');
-  const selected = expertiseArea || [];
+  const selected = useMemo(() => expertiseArea || [], [expertiseArea]);
   const atMax = selected.length >= 5;
 
   // Track which groups are manually opened
