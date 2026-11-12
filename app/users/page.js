@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   MagnifyingGlassIcon,
   UserCircleIcon,
   MapPinIcon,
   BriefcaseIcon,
-  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { useTranslations } from 'next-intl';
@@ -21,15 +20,7 @@ import { useInfiniteData } from '@/hooks/useInfiniteData';
 import Pagination from '@/components/ui/Pagination';
 import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
-import {
-  DOMAINS,
-  EMPLOYMENT_TYPES,
-  EXPERTISE_TAG_GROUPS,
-  SERVICE_MODES,
-  getExpertiseTagLabel,
-  getSpecializations,
-  resolveProfessionLabel,
-} from '@/lib/utils/professionTaxonomy';
+import { getExpertiseTagLabel, resolveProfessionLabel } from '@/lib/utils/professionTaxonomy';
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
@@ -149,108 +140,15 @@ function PersonCard({ profile, t }) {
 // ─── FilterBar (shared) ────────────────────────────────────────────────────────
 
 function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
-  const [expertiseOpen, setExpertiseOpen] = useState(false);
-  const [openExpertiseGroups, setOpenExpertiseGroups] = useState(new Set());
-  const expertiseRef = useRef(null);
-  const expertiseTriggerRef = useRef(null);
-
-  // Close expertise dropdown on outside click
-  useEffect(() => {
-    if (!expertiseOpen) return;
-    function handleClickOutside(e) {
-      if (expertiseRef.current && !expertiseRef.current.contains(e.target)) {
-        setExpertiseOpen(false);
-      }
-    }
-    function handleKeyDown(e) {
-      if (e.key === 'Escape') {
-        setExpertiseOpen(false);
-        expertiseTriggerRef.current?.focus();
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [expertiseOpen]);
-
-  // Auto-open the group whose tag is currently selected
-  useEffect(() => {
-    if (!filters.expertiseArea) return;
-    for (const { domain, tags } of EXPERTISE_TAG_GROUPS) {
-      if (tags.some((tag) => tag.id === filters.expertiseArea)) {
-        setOpenExpertiseGroups((prev) => new Set([...prev, domain.id]));
-        break;
-      }
-    }
-  }, [filters.expertiseArea]);
-
-  const toggleExpertiseGroup = (domainId) => {
-    setOpenExpertiseGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(domainId)) next.delete(domainId);
-      else next.add(domainId);
-      return next;
-    });
-  };
-
-  // Select an expertise tag and close the dropdown
-  function selectExpertiseAndClose(value) {
-    onFilterChange('expertiseArea', value);
-    setExpertiseOpen(false);
-  }
-
-  // Cascade-aware domain change: reset profession + specialization
-  function handleDomainChange(value) {
-    onFilterChange('domainId', value);
-    onFilterChange('professionId', '');
-    onFilterChange('specializationId', '');
-  }
-
-  // Cascade-aware profession change: reset specialization
-  function handleProfessionChange(value) {
-    onFilterChange('professionId', value);
-    onFilterChange('specializationId', '');
-  }
-
-  // Professions for the selected domain
-  const professionList = useMemo(() => {
-    if (!filters.domainId) return [];
-    const domain = DOMAINS.find((d) => d.id === filters.domainId);
-    return domain ? domain.professions : [];
-  }, [filters.domainId]);
-
-  // Specializations for the selected profession
-  const specializationList = useMemo(
-    () => getSpecializations(filters.domainId, filters.professionId),
-    [filters.domainId, filters.professionId]
-  );
-
-  const selectedDomain = DOMAINS.find((d) => d.id === filters.domainId);
-  const selectedExpertiseLabel = filters.expertiseArea
-    ? getExpertiseTagLabel(filters.expertiseArea)
-    : t('all_expertise');
-
-  const hasActiveFilters =
-    filters.search || filters.locationId || filters.domainId || filters.expertiseArea ||
-    filters.employmentType || filters.serviceMode || filters.availableForHire;
-
+  const hasActiveFilters = filters.search || filters.locationId;
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-      {/* Home-location breadcrumb filter */}
-      <LocationFilterBreadcrumb
-        key={resetKey}
-        value={filters.locationId}
-        onChange={(id) => onFilterChange('locationId', id || '')}
-      />
-
-      <div className="flex min-w-0 flex-col sm:flex-row flex-wrap gap-3">
+      <div className="flex min-w-0 flex-col sm:flex-row gap-3">
         {/* Search */}
         <div className="relative w-full min-w-0 flex-1 sm:min-w-[200px]">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
+            aria-label={t('search_placeholder')}
             type="text"
             placeholder={t('search_placeholder')}
             value={filters.search}
@@ -259,183 +157,12 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
           />
         </div>
 
-        {/* Domain */}
-        <select
-          value={filters.domainId}
-          onChange={(e) => handleDomainChange(e.target.value)}
-          className={`w-full min-w-0 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto sm:min-w-[180px] ${
-            filters.domainId ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700'
-          }`}
-        >
-          <option value="">{t('all_professions')}</option>
-          {DOMAINS.map((domain) => (
-            <option key={domain.id} value={domain.id}>
-              {domain.label}
-            </option>
-          ))}
-        </select>
-
-        {/* Profession (shown when a domain is selected) */}
-        {filters.domainId && professionList.length > 0 && (
-          <select
-            value={filters.professionId}
-            onChange={(e) => handleProfessionChange(e.target.value)}
-            className={`w-full min-w-0 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto sm:min-w-[180px] ${
-              filters.professionId ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700'
-            }`}
-          >
-            <option value="">{t('all_professions')} — {selectedDomain?.label}</option>
-            {professionList.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </select>
-        )}
-
-        {/* Specialization (shown when a profession with specs is selected) */}
-        {filters.professionId && specializationList.length > 0 && (
-          <select
-            value={filters.specializationId}
-            onChange={(e) => onFilterChange('specializationId', e.target.value)}
-            className={`w-full min-w-0 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto sm:min-w-[180px] ${
-              filters.specializationId ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700'
-            }`}
-          >
-            <option value="">{t('all_specializations')}</option>
-            {specializationList.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        )}
-
-        {/* Expertise – custom accordion dropdown */}
-        <select
-          value={filters.employmentType || ''}
-          onChange={(e) => onFilterChange('employmentType', e.target.value)}
-          className={`w-full min-w-0 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto sm:min-w-[170px] ${
-            filters.employmentType ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700'
-          }`}
-        >
-          <option value="">Any work type</option>
-          {EMPLOYMENT_TYPES.map((type) => (
-            <option key={type.id} value={type.id}>{type.label}</option>
-          ))}
-        </select>
-
-        <select
-          value={filters.serviceMode || ''}
-          onChange={(e) => onFilterChange('serviceMode', e.target.value)}
-          className={`w-full min-w-0 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto sm:min-w-[150px] ${
-            filters.serviceMode ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700'
-          }`}
-        >
-          <option value="">Any service mode</option>
-          {SERVICE_MODES.map((mode) => (
-            <option key={mode.id} value={mode.id}>{mode.label}</option>
-          ))}
-        </select>
-
-        <label className={`inline-flex w-full min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm sm:w-auto ${
-          filters.availableForHire ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700'
-        }`}>
-          <input
-            type="checkbox"
-            checked={Boolean(filters.availableForHire)}
-            onChange={(e) => onFilterChange('availableForHire', e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-          />
-          <span>Available</span>
-        </label>
-
-        <div className="relative w-full min-w-0 sm:w-auto" ref={expertiseRef}>
-          <button
-            ref={expertiseTriggerRef}
-            type="button"
-            aria-haspopup="listbox"
-            aria-expanded={expertiseOpen}
-            onClick={() => setExpertiseOpen((v) => !v)}
-            className={`inline-flex w-full min-w-0 items-center justify-between gap-2 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto sm:min-w-[180px] ${
-              filters.expertiseArea
-                ? 'border-blue-400 bg-blue-50 text-blue-700'
-                : 'border-gray-300 text-gray-700'
-            }`}
-          >
-            <span className="truncate max-w-[140px]" title={selectedExpertiseLabel}>
-              {selectedExpertiseLabel}
-            </span>
-            <ChevronDownIcon
-              className={`h-4 w-4 flex-shrink-0 text-gray-400 transition-transform ${expertiseOpen ? 'rotate-180' : ''}`}
-            />
-          </button>
-
-          {expertiseOpen && (
-            <div
-              role="listbox"
-              aria-label={t('all_expertise')}
-              className="absolute z-30 mt-1 w-full max-w-[calc(100vw-4rem)] sm:w-72 bg-white border border-gray-200 rounded-xl shadow-lg max-h-80 overflow-y-auto"
-            >
-              {/* "All" option */}
-              <button
-                type="button"
-                role="option"
-                aria-selected={!filters.expertiseArea}
-                onClick={() => selectExpertiseAndClose('')}
-                className={`w-full text-left px-4 py-2.5 text-sm font-medium border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                  !filters.expertiseArea ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
-                }`}
-              >
-                {t('all_expertise')}
-              </button>
-
-              {/* Grouped accordion */}
-              {EXPERTISE_TAG_GROUPS.map(({ domain, tags }) => {
-                const isOpen = openExpertiseGroups.has(domain.id);
-                const isActiveGroup = tags.some((tag) => tag.id === filters.expertiseArea);
-
-                return (
-                  <div key={domain.id} className="border-b border-gray-100 last:border-b-0">
-                    <button
-                      type="button"
-                      onClick={() => toggleExpertiseGroup(domain.id)}
-                      className={`w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium hover:bg-gray-50 text-left transition-colors ${
-                        isActiveGroup ? 'text-blue-700' : 'text-gray-700'
-                      }`}
-                    >
-                      <span>{domain.label}</span>
-                      <ChevronDownIcon
-                        className={`h-3.5 w-3.5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                      />
-                    </button>
-
-                    {isOpen && (
-                      <div className="pb-2 px-3 pt-1 flex flex-wrap gap-1.5 bg-gray-50">
-                        {tags.map((tag) => (
-                          <button
-                            key={tag.id}
-                            type="button"
-                            role="option"
-                            aria-selected={filters.expertiseArea === tag.id}
-                            onClick={() => selectExpertiseAndClose(tag.id)}
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs transition ${
-                              filters.expertiseArea === tag.id
-                                ? 'bg-blue-600 text-white border border-blue-600'
-                                : 'border border-purple-300 text-purple-700 hover:bg-purple-50'
-                            }`}
-                          >
-                            {tag.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        {/* Home-location filter */}
+        <LocationFilterBreadcrumb
+          key={resetKey}
+          value={filters.locationId}
+          onChange={(id) => onFilterChange('locationId', id || '')}
+        />
 
         {/* Clear filters */}
         {hasActiveFilters && (
@@ -481,13 +208,6 @@ function UnifiedPanel({ viewMode, filters, t, isAuthenticated, authLoading, onVi
       const params = { page: p, limit: lim };
       if (filters.search) params.search = filters.search;
       if (filters.locationId) params.locationId = filters.locationId;
-      if (filters.domainId) params.domainId = filters.domainId;
-      if (filters.professionId) params.professionId = filters.professionId;
-      if (filters.specializationId) params.specializationId = filters.specializationId;
-      if (filters.expertiseArea) params.expertiseArea = filters.expertiseArea;
-      if (filters.employmentType) params.employmentType = filters.employmentType;
-      if (filters.serviceMode) params.serviceMode = filters.serviceMode;
-      if (filters.availableForHire) params.availableForHire = 'true';
       const res = await personAPI.getAll(params);
       return {
         items: res?.data?.profiles || [],
@@ -506,13 +226,6 @@ function UnifiedPanel({ viewMode, filters, t, isAuthenticated, authLoading, onVi
       const params = { page: usersPage, limit: usersLimit };
       if (filters.search) params.search = filters.search;
       if (filters.locationId) params.locationId = filters.locationId;
-      if (filters.domainId) params.domainId = filters.domainId;
-      if (filters.professionId) params.professionId = filters.professionId;
-      if (filters.specializationId) params.specializationId = filters.specializationId;
-      if (filters.expertiseArea) params.expertiseArea = filters.expertiseArea;
-      if (filters.employmentType) params.employmentType = filters.employmentType;
-      if (filters.serviceMode) params.serviceMode = filters.serviceMode;
-      if (filters.availableForHire) params.availableForHire = 'true';
       const res = await authAPI.searchUsers(params);
       if (res?.success) {
         setUsersTotalPages(res.data.pagination?.totalPages || 1);
@@ -641,19 +354,19 @@ export default function UsersPage() {
   const { user, loading: authLoading } = useAuth();
   const isAuthenticated = !authLoading && !!user;
 
-  const [viewMode, setViewMode] = useState('all');
+  const readUrlState = () => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedView = params.get('view');
+    return {
+      viewMode: ['registered', 'persons'].includes(requestedView) ? requestedView : 'all',
+      filters: { search: params.get('search') || '', locationId: params.get('location') || '' },
+    };
+  };
+  const [viewMode, setViewMode] = useState(() => typeof window === 'undefined' ? 'all' : readUrlState().viewMode);
 
-  const [filters, setFilters] = useState({
-    search: '',
-    locationId: '',
-    domainId: '',
-    professionId: '',
-    specializationId: '',
-    expertiseArea: '',
-    employmentType: '',
-    serviceMode: '',
-    availableForHire: false,
-  });
+  const [filters, setFilters] = useState(() => typeof window === 'undefined'
+    ? { search: '', locationId: '' }
+    : readUrlState().filters);
 
   // Increment to force LocationFilterBreadcrumb remount on reset
   const [filterResetKey, setFilterResetKey] = useState(0);
@@ -662,18 +375,37 @@ export default function UsersPage() {
     setFilters((prev) => ({ ...prev, [key]: value }));
   }
 
+  function handleViewModeChange(nextView) {
+    const params = new URLSearchParams(window.location.search);
+    if (nextView === 'all') params.delete('view');
+    else params.set('view', nextView);
+    const query = params.toString();
+    window.history.pushState(null, '', query ? `/users?${query}` : '/users');
+    setViewMode(nextView);
+  }
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (viewMode !== 'all') params.set('view', viewMode);
+    if (filters.search.trim()) params.set('search', filters.search.trim());
+    if (filters.locationId) params.set('location', filters.locationId);
+    const query = params.toString();
+    window.history.replaceState(null, '', query ? `/users?${query}` : '/users');
+  }, [viewMode, filters]);
+
+  useEffect(() => {
+    const syncFromUrl = () => {
+      const state = readUrlState();
+      setViewMode(state.viewMode);
+      setFilters(state.filters);
+      setFilterResetKey((key) => key + 1);
+    };
+    window.addEventListener('popstate', syncFromUrl);
+    return () => window.removeEventListener('popstate', syncFromUrl);
+  }, []);
+
   function handleReset() {
-    setFilters({
-      search: '',
-      locationId: '',
-      domainId: '',
-      professionId: '',
-      specializationId: '',
-      expertiseArea: '',
-      employmentType: '',
-      serviceMode: '',
-      availableForHire: false,
-    });
+    setFilters({ search: '', locationId: '' });
     setFilterResetKey((k) => k + 1);
   }
 
@@ -710,22 +442,9 @@ export default function UsersPage() {
         {/* Stats strip */}
         {!statsLoading && userStats && (
           <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-100 py-2.5 px-4 flex items-center gap-6 flex-wrap">
-            <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">{t('stats_label')}</span>
             <span className="flex items-center gap-1.5">
-              <span className="text-xs text-gray-500">{t('stats_registered')}</span>
-              <span className="text-lg font-bold text-blue-600">{userStats.totalUsers}</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="text-xs text-gray-500">{t('stats_registered_only')}</span>
               <span className="text-lg font-bold text-blue-600">{userStats.registeredUsers}</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="text-xs text-gray-500">{t('stats_public')}</span>
-              <span className="text-lg font-bold text-green-600">{userStats.claimFlowProfiles ?? userStats.publicUsers}</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="text-xs text-gray-500">{t('stats_hidden')}</span>
-              <span className="text-lg font-bold text-gray-500">{userStats.nonSearchableUsers}</span>
+              <span className="text-sm text-gray-600">{t('stats_community_members')}</span>
             </span>
           </div>
         )}
@@ -737,7 +456,8 @@ export default function UsersPage() {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setViewMode(tab.id)}
+                onClick={() => handleViewModeChange(tab.id)}
+                aria-pressed={viewMode === tab.id}
                 className={`min-w-0 px-2 sm:px-4 py-1.5 rounded-lg text-sm font-medium transition-colors truncate ${
                   viewMode === tab.id
                     ? 'bg-blue-600 text-white shadow-sm'
@@ -783,7 +503,7 @@ export default function UsersPage() {
           t={t}
           isAuthenticated={isAuthenticated}
           authLoading={authLoading}
-          onViewRegistered={() => setViewMode('registered')}
+          onViewRegistered={() => handleViewModeChange('registered')}
         />
       </div>
     </div>

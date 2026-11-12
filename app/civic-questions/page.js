@@ -14,10 +14,13 @@ import Pagination from '@/components/ui/Pagination';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
 import CivicQuestionCard from '@/components/civicQuestions/CivicQuestionCard';
-import { useTranslations } from 'next-intl';
+import Badge from '@/components/ui/Badge';
+import { getCivicQuestionLifecycleStatus, getCivicQuestionStatusBadgeVariant } from '@/components/civicQuestions/statusUtils';
+import { useLocale, useTranslations } from 'next-intl';
 
 export default function CivicQuestionsPage() {
   const t = useTranslations('civicQuestions');
+  const locale = useLocale();
   const { user } = useAuth();
   const {
     filters,
@@ -69,23 +72,29 @@ export default function CivicQuestionsPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
-        <header className="mb-6 max-w-3xl">
+        <header className="mb-6 max-w-3xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
           <h1 className="text-3xl font-bold text-gray-900">{t('list.title')}</h1>
-          <p className="mt-3 text-gray-700">{t('list.intro')}</p>
-          <p className="mt-2 text-sm text-gray-600">{t('list.advisory')}</p>
-          <Link href="#issue-list" onClick={() => updateFilters({ status: 'open', closingSoon: '', myArea: '' })} className="mt-4 inline-flex rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700">
+          <p className="mt-3 max-w-2xl text-lg leading-relaxed text-gray-700">{t('list.intro')}</p>
+          <p className="mt-3 text-sm leading-relaxed text-gray-600">{t('list.advisory')}</p>
+          {!user && <p className="mt-2 text-sm font-medium text-gray-700">{t('list.sign_in_note')}</p>}
+          <Link href="#issue-list" onClick={() => updateFilters({ status: 'open', sourceType: '', category: '', location: '', sortBy: 'newest', search: '', myArea: '', closingSoon: '' })} className="mt-4 inline-flex rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700">
             {t('list.browse_open_action')}
           </Link>
         </header>
         {!featuredLoading && !featuredError && featured && (
-          <section aria-labelledby="featured-issue" className="mb-8 rounded-xl border border-blue-200 bg-blue-50 p-5 sm:p-8">
+          <section aria-labelledby="featured-issue" className="mb-8 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-5 shadow-sm sm:p-8">
             <h2 id="featured-issue" className="text-sm font-bold uppercase tracking-wide text-blue-800">{t('featured.title')}</h2>
             <p className="mt-2 text-sm text-blue-800">{t('featured.reason')}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Badge variant="primary">{t(`source_types.${featured.sourceType}`)}</Badge>
+              <Badge variant={getCivicQuestionStatusBadgeVariant(getCivicQuestionLifecycleStatus(featured))}>{t(`status.${getCivicQuestionLifecycleStatus(featured)}`)}</Badge>
+            </div>
             <h3 className="mt-4 max-w-4xl text-2xl font-bold leading-snug text-gray-900">{featured.title}</h3>
             {featured.simplified && <p className="mt-3 max-w-3xl line-clamp-3 leading-relaxed text-gray-700">{featured.simplified}</p>}
             <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
               <Link href={`/civic-questions/${featured.id}`} className="inline-flex rounded-lg bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700">{t('featured.action')}</Link>
               <p className="text-sm text-gray-700">{t('featured.participants', { count: featured.recentParticipants })}</p>
+              {featured.deadline && <p className="text-sm font-medium text-gray-700">{t('card.deadline')}: {new Date(featured.deadline).toLocaleDateString(locale)}</p>}
             </div>
           </section>
         )}
@@ -122,7 +131,7 @@ export default function CivicQuestionsPage() {
         <p className="mb-4 mt-2 text-sm text-gray-600">{t('guide.browse_description')}</p>
         <div className="flex flex-wrap gap-2 mb-5" aria-label={t('list.quick_filters')}>
           {[
-            { label: t('list.all'), selected: !filters.status && !filters.closingSoon && !filters.myArea, values: { status: '', closingSoon: '', myArea: '', sortBy: 'newest' } },
+            { label: t('list.all'), selected: !filters.status && !filters.closingSoon && !filters.myArea && !filters.sourceType && !filters.category && !filters.location && !filters.search, values: { status: '', closingSoon: '', myArea: '', sortBy: 'newest' } },
             { label: t('list.open'), selected: filters.status === 'open' && !filters.closingSoon, values: { status: 'open', closingSoon: '', sortBy: 'newest' } },
             { label: t('list.sort_closing_soon'), selected: Boolean(filters.closingSoon), values: { status: 'open', closingSoon: 'true', sortBy: 'closing_soon' } },
             ...(user?.homeLocationId ? [{ label: t('list.my_area'), selected: Boolean(filters.myArea), values: { myArea: filters.myArea ? '' : 'true', location: '' } }] : []),
@@ -225,7 +234,8 @@ export default function CivicQuestionsPage() {
               : key === 'sourceType' ? t(`source_types.${value}`)
                 : key === 'myArea' ? t('list.my_area')
                   : key === 'closingSoon' ? t('list.sort_closing_soon')
-                    : key === 'sortBy' ? t(`list.sort_${value}`) : value;
+                    : key === 'sortBy' ? t(`list.sort_${value}`)
+                      : key === 'search' ? t('list.search_filter', { value }) : value;
             return <button key={key} type="button" className="rounded-full bg-gray-100 px-3 py-1 text-gray-700" aria-label={t('list.remove_filter', { label })}
               onClick={() => key === 'status' ? updateFilters({ status: '', closingSoon: '' }) : updateFilter(key, key === 'sortBy' ? 'newest' : '')}>{label} ×</button>;
           })}

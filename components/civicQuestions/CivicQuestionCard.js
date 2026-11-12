@@ -33,11 +33,14 @@ export default function CivicQuestionCard({ civicQuestion }) {
       )}
       {civicQuestion.category && <p className="mt-3 text-xs text-gray-500">{civicQuestion.category}</p>}
       {civicQuestion.sourceStatus && <p className="mt-2 text-sm text-gray-600">{t('detail.source_status')}: {civicQuestion.sourceStatus}</p>}
-      <div className="mt-4 text-sm text-gray-600 flex flex-wrap gap-3">
-        <span>{t('participation_count', { count: civicQuestion.totalVotes || 0 })}</span>
-        {locationName && <span>📍 {locationName}</span>}
-        {deadlineDate && <span>⏱ {t('card.deadline')}: {deadlineDate}</span>}
+      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium text-gray-700">
+        {deadlineDate && <span>{t('card.deadline')}: {deadlineDate}</span>}
         {!deadlineDate && lifecycleStatus === 'open' && <span>{t('card.no_deadline')}</span>}
+        {locationName && <span>{t('detail.location')}: {locationName}</span>}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+        <span>{t('source_types.' + civicQuestion.sourceType)}</span>
+        <span>{t('participation_count', { count: civicQuestion.totalVotes || 0 })}</span>
         {sourceCheckedDate && <span>{t('card.source_checked')}: {sourceCheckedDate}</span>}
         <span>{t(civicQuestion.dateAsked ? 'detail.date_asked' : 'card.published')}: {createdAt}</span>
       </div>
