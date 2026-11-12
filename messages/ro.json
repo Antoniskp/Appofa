@@ -2463,6 +2463,8 @@
       "quick_filters": "Filtre rapide",
       "filters": "Filtre",
       "result_count": "{count, plural, one {# subiect} few {# subiecte} other {# de subiecte}}",
+      "sign_in_note": "Poți consulta subiectele fără cont. Pentru participare trebuie să te autentifici, iar unele întrebări pot avea cerințe de localitate.",
+      "search_filter": "Căutare: {value}",
       "remove_filter": "Elimină filtrul: {label}",
       "clear": "Șterge filtrele"
     },

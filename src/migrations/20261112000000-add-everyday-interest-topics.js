@@ -36,7 +36,7 @@ module.exports = {
           name: topic.name,
           slug: topic.slug,
           description: topic.description,
-          aliases: [],
+          aliases: JSON.stringify([]),
           status: 'active',
           isFeatured: false,
           createdAt: now,
@@ -47,6 +47,8 @@ module.exports = {
   },
 
   async down(queryInterface) {
-    await queryInterface.bulkDelete('Topics', { slug: TOPICS.map(({ slug }) => slug) });
+    for (const { slug } of TOPICS) {
+      await queryInterface.bulkDelete('Topics', { slug });
+    }
   }
 };
