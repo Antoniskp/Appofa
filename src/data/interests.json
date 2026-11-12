@@ -90,7 +90,10 @@
       "label": "Lifestyle",
       "interests": [
         { "id": "travel", "label": "Travel", "subInterests": [] },
-        { "id": "food", "label": "Food & Cooking", "subInterests": [] },
+        { "id": "olive_growing", "label": "Ελαιοπαραγωγή", "subInterests": [] },
+        { "id": "fishing", "label": "Ψάρεμα", "subInterests": [] },
+        { "id": "food", "label": "Μαγειρική", "subInterests": [] },
+        { "id": "gardening", "label": "Κηπουρική", "subInterests": [] },
         { "id": "gaming", "label": "Gaming & Esports", "subInterests": [] },
         { "id": "volunteering", "label": "Volunteering & Community", "subInterests": [] },
         { "id": "photography_hobby", "label": "Photography", "subInterests": [] }
