@@ -26,6 +26,8 @@ export function useInfiniteData(fetchFn, limit = 15, resetDeps = []) {
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
   const isMounted = useRef(true);
+  const fetchFnRef = useRef(fetchFn);
+  fetchFnRef.current = fetchFn;
   useEffect(() => {
     isMounted.current = true;
     return () => {
@@ -43,7 +45,7 @@ export function useInfiniteData(fetchFn, limit = 15, resetDeps = []) {
     setError(null);
 
     try {
-      const result = await fetchFn(pageToLoad, limit);
+      const result = await fetchFnRef.current(pageToLoad, limit);
       if (!isMounted.current) return;
 
       const nextItems = result?.items || [];
@@ -60,7 +62,7 @@ export function useInfiniteData(fetchFn, limit = 15, resetDeps = []) {
         setInitialLoading(false);
       }
     }
-  }, [fetchFn, limit]);
+  }, [limit]);
 
   // Reset when resetDeps change
   useEffect(() => {
