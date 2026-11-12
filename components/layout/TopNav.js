@@ -321,7 +321,7 @@ export default function TopNav() {
   return (
     <nav
       className={[
-        'relative z-20',
+        'relative z-[600]',
         'bg-white border-b border-brand-border',
         'shadow-sm',
       ].join(' ')}

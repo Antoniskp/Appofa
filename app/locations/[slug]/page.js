@@ -92,7 +92,7 @@ function LocationPageNav({ items }) {
   return (
     <nav
       aria-label="Πλοήγηση σελίδας τοποθεσίας"
-      className="sticky top-16 z-20 mb-6 rounded-lg border border-gray-200 bg-white/95 px-3 py-2 shadow-sm backdrop-blur"
+      className="sticky top-16 z-[500] mb-6 rounded-lg border border-gray-200 bg-white/95 px-3 py-2 shadow-sm backdrop-blur"
     >
       <div className="flex items-center gap-3 overflow-x-auto">
         <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-gray-500">
