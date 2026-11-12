@@ -642,8 +642,6 @@ export default function LocationDetailPage() {
     };
     return [...otherSections, merged];
   })();
-  const canHaveChildHierarchy = !['municipality', 'electoral_district'].includes(location?.type);
-  const showHierarchyNearTop = children.length > 0 || (secondaryLoading && canHaveChildHierarchy);
   const pageNavItems = [
     { href: '#location-content', label: 'Δραστηριότητα' },
     { href: '#location-roles', label: 'Εκπρόσωποι' },
@@ -688,6 +686,15 @@ export default function LocationDetailPage() {
         {!isEditing && (
           <>
             <LocationPageNav items={pageNavItems} />
+
+            {/* Keep hierarchy navigation directly under the page header. */}
+            <LocationChildrenExplorer
+              location={location}
+              parent={location.parent}
+              siblings={siblings}
+              children={children}
+              loading={secondaryLoading}
+            />
 
             <LocationDashboard
               key={location.id}
@@ -903,25 +910,6 @@ export default function LocationDetailPage() {
               </div>
             )}
 
-            {showHierarchyNearTop && (
-              <LocationChildrenExplorer
-                location={location}
-                parent={location.parent}
-                siblings={siblings}
-                children={children}
-                loading={secondaryLoading}
-              />
-            )}
-
-            {!showHierarchyNearTop && (
-              <LocationChildrenExplorer
-                location={location}
-                parent={location.parent}
-                siblings={siblings}
-                children={children}
-                loading={secondaryLoading}
-              />
-            )}
           </>
         )}
       </div>

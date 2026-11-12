@@ -270,8 +270,16 @@ export default function LocationChildrenExplorer({
             {childTerms.label}{!loading && children.length > 0 ? ` (${children.length})` : ''}
           </h2>
         </div>
-        {hasRelatedLocations && (
-          <p className="text-sm text-gray-500">Γονική και κοντινές τοποθεσίες σε ένα σημείο.</p>
+        {parent && (
+          <Link
+            href={`/locations/${parent.slug || parent.id}`}
+            className="inline-flex min-h-10 items-center gap-2 self-start rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-blue-800 shadow-sm transition-colors hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:self-auto"
+            aria-label={`Μετάβαση ένα επίπεδο πάνω: ${parent.name_local || parent.name}`}
+          >
+            <span aria-hidden="true">↑</span>
+            <span>Ένα επίπεδο πάνω</span>
+            <span className="font-normal text-blue-700">· {parent.name_local || parent.name}</span>
+          </Link>
         )}
       </div>
       <div className="bg-white rounded-lg shadow-md p-3 space-y-3">
