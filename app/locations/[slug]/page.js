@@ -685,8 +685,6 @@ export default function LocationDetailPage() {
         {/* Location overview, participation, representatives and information. */}
         {!isEditing && (
           <>
-            <LocationPageNav items={pageNavItems} />
-
             {/* Compact hierarchy links stay near the top; the map remains below. */}
             <LocationChildrenExplorer
               location={location}
@@ -696,6 +694,8 @@ export default function LocationDetailPage() {
               loading={secondaryLoading}
               compactNavigation
             />
+
+            <LocationPageNav items={pageNavItems} />
 
             <LocationDashboard
               key={location.id}

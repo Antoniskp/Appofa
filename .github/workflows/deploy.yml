@@ -10,8 +10,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  quality:
+    name: Quality checks
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/quality.yml
+
   deploy:
     name: Deploy to VPS
+    needs: quality
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read

@@ -30,15 +30,10 @@ async function ensureMigrationsTable() {
  * Get list of executed migrations
  */
 async function getExecutedMigrations() {
-  try {
-    const [results] = await sequelize.query(
-      `SELECT name FROM "${MIGRATIONS_TABLE}" ORDER BY name ASC;`
-    );
-    return results.map(r => r.name);
-  } catch (error) {
-    console.error('Error fetching executed migrations:', error.message);
-    return [];
-  }
+  const [results] = await sequelize.query(
+    `SELECT name FROM "${MIGRATIONS_TABLE}" ORDER BY name ASC;`
+  );
+  return results.map(r => r.name);
 }
 
 /**
