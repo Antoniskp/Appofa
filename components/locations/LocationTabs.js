@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import LocationActivityImage from '@/components/locations/LocationActivityImage';
 import LocationActionSummary from '@/components/locations/LocationActionSummary';
 import CalendarView from '@/components/calendar/CalendarView';
@@ -129,6 +130,13 @@ export default function LocationTabs({
   loading,
   electionData,
 }) {
+  const [selectedTab, setSelectedTab] = useState(activeTab);
+  useEffect(() => setSelectedTab(activeTab), [activeTab]);
+  const changeTab = (tab) => {
+    setSelectedTab(tab);
+    onTabChange(tab);
+  };
+
   // Fall back to all tabs if visibleTabs not provided (e.g. during initial load)
   const tabs = visibleTabs && visibleTabs.length > 0 ? visibleTabs : VALID_TABS;
 
@@ -155,29 +163,29 @@ export default function LocationTabs({
           <button
             key={tab}
             role="tab"
-            tabIndex={activeTab === tab ? 0 : -1}
-            aria-selected={activeTab === tab}
+            tabIndex={selectedTab === tab ? 0 : -1}
+            aria-selected={selectedTab === tab}
             aria-controls={`tabpanel-${tab}`}
             id={`tab-${tab}`}
-            onClick={() => onTabChange(tab)}
+            onClick={() => changeTab(tab)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                onTabChange(tab);
+                changeTab(tab);
               }
               if (e.key === 'ArrowRight') {
                 const next = tabs[(tabs.indexOf(tab) + 1) % tabs.length];
-                onTabChange(next);
+                changeTab(next);
                 document.getElementById(`tab-${next}`)?.focus();
               }
               if (e.key === 'ArrowLeft') {
                 const prev = tabs[(tabs.indexOf(tab) - 1 + tabs.length) % tabs.length];
-                onTabChange(prev);
+                changeTab(prev);
                 document.getElementById(`tab-${prev}`)?.focus();
               }
             }}
             className={`flex-shrink-0 px-5 py-3 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-              activeTab === tab
+              selectedTab === tab
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
@@ -189,7 +197,7 @@ export default function LocationTabs({
 
       {/* Tab panels */}
       <div className="p-4 sm:p-6">
-        {activeTab === 'recent' && (
+        {selectedTab === 'recent' && (
           <div id="tabpanel-recent" role="tabpanel" aria-labelledby="tab-recent">
             <LocationActionSummary polls={activePolls} suggestions={suggestions} news={newsArticles} articles={regularArticles} loading={loading} embedded />
           </div>
@@ -199,7 +207,7 @@ export default function LocationTabs({
           id="tabpanel-polls"
           role="tabpanel"
           aria-labelledby="tab-polls"
-          hidden={activeTab !== 'polls'}
+          hidden={selectedTab !== 'polls'}
         >
           {loading ? (
             <p className="text-center text-gray-400 py-8 animate-pulse">Φόρτωση…</p>
@@ -248,7 +256,7 @@ export default function LocationTabs({
           id="tabpanel-news"
           role="tabpanel"
           aria-labelledby="tab-news"
-          hidden={activeTab !== 'news'}
+          hidden={selectedTab !== 'news'}
         >
           {loading ? (
             <p className="text-center text-gray-400 py-8 animate-pulse">Φόρτωση…</p>
@@ -289,7 +297,7 @@ export default function LocationTabs({
           id="tabpanel-articles"
           role="tabpanel"
           aria-labelledby="tab-articles"
-          hidden={activeTab !== 'articles'}
+          hidden={selectedTab !== 'articles'}
         >
           {loading ? (
             <p className="text-center text-gray-400 py-8 animate-pulse">Φόρτωση…</p>
@@ -330,7 +338,7 @@ export default function LocationTabs({
           id="tabpanel-users"
           role="tabpanel"
           aria-labelledby="tab-users"
-          hidden={activeTab !== 'users'}
+          hidden={selectedTab !== 'users'}
         >
           {loading ? (
             <p className="text-center text-gray-400 py-8 animate-pulse">Φόρτωση…</p>
@@ -373,7 +381,7 @@ export default function LocationTabs({
           id="tabpanel-unclaimed"
           role="tabpanel"
           aria-labelledby="tab-unclaimed"
-          hidden={activeTab !== 'unclaimed'}
+          hidden={selectedTab !== 'unclaimed'}
         >
           {loading ? (
             <p className="text-center text-gray-400 py-8 animate-pulse">Φόρτωση…</p>
@@ -435,7 +443,7 @@ export default function LocationTabs({
           id="tabpanel-candidates"
           role="tabpanel"
           aria-labelledby="tab-candidates"
-          hidden={activeTab !== 'candidates'}
+          hidden={selectedTab !== 'candidates'}
         >
           <LocationCandidatesTab
             candidates={candidates}
@@ -449,7 +457,7 @@ export default function LocationTabs({
           id="tabpanel-suggestions"
           role="tabpanel"
           aria-labelledby="tab-suggestions"
-          hidden={activeTab !== 'suggestions'}
+          hidden={selectedTab !== 'suggestions'}
         >
           {loading ? (
             <p className="text-center text-gray-400 py-8 animate-pulse">Φόρτωση…</p>
@@ -497,14 +505,14 @@ export default function LocationTabs({
           )}
         </div>
 
-        {activeTab === 'events' && <div id="tabpanel-events" role="tabpanel" aria-labelledby="tab-events"><CalendarView locationId={locationId} /></div>}{/* Elections tab */}
+        {selectedTab === 'events' && <div id="tabpanel-events" role="tabpanel" aria-labelledby="tab-events"><CalendarView locationId={locationId} /></div>}{/* Elections tab */}
         <div
           id="tabpanel-elections"
           role="tabpanel"
           aria-labelledby="tab-elections"
-          hidden={activeTab !== 'elections'}
+          hidden={selectedTab !== 'elections'}
         >
-          {activeTab === 'elections' && electionData && (
+          {selectedTab === 'elections' && electionData && (
             <LocationElectionsTab
               locationId={electionData.locationId}
               locationType={electionData.locationType}

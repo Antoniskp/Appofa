@@ -152,12 +152,15 @@ export function PositionCard({ detail = false, row, manage, metadata, user, busy
       {row.status === 'published' && row.position.status === 'active' && <div className="flex flex-wrap gap-2">
         {[1, -1, 2].map(value => {
           const Icon = value === 2 ? null : value === 1 ? HandThumbUpIcon : HandThumbDownIcon;
+          const actionLabel = t(value === 1 ? 'support' : value === 2 ? 'view_unsure' : 'oppose');
+          const voteCount = value === 1 ? row.support : value === 2 ? row.unsure || 0 : row.oppose;
           const selected = row.myVote === value;
           return <button key={value} type="button" disabled={busy || voting || !user} aria-pressed={selected}
+            aria-label={`${actionLabel} ${voteCount}`}
             onClick={() => vote(selected ? 0 : value)}
             className={buttonClass + ' inline-flex min-h-11 flex-1 justify-center items-center gap-2 ' + (selected ? 'ring-2 ring-blue-500 bg-blue-50 text-blue-800' : '')}>
-            {Icon && <Icon className="h-4 w-4" />}{t(value === 1 ? 'support' : value === 2 ? 'view_unsure' : 'oppose')}
-            <span>{value === 1 ? row.support : value === 2 ? row.unsure || 0 : row.oppose}</span>
+            {Icon && <Icon className="h-4 w-4" />}{actionLabel}
+            <span>{voteCount}</span>
             {selected && <span aria-hidden="true">&#10003;</span>}
           </button>;
         })}
