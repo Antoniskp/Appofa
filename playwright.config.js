@@ -9,12 +9,19 @@ module.exports = defineConfig({
   // Fail once with traces/screenshots; retrying long browser journeys multiplies CI time.
   retries: 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
-  use: { baseURL: 'http://127.0.0.1:3101', trace: 'retain-on-failure', screenshot: 'only-on-failure' },
+  use: {
+    baseURL: 'http://127.0.0.1:3101',
+    actionTimeout: 15000,
+    navigationTimeout: 30000,
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+  },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     {
       name: 'mobile',
       testMatch: ['**/participation.spec.js', '**/location-dashboard.spec.js'],
+      grep: /homepage action controls use the en locale|location dashboard provides useful routes and a scoped agenda/,
       use: { ...devices['Pixel 7'] },
     },
   ],

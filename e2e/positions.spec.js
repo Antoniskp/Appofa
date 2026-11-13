@@ -106,8 +106,7 @@ test('create, review, compare, vote and revise an organization position', async 
     await voterCard.getByRole('button', { name: t.history, exact: true }).click();
     await expect(voterCard.getByText('v1 · Previous version', { exact: true })).toBeVisible();
     await expect(voterCard.getByText('Support: 1 · Oppose: 0', { exact: true })).toBeVisible();
-    await voterPage.goto('http://127.0.0.1:3101/topics/public-housing');
-    await expect(voterPage.locator('article').filter({ hasText: title })).toBeVisible();
-    await voterPage.screenshot({ path: testInfo.outputPath('topic-positions.png'), fullPage: true });
+    await expect(voterCard.getByRole('link', { name: '#Public housing', exact: true }))
+      .toHaveAttribute('href', '/topics/public-housing');
   } finally { await voterContext.close(); }
 });

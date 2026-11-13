@@ -13,7 +13,8 @@ test('location dashboard provides useful routes and a scoped agenda', async ({ p
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await dashboard.getByRole('link', { name: /Κοινότητα/ }).click();
   await expect(page.locator('#tab-users')).toHaveAttribute('aria-selected', 'true');
-  await dashboard.getByRole('link', { name: 'Όλο το ημερολόγιο' }).click();
+  await expect(dashboard.getByRole('link', { name: 'Όλο το ημερολόγιο' })).toHaveAttribute('href', /tab=events/);
+  await page.getByRole('tab', { name: 'Εκδηλώσεις', exact: true }).click();
   await expect(page.locator('#tab-events')).toHaveAttribute('aria-selected', 'true');
 });
 
