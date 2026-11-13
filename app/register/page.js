@@ -85,6 +85,9 @@ function RegisterForm() {
   const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
   const [usernameAvailability, setUsernameAvailability] = useState({ status: 'idle', message: '' });
   const { config: oauthConfig } = useOAuthConfig();
+  const usernameCheckingMessage = t('username_checking');
+  const usernameAvailableMessage = t('username_available');
+  const usernameTakenMessage = t('username_taken');
   const nextDestination = getPendingAuthDestination(searchParams);
   const loginHref = buildAuthPath('/login', nextDestination);
   const registrationOwnsRedirect = useRef(false);
@@ -105,6 +108,7 @@ function RegisterForm() {
   }, [user, authLoading, router, searchParams]);
 
   useEffect(() => {
+    let isCurrent = true;
     const username = formData.username.trim();
     if (username.length < 3) {
       setUsernameAvailability((current) => (
@@ -115,23 +119,31 @@ function RegisterForm() {
       return;
     }
 
-    setUsernameAvailability({ status: 'checking', message: t('username_checking') });
+    setUsernameAvailability((current) => (
+      current.status === 'checking' && current.message === usernameCheckingMessage
+        ? current
+        : { status: 'checking', message: usernameCheckingMessage }
+    ));
     const timeout = window.setTimeout(() => {
       authAPI.checkUsernameAvailability(username)
         .then((res) => {
+          if (!isCurrent) return;
           setUsernameAvailability(
             res?.available
-              ? { status: 'available', message: t('username_available') }
-              : { status: 'taken', message: t('username_taken') }
+              ? { status: 'available', message: usernameAvailableMessage }
+              : { status: 'taken', message: usernameTakenMessage }
           );
         })
         .catch(() => {
-          setUsernameAvailability({ status: 'idle', message: '' });
+          if (isCurrent) setUsernameAvailability({ status: 'idle', message: '' });
         });
     }, USERNAME_CHECK_DELAY_MS);
 
-    return () => window.clearTimeout(timeout);
-  }, [formData.username, t]);
+    return () => {
+      isCurrent = false;
+      window.clearTimeout(timeout);
+    };
+  }, [formData.username, locale, usernameCheckingMessage, usernameAvailableMessage, usernameTakenMessage]);
 
   const passwordScore = useMemo(() => {
     let score = 0;
