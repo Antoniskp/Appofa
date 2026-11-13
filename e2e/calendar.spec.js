@@ -108,15 +108,20 @@ test('moderator rejection supplies private feedback and notifies the author', as
 test('calendar filters survive refresh and browser history', async ({ page }) => {
   await page.goto('/calendar?category=culture&month=2026-10&mode=month');
   await expect(page.getByRole('button', { name: t.month, exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await page.getByRole('button', { name: /^Filters/ }).click();
-  await expect(page.getByLabel(t.category, { exact: true })).toHaveValue('culture');
-  await page.getByLabel(t.category, { exact: true }).selectOption('meeting');
+  const filtersButton = page.getByRole('button', { name: /^Filters/ });
+  await filtersButton.click();
+  await expect(filtersButton).toHaveAttribute('aria-expanded', 'true');
+  const filterPanelId = await filtersButton.getAttribute('aria-controls');
+  const categoryFilter = page.locator(`[id="${filterPanelId}"]`).getByRole('combobox').first();
+  await expect(categoryFilter).toHaveValue('culture');
+  await categoryFilter.selectOption('meeting');
   await expect(page).toHaveURL(/category=meeting/);
   await page.reload();
-  await page.getByRole('button', { name: /^Filters/ }).click();
-  await expect(page.getByLabel(t.category, { exact: true })).toHaveValue('meeting');
+  await filtersButton.click();
+  await expect(filtersButton).toHaveAttribute('aria-expanded', 'true');
+  await expect(categoryFilter).toHaveValue('meeting');
   await page.goBack();
-  await expect(page.getByLabel(t.category, { exact: true })).toHaveValue('culture');
+  await expect(categoryFilter).toHaveValue('culture');
   await page.getByRole('button', { name: t.clearFilters, exact: true }).click();
   await expect(page).not.toHaveURL(/category=/);
   await expect(page.getByRole('button', { name: t.month, exact: true })).toHaveAttribute('aria-pressed', 'true');

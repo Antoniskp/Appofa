@@ -8,7 +8,7 @@ test('location dashboard provides useful routes and a scoped agenda', async ({ p
   await page.goto('/locations/test-municipality');
   const dashboard = page.getByRole('region', { name: 'Η περιοχή με μια ματιά' });
   await expect(dashboard.getByText('Neighbourhood gathering')).toBeVisible();
-  await expect(dashboard.getByRole('link', { name: /Κάμερες/ })).toHaveAttribute('href', '/locations/test-municipality/improve');
+  await expect(dashboard.getByRole('link', { name: /Κάμερες/ })).toHaveAttribute('href', '/cameras');
   await page.screenshot({ path: testInfo.outputPath('location-dashboard.png'), fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await dashboard.getByRole('link', { name: /Κοινότητα/ }).click();

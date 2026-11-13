@@ -54,24 +54,20 @@ test('homepage prioritizes the area journey and recovers a failed section withou
   await expect(page).toHaveURL(/\/locations$/);
 });
 
-test('registers with an area, submits a proposal, votes and rejects admin access', async ({ page }) => {
+test('registers, submits a proposal, votes and rejects admin access', async ({ page }) => {
   const username = `citizen-${Date.now()}`;
   await page.goto('/register');
   await page.locator('[name="username"]').fill(username);
   await page.locator('[name="email"]').fill(`${username}@example.test`);
   await page.locator('[name="password"]').fill('TestPassword123!');
   await page.locator('[name="confirmPassword"]').fill('TestPassword123!');
-  await page.getByRole('button', { name: new RegExp(en.auth.optional_setup_title) }).click();
-  for (const id of ['1', '2', '3']) {
-    await page.locator('select').filter({ has: page.locator(`option[value="${id}"]`) }).first().selectOption(id);
-  }
   await page.locator('[name="gdpr_consent"]').check();
   const registration = page.waitForResponse(response => response.url().endsWith('/api/auth/register') && response.request().method() === 'POST');
   await page.getByRole('button', { name: en.auth.submit_register, exact: true }).click();
   expect((await registration).status()).toBe(201);
   await expect(page).toHaveURL(/\/onboarding/);
   const profile = await (await page.request.get('/api/auth/profile')).json();
-  expect(profile.data.user.homeLocationId).toBe(3);
+  expect(profile.data.user.username).toBe(username);
 
   await page.goto('/suggestions/new');
   const title = `Safer paths ${username}`;

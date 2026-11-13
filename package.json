@@ -9,7 +9,7 @@
     "dev": "nodemon src/index.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
-    "test:ci": "jest --runInBand",
+    "test:ci": "jest --maxWorkers=50%",
     "test:e2e": "playwright test",
     "frontend": "next dev -p 3001",
     "frontend:build": "next build",
