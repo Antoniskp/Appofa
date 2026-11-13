@@ -60,7 +60,8 @@ test('create, review, compare, vote and revise an organization position', async 
     await voterPage.screenshot({ path: testInfo.outputPath('positions-first-screen.png') });
     await expect(voterPage.getByRole('group', { name: t.filters, exact: true })).toHaveCount(1);
     await expect(voterPage.getByRole('combobox', { name: t.topic, exact: true })).toHaveCount(0);
-    await voterPage.getByLabel(t.category, { exact: true }).selectOption({ label: 'Housing' });
+    await voterPage.locator('#position-filter-options').getByRole('combobox').last()
+      .selectOption({ label: 'Housing' });
     let voterCard = voterPage.locator('article').filter({ hasText: title });
     await voterCard.getByRole('button', { name: 'Support 0', exact: true }).click();
     await expect(voterCard.getByRole('button', { name: 'Support 1', exact: true })).toHaveAttribute('aria-pressed', 'true');

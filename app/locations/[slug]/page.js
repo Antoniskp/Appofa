@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { locationAPI, locationSectionAPI, suggestionAPI, geoAPI, candidateRegistrationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -117,6 +117,7 @@ function LocationPageNav({ items }) {
 export default function LocationDetailPage() {
   const tCalendar = useTranslations('calendar');
   const params = useParams();
+  const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { error: toastError, success: toastSuccess } = useToast();
@@ -151,7 +152,7 @@ export default function LocationDetailPage() {
   const handleTabChange = (tab) => {
     const next = new URLSearchParams(searchParams.toString());
     next.set('tab', tab);
-    router.replace(`?${next.toString()}`, { scroll: false });
+    router.replace(`${pathname}?${next.toString()}${window.location.hash}`, { scroll: false });
   };
 
   const { data: location, loading, error, refetch } = useAsyncData(
