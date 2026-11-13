@@ -147,11 +147,14 @@ export default function LocationDetailPage() {
 
   // Derive active tab from URL query param
   const rawTab = searchParams.get('tab');
-  const activeTab = VALID_TABS.includes(rawTab) ? rawTab : DEFAULT_TAB;
+  const [tabOverride, setTabOverride] = useState(null);
+  useEffect(() => setTabOverride(null), [rawTab]);
+  const activeTab = tabOverride || (VALID_TABS.includes(rawTab) ? rawTab : DEFAULT_TAB);
 
   const handleTabChange = (tab) => {
     const next = new URLSearchParams(searchParams.toString());
     next.set('tab', tab);
+    setTabOverride(tab);
     router.replace(`${pathname}?${next.toString()}${window.location.hash}`, { scroll: false });
   };
 
