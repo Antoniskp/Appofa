@@ -53,6 +53,7 @@ const customJestConfig = {
   setupFiles: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    '^next/image$': '<rootDir>/__mocks__/next-image.js',
     '^uuid$': '<rootDir>/__mocks__/uuid.js',
   },
   transformIgnorePatterns: [
