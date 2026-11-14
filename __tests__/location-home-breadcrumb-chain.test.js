@@ -64,12 +64,12 @@ describe('buildLocationBreadcrumb', () => {
 });
 
 describe('shouldShowMainLocationMap', () => {
-  test('hides the main map when mapped children will render the hierarchy map', () => {
+  test('uses the unified explorer when the location has mapped children', () => {
     expect(shouldShowMainLocationMap({
       location: { id: 1, name: 'Greece', lat: 38.5, lng: 23.8 },
       children: [{ id: 2, name: 'Attica', boundary_geojson: { type: 'Polygon', coordinates: [] } }],
       secondaryLoading: false,
-    })).toBe(false);
+    })).toBe(true);
   });
 
   test('hides the main map while child geometry is still loading', () => {

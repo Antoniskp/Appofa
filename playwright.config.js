@@ -20,8 +20,8 @@ module.exports = defineConfig({
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     {
       name: 'mobile',
-      testMatch: ['**/participation.spec.js', '**/location-dashboard.spec.js'],
-      grep: /homepage action controls use the en locale|location dashboard provides useful routes and a scoped agenda/,
+      testMatch: ['**/participation.spec.js', '**/location-dashboard.spec.js', '**/map-explorer.spec.js'],
+      grep: /homepage action controls use the en locale|location dashboard provides useful routes and a scoped agenda|map explorer/,
       use: { ...devices['Pixel 7'] },
     },
   ],

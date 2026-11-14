@@ -13,7 +13,7 @@ process.env.SMTP_PASS = '';
 // Only delivery is stubbed; registration, sessions, permissions and CSRF stay real.
 require('../src/services/mailService').sendMail = async () => ({ messageId: 'local-e2e' });
 const app = require('../src/index');
-const { sequelize, User, Location, LocationLink, Poll, PollOption, Organization, OrganizationMember, PolicyCategory, Topic } = require('../src/models');
+const { sequelize, User, Location, LocationLink, Poll, PollOption, Organization, OrganizationMember, PolicyCategory, Topic, Suggestion } = require('../src/models');
 
 async function start() {
   if (sequelize.getDialect() !== 'sqlite' || sequelize.options.storage !== ':memory:') throw new Error('E2E requires an in-memory database');
@@ -27,7 +27,13 @@ async function start() {
   await Topic.create({ name: 'Public housing', slug: 'public-housing' });
   const country = await Location.create({ id: 1, name: 'Greece', slug: 'greece', code: 'GR', type: 'country' });
   const region = await Location.create({ id: 2, name: 'Attica', slug: 'attica', type: 'prefecture', parent_id: country.id });
-  const town = await Location.create({ id: 3, name: 'Test Municipality', slug: 'test-municipality', type: 'municipality', parent_id: region.id });
+  const town = await Location.create({ id: 3, name: 'Test Municipality', slug: 'test-municipality', type: 'municipality', parent_id: region.id,
+    lat: 37.98, lng: 23.73, boundary_geojson: { type: 'Polygon', coordinates: [[[23.70, 37.96], [23.76, 37.96], [23.76, 38.00], [23.70, 38.00], [23.70, 37.96]]] } });
+  await Suggestion.bulkCreate([
+    { title: 'Broken light on Oak Street', body: 'The street light near the park is not working after sunset.', mapLat: 37.985, mapLng: 23.724, mapIssueType: 'broken_lighting', status: 'open' },
+    { title: 'Rubbish beside the square', body: 'Waste has accumulated beside the neighbourhood square.', mapLat: 37.976, mapLng: 23.740, mapIssueType: 'trash', status: 'under_review' },
+    { title: 'Pothole repaired on Pine Street', body: 'The road surface has been repaired and inspected.', mapLat: 37.982, mapLng: 23.746, mapIssueType: 'pothole', status: 'implemented' },
+  ].map(issue => ({ ...issue, authorId: author.id, locationId: town.id, type: 'problem', visibility: 'public' })));
   const poll = await Poll.create({ id: 1, title: 'Improve our local park', creatorId: author.id, locationId: town.id, voteRestriction: 'anyone', visibility: 'public', status: 'active' });
   await PollOption.bulkCreate([{ id: 1, pollId: poll.id, text: 'More trees', order: 0 }, { id: 2, pollId: poll.id, text: 'More benches', order: 1 }]);
   await LocationLink.create({ location_id: town.id, entity_type: 'poll', entity_id: poll.id });

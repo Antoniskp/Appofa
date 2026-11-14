@@ -13,6 +13,7 @@ router.get('/progress', apiLimiter, proposalProgressController.list);
 router.get('/category-counts', apiLimiter, suggestionController.getCategoryCounts);
 router.get('/recipients', apiLimiter, suggestionController.getRecipients);
 router.get('/nearby', apiLimiter, require('../controllers/nearbySuggestionController').list);
+router.get('/map', apiLimiter, require('../controllers/mapSuggestionController').list);
 router.get('/:id', optionalAuthMiddleware, apiLimiter, suggestionController.getSuggestionById);
 router.get('/:id/solutions', optionalAuthMiddleware, apiLimiter, suggestionController.getSolutions);
 

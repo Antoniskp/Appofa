@@ -18,7 +18,7 @@ import LocationContributionPrompt from '@/components/locations/LocationContribut
 import LocationEditForm from '@/components/locations/LocationEditForm';
 import LocationTabs from '@/components/locations/LocationTabs';
 import CountryFundingBanner from '@/components/locations/CountryFundingBanner';
-import LocationMap from '@/components/locations/LocationMap';
+import LocationMapExplorer from '@/components/locations/LocationMapExplorer';
 import LocationChildrenExplorer from '@/components/locations/LocationChildrenExplorer';
 import CommentsThread from '@/components/comments/CommentsThread';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -79,11 +79,8 @@ export function shouldShowMainLocationMap({ location, children = [], secondaryLo
   const hasOwnGeometry = hasMapGeometry(location);
   const hasChildGeometry = children.some(hasMapGeometry);
 
-  // Parent pages with mapped children already get a richer hierarchy map below.
-  // While child data is loading, wait so the page does not briefly show two map slots.
-  if (secondaryLoading || hasChildGeometry) return false;
-
-  return hasOwnGeometry;
+  if (secondaryLoading) return false;
+  return hasOwnGeometry || hasChildGeometry;
 }
 
 function LocationPageNav({ items }) {
@@ -144,6 +141,8 @@ export default function LocationDetailPage() {
   const [mapIssuePin, setMapIssuePin] = useState(null);
   const [mapIssueForm, setMapIssueForm] = useState(DEFAULT_MAP_ISSUE_FORM);
   const [isSubmittingMapIssue, setIsSubmittingMapIssue] = useState(false);
+  const [isReportingMapIssue, setIsReportingMapIssue] = useState(false);
+  const [mapRefreshKey, setMapRefreshKey] = useState(0);
 
   // Derive active tab from URL query param
   const rawTab = searchParams.get('tab');
@@ -176,6 +175,7 @@ export default function LocationDetailPage() {
         setImageError(false);
         setIsEditing(false);
         setMapIssuePin(null);
+        setIsReportingMapIssue(false);
         setMapIssueForm(DEFAULT_MAP_ISSUE_FORM);
         setFundingData(null);
         setFundingLoaded(false);
@@ -529,6 +529,8 @@ export default function LocationDetailPage() {
       }
 
       setSuggestions((prev) => [response.data, ...prev]);
+      setIsReportingMapIssue(false);
+      setMapRefreshKey(value => value + 1);
       setMapIssuePin(null);
       setMapIssueForm(DEFAULT_MAP_ISSUE_FORM);
       toastSuccess('Local issue posted.');
@@ -574,9 +576,6 @@ export default function LocationDetailPage() {
 
   // Filter out archived polls (single iteration)
   const activePolls = entities.polls.filter(poll => poll.status !== 'archived');
-  const mapIssueSuggestions = suggestions.filter((suggestion) => (
-    suggestion.mapLat != null && suggestion.mapLng != null
-  ));
   const mapSummaryCounts = {
     polls: activePolls.length,
     suggestions: suggestions.length,
@@ -644,6 +643,7 @@ export default function LocationDetailPage() {
     return [...otherSections, merged];
   })();
   const pageNavItems = [
+    ...(showMainLocationMap ? [{ href: '#location-map', label: 'Χάρτης' }] : []),
     { href: '#location-content', label: 'Δραστηριότητα' },
     { href: '#location-roles', label: 'Εκπρόσωποι' },
     { href: '#location-local-info', label: 'Για την περιοχή' },
@@ -707,104 +707,25 @@ export default function LocationDetailPage() {
               loading={secondaryLoading}
             />
 
-            {/* Tabbed content — participation-first placement */}
-            <div id="location-content" className="mb-8 space-y-3 scroll-mt-36">
-              <h2 className="text-lg font-semibold text-gray-900">Συμμετοχή και δραστηριότητα</h2>
-              <LocationTabs
-                activeTab={resolvedActiveTab}
-                onTabChange={handleTabChange}
-                activePolls={activePolls}
-                newsArticles={newsArticles}
-                regularArticles={regularArticles}
-                entities={entities}
-                suggestions={suggestions}
-                candidates={candidates}
-                isAuthenticated={isAuthenticated}
-                locationIdentifier={location.slug || location.id}
-                locationId={location.id}
-                canManageLocations={canManageLocations()}
-                TAB_LABELS={TAB_LABELS}
-                visibleTabs={visibleTabs}
-                loading={secondaryLoading}
-                electionData={{
-                  locationId: location.id,
-                  locationType: location.type,
-                  isAuthenticated,
-                  currentUserId: user?.id ?? null,
-                }}
-              />
-            </div>
-
-            <div id="location-wall" className="mb-8 scroll-mt-36 bg-white rounded-lg shadow-sm p-6">
-              <CommentsThread
-                entityType="location"
-                entityId={location.id}
-                title="Συζήτηση"
-                composerPlaceholder={`Γράψε για ${location.name_local || location.name}…`}
-                emptyMessage="Ξεκίνα μια συζήτηση για την περιοχή."
-              />
-            </div>
-
-            {/* Location Roles — assigned officials for this location */}
-            {location && (
-              <div id="location-roles" className="mb-8 space-y-3 scroll-mt-36">
-                <h2 className="text-lg font-semibold text-gray-900">Εκπρόσωποι και ρόλοι</h2>
-                <LocationRoles
-                  locationId={location.id}
-                  showEmptyState
-                  canManageLocations={canManageLocations()}
-                  onEdit={handleEdit}
-                />
-              </div>
-            )}
-
-            {(
-              <div id="location-local-info" className="mb-8 space-y-3 scroll-mt-36">
-                <h2 className="text-lg font-semibold text-gray-900">Τοπικές πληροφορίες</h2>
-                <LocationContributionPrompt location={location} />
-                <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-600">
-                  {location.wikipedia_url && <a href={location.wikipedia_url} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">Wikipedia ↗</a>}
-                  <a href="#location-map" className="text-blue-700 hover:underline" hidden={!showMainLocationMap}>Χάρτης περιοχής</a>
-                  {!location.hasModerator && <Link href="/become-moderator" className="text-blue-700 hover:underline">Γίνε συντονιστής</Link>}
-                  {location.hasModerator && <span>Συντονιστής: {location.moderatorPreview?.username || 'Διαθέσιμος'}</span>}
-                </div>
-                <details className="text-sm text-gray-500">
-                  <summary className="cursor-pointer py-2">Στοιχεία περιοχής</summary>
-                  {location.code && <p>Κωδικός: {location.code}</p>}
-                  {location.lat != null && location.lng != null && <p>Συντεταγμένες: {location.lat}, {location.lng}</p>}
-                  {location.wikipedia_data_updated_at && <p>Ενημέρωση στοιχείων: {new Date(location.wikipedia_data_updated_at).toLocaleDateString('el-GR')}</p>}
-                </details>
-                {secondaryLoading ? (
-                  <SkeletonLoader type="card" count={2} />
-                ) : (
-                  <>
-                    {mergedBodySections.some(section => section.type === 'webcams') && (
-                      <div id="location-cameras" className="scroll-mt-36">
-                        <LocationSections sections={mergedBodySections.filter(section => section.type === 'webcams')} />
-                      </div>
-                    )}
-                    <LocationSections sections={mergedBodySections.filter(section => section.type !== 'webcams')} />
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Map: own geometry only when the hierarchy explorer will not render a map. */}
+            {/* One explorer for local activity and the area's hierarchy. */}
             {showMainLocationMap && (
               <div id="location-map" className="mb-8 scroll-mt-36">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Χάρτης</h2>
-                <div className="overflow-hidden rounded-lg bg-white shadow-sm lg:grid lg:grid-cols-[minmax(0,1fr)_360px]">
-                  <LocationMap
+                  <LocationMapExplorer
+                    key={location.id}
                     location={location}
+                    childLocations={children}
+                    breadcrumb={breadcrumb}
                     summaryCounts={mapSummaryCounts}
-                    mapIssues={mapIssueSuggestions}
                     pendingIssuePin={mapIssuePin}
                     onMapClick={isAuthenticated ? handleMapIssueMapClick : undefined}
-                    className="h-80 w-full lg:h-full"
-                  />
+                    isAuthenticated={isAuthenticated}
+                    reporting={isReportingMapIssue}
+                    refreshKey={mapRefreshKey}
+                    onReportingChange={(value) => { setIsReportingMapIssue(value); if (!value) setMapIssuePin(null); }}
+                    reportForm={
                   <form
                     onSubmit={handleSubmitMapIssue}
-                    className="space-y-4 border-t border-gray-200 p-4 lg:border-l lg:border-t-0"
+                    className="space-y-4"
                   >
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Τοπικό ζήτημα</p>
@@ -898,7 +819,90 @@ export default function LocationDetailPage() {
                       </LoginLink>
                     )}
                   </form>
+                    }
+                  />
+              </div>
+            )}
+
+            {/* Tabbed content — participation-first placement */}
+            <div id="location-content" className="mb-8 space-y-3 scroll-mt-36">
+              <h2 className="text-lg font-semibold text-gray-900">Συμμετοχή και δραστηριότητα</h2>
+              <LocationTabs
+                activeTab={resolvedActiveTab}
+                onTabChange={handleTabChange}
+                activePolls={activePolls}
+                newsArticles={newsArticles}
+                regularArticles={regularArticles}
+                entities={entities}
+                suggestions={suggestions}
+                candidates={candidates}
+                isAuthenticated={isAuthenticated}
+                locationIdentifier={location.slug || location.id}
+                locationId={location.id}
+                canManageLocations={canManageLocations()}
+                TAB_LABELS={TAB_LABELS}
+                visibleTabs={visibleTabs}
+                loading={secondaryLoading}
+                electionData={{
+                  locationId: location.id,
+                  locationType: location.type,
+                  isAuthenticated,
+                  currentUserId: user?.id ?? null,
+                }}
+              />
+            </div>
+
+            <div id="location-wall" className="mb-8 scroll-mt-36 bg-white rounded-lg shadow-sm p-6">
+              <CommentsThread
+                entityType="location"
+                entityId={location.id}
+                title="Συζήτηση"
+                composerPlaceholder={`Γράψε για ${location.name_local || location.name}…`}
+                emptyMessage="Ξεκίνα μια συζήτηση για την περιοχή."
+              />
+            </div>
+
+            {/* Location Roles — assigned officials for this location */}
+            {location && (
+              <div id="location-roles" className="mb-8 space-y-3 scroll-mt-36">
+                <h2 className="text-lg font-semibold text-gray-900">Εκπρόσωποι και ρόλοι</h2>
+                <LocationRoles
+                  locationId={location.id}
+                  showEmptyState
+                  canManageLocations={canManageLocations()}
+                  onEdit={handleEdit}
+                />
+              </div>
+            )}
+
+            {(
+              <div id="location-local-info" className="mb-8 space-y-3 scroll-mt-36">
+                <h2 className="text-lg font-semibold text-gray-900">Τοπικές πληροφορίες</h2>
+                <LocationContributionPrompt location={location} />
+                <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-600">
+                  {location.wikipedia_url && <a href={location.wikipedia_url} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">Wikipedia ↗</a>}
+                  <a href="#location-map" className="text-blue-700 hover:underline" hidden={!showMainLocationMap}>Χάρτης περιοχής</a>
+                  {!location.hasModerator && <Link href="/become-moderator" className="text-blue-700 hover:underline">Γίνε συντονιστής</Link>}
+                  {location.hasModerator && <span>Συντονιστής: {location.moderatorPreview?.username || 'Διαθέσιμος'}</span>}
                 </div>
+                <details className="text-sm text-gray-500">
+                  <summary className="cursor-pointer py-2">Στοιχεία περιοχής</summary>
+                  {location.code && <p>Κωδικός: {location.code}</p>}
+                  {location.lat != null && location.lng != null && <p>Συντεταγμένες: {location.lat}, {location.lng}</p>}
+                  {location.wikipedia_data_updated_at && <p>Ενημέρωση στοιχείων: {new Date(location.wikipedia_data_updated_at).toLocaleDateString('el-GR')}</p>}
+                </details>
+                {secondaryLoading ? (
+                  <SkeletonLoader type="card" count={2} />
+                ) : (
+                  <>
+                    {mergedBodySections.some(section => section.type === 'webcams') && (
+                      <div id="location-cameras" className="scroll-mt-36">
+                        <LocationSections sections={mergedBodySections.filter(section => section.type === 'webcams')} />
+                      </div>
+                    )}
+                    <LocationSections sections={mergedBodySections.filter(section => section.type !== 'webcams')} />
+                  </>
+                )}
               </div>
             )}
 
@@ -912,14 +916,14 @@ export default function LocationDetailPage() {
               </div>
             )}
 
-            <LocationChildrenExplorer
+            {!showMainLocationMap && <LocationChildrenExplorer
               location={location}
               parent={location.parent}
               siblings={siblings}
               children={children}
               loading={secondaryLoading}
               hideChildrenList
-            />
+            />}
 
           </>
         )}

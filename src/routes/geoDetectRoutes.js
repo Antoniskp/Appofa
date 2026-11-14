@@ -3,6 +3,7 @@ const { apiLimiter } = require('../middleware/rateLimiter');
 const { normalizeIp } = require('../utils/normalizeIp');
 
 const router = express.Router();
+router.get('/search', apiLimiter, require('../controllers/mapAddressController').search);
 
 const COUNTRY_NAMES = {
   GR: 'Greece', CY: 'Cyprus', DE: 'Germany', GB: 'United Kingdom',

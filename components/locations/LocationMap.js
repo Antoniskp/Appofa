@@ -26,7 +26,9 @@
  */
 
 import dynamic from 'next/dynamic';
+import { memo, useMemo } from 'react';
 import { MAP_ISSUE_TYPE_COLORS, MAP_ISSUE_TYPE_LABELS } from '@/lib/constants/mapIssues';
+import { outsideBoundaryMask, normalizeMapBoundary, mapGeometryBounds } from '@/lib/map-utils';
 
 // Dynamic import keeps Leaflet (which needs `window`) out of the SSR bundle.
 // ssr:false is required — Leaflet uses browser APIs at import time.
@@ -35,19 +37,19 @@ const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false }
 // Boundary polygon styles — slightly bolder than the default so the outline is clearly
 // visible on location detail pages.
 const BOUNDARY_STYLE = {
-  color: '#2563eb',
+  color: '#80462f',
   weight: 2,
   opacity: 0.85,
-  fillColor: '#3b82f6',
-  fillOpacity: 0.12,
+  fillColor: '#80462f',
+  fillOpacity: 0.025,
 };
 
 const BOUNDARY_HOVER_STYLE = {
-  color: '#1d4ed8',
+  color: '#80462f',
   weight: 2.5,
   opacity: 1,
-  fillColor: '#3b82f6',
-  fillOpacity: 0.25,
+  fillColor: '#80462f',
+  fillOpacity: 0.045,
 };
 
 const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
@@ -158,7 +160,7 @@ function getMarkersBounds(markers) {
 const GREECE_CENTER = [38.5, 23.8];
 const GREECE_ZOOM = 6;
 
-export default function LocationMap({
+export default memo(function LocationMap({
   location,
   childLocations = [],
   summaryCounts,
@@ -169,10 +171,30 @@ export default function LocationMap({
   scrollWheelZoom = false,
   interactive = true,
   onMapClick,
+  onMarkerHover,
+  onMarkerClick,
+  onMarkersReady,
+  onAreaLayersReady,
+  onViewportChange,
+  selectedIssueId,
+  selectedChildId,
+  focusTarget,
+  viewResetKey,
+  tileMode = 'light',
+  showFullscreenControl = true,
+  issueLabels = MAP_ISSUE_TYPE_LABELS,
+  mapLabel,
 }) {
+  const normalizedBoundary = useMemo(() => location?.boundary_geojson
+    ? normalizeBoundaryGeoJSON(location.boundary_geojson, location.name_local || location.name) : null, [location]);
+  const boundaryBounds = useMemo(() => getBoundaryBounds(normalizedBoundary), [normalizedBoundary]);
+  const childBoundaries = useMemo(() => childLocations.flatMap(child => {
+    const data = normalizeMapBoundary(child.boundary_geojson, child.name_local || child.name);
+    return data?.features.map(feature => ({ ...feature, properties: { ...feature.properties, childId: child.id, name: child.name_local || child.name } })) || [];
+  }), [childLocations]);
   if (!location) return null;
 
-  const { lat, lng, bounding_box, name, name_local, boundary_geojson } = location;
+  const { lat, lng, bounding_box, name, name_local } = location;
   const displayName = name_local || name;
   const normalizedBoundaryColor =
     HEX_COLOR_RE.test(String(location.boundary_color || '').trim())
@@ -183,10 +205,6 @@ export default function LocationMap({
     isValidCoord(lat, -90, 90) && isValidCoord(lng, -180, 180);
 
   // Build polygon layer from boundary_geojson when present and valid.
-  const normalizedBoundary = boundary_geojson
-    ? normalizeBoundaryGeoJSON(boundary_geojson, displayName)
-    : null;
-  const boundaryBounds = normalizedBoundary ? getBoundaryBounds(normalizedBoundary) : null;
 
   const boundaryStyle = normalizedBoundaryColor
     ? {
@@ -213,10 +231,26 @@ export default function LocationMap({
           hoverStyle: boundaryHoverStyle,
           // Don't auto-fit on click — the page already fits on load via bounding_box/center.
           fitBoundsOnClick: false,
-          getTooltip: () => displayName,
+          getTooltip: () => escapeHtml(displayName),
         },
       ]
     : [];
+  if (childBoundaries.length) polygonLayers.push({
+    id: 'child-boundaries', geojson: { type: 'FeatureCollection', features: childBoundaries },
+    style: { color: '#8a8178', weight: 1.3, fillOpacity: 0.015 },
+    styleFeature: feature => ({ color: String(feature.properties.childId) === String(selectedChildId) ? '#80462f' : '#8a8178', weight: String(feature.properties.childId) === String(selectedChildId) ? 2.5 : 1.3, fillOpacity: 0.025 }),
+    hoverStyle: { color: '#80462f', weight: 2.5, fillOpacity: 0.09 },
+    getTooltip: props => escapeHtml(props.name), fitBoundsOnClick: false,
+    onFeatureClick: feature => onMarkerClick?.(`child-${feature.properties.childId}`),
+    onFeatureHover: feature => onMarkerHover?.(feature ? `child-${feature.properties.childId}` : null),
+    getFeatureId: feature => `child-${feature.properties.childId}`,
+    onLayerInit: onAreaLayersReady,
+  });
+  const boundaryMask = outsideBoundaryMask(normalizeMapBoundary(normalizedBoundary));
+  if (boundaryMask) polygonLayers.push({
+    id: 'outside-area', geojson: boundaryMask, interactive: false,
+    style: { stroke: false, fillColor: '#606b70', fillOpacity: tileMode === 'satellite' ? 0.35 : 0.14, fillRule: 'evenodd' },
+  });
 
   const childMarkers = childLocations
     .filter((child) => isValidCoord(child.lat, -90, 90) && isValidCoord(child.lng, -180, 180))
@@ -231,9 +265,9 @@ export default function LocationMap({
         label: childName,
         meta: `${userCount} users${child.moderatorPreview ? ' - moderator assigned' : ''}`,
         href,
-        variant: 'explorer',
+        variant: String(child.id) === String(selectedChildId) ? 'selected' : 'explorer',
         tooltip: escapeHtml(childName),
-        popup: `<div style="min-width:160px"><strong>${escapeHtml(childName)}</strong>${userCount > 0 ? `<div style="font-size:12px;color:#64748b;margin-top:3px">${userCount} users</div>` : ''}${href ? `<a href="${escapeHtml(href)}" style="display:inline-block;margin-top:8px;color:#1d4ed8;font-weight:600;text-decoration:none">Open location</a>` : ''}</div>`,
+        popup: onMarkerClick ? undefined : `<div style="min-width:160px"><strong>${escapeHtml(childName)}</strong>${userCount > 0 ? `<div style="font-size:12px;color:#64748b;margin-top:3px">${userCount} users</div>` : ''}${href ? `<a href="${escapeHtml(href)}" style="display:inline-block;margin-top:8px;color:#1d4ed8;font-weight:600;text-decoration:none">Open location</a>` : ''}</div>`,
       };
     });
 
@@ -241,7 +275,7 @@ export default function LocationMap({
     .filter((issue) => isValidCoord(issue.mapLat, -90, 90) && isValidCoord(issue.mapLng, -180, 180))
     .map((issue) => {
       const issueType = issue.mapIssueType || 'other';
-      const issueLabel = MAP_ISSUE_TYPE_LABELS[issueType] || MAP_ISSUE_TYPE_LABELS.other;
+      const issueLabel = issueLabels[issueType] || issueLabels.other;
       const href = issue.id ? `/suggestions/${issue.id}` : null;
       const title = issue.title || issueLabel;
       const status = issue.status ? String(issue.status).replace('_', ' ') : 'open';
@@ -252,10 +286,11 @@ export default function LocationMap({
         label: title,
         meta: issueLabel,
         href,
-        variant: 'explorer',
+        variant: String(issue.id) === String(selectedIssueId) ? 'selected' : 'explorer',
+        issueType,
         iconColor: MAP_ISSUE_TYPE_COLORS[issueType] || MAP_ISSUE_TYPE_COLORS.other,
         tooltip: escapeHtml(title),
-        popup: `<div style="min-width:180px"><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.04em">${escapeHtml(issueLabel)}</div><strong>${escapeHtml(title)}</strong><div style="font-size:12px;color:#64748b;margin-top:4px">${escapeHtml(status)}${Number.isFinite(Number(issue.score)) ? ` - score ${Number(issue.score)}` : ''}</div>${href ? `<a href="${escapeHtml(href)}" style="display:inline-block;margin-top:8px;color:#1d4ed8;font-weight:600;text-decoration:none">Open issue</a>` : ''}</div>`,
+        popup: onMarkerClick ? undefined : `<div style="min-width:180px"><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.04em">${escapeHtml(issueLabel)}</div><strong>${escapeHtml(title)}</strong><div style="font-size:12px;color:#64748b;margin-top:4px">${escapeHtml(status)}${Number.isFinite(Number(issue.score)) ? ` - score ${Number(issue.score)}` : ''}</div>${href ? `<a href="${escapeHtml(href)}" style="display:inline-block;margin-top:8px;color:#1d4ed8;font-weight:600;text-decoration:none">Open issue</a>` : ''}</div>`,
       };
     });
 
@@ -267,6 +302,7 @@ export default function LocationMap({
         lat: Number(pendingIssuePin.lat),
         lng: Number(pendingIssuePin.lng),
         variant: 'selected',
+        issueType: pendingIssuePin.mapIssueType || 'other',
         iconColor: MAP_ISSUE_TYPE_COLORS[pendingIssuePin.mapIssueType] || MAP_ISSUE_TYPE_COLORS.other,
         tooltip: 'New local issue',
         popup: '<strong>New local issue</strong>',
@@ -274,7 +310,7 @@ export default function LocationMap({
     : [];
 
   // Nothing to render if we have neither valid coords nor a boundary polygon nor child markers.
-  if (!hasValidCoords && !normalizedBoundary && childMarkers.length === 0 && issueMarkers.length === 0 && pendingMarker.length === 0) return null;
+  if (!hasValidCoords && !normalizedBoundary && childMarkers.length === 0 && !childBoundaries.length && issueMarkers.length === 0 && pendingMarker.length === 0) return null;
 
   const hasDefaultCenter =
     isValidCoord(location.map_default_center_lat, -90, 90)
@@ -284,13 +320,15 @@ export default function LocationMap({
     : (
         hasValidCoords
           ? [Number(lat), Number(lng)]
+          : childMarkers.length > 0
+            ? [childMarkers[0].lat, childMarkers[0].lng]
           : issueMarkers.length > 0
             ? [issueMarkers[0].lat, issueMarkers[0].lng]
             : pendingMarker.length > 0
               ? [pendingMarker[0].lat, pendingMarker[0].lng]
               : GREECE_CENTER
       );
-  const zoom = Number.isFinite(Number(location.map_default_zoom))
+  const zoom = location.map_default_zoom != null && Number(location.map_default_zoom) >= 1 && Number(location.map_default_zoom) <= 20
     ? Number(location.map_default_zoom)
     : (hasValidCoords ? 12 : (issueMarkers.length > 0 || pendingMarker.length > 0 ? 14 : GREECE_ZOOM));
   const locationHref = location.slug ? `/locations/${location.slug}` : null;
@@ -305,6 +343,8 @@ export default function LocationMap({
       ? [{
           lat: Number(lat),
           lng: Number(lng),
+          variant: 'explorer',
+          iconColor: '#80462f',
           label: displayName,
           href: locationHref,
           popup: `<div style="min-width:170px"><strong>${escapeHtml(displayName)}</strong>${actionLinks ? `<div style="font-size:12px;margin-top:8px">${actionLinks}</div>` : ''}</div>`,
@@ -314,7 +354,10 @@ export default function LocationMap({
     ...issueMarkers,
     ...pendingMarker,
   ];
-  const initialBounds = boundaryBounds || bounding_box || (markers.length > 1 ? getMarkersBounds(markers) : null);
+  // The overview belongs to the location. Filtering the issue list must not move it.
+  const initialBounds = hasDefaultCenter ? null : boundaryBounds || bounding_box
+    || mapGeometryBounds({ type: 'FeatureCollection', features: childBoundaries })
+    || (childMarkers.length > 1 ? getMarkersBounds(childMarkers) : null);
 
   return (
     <BaseMap
@@ -329,7 +372,15 @@ export default function LocationMap({
       scrollWheelZoom={scrollWheelZoom}
       interactive={interactive}
       onMapClick={onMapClick}
-      showFullscreenControl
+      showFullscreenControl={showFullscreenControl}
+      tileMode={tileMode}
+      onMarkerHover={onMarkerHover}
+      onMarkerClick={onMarkerClick}
+      onMarkersReady={onMarkersReady}
+      onViewportChange={onViewportChange}
+      focusTarget={focusTarget}
+      viewResetKey={viewResetKey}
+      ariaLabel={mapLabel}
     />
   );
-}
+});

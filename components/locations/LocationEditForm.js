@@ -8,7 +8,7 @@ import LocationSectionManager from '@/components/LocationSectionManager';
 import LocationRoleManager from '@/components/LocationRoleManager';
 import LocationModeratorManager from '@/components/locations/LocationModeratorManager';
 import LocationBoundaryGeoJsonField from '@/components/locations/LocationBoundaryGeoJsonField';
-import { locationAPI } from '@/lib/api';
+import { locationAPI, geoAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import { isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
 import { normalizeUploadImage, isHeicFile, UPLOAD_PRESETS } from '@/lib/utils/normalizeUploadImage';
@@ -101,17 +101,18 @@ export default function LocationEditForm({
     if (!query) return;
     setIsSearchingGeo(true);
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`);
-      const results = await response.json();
+      const response = await geoAPI.searchAddress(query, location.id);
+      if (!response?.success) throw new Error('Place search unavailable');
+      const results = response.data;
       const first = results?.[0];
-      if (!first?.lat || !first?.lon) {
+      if (first?.lat == null || first?.lng == null) {
         toastError('No map result found for that place.');
         return;
       }
       onInputChange('lat', String(Number(first.lat).toFixed(6)));
-      onInputChange('lng', String(Number(first.lon).toFixed(6)));
+      onInputChange('lng', String(Number(first.lng).toFixed(6)));
       onInputChange('map_default_center_lat', String(Number(first.lat).toFixed(6)));
-      onInputChange('map_default_center_lng', String(Number(first.lon).toFixed(6)));
+      onInputChange('map_default_center_lng', String(Number(first.lng).toFixed(6)));
       onInputChange('map_default_zoom', String(location.type === 'country' ? 6 : 12));
       toastSuccess('Coordinates updated from place search.');
     } catch {

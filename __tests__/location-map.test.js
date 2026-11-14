@@ -95,6 +95,19 @@ describe('LocationMap', () => {
     expect(container.querySelector('div')).toBeTruthy();
   });
 
+  test('fresh camera objects and issue filtering preserve a user-selected viewport', async () => {
+    const BaseMap = require('../components/map/BaseMap').default;
+    const props = () => ({ center: [38, 23], bounds: { north: 40, south: 35, east: 27, west: 19 }, markers: [] });
+    await act(async () => { root.render(React.createElement(BaseMap, props())); });
+    mockMapInstance.fitBounds.mockClear();
+    mockMapInstance.setView.mockClear();
+    await act(async () => { root.render(React.createElement(BaseMap, props())); });
+    expect(mockMapInstance.fitBounds).not.toHaveBeenCalled();
+    expect(mockMapInstance.setView).not.toHaveBeenCalled();
+    await act(async () => { root.render(React.createElement(BaseMap, { ...props(), viewResetKey: 1 })); });
+    expect(mockMapInstance.fitBounds).toHaveBeenCalledTimes(1);
+  });
+
   test('renders nothing when lat/lng are missing', async () => {
     const location = { id: 2, name: 'Unknown', lat: null, lng: null };
     await act(async () => {

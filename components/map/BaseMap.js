@@ -64,6 +64,7 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { STANDARD_MAP_TILES } from '@/lib/map-tiles';
+import { mapIssueSvg } from '@/lib/map-marker-icons';
 import 'leaflet/dist/leaflet.css';
 
 // Fix Leaflet's bundled default marker icon paths broken by webpack/next.js module resolution.
@@ -153,10 +154,18 @@ const DEFAULT_POLY_HOVER_STYLE = {
 // where the Leaflet mock may not include divIcon.
 const _explorerIcons = {};
 
-function resolveMarkerIcon(variant, iconColor) {
+function resolveMarkerIcon(variant, iconColor, issueType) {
   if (!L.divIcon) {
     // Fallback when Leaflet mock does not provide divIcon (e.g. in jest)
     return DEFAULT_ICON;
+  }
+  if (issueType) {
+    const color = /^#[\da-f]{6}$/i.test(iconColor || '') ? iconColor : '#80462f';
+    return L.divIcon({
+      html: `<span class="map-issue-marker ${variant === 'selected' ? 'is-selected' : variant === 'hovered' ? 'is-hovered' : ''}" style="--marker-color:${color}">${mapIssueSvg(issueType)}</span>`,
+      className: 'map-issue-hitbox', iconSize: [44, 44], iconAnchor: [22, 22],
+      popupAnchor: [0, -20], tooltipAnchor: [0, -20],
+    });
   }
   if (iconColor) {
     const cacheKey = `${variant || 'default'}:${iconColor}`;
@@ -219,7 +228,7 @@ function resolveClusterIcon(count) {
   if (!L.divIcon) return DEFAULT_ICON;
   const size = count >= 100 ? 44 : count >= 10 ? 38 : 32;
   return L.divIcon({
-    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#0f172a;color:#fff;border:2px solid #fff;box-shadow:0 2px 8px rgba(15,23,42,0.35);font-size:13px;font-weight:700">${count}</div>`,
+    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#80462f;color:#fff;border:3px solid #fff;box-shadow:0 2px 8px rgba(15,23,42,0.2);font-size:13px;font-weight:700">${count}</div>`,
     className: '',
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
@@ -310,6 +319,11 @@ export default function BaseMap({
   onMarkersReady,
   focusTarget,
   resizeKey,
+  viewResetKey = 0,
+  onViewportChange,
+  controlLabels = {},
+  ariaLabel = 'Interactive map',
+  showResetControl = false,
 }) {
   const initialMapOptionsRef = useRef({ scrollWheelZoom, interactive, tileMode });
   const mapContainerRef = useRef(null);
@@ -327,7 +341,10 @@ export default function BaseMap({
   const onMarkersReadyRef = useRef(onMarkersReady);
   onMarkersReadyRef.current = onMarkersReady;
   const tileLayerRef = useRef(null);
+  const onViewportChangeRef = useRef(onViewportChange);
+  onViewportChangeRef.current = onViewportChange;
   const [isExpanded, setIsExpanded] = useState(false);
+  const [localResetKey, setLocalResetKey] = useState(0);
 
   // Initialise the map once on mount
   useEffect(() => {
@@ -346,6 +363,20 @@ export default function BaseMap({
     });
 
     mapInstanceRef.current = map;
+    const reportViewport = () => {
+      const currentBounds = map.getBounds?.();
+      if (!currentBounds) return;
+      const west = currentBounds.getWest();
+      const east = currentBounds.getEast();
+      onViewportChangeRef.current?.({
+        north: Math.min(90, currentBounds.getNorth()), south: Math.max(-90, currentBounds.getSouth()),
+        west: east - west >= 360 ? -180 : ((west + 180) % 360 + 360) % 360 - 180,
+        east: east - west >= 360 ? 180 : ((east + 180) % 360 + 360) % 360 - 180,
+      });
+    };
+    map.on('moveend', reportViewport);
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => map.invalidateSize?.()) : null;
+    resizeObserver?.observe(mapContainerRef.current);
 
     // Tile layer — shared OpenStreetMap defaults, or the selected satellite layer.
     // Attribution is required by both OSM (ODbL) and CARTO's terms of service.
@@ -369,6 +400,7 @@ export default function BaseMap({
     polyLayersGroupRef.current = L.layerGroup().addTo(map);
 
     return () => {
+      resizeObserver?.disconnect();
       map.remove();
       mapInstanceRef.current = null;
       markersLayerRef.current = null;
@@ -377,6 +409,13 @@ export default function BaseMap({
       tileLayerRef.current = null;
     };
   }, []);  // Empty deps: map is initialised once; scrollWheelZoom/interactive aren't reactive
+
+  useEffect(() => {
+    if (!isExpanded) return;
+    const handleKey = event => { if (event.key === 'Escape') setIsExpanded(false); };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isExpanded]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -396,24 +435,34 @@ export default function BaseMap({
     return () => clearTimeout(timeout);
   }, [isExpanded, resizeKey]);
 
-  // Sync bounds / center / zoom whenever they change
+  // Compare camera values, not newly allocated arrays/objects. Hover and filtering
+  // must never return the camera to the overview.
+  const centerLat = bounds ? null : center?.[0];
+  const centerLng = bounds ? null : center?.[1];
+  const overviewZoom = bounds ? null : zoom;
+  const north = bounds?.north, south = bounds?.south, east = bounds?.east, west = bounds?.west;
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
-    const leafletBounds = boundingBoxToLeaflet(bounds);
+    const leafletBounds = boundingBoxToLeaflet({ north, south, east, west });
     if (leafletBounds) {
-      map.fitBounds(leafletBounds, { padding: [20, 20] });
-    } else if (center) {
-      map.setView(center, zoom);
+      map.fitBounds(leafletBounds, { padding: [32, 32], maxZoom: 16 });
+    } else if (centerLat != null && centerLng != null) {
+      map.setView([centerLat, centerLng], overviewZoom);
     }
-  }, [bounds, center, zoom]);
+  }, [north, south, east, west, centerLat, centerLng, overviewZoom, viewResetKey, localResetKey]);
 
   // Explicit camera selection is separate from hover and overall bounds.
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map || !focusTarget) return;
     map.invalidateSize?.();
-    map.setView([focusTarget.lat, focusTarget.lng], focusTarget.zoom ?? 15);
+    if (focusTarget.bounds) {
+      const targetBounds = boundingBoxToLeaflet(focusTarget.bounds);
+      if (targetBounds) map.fitBounds(targetBounds, { padding: [40, 40], maxZoom: focusTarget.zoom ?? 15 });
+    } else if (focusTarget.lat != null && focusTarget.lng != null) {
+      map.setView([focusTarget.lat, focusTarget.lng], focusTarget.zoom ?? 15);
+    }
   }, [focusTarget]);
 
   // Sync markers whenever the markers array changes
@@ -427,9 +476,9 @@ export default function BaseMap({
 
     const map = mapInstanceRef.current;
 
-    function renderSingleMarker({ lat, lng, popup, tooltip, id, variant, iconColor }) {
-      const icon = resolveMarkerIcon(variant, iconColor);
-      const marker = L.marker([lat, lng], { icon }).addTo(layer);
+    function renderSingleMarker({ lat, lng, popup, tooltip, label, id, variant, iconColor, issueType }) {
+      const icon = resolveMarkerIcon(variant, iconColor, issueType);
+      const marker = L.marker([lat, lng], { icon, title: label || '', alt: label || 'Map marker', bubblingMouseEvents: false }).addTo(layer);
       if (popup) {
         marker.bindPopup(popup, { maxWidth: 260 });
       }
@@ -494,7 +543,9 @@ export default function BaseMap({
       idToMarker.clear();
 
       if (clusterMarkers) {
-        getMarkerClusters(markers, map, clusterRadius, zoom).forEach(renderCluster);
+        const clustered = markers.filter(marker => marker.variant !== 'selected');
+        getMarkerClusters(clustered, map, clusterRadius, zoom).forEach(renderCluster);
+        markers.filter(marker => marker.variant === 'selected').forEach(renderSingleMarker);
       } else {
         markers.forEach(renderSingleMarker);
       }
@@ -512,12 +563,12 @@ export default function BaseMap({
         highlight: (id) => {
           const marker = idToMarker.get(id);
           const markerDef = markers.find((item) => item.id === id);
-          if (marker) marker.setIcon(resolveMarkerIcon('hovered', markerDef?.iconColor));
+          if (marker) marker.setIcon(resolveMarkerIcon('hovered', markerDef?.iconColor, markerDef?.issueType));
         },
         unhighlight: (id, variant = 'default') => {
           const marker = idToMarker.get(id);
           const markerDef = markers.find((item) => item.id === id);
-          if (marker) marker.setIcon(resolveMarkerIcon(variant, markerDef?.iconColor));
+          if (marker) marker.setIcon(resolveMarkerIcon(variant, markerDef?.iconColor, markerDef?.issueType));
         },
       });
     }
@@ -578,6 +629,8 @@ export default function BaseMap({
           return nextStyle && typeof nextStyle === 'object' ? nextStyle : baseStyle;
         },
 
+        interactive: layerDef.interactive !== false,
+        pane: layerDef.pane || 'overlayPane',
         onEachFeature: (feature, featureLayer) => {
           const props = feature.properties || {};
 
@@ -673,9 +726,11 @@ export default function BaseMap({
     : `relative ${className}`;
 
   return (
-    <div className={wrapperClassName}>
+    <div className={`${wrapperClassName} app-map ${tileMode === 'satellite' ? 'app-map-satellite' : 'app-map-light'}`}>
       <div
         ref={mapContainerRef}
+        role="region"
+        aria-label={ariaLabel}
         className={isExpanded ? 'h-full w-full rounded-lg overflow-hidden' : 'h-full w-full'}
       />
       {showFullscreenControl && (
@@ -685,9 +740,13 @@ export default function BaseMap({
           className="absolute right-3 top-3 z-[1000] rounded-md border border-gray-200 bg-white/95 px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
           aria-pressed={isExpanded}
         >
-          {isExpanded ? 'Close map' : 'Expand map'}
+          {isExpanded ? (controlLabels.close || 'Close map') : (controlLabels.expand || 'Expand map')}
         </button>
       )}
+      {showResetControl && <button type="button" onClick={() => setLocalResetKey(value => value + 1)}
+        className="absolute right-3 top-14 z-[1000] rounded-md border border-gray-200 bg-white/95 px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50">
+        {controlLabels.reset || 'Reset view'}
+      </button>}
     </div>
   );
 }

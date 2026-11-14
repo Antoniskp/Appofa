@@ -23,6 +23,30 @@ body {
 }
 
 html { scroll-behavior: smooth; scroll-padding-top: 2rem; }
+
+/* A quiet shared basemap keeps civic activity and area boundaries in front. */
+.app-map .leaflet-container { background: #e7e8e5; font-family: inherit; }
+.app-map-light .leaflet-tile-pane { filter: grayscale(1) saturate(0) contrast(.78) brightness(1.13); }
+.app-map .leaflet-control-zoom { border: 1px solid #dcd8d0 !important; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px #25262712; }
+.app-map .leaflet-control-zoom a { color: #525452; width: 34px; height: 34px; line-height: 34px; }
+.app-map .leaflet-control-attribution { background: #ffffffdf; font-size: 9px; }
+.map-issue-hitbox { display: flex; align-items: center; justify-content: center; background: transparent; border: 0; }
+.map-issue-marker { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 2px solid #fff; border-radius: 50%; color: var(--marker-color); background: color-mix(in srgb, var(--marker-color) 12%, white); box-shadow: 0 2px 6px #25262730, 0 0 0 1px color-mix(in srgb, var(--marker-color) 45%, white); transition: transform .15s, box-shadow .15s; }
+.map-issue-marker svg { width: 20px; height: 20px; }
+.map-issue-marker.is-hovered, .map-issue-marker.is-selected { transform: scale(1.16); box-shadow: 0 2px 8px #25262730, 0 0 0 5px color-mix(in srgb, var(--marker-color) 25%, transparent); }
+.map-issue-marker.is-selected { color: white; background: var(--marker-color); }
+.map-picking .leaflet-container { cursor: crosshair; }
+.map-control { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; border: 1px solid var(--border); border-radius: 10px; background: white; color: #62645f; }
+.map-control:hover { background: var(--surface-muted); color: var(--brand); }
+.map-results { height: 100%; }
+.discovery-map .leaflet-top.leaflet-left { top: 48px; }
+@media (max-width: 767px) {
+  .map-results { height: min(var(--sheet-height), 85%); border-radius: 18px 18px 0 0; box-shadow: 0 -4px 20px #25262712; }
+  .map-explorer-canvas { bottom: min(var(--sheet-height), 85%); }
+  .map-explorer .leaflet-bottom.leaflet-right { top: 0; bottom: auto; max-width: 65%; }
+  .map-explorer .leaflet-control-attribution { text-align: right; }
+  .map-layer-switch { bottom: 12px; }
+}
 h1, h2, h3 { text-wrap: balance; }
 a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 2px solid #955438; outline-offset: 4px; }

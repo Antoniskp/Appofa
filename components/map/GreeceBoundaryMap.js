@@ -546,7 +546,6 @@ export default memo(function GreeceBoundaryMap({
     const props = featureOrNull.properties || {};
     const linkedLocation = resolveLocationFromFeatureProps(props, locationLookup);
     if (onLocationHover) onLocationHover(linkedLocation?.id ?? null);
-    setSelectedRegion(buildRegionCardData(props, linkedLocation));
   }, [locationLookup, onLocationHover]);
 
   const showLocationCard = useCallback((locationId) => {
@@ -600,6 +599,7 @@ export default memo(function GreeceBoundaryMap({
         fitBoundsOnClick: true,
         onFeatureClick: handleFeatureClick,
         onFeatureHover: handleFeatureHover,
+        getTooltip: props => String(props.name || '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]),
         getFeatureId: (feature) => getLocationFeatureKey(feature.properties || {}),
         onLayerInit,
       },
@@ -627,7 +627,7 @@ export default memo(function GreeceBoundaryMap({
   if (useFallback && !fallbackGeoData) return <Skeleton />;
 
   return (
-    <div className={`relative ${className || 'h-[420px] w-full rounded-xl overflow-hidden'}`}>
+    <div className={`discovery-map relative ${className || 'h-[420px] w-full rounded-xl overflow-hidden'}`}>
       <div className="absolute left-3 top-3 z-[1000] flex flex-wrap gap-1 rounded-lg border border-gray-200 bg-white/95 p-1 shadow-sm">
         {[
           { id: 'activity', label: t('map_activity') },
@@ -638,6 +638,7 @@ export default memo(function GreeceBoundaryMap({
           <button
             key={mode.id}
             type="button"
+            aria-pressed={layerMode === mode.id}
             onClick={() => setLayerMode(mode.id)}
             className={`rounded-md px-2 py-1 text-xs font-semibold transition ${layerMode === mode.id ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
           >
@@ -649,14 +650,15 @@ export default memo(function GreeceBoundaryMap({
         center={GREECE_CENTER}
         zoom={GREECE_ZOOM}
         markers={markers}
-        polygonLayers={polygonLayers}
+        polygonLayers={layerMode === 'light' ? [] : polygonLayers}
         className="h-full w-full"
         scrollWheelZoom={false}
         interactive={true}
         tileMode={layerMode === 'satellite' ? 'satellite' : 'political'}
         showFullscreenControl
+        showResetControl
+        controlLabels={{ reset: t('map_reset'), expand: t('map_expand'), close: t('map_close') }}
         onMarkerHover={(idOrNull) => {
-          if (idOrNull != null) showLocationCard(idOrNull);
           if (onMarkerHover) onMarkerHover(idOrNull);
         }}
         onMarkerClick={(id) => showLocationCard(id)}
