@@ -6,7 +6,8 @@
  * - ListPageToolbar renders search, filter, and action slots
  * - Filter controls expand BELOW the toggle button (not inline/sideways)
  * - The action button remains accessible regardless of filter state
- * - Civic-questions, polls, and suggestions pages import the shared toolbar
+ * - Civic-questions controls keep filters separate from search, sort, and creation
+ * - Polls and suggestions pages import the shared toolbar
  */
 
 const React = require('react');
@@ -25,6 +26,18 @@ jest.mock('next/link', () => {
       React.createElement('a', { href, ...props }, children),
   };
 });
+
+jest.mock('@/lib/auth-context', () => ({
+  useAuth: () => ({ user: { id: 1 } }),
+}));
+
+jest.mock('@/lib/api', () => ({
+  civicQuestionAPI: {
+    getFeatured: jest.fn(),
+    getCategories: jest.fn(),
+    getAll: jest.fn(),
+  },
+}));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -356,19 +369,73 @@ describe('FilterBar expanded-below layout', () => {
   });
 });
 
+describe('civic-questions page toolbar', () => {
+  const CivicQuestionsPage = require('../app/civic-questions/page').default;
+  const { civicQuestionAPI } = require('@/lib/api');
+  let container;
+  let root;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    civicQuestionAPI.getFeatured.mockResolvedValue({ success: true, data: null });
+    civicQuestionAPI.getCategories.mockResolvedValue({ success: true, data: ['Energy', 'Transport'] });
+    civicQuestionAPI.getAll.mockResolvedValue({ success: true, data: [], pagination: { total: 0, totalPages: 1 } });
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    root = createRoot(container);
+  });
+
+  afterEach(async () => {
+    await act(async () => { root.unmount(); });
+    container.remove();
+  });
+
+  test('expands filters separately while keeping search, sorting, and creation available', async () => {
+    await act(async () => { root.render(React.createElement(CivicQuestionsPage)); });
+    const search = container.querySelector('input[name="search"]');
+    const sort = container.querySelector('select[name="sortBy"]');
+    const toggle = container.querySelector('button[aria-controls="civic-filters"]');
+    const create = container.querySelector('a[href="/civic-questions/create"]');
+    expect(search).toBeTruthy();
+    expect(sort).toBeTruthy();
+    expect(create).toBeTruthy();
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(container.querySelector('#civic-filters')).toBeNull();
+
+    await act(async () => { toggle.click(); });
+    const panel = container.querySelector(`#${toggle.getAttribute('aria-controls')}`);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(toggle.contains(panel)).toBe(false);
+    expect(toggle.compareDocumentPosition(panel) & document.defaultView.Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    for (const control of [search, sort, create]) {
+      expect(control.isConnected).toBe(true);
+      expect(panel.contains(control)).toBe(false);
+    }
+
+    const category = panel.querySelector('select[name="category"]');
+    await act(async () => {
+      category.value = 'Energy';
+      category.dispatchEvent(new document.defaultView.Event('change', { bubbles: true }));
+    });
+    expect(civicQuestionAPI.getAll).toHaveBeenLastCalledWith(expect.objectContaining({ category: 'Energy' }));
+
+    await act(async () => { toggle.click(); });
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(container.querySelector('#civic-filters')).toBeNull();
+    await act(async () => {
+      sort.value = 'most_voted';
+      sort.dispatchEvent(new document.defaultView.Event('change', { bubbles: true }));
+    });
+    expect(civicQuestionAPI.getAll).toHaveBeenLastCalledWith(expect.objectContaining({ category: 'Energy', sortBy: 'most_voted' }));
+    expect(create.isConnected).toBe(true);
+    await act(async () => { toggle.click(); });
+    expect(container.querySelector('select[name="category"]').value).toBe('Energy');
+  });
+});
+
 // ── Smoke tests: pages import ListPageToolbar ─────────────────────────────────
 
 describe('list-page toolbar adoption smoke tests', () => {
-  test('civic-questions page module imports ListPageToolbar', () => {
-    const fs = require('fs');
-    const src = fs.readFileSync(
-      require('path').join(__dirname, '../app/civic-questions/page.js'),
-      'utf8',
-    );
-    expect(src).toContain('ListPageToolbar');
-    expect(src).toContain("import ListPageToolbar from '@/components/ui/ListPageToolbar'");
-  });
-
   test('polls page module imports ListPageToolbar', () => {
     const fs = require('fs');
     const src = fs.readFileSync(
@@ -396,16 +463,4 @@ describe('list-page toolbar adoption smoke tests', () => {
     expect(src).toContain("export { default as ListPageToolbar }");
   });
 
-  test('civic-questions page no longer uses raw flex toolbar div', () => {
-    const fs = require('fs');
-    const src = fs.readFileSync(
-      require('path').join(__dirname, '../app/civic-questions/page.js'),
-      'utf8',
-    );
-    // The old broken pattern had all three siblings (search + FilterBar + Link)
-    // in a single flex-row div. Verify it's been replaced by ListPageToolbar.
-    expect(src).not.toContain(
-      '"flex flex-col sm:flex-row sm:items-center gap-3 mb-8"',
-    );
-  });
 });
