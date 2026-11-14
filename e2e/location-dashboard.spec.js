@@ -1,15 +1,24 @@
 /* global document, window */
 const { test, expect } = require('@playwright/test');
 
+const calendarResponse = data => ({
+  success: true,
+  data,
+  pagination: { page: 1, totalPages: data.length ? 1 : 0, total: data.length },
+});
+
 test('location dashboard provides useful routes and a scoped agenda', async ({ page, context }, testInfo) => {
   await context.addInitScript(() => localStorage.setItem('appofa_country_entry_decision_v1', 'stay'));
-  await page.route('**/api/calendar?**', route => route.fulfill({ json: {
-    success: true,
-    data: [
-      { id: 'event-1', title: 'Neighbourhood gathering', start: '2026-10-25T10:00:00Z', end: '2026-10-25T11:00:00Z', timezone: 'Europe/Athens', href: '/events/1', status: 'published' },
-    ],
-    pagination: { page: 1, totalPages: 1, total: 1 },
-  } }));
+  const event = {
+    id: 'event-1',
+    title: 'Neighbourhood gathering',
+    start: '2026-10-25T10:00:00Z',
+    end: '2026-10-25T11:00:00Z',
+    timezone: 'Europe/Athens',
+    href: '/events/1',
+    status: 'published',
+  };
+  await page.route('**/api/calendar?**', route => route.fulfill({ json: calendarResponse([event]) }));
   await page.goto('/locations/test-municipality');
   const dashboard = page.getByRole('region', { name: 'Η περιοχή με μια ματιά' });
   await expect(dashboard.getByText('Neighbourhood gathering')).toBeVisible();
@@ -28,7 +37,7 @@ test('agenda distinguishes failures from an empty calendar and supports retry', 
   let failing = true;
   await page.route('**/api/calendar?**', route => route.fulfill(failing
     ? { status: 503, json: { success: false, message: 'Unavailable' } }
-    : { json: { success: true, data: [] } }));
+    : { json: calendarResponse([]) }));
   await page.goto('/locations/test-municipality');
   const dashboard = page.getByRole('region', { name: 'Η περιοχή με μια ματιά' });
   await expect(dashboard.getByText('Το ημερολόγιο δεν είναι διαθέσιμο αυτή τη στιγμή.')).toBeVisible();

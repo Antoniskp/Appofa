@@ -2,7 +2,11 @@
 const { test, expect } = require('@playwright/test');
 const t = require('../messages/en.json').positions;
 const auth = require('../messages/en.json').auth;
-test.setTimeout(180000);
+
+const voteButton = (card, label, count) => card.getByRole('button', {
+  name: `${label} ${count}`,
+  exact: true,
+});
 
 test.beforeEach(async ({ context }) => {
   await context.addCookies([{ name: 'NEXT_LOCALE', value: 'en', domain: '127.0.0.1', path: '/' }]);
@@ -43,18 +47,16 @@ test('create, review, compare, vote and revise an organization position', async 
   await card.getByRole('button', { name: t.publish, exact: true }).click();
   await expect(card.getByText('Published · v1', { exact: true })).toBeVisible();
 
-  const voterContext = await browser.newContext({ viewport: testInfo.project.use.viewport });
+  const voterContext = await browser.newContext({
+    baseURL: 'http://127.0.0.1:3101',
+    viewport: testInfo.project.use.viewport,
+  });
   try {
     await voterContext.addCookies([{ name: 'NEXT_LOCALE', value: 'en', domain: '127.0.0.1', path: '/' }]);
     await voterContext.addInitScript(() => localStorage.setItem('appofa_country_entry_decision_v1', 'stay'));
     const voterPage = await voterContext.newPage();
-    // newContext does not inherit baseURL.
-    await voterPage.goto('http://127.0.0.1:3101/login');
-    await voterPage.locator('[name="email"]').fill('contributor@example.test');
-    await voterPage.locator('[name="password"]').fill('TestPassword123!');
-    await voterPage.getByRole('button', { name: auth.submit_login, exact: true }).click();
-    await expect(voterPage).not.toHaveURL(/\/login/);
-    await voterPage.goto('http://127.0.0.1:3101/positions');
+    await login(voterPage, 'contributor@example.test');
+    await voterPage.goto('/positions');
     await dismissCookies(voterPage);
     await expect(voterPage.getByRole('heading', { name: title, exact: true }).first()).toBeVisible();
     await voterPage.screenshot({ path: testInfo.outputPath('positions-first-screen.png') });
@@ -64,17 +66,18 @@ test('create, review, compare, vote and revise an organization position', async 
     await expect(voterPage.getByRole('radio', { name: t.view_all, exact: true })).toBeChecked();
     let voterCard = voterPage.locator('article').filter({ hasText: title });
     await expect(voterCard.getByText('Housing', { exact: true })).toBeVisible();
-    await voterCard.getByRole('button', { name: `${t.support} 0`, exact: true }).click();
-    await expect(voterCard.getByRole('button', { name: `${t.support} 1`, exact: true })).toHaveAttribute('aria-pressed', 'true');
-    await voterCard.getByRole('button', { name: `${t.oppose} 0`, exact: true }).click();
-    await expect(voterCard.getByRole('button', { name: `${t.oppose} 1`, exact: true })).toHaveAttribute('aria-pressed', 'true');
-    await voterCard.getByRole('button', { name: `${t.oppose} 1`, exact: true }).click();
+    await voteButton(voterCard, t.support, 0).click();
+    await expect(voteButton(voterCard, t.support, 1)).toHaveAttribute('aria-pressed', 'true');
+    await voteButton(voterCard, t.oppose, 0).click();
+    await expect(voteButton(voterCard, t.oppose, 1)).toHaveAttribute('aria-pressed', 'true');
+    await voteButton(voterCard, t.oppose, 1).click();
     await expect(voterCard.getByText(t.no_votes, { exact: true })).toBeVisible();
-    await voterCard.getByRole('button', { name: `${t.support} 0`, exact: true }).click();
-    await expect(voterCard.getByRole('button', { name: `${t.support} 1`, exact: true })).toBeVisible();
+    await voteButton(voterCard, t.support, 0).click();
+    await expect(voteButton(voterCard, t.support, 1)).toBeVisible();
     const positionHref = await voterCard.getByRole('link', { name: title, exact: true }).getAttribute('href');
+    expect(positionHref).toMatch(/^\/positions\/\d+$/);
     const detailPage = await voterContext.newPage();
-    await detailPage.goto('http://127.0.0.1:3101' + positionHref);
+    await detailPage.goto(positionHref);
     await expect(detailPage).toHaveURL(/\/positions\/\d+$/);
     await expect(detailPage.getByText(t.low_participation, { exact: true })).toBeVisible();
     await expect(detailPage.getByText(t.approval_percent.replace('{percent}', '100'), { exact: true })).toHaveCount(0);

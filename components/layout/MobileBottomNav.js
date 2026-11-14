@@ -98,32 +98,34 @@ export default function MobileBottomNav() {
   // â”€â”€ Shared styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const tabClass = (active) =>
     [
-      'flex flex-col items-center justify-center gap-0.5 flex-1 min-h-[44px] py-1 text-[11px] font-medium transition-colors',
-      active ? 'text-blue-700' : 'text-gray-500 hover:text-blue-600',
+      'relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 min-h-[44px] rounded-xl py-1 text-[10px] font-medium transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-700',
+      active ? 'bg-blue-50 text-blue-800' : 'text-gray-600 hover:bg-gray-50 hover:text-blue-700',
     ].join(' ');
 
   const iconClass = (active) =>
-    ['h-6 w-6 transition-colors', active ? 'text-blue-700' : 'text-gray-500'].join(' ');
+    ['h-5 w-5 transition-colors', active ? 'text-blue-800' : 'text-gray-600'].join(' ');
+
+  const tabLabelClass = 'max-w-full whitespace-nowrap leading-tight';
 
   return (
     <>
       {/* â”€â”€ Fixed bottom bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <nav
         aria-label={t('bottom_nav_aria')}
-        className="md:hidden fixed inset-x-0 bottom-0 z-30 bg-white border-t border-seafoam"
+        className="md:hidden fixed inset-x-0 bottom-0 z-30 border-t border-seafoam bg-white/95 shadow-[0_-4px_16px_rgba(15,23,42,0.06)] backdrop-blur"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="flex items-stretch h-16">
           {/* Home */}
-          <Link href="/" aria-label={t('bottom_home')} className={tabClass(isHomeActive)}>
+          <Link href="/" aria-label={t('bottom_home')} aria-current={isHomeActive ? 'page' : undefined} className={tabClass(isHomeActive)}>
             <HomeIcon className={iconClass(isHomeActive)} aria-hidden="true" />
-            <span aria-hidden="true">{t('bottom_home')}</span>
+            <span className={tabLabelClass} aria-hidden="true">{t('bottom_home')}</span>
           </Link>
 
           {/* Explore */}
-          <Link href="/news" aria-label={t('bottom_explore')} className={tabClass(isExploreActive)}>
+          <Link href="/news" aria-label={t('bottom_explore')} aria-current={isExploreActive ? 'page' : undefined} className={tabClass(isExploreActive)}>
             <NewspaperIcon className={iconClass(isExploreActive)} aria-hidden="true" />
-            <span aria-hidden="true">{t('bottom_explore')}</span>
+            <span className={tabLabelClass} aria-hidden="true">{t('bottom_explore')}</span>
           </Link>
 
           {/* Participate â€“ centre action */}
@@ -134,7 +136,7 @@ export default function MobileBottomNav() {
             aria-expanded={sheetOpen}
             aria-haspopup="dialog"
             onClick={() => setSheetOpen(true)}
-            className="flex flex-col items-center justify-center gap-0.5 flex-1 min-h-[44px] py-1 transition-colors focus-visible:outline-none"
+            className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 min-h-[44px] rounded-xl py-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-700"
           >
             <span
               className={[
@@ -148,7 +150,7 @@ export default function MobileBottomNav() {
             </span>
             <span
               className={[
-                'text-[11px] font-semibold transition-colors',
+                'text-[10px] font-semibold leading-tight transition-colors',
                 isParticipateActive ? 'text-blue-700' : 'text-blue-600',
               ].join(' ')}
               aria-hidden="true"
@@ -161,12 +163,12 @@ export default function MobileBottomNav() {
           {loading ? (
             <div className={tabClass(false)} aria-hidden="true">
               <MapPinIcon className="h-6 w-6 text-gray-300" />
-              <span>{t('bottom_my_area')}</span>
+              <span className={tabLabelClass}>{t('bottom_my_area')}</span>
             </div>
           ) : (
-            <Link href={myAreaHref} aria-label={t('bottom_my_area')} className={tabClass(isMyAreaActive)}>
+            <Link href={myAreaHref} aria-label={t('bottom_my_area')} aria-current={isMyAreaActive ? 'page' : undefined} className={tabClass(isMyAreaActive)}>
               <MapPinIcon className={iconClass(isMyAreaActive)} aria-hidden="true" />
-              <span aria-hidden="true">{t('bottom_my_area')}</span>
+              <span className={tabLabelClass} aria-hidden="true">{t('bottom_my_area')}</span>
             </Link>
           )}
 
@@ -174,12 +176,12 @@ export default function MobileBottomNav() {
           {loading ? (
             <div className={tabClass(false)} aria-hidden="true">
               <UserCircleIcon className="h-6 w-6 text-gray-300" />
-              <span>{t('bottom_you')}</span>
+              <span className={tabLabelClass}>{t('bottom_you')}</span>
             </div>
           ) : user ? (
-            <Link href="/profile" aria-label={t('bottom_you')} className={tabClass(isYouActive)}>
+            <Link href="/profile" aria-label={t('bottom_you')} aria-current={isYouActive ? 'page' : undefined} className={tabClass(isYouActive)}>
               <UserCircleIcon className={iconClass(isYouActive)} aria-hidden="true" />
-              <span aria-hidden="true">{t('bottom_you')}</span>
+              <span className={tabLabelClass} aria-hidden="true">{t('bottom_you')}</span>
             </Link>
           ) : (
             <LoginLink aria-label={t('bottom_you')} className={tabClass(false)}>
@@ -205,8 +207,8 @@ export default function MobileBottomNav() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="participate-sheet-title"
-            className="md:hidden fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-xl"
-            style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}
+            className="md:hidden fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-2xl bg-white shadow-xl"
+            style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' }}
           >
             {/* Drag handle */}
             <div className="flex justify-center pt-3 pb-1">
@@ -226,7 +228,7 @@ export default function MobileBottomNav() {
                   ref={closeButtonRef}
                   type="button"
                   onClick={handleCloseSheet}
-                  className="p-1.5 rounded-full hover:bg-seafoam/40 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-full transition-colors hover:bg-seafoam/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
                   aria-label={t('bottom_participate_close')}
                 >
                   <XMarkIcon className="h-5 w-5 text-gray-600" aria-hidden="true" />
