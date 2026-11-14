@@ -24,6 +24,13 @@ const EXPLORE_ROOTS = ['/news', '/articles', '/videos', '/topics', '/live'];
 
 // Route groups that belong to the "Participate" tab (used for active-state only)
 const PARTICIPATE_ROOTS = ['/polls', '/civic-questions', '/suggestions', '/dream-team', '/organizations', '/positions'];
+const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]';
+
+function getFocusableElements(container) {
+  return Array.from(container.querySelectorAll(FOCUSABLE_SELECTOR)).filter(element => (
+    element.tabIndex >= 0 && !element.closest('[hidden], [aria-hidden="true"]')
+  ));
+}
 
 export default function MobileBottomNav() {
   const t = useTranslations('nav');
@@ -32,6 +39,7 @@ export default function MobileBottomNav() {
   const { user, loading } = useAuth();
   const pathname = usePathname();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
   const participateButtonRef = useRef(null);
 
@@ -74,6 +82,28 @@ export default function MobileBottomNav() {
       if (e.key === 'Escape') {
         setSheetOpen(false);
         participateButtonRef.current?.focus();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusableElements = getFocusableElements(dialog);
+      if (!focusableElements.length) {
+        e.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const focusIsOutsideDialog = !dialog.contains(document.activeElement);
+      if (e.shiftKey && (focusIsOutsideDialog || document.activeElement === firstElement)) {
+        e.preventDefault();
+        lastElement.focus();
+      } else if (!e.shiftKey && (focusIsOutsideDialog || document.activeElement === lastElement)) {
+        e.preventDefault();
+        firstElement.focus();
       }
     };
     document.addEventListener('keydown', handleKeyDown);
@@ -204,9 +234,11 @@ export default function MobileBottomNav() {
 
           {/* Sheet */}
           <div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="participate-sheet-title"
+            tabIndex={-1}
             className="md:hidden fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-2xl bg-white shadow-xl"
             style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' }}
           >

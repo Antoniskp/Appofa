@@ -1,4 +1,5 @@
 /** @jest-environment <rootDir>/jest-jsdom-env.js */
+/* global document, KeyboardEvent, MouseEvent */
 
 const React = require('react');
 const { act } = require('react');
@@ -185,6 +186,46 @@ describe('MobileBottomNav', () => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     });
     expect(container.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.activeElement).toBe(btn);
+  });
+
+  test('action sheet keeps keyboard focus inside the dialog', async () => {
+    const outsideLink = document.createElement('a');
+    outsideLink.href = '/outside';
+    document.body.appendChild(outsideLink);
+
+    const btn = container.querySelector('button[aria-haspopup="dialog"]');
+    await act(async () => {
+      btn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    const sheet = container.querySelector('[role="dialog"]');
+    const focusableElements = sheet.querySelectorAll('a[href], button:not([disabled])');
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    const pressTab = shiftKey => document.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'Tab',
+      shiftKey,
+      bubbles: true,
+    }));
+
+    await act(async () => {
+      outsideLink.focus();
+      pressTab(false);
+    });
+    expect(document.activeElement).toBe(firstElement);
+
+    await act(async () => {
+      lastElement.focus();
+      pressTab(false);
+    });
+    expect(document.activeElement).toBe(firstElement);
+
+    await act(async () => {
+      firstElement.focus();
+      pressTab(true);
+    });
+    expect(document.activeElement).toBe(lastElement);
   });
 
   test('authenticated user sees /profile link for You tab', async () => {
