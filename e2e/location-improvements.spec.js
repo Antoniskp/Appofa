@@ -1,3 +1,4 @@
+/* global document, window */
 const { test, expect } = require('@playwright/test');
 const t = require('../messages/en.json').locationImprovements;
 const auth = require('../messages/en.json').auth;
@@ -8,9 +9,10 @@ test.beforeEach(async ({ context }) => {
 });
 
 async function login(page, email) {
-  await page.locator('[name="email"]').fill(email);
-  await page.locator('[name="password"]').fill('TestPassword123!');
-  await page.getByRole('button', { name: auth.submit_login, exact: true }).click();
+  const loginForm = page.getByRole('main');
+  await loginForm.locator('[name="email"]').fill(email);
+  await loginForm.locator('[name="password"]').fill('TestPassword123!');
+  await loginForm.getByRole('button', { name: auth.submit_login, exact: true }).click();
 }
 
 test('guest draft survives sign-in, is reviewed, and appears on the location page', async ({ page, browser }, testInfo) => {

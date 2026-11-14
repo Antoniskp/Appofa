@@ -1,3 +1,4 @@
+/* global document, window */
 const { test, expect } = require('@playwright/test');
 const auth = require('../messages/en.json').auth;
 const t = require('../messages/calendar/en.json');
@@ -70,9 +71,10 @@ test('moderator rejection supplies private feedback and notifies the author', as
     await target.goto('/login');
     const dismiss = target.getByRole('button', { name: 'Reject Non-Essential', exact: true });
     if (await dismiss.isVisible()) await dismiss.click();
-    await target.locator('[name="email"]').fill(email);
-    await target.locator('[name="password"]').fill('TestPassword123!');
-    await target.getByRole('button', { name: auth.submit_login, exact: true }).click();
+    const loginForm = target.getByRole('main');
+    await loginForm.locator('[name="email"]').fill(email);
+    await loginForm.locator('[name="password"]').fill('TestPassword123!');
+    await loginForm.getByRole('button', { name: auth.submit_login, exact: true }).click();
     await expect(target).not.toHaveURL(/\/login/);
   }
   await login(page, 'contributor@example.test');
