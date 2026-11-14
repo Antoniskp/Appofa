@@ -98,12 +98,12 @@ export default function MobileBottomNav() {
   // â”€â”€ Shared styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const tabClass = (active) =>
     [
-      'relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 min-h-[44px] rounded-xl py-1 text-[10px] font-medium transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-700',
-      active ? 'bg-blue-50 text-blue-800' : 'text-gray-600 hover:bg-gray-50 hover:text-blue-700',
+      'relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 min-h-[44px] rounded-xl py-1 text-[10px] font-medium transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-600',
+      active ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600',
     ].join(' ');
 
   const iconClass = (active) =>
-    ['h-5 w-5 transition-colors', active ? 'text-blue-800' : 'text-gray-600'].join(' ');
+    ['h-5 w-5 transition-colors', active ? 'text-blue-700' : 'text-gray-600'].join(' ');
 
   const tabLabelClass = 'max-w-full whitespace-nowrap leading-tight';
 
