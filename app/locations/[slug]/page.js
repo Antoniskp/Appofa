@@ -152,7 +152,7 @@ export default function LocationDetailPage() {
   const handleTabChange = (tab) => {
     const next = new URLSearchParams(searchParams.toString());
     next.set('tab', tab);
-    router.replace(`${pathname}?${next.toString()}${window.location.hash}`, { scroll: false });
+    window.history.replaceState(null, '', `${pathname}?${next.toString()}${window.location.hash}`);
   };
 
   const { data: location, loading, error, refetch } = useAsyncData(

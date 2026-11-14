@@ -11,8 +11,8 @@ test.beforeEach(async ({ context }) => {
 
 async function login(page, email) {
   await page.goto('/login');
-  await page.locator('[name="email"]').fill(email);
-  await page.locator('[name="password"]').fill('TestPassword123!');
+  await page.locator('[name="email"]:visible').fill(email);
+  await page.locator('[name="password"]:visible').fill('TestPassword123!');
   await page.getByRole('button', { name: auth.submit_login, exact: true }).click();
   await expect(page).not.toHaveURL(/\/login/);
 }
@@ -60,22 +60,29 @@ test('create, review, compare, vote and revise an organization position', async 
     await voterPage.screenshot({ path: testInfo.outputPath('positions-first-screen.png') });
     await expect(voterPage.getByRole('group', { name: t.filters, exact: true })).toHaveCount(1);
     await expect(voterPage.getByRole('combobox', { name: t.topic, exact: true })).toHaveCount(0);
+    await voterPage.getByText(t.view_all, { exact: true }).click();
+    await expect(voterPage.getByRole('radio', { name: t.view_all, exact: true })).toBeChecked();
     let voterCard = voterPage.locator('article').filter({ hasText: title });
     await expect(voterCard.getByText('Housing', { exact: true })).toBeVisible();
-    await voterCard.getByRole('button', { name: 'Support 0', exact: true }).click();
-    await expect(voterCard.getByRole('button', { name: 'Support 1', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    await voterCard.getByRole('button', { name: 'Oppose 0', exact: true }).click();
-    await expect(voterCard.getByRole('button', { name: 'Oppose 1', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    await voterCard.getByRole('button', { name: 'Oppose 1', exact: true }).click();
+    await voterCard.getByRole('button', { name: `${t.support} 0`, exact: true }).click();
+    await expect(voterCard.getByRole('button', { name: `${t.support} 1`, exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await voterCard.getByRole('button', { name: `${t.oppose} 0`, exact: true }).click();
+    await expect(voterCard.getByRole('button', { name: `${t.oppose} 1`, exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await voterCard.getByRole('button', { name: `${t.oppose} 1`, exact: true }).click();
     await expect(voterCard.getByText(t.no_votes, { exact: true })).toBeVisible();
-    await voterCard.getByRole('button', { name: 'Support 0', exact: true }).click();
-    await expect(voterCard.getByRole('button', { name: 'Support 1', exact: true })).toBeVisible();
-    await expect(voterCard.getByText(t.low_participation, { exact: true })).toBeVisible();
-    await expect(voterCard.getByText('100% agree', { exact: true })).toHaveCount(0);
+    await voterCard.getByRole('button', { name: `${t.support} 0`, exact: true }).click();
+    await expect(voterCard.getByRole('button', { name: `${t.support} 1`, exact: true })).toBeVisible();
+    const positionHref = await voterCard.getByRole('link', { name: title, exact: true }).getAttribute('href');
+    const detailPage = await voterContext.newPage();
+    await detailPage.goto('http://127.0.0.1:3101' + positionHref);
+    await expect(detailPage).toHaveURL(/\/positions\/\d+$/);
+    await expect(detailPage.getByText(t.low_participation, { exact: true })).toBeVisible();
+    await expect(detailPage.getByText(t.approval_percent.replace('{percent}', '100'), { exact: true })).toHaveCount(0);
     await voterPage.getByRole('searchbox', { name: t.search }).fill('no-matching-proposal');
     await expect(voterPage.locator('article')).toHaveCount(0);
     await voterPage.getByRole('searchbox', { name: t.search }).fill(title);
     await expect(voterPage.locator('article')).toHaveCount(1);
+    await voterPage.getByRole('combobox', { name: t.category, exact: true }).selectOption({ label: 'Housing' });
     await voterPage.getByRole('button', { name: t.compare, exact: true }).click();
     await voterPage.getByRole('checkbox', { name: 'Civic Policy Lab', exact: true }).check();
     await voterPage.getByRole('checkbox', { name: 'Community Forum', exact: true }).check();
@@ -102,11 +109,13 @@ test('create, review, compare, vote and revise an organization position', async 
     await voterPage.reload();
     voterCard = voterPage.locator('article').filter({ hasText: title });
     await expect(voterCard.getByText(t.no_votes, { exact: true })).toBeVisible();
-    await voterCard.getByText(t.details, { exact: true }).click();
-    await voterCard.getByRole('button', { name: t.history, exact: true }).click();
-    await expect(voterCard.getByText('v1 · Previous version', { exact: true })).toBeVisible();
-    await expect(voterCard.getByText('Support: 1 · Oppose: 0', { exact: true })).toBeVisible();
-    await expect(voterCard.getByRole('link', { name: '#Public housing', exact: true }))
+    await detailPage.reload();
+    const historyCard = detailPage.locator('article').filter({ hasText: title });
+    await historyCard.getByText(t.details, { exact: true }).click();
+    await historyCard.getByRole('button', { name: t.history, exact: true }).click();
+    await expect(historyCard.getByText('v1 · Previous version', { exact: true })).toBeVisible();
+    await expect(historyCard.getByText(`${t.support}: 1 · ${t.oppose}: 0 · ${t.view_unsure}: 0`, { exact: true })).toBeVisible();
+    await expect(historyCard.getByRole('link', { name: '#Public housing', exact: true }))
       .toHaveAttribute('href', '/topics/public-housing');
   } finally { await voterContext.close(); }
 });

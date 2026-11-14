@@ -1,10 +1,15 @@
+/* global document, window */
 const { test, expect } = require('@playwright/test');
 
 test('location dashboard provides useful routes and a scoped agenda', async ({ page, context }, testInfo) => {
   await context.addInitScript(() => localStorage.setItem('appofa_country_entry_decision_v1', 'stay'));
-  await page.route('**/api/calendar?**', route => route.fulfill({ json: { success: true, data: [
-    { id: 'event-1', title: 'Neighbourhood gathering', start: '2026-10-25T10:00:00Z', timezone: 'Europe/Athens', href: '/events/1', status: 'published' },
-  ] } }));
+  await page.route('**/api/calendar?**', route => route.fulfill({ json: {
+    success: true,
+    data: [
+      { id: 'event-1', title: 'Neighbourhood gathering', start: '2026-10-25T10:00:00Z', end: '2026-10-25T11:00:00Z', timezone: 'Europe/Athens', href: '/events/1', status: 'published' },
+    ],
+    pagination: { page: 1, totalPages: 1, total: 1 },
+  } }));
   await page.goto('/locations/test-municipality');
   const dashboard = page.getByRole('region', { name: 'Η περιοχή με μια ματιά' });
   await expect(dashboard.getByText('Neighbourhood gathering')).toBeVisible();
