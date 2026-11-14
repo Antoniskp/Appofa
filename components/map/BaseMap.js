@@ -64,7 +64,7 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { STANDARD_MAP_TILES } from '@/lib/map-tiles';
-import { mapCameraSvg, mapIssueSvg } from '@/lib/map-marker-icons';
+import { mapCameraSvg, mapIssueSvg, mapPollSvg } from '@/lib/map-marker-icons';
 import 'leaflet/dist/leaflet.css';
 
 // Fix Leaflet's bundled default marker icon paths broken by webpack/next.js module resolution.
@@ -154,15 +154,19 @@ const DEFAULT_POLY_HOVER_STYLE = {
 // where the Leaflet mock may not include divIcon.
 const _explorerIcons = {};
 
-function resolveMarkerIcon(variant, iconColor, issueType, markerType) {
+function resolveMarkerIcon(variant, iconColor, issueType, markerType, count) {
   if (!L.divIcon) {
     // Fallback when Leaflet mock does not provide divIcon (e.g. in jest)
     return DEFAULT_ICON;
   }
-  if (issueType || markerType === 'camera') {
+  if (Number.isSafeInteger(count) && count >= 0) {
+    return L.divIcon({ html: `<span class="home-map-count ${variant === 'hovered' ? 'is-hovered' : ''}">${count}</span>`,
+      className: 'map-issue-hitbox', iconSize: [44, 44], iconAnchor: [22, 22] });
+  }
+  if (issueType || markerType === 'camera' || markerType === 'poll') {
     const color = /^#[\da-f]{6}$/i.test(iconColor || '') ? iconColor : '#80462f';
     return L.divIcon({
-      html: `<span class="${markerType === 'camera' ? 'map-camera-marker' : 'map-issue-marker'} ${variant === 'selected' ? 'is-selected' : variant === 'hovered' ? 'is-hovered' : ''}" style="--marker-color:${color}">${markerType === 'camera' ? mapCameraSvg() : mapIssueSvg(issueType)}</span>`,
+      html: `<span class="${markerType === 'camera' ? 'map-camera-marker' : markerType === 'poll' ? 'map-poll-marker' : 'map-issue-marker'} ${variant === 'selected' ? 'is-selected' : variant === 'hovered' ? 'is-hovered' : ''}" style="--marker-color:${color}">${markerType === 'camera' ? mapCameraSvg() : markerType === 'poll' ? mapPollSvg() : mapIssueSvg(issueType)}</span>`,
       className: 'map-issue-hitbox', iconSize: [44, 44], iconAnchor: [22, 22],
       popupAnchor: [0, -20], tooltipAnchor: [0, -20],
     });
@@ -476,8 +480,8 @@ export default function BaseMap({
 
     const map = mapInstanceRef.current;
 
-    function renderSingleMarker({ lat, lng, popup, tooltip, label, id, variant, iconColor, issueType, markerType }) {
-      const icon = resolveMarkerIcon(variant, iconColor, issueType, markerType);
+    function renderSingleMarker({ lat, lng, popup, tooltip, label, id, variant, iconColor, issueType, markerType, count }) {
+      const icon = resolveMarkerIcon(variant, iconColor, issueType, markerType, count);
       const marker = L.marker([lat, lng], { icon, title: label || '', alt: label || 'Map marker', bubblingMouseEvents: false }).addTo(layer);
       if (popup) {
         marker.bindPopup(popup, { maxWidth: 260 });
@@ -563,12 +567,12 @@ export default function BaseMap({
         highlight: (id) => {
           const marker = idToMarker.get(id);
           const markerDef = markers.find((item) => item.id === id);
-          if (marker) marker.setIcon(resolveMarkerIcon(markerDef?.variant === 'selected' ? 'selected' : 'hovered', markerDef?.iconColor, markerDef?.issueType, markerDef?.markerType));
+          if (marker) marker.setIcon(resolveMarkerIcon(markerDef?.variant === 'selected' ? 'selected' : 'hovered', markerDef?.iconColor, markerDef?.issueType, markerDef?.markerType, markerDef?.count));
         },
         unhighlight: (id, variant = 'default') => {
           const marker = idToMarker.get(id);
           const markerDef = markers.find((item) => item.id === id);
-          if (marker) marker.setIcon(resolveMarkerIcon(variant, markerDef?.iconColor, markerDef?.issueType, markerDef?.markerType));
+          if (marker) marker.setIcon(resolveMarkerIcon(variant, markerDef?.iconColor, markerDef?.issueType, markerDef?.markerType, markerDef?.count));
         },
       });
     }

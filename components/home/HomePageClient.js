@@ -74,6 +74,33 @@ export default function HomePageClient({ initialPayload = null }) {
         featuredPoll={shouldShowFeaturedPoll ? featuredPoll : null}
         featuredPollLoading={shouldShowFeaturedPoll && featuredPollLoading}
       />
+      {/* Local discovery follows the opening participation section */}
+      {(prefecturesLoading || error('prefectures') || prefectures.length > 0) && (
+        <HomepageSection
+          title={tHome('explore_locations_title')}
+          subtitle={tHome('explore_locations_subtitle')}
+          linkHref="/locations"
+          loading={prefecturesLoading}
+          error={error('prefectures')}
+          onRetry={() => retry(['prefectures'])}
+          items={[]}
+          emptyTitle=""
+          emptyDescription=""
+          skeletonCount={3}
+          bgColor="bg-white"
+          renderItem={() => null}
+          mapSlot={
+            <div className="-mt-2 md:-mt-3">
+              <ExploreLocationsMap
+                prefectures={prefectures}
+                homeLocationId={homeLocationId}
+                loading={prefecturesLoading}
+              />
+            </div>
+          }
+        />
+      )}
+
       {homeLocationId && <LocalActivity
         key={`${user.id}:${user.role}:${homeLocationId}`}
         locationId={homeLocationId}
@@ -146,33 +173,6 @@ export default function HomePageClient({ initialPayload = null }) {
         renderItem={(suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} />}
         topTags={suggestionTags}
       />
-
-      {/* Featured Locations Section — map + prefecture pills, no location cards */}
-      {(prefecturesLoading || error('prefectures') || prefectures.length > 0) && (
-        <HomepageSection
-          title={tHome('explore_locations_title')}
-          subtitle={tHome('explore_locations_subtitle')}
-          linkHref="/locations"
-          loading={prefecturesLoading}
-          error={error('prefectures')}
-          onRetry={() => retry(['prefectures'])}
-          items={[]}
-          emptyTitle=""
-          emptyDescription=""
-          skeletonCount={3}
-          bgColor="bg-white"
-          renderItem={() => null}
-          mapSlot={
-            <div className="-mt-2 md:-mt-3">
-              <ExploreLocationsMap
-                prefectures={prefectures}
-                loading={prefecturesLoading}
-              />
-            </div>
-          }
-        />
-      )}
-
 
       <HomepageSection
         title={tHome('latest_videos_title')}

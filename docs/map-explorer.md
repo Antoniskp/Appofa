@@ -1,5 +1,25 @@
 # Map explorer
 
+The homepage explorer appears directly after the opening participation section.
+It loads Leaflet and public activity when it approaches the viewport. Area search
+includes municipalities and handles Greek accents; saved locations can be selected
+with “My area”. Map and list selection share a preview and an explicit area link.
+
+`GET /api/locations/map-activity` is public regardless of authentication. It scopes
+to Greece and descendants, aggregates counts by location, and rolls them up into
+immediate child areas. Counts mean current public pinned issues in open/review
+states, public active votes before their deadline, and published cameras with safe
+stream URLs. They do not measure registered members or imply a recent time window.
+Gray indicates zero activity; unavailable counts use placeholders and a retry.
+
+At local scale (a latitude span below 1.5 degrees), the selected layer requests
+only pins inside the visible bounds, in pages of 100. Markers cluster in dense
+views. Votes use the associated area's coordinates and are labeled approximate.
+Camera pins use exact coordinates when supplied and otherwise source coordinates;
+unavailable cameras remain visible with gray markers. Counts cover the whole
+selected area, while the list/pins cover the viewport. Responses can be cached
+publicly for 30 seconds. Private and locals-only content never enters this feed.
+
 Location pages use one explorer for public geolocated issues, cameras and child areas. The
 map API includes descendant locations, applies category/status/date/text/bounds
 filters before pagination, and returns 100 issues per page. “Load more” adds the

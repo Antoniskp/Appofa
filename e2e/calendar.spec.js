@@ -59,7 +59,7 @@ test('calendar follows the selected language', async ({ page, context }) => {
     await context.addCookies([{ name: 'NEXT_LOCALE', value: locale, domain: '127.0.0.1', path: '/' }]);
     await page.goto('/calendar');
     await expect(page.getByRole('heading', { name: messages.title, exact: true })).toBeVisible();
-    await expect(page.getByLabel(messages.period, { exact: true })).toHaveValue('upcoming');
+    await expect(page.getByRole('combobox', { name: messages.period, exact: true })).toHaveValue('upcoming');
     await page.getByRole('button', { name: messages.month, exact: true }).click();
     await expect(page.getByRole('button', { name: messages.nextMonth, exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -113,8 +113,7 @@ test('calendar filters survive refresh and browser history', async ({ page }) =>
   const filtersButton = page.getByRole('button', { name: /^Filters/ });
   await filtersButton.click();
   await expect(filtersButton).toHaveAttribute('aria-expanded', 'true');
-  const filterPanelId = await filtersButton.getAttribute('aria-controls');
-  const categoryFilter = page.locator(`[id="${filterPanelId}"]`).getByRole('combobox').first();
+  const categoryFilter = page.getByRole('combobox', { name: t.category, exact: true });
   await expect(categoryFilter).toHaveValue('culture');
   await categoryFilter.selectOption('meeting');
   await expect(page).toHaveURL(/category=meeting/);

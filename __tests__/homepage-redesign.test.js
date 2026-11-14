@@ -40,7 +40,7 @@ describe('Restored map homepage', () => {
   });
   afterEach(async () => { await act(async () => root.unmount()); container.remove(); });
   const render = async () => { await act(async () => root.render(React.createElement(Home))); };
-  test('leads with news and polls, with secondary actions below the content', async () => {
+  test('puts local map discovery after participation and before news and polls', async () => {
     await render();
     for (const id of ['original-hero', 'territory-map', 'action-lanes']) expect(container.querySelector('[data-testid="' + id + '"]')).toBeTruthy();
     expect(container.querySelector('[data-testid="government"]')).toBeNull();
@@ -48,9 +48,10 @@ describe('Restored map homepage', () => {
     const sections = container.querySelectorAll('section');
     expect(sections[0].querySelector('#policy-vote')).toBeTruthy();
     expect(mockPositions).not.toHaveBeenCalled();
-    expect(sections[1].textContent).toContain('Local news');
-    expect(sections[2].textContent).toContain('Δημοφιλείς δημοσκοπήσεις');
-    expect(sections[2].compareDocumentPosition(container.querySelector('[data-testid="action-lanes"]')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(sections[1].querySelector('[data-testid="territory-map"]')).toBeTruthy();
+    expect(sections[2].textContent).toContain('Local news');
+    expect(sections[3].textContent).toContain('Δημοφιλείς δημοσκοπήσεις');
+    expect(sections[3].compareDocumentPosition(container.querySelector('[data-testid="action-lanes"]')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     for (const text of ['Attica', 'Local news', 'Community article', 'Community video', 'Public commitment']) expect(container.textContent).toContain(text);
     expect(container.querySelector('#home-area')).toBeNull();
   });
@@ -58,8 +59,8 @@ describe('Restored map homepage', () => {
     mockUser = { id: 1, homeLocation: { id: 42, slug: 'athens' } };
     await render();
     expect(mockGet).toHaveBeenCalledWith(42, ['latestNews', 'latestArticles', 'suggestions', 'polls']);
-    expect(container.querySelectorAll('section')[1].getAttribute('aria-label')).toBe('Στην περιοχή σου');
-    expect(container.querySelectorAll('section')[1].querySelector('a').getAttribute('href')).toBe('/locations/athens');
+    expect(container.querySelectorAll('section')[2].getAttribute('aria-label')).toBe('Στην περιοχή σου');
+    expect(container.querySelectorAll('section')[2].querySelector('a').getAttribute('href')).toBe('/locations/athens');
     mockPositions.mockReset().mockResolvedValue({ data: { positions: [] } });
     mockUser = null;
     await render();

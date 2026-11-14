@@ -20,6 +20,7 @@ router.post('/:locationId/improvements', createLimiter, authMiddleware, csrfProt
 router.patch('/:locationId/improvements/:id', apiLimiter, authMiddleware, csrfProtection, improvements.revise);
 router.patch('/:locationId/improvements/:id/review', apiLimiter, authMiddleware, csrfProtection, improvements.review);
 router.get('/', locationController.getLocations);
+router.get('/map-activity', apiLimiter, require('../controllers/homeMapController').list);
 router.get('/cameras', apiLimiter, locationSectionController.getAllCameras);
 router.put('/cameras/:sectionId/:index/status', apiLimiter, authMiddleware, locationSectionController.updateCameraStatus);
 

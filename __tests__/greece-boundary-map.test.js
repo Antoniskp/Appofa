@@ -691,10 +691,10 @@ describe('greece-regions.geojson schema', () => {
   });
 });
 
-describe('ExploreLocationsMap — prefecture pills', () => {
+describe('ExploreLocationsMap — initial area list', () => {
   const ExploreLocationsMap = require('../components/locations/ExploreLocationsMap').default;
 
-  test('renders prefecture pills for each prefecture with a slug', async () => {
+  test('renders selectable areas for the initial prefectures', async () => {
     const prefectures = [
       { id: 1, name: 'Attica', name_local: 'Αττική', slug: 'attiki', code: 'GR-I', boundary_geojson: null },
       { id: 2, name: 'Crete', name_local: 'Κρήτη', slug: 'kriti', code: 'GR-M', boundary_geojson: null },
@@ -703,10 +703,9 @@ describe('ExploreLocationsMap — prefecture pills', () => {
       React.createElement(ExploreLocationsMap, { prefectures, loading: false })
     );
 
-    const links = container.querySelectorAll('a');
-    const hrefs = Array.from(links).map((a) => a.getAttribute('href'));
-    expect(hrefs).toContain('/locations/attiki');
-    expect(hrefs).toContain('/locations/kriti');
+    const labels = Array.from(container.querySelectorAll('ul button')).map(button => button.textContent);
+    expect(labels.some(label => label.includes('Αττική'))).toBe(true);
+    expect(labels.some(label => label.includes('Κρήτη'))).toBe(true);
 
     await cleanup(root, container);
   });
@@ -771,7 +770,7 @@ describe('ExploreLocationsMap — prefecture pills', () => {
 //
 // The fix uses a 2-step API pattern:
 //   1. `locationAPI.getAll({ type: 'country', code: 'GR', limit: 1 })` → resolve Greece ID
-//   2. `locationAPI.getAll({ type: 'prefecture', parent_id: greeceId, includeUserCounts: true, includeCandidatePreview: true, limit: 50 })` → Greek prefectures only with aggregate user counts and candidate previews
+//   2. `locationAPI.getAll({ type: 'prefecture', parent_id: greeceId, limit: 50 })` → Greek prefectures only for initial map boundaries
 //
 // These tests verify the contract for that pattern.
 
@@ -784,7 +783,7 @@ describe('homepage Greek prefecture scoping — regression for Cyprus pills bug'
         ? greeceRes.locations[0].id
         : null;
     if (!greeceId) return [];
-    const response = await mockGetAll({ type: 'prefecture', parent_id: greeceId, includeUserCounts: true, includeCandidatePreview: true, limit: 50 });
+    const response = await mockGetAll({ type: 'prefecture', parent_id: greeceId, limit: 50 });
     return response.success ? (response.locations || []) : [];
   }
 
@@ -811,7 +810,7 @@ describe('homepage Greek prefecture scoping — regression for Cyprus pills bug'
     // First call: country code lookup
     expect(mockGetAll).toHaveBeenNthCalledWith(1, { type: 'country', code: 'GR', limit: 1 });
     // Second call: prefectures scoped to Greece's ID
-    expect(mockGetAll).toHaveBeenNthCalledWith(2, { type: 'prefecture', parent_id: 7, includeUserCounts: true, includeCandidatePreview: true, limit: 50 });
+    expect(mockGetAll).toHaveBeenNthCalledWith(2, { type: 'prefecture', parent_id: 7, limit: 50 });
 
     expect(prefectures).toHaveLength(2);
     const names = prefectures.map((p) => p.name);
@@ -857,25 +856,25 @@ describe('homepage Greek prefecture scoping — regression for Cyprus pills bug'
     expect(prefectures).toHaveLength(0);
   });
 
-  test('ExploreLocationsMap renders no Cyprus pills when only Greek prefectures are passed', async () => {
+  test('ExploreLocationsMap renders only the supplied Greek areas when only Greek prefectures are passed', async () => {
     const ExploreLocationsMap = require('../components/locations/ExploreLocationsMap').default;
 
     const { container, root } = await renderComponent(
       React.createElement(ExploreLocationsMap, { prefectures: GREEK_PREFECTURES, loading: false })
     );
 
-    const hrefs = Array.from(container.querySelectorAll('a')).map((a) => a.getAttribute('href'));
+    const labels = Array.from(container.querySelectorAll('ul button')).map(button => button.textContent).join(' ');
     // Greek prefectures are present
-    expect(hrefs).toContain('/locations/attiki');
-    expect(hrefs).toContain('/locations/kriti');
+    expect(labels).toContain('Αττική');
+    expect(labels).toContain('Κρήτη');
     // Cyprus slugs are absent
-    expect(hrefs).not.toContain('/locations/nicosia');
-    expect(hrefs).not.toContain('/locations/limassol');
+    expect(labels).not.toContain('Λευκωσία');
+    expect(labels).not.toContain('Λεμεσός');
 
     await cleanup(root, container);
   });
 
-  test('ExploreLocationsMap would render Cyprus pills if they were incorrectly passed (documenting the old bug)', async () => {
+  test('ExploreLocationsMap shows the supplied fallback areas until public activity loads', async () => {
     const ExploreLocationsMap = require('../components/locations/ExploreLocationsMap').default;
     const allPrefectures = [...GREEK_PREFECTURES, ...CYPRUS_PREFECTURES];
 
@@ -883,10 +882,10 @@ describe('homepage Greek prefecture scoping — regression for Cyprus pills bug'
       React.createElement(ExploreLocationsMap, { prefectures: allPrefectures, loading: false })
     );
 
-    const hrefs = Array.from(container.querySelectorAll('a')).map((a) => a.getAttribute('href'));
+    const labels = Array.from(container.querySelectorAll('ul button')).map(button => button.textContent).join(' ');
     // Cyprus pills ARE rendered when passed in (the component renders all that it receives)
-    expect(hrefs).toContain('/locations/nicosia');
-    expect(hrefs).toContain('/locations/limassol');
+    expect(labels).toContain('Λευκωσία');
+    expect(labels).toContain('Λεμεσός');
     // This test documents why the fix must happen at the data-fetching level (app/page.js),
     // not inside ExploreLocationsMap itself.
 

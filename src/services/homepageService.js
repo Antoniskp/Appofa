@@ -174,8 +174,6 @@ async function getPrefectures() {
   const prefectures = await locationService.getLocations({
     type: 'prefecture',
     parent_id: greeceId,
-    includeUserCounts: true,
-    includeCandidatePreview: true,
     limit: 50,
   });
   if (!prefectures.success) throw new Error('Locations unavailable');
