@@ -134,7 +134,8 @@ export default function CivicQuestionForm({
         <h3 className="text-lg font-semibold text-gray-900">{t('form.basic_information')}</h3>
         <div>
           <label htmlFor="civic-question-title" className="block text-sm font-medium text-gray-700">{t('form.title')}</label>
-          <input id="civic-question-title" name="title" required maxLength={200} value={formData.title} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2" />
+          <input id="civic-question-title" name="title" required maxLength={200} aria-describedby="civic-question-title-help" value={formData.title} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2" />
+          <p id="civic-question-title-help" className="mt-1 text-sm text-gray-600">{t('form.title_help')}</p>
         </div>
 
         {['officialTitle', 'sourceStatus', 'sourceCheckedAt'].map((field) => (

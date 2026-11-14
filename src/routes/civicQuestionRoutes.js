@@ -9,6 +9,7 @@ const { apiLimiter, createLimiter, authVoteLimiter } = require('../middleware/ra
 
 router.get('/', optionalAuthMiddleware, apiLimiter, civicQuestionController.listCivicQuestions);
 router.get('/featured', optionalAuthMiddleware, apiLimiter, civicQuestionController.getFeaturedCivicQuestion);
+router.get('/categories', optionalAuthMiddleware, apiLimiter, civicQuestionController.getCivicQuestionCategories);
 router.get('/:id', optionalAuthMiddleware, apiLimiter, civicQuestionController.getCivicQuestionById);
 router.get('/:id/results', optionalAuthMiddleware, apiLimiter, civicQuestionController.getCivicQuestionResults);
 

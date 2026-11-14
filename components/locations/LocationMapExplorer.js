@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { ArrowPathIcon, ArrowsPointingOutIcon, ChevronRightIcon, MagnifyingGlassIcon, MapPinIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ArrowsPointingOutIcon, ChevronRightIcon, MagnifyingGlassIcon, MapPinIcon, PlusIcon, VideoCameraIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import LocationMap from './LocationMap';
-import { geoAPI, suggestionAPI } from '@/lib/api';
+import { geoAPI, locationSectionAPI, suggestionAPI } from '@/lib/api';
 import { MAP_ISSUE_TYPES, MAP_ISSUE_TYPE_COLORS } from '@/lib/constants/mapIssues';
 import { MAP_ISSUE_ICON_PATHS } from '@/lib/map-marker-icons';
-import { hasMapPoint, normalizeMapBoundary, normalizeMapSearch, mapGeometryBounds } from '@/lib/map-utils';
+import { hasMapPoint, normalizeMapBoundary, normalizeMapSearch, mapGeometryBounds, pointInMapBounds } from '@/lib/map-utils';
 
 const EMPTY = [];
 const STATUS_CLASSES = {
@@ -20,9 +20,17 @@ function IssueIcon({ type }) {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="h-5 w-5"><path d={MAP_ISSUE_ICON_PATHS[type] || MAP_ISSUE_ICON_PATHS.other} /></svg>;
 }
 
+function safeCameraUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : null;
+  } catch { return null; }
+}
+
 export default function LocationMapExplorer({ location, childLocations = EMPTY, breadcrumb = EMPTY, summaryCounts,
   pendingIssuePin, reporting = false, onReportingChange, onMapClick, reportForm, isAuthenticated, refreshKey = 0 }) {
   const t = useTranslations('mapExplorer');
+  const cameraText = useTranslations('cameras');
   const locale = useLocale();
   const [filters, setFilters] = useState({ search: '', issueType: '', status: '', days: '', bounds: null });
   const [page, setPage] = useState(1);
@@ -32,6 +40,9 @@ export default function LocationMapExplorer({ location, childLocations = EMPTY, 
   const [error, setError] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [selectedChildId, setSelectedChildId] = useState(null);
+  const [selectedCameraId, setSelectedCameraId] = useState(null);
+  const [cameraData, setCameraData] = useState({ locationId: null, cameras: EMPTY, loading: true, error: false });
+  const [cameraRetryKey, setCameraRetryKey] = useState(0);
   const [hoveredId, setHoveredId] = useState(null);
   const [focusTarget, setFocusTarget] = useState(null);
   const [viewport, setViewport] = useState(null);
@@ -56,15 +67,37 @@ export default function LocationMapExplorer({ location, childLocations = EMPTY, 
   const selectedIssue = issues.find(issue => String(issue.id) === String(selectedId));
   const selectedChild = childLocations.find(child => String(child.id) === String(selectedChildId));
   const matchingChildren = useMemo(() => childLocations.filter(child => normalizeMapSearch(`${child.name} ${child.name_local || ''}`).includes(normalizeMapSearch(filters.search))), [childLocations, filters.search]);
+  const cameras = cameraData.locationId === location.id ? cameraData.cameras : EMPTY;
+  const camerasLoading = cameraData.locationId !== location.id || cameraData.loading;
+  const matchingCameras = useMemo(() => cameras.filter(camera => {
+    const source = camera.sourceLocation;
+    const matchesSearch = normalizeMapSearch(`${camera.label} ${source?.name || ''} ${source?.name_local || ''}`).includes(normalizeMapSearch(filters.search));
+    return matchesSearch && (!filters.bounds || (hasMapPoint(camera.mapLocation)
+      && pointInMapBounds(camera.mapLocation.lat, camera.mapLocation.lng, filters.bounds)));
+  }), [cameras, filters.search, filters.bounds]);
+  const selectedCamera = matchingCameras.find(camera => String(camera.id) === String(selectedCameraId));
 
   const updateFilters = patch => {
     setFilters(current => ({ ...current, ...patch }));
     setPage(1);
     setSelectedId(null);
     setSelectedChildId(null);
+    setSelectedCameraId(null);
     addressRequest.current += 1;
     setAddressState({ results: null, loading: false, error: false });
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    setCameraData({ locationId: location.id, cameras: EMPTY, loading: true, error: false });
+    locationSectionAPI.getAllCameras({ locationId: location.id }).then(response => {
+      if (!response?.success) throw new Error('Cameras unavailable');
+      if (!cancelled) setCameraData({ locationId: location.id, cameras: response.cameras || EMPTY, loading: false, error: false });
+    }).catch(() => {
+      if (!cancelled) setCameraData({ locationId: location.id, cameras: EMPTY, loading: false, error: true });
+    });
+    return () => { cancelled = true; };
+  }, [location.id, refreshKey, cameraRetryKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -88,17 +121,17 @@ export default function LocationMapExplorer({ location, childLocations = EMPTY, 
   }, [location.id, filters, page, queryKey, retryKey]);
 
   useEffect(() => {
-    selectedMarker.current = selectedIssue ? `issue-${selectedIssue.id}` : selectedChild ? `child-${selectedChild.id}` : null;
-  }, [selectedIssue, selectedChild]);
+    selectedMarker.current = selectedIssue ? `issue-${selectedIssue.id}` : selectedChild ? `child-${selectedChild.id}` : selectedCamera ? `camera-${selectedCamera.id}` : null;
+  }, [selectedIssue, selectedChild, selectedCamera]);
 
   useEffect(() => {
     const panel = resultsPanel.current;
-    const resultId = activePanel === 'issues' ? selectedId : selectedChildId;
+    const resultId = activePanel === 'issues' ? selectedId : activePanel === 'cameras' ? selectedCameraId : selectedChildId;
     const card = panel && Array.from(panel.querySelectorAll('[data-map-result]')).find(node => node.dataset.mapResult === String(resultId));
     if (!card) return;
     // Scroll only the results panel; selecting a pin must not scroll the page.
     panel.scrollTop += card.getBoundingClientRect().top - panel.getBoundingClientRect().top - 12;
-  }, [selectedId, selectedChildId, activePanel]);
+  }, [selectedId, selectedChildId, selectedCameraId, activePanel]);
 
   useEffect(() => {
     if (!expanded) return;
@@ -129,8 +162,10 @@ export default function LocationMapExplorer({ location, childLocations = EMPTY, 
   };
   const selectMarker = useCallback(id => {
     setSheetHeight(360);
-    if (id.startsWith('issue-')) { setSelectedId(id.slice(6)); setSelectedChildId(null); setActivePanel('issues'); }
-    if (id.startsWith('child-')) { setSelectedChildId(id.slice(6)); setSelectedId(null); setActivePanel('areas'); }
+    setSelectedId(null); setSelectedChildId(null); setSelectedCameraId(null);
+    if (id.startsWith('issue-')) { setSelectedId(id.slice(6)); setActivePanel('issues'); }
+    if (id.startsWith('child-')) { setSelectedChildId(id.slice(6)); setActivePanel('areas'); }
+    if (id.startsWith('camera-')) { setSelectedCameraId(id.slice(7)); setActivePanel('cameras'); }
   }, []);
   const markersReady = useCallback(controls => { markerControls.current = controls; }, []);
   const areasReady = useCallback(controls => { areaControls.current = controls; }, []);
@@ -203,8 +238,9 @@ export default function LocationMapExplorer({ location, childLocations = EMPTY, 
 
       <div className={`map-explorer-body relative min-h-0 ${expanded ? 'flex-1' : 'h-[640px] md:h-[580px]'}`} style={{ '--sheet-height': `${sheetHeight}px` }}>
         <div className="map-explorer-canvas absolute inset-0 md:right-[360px]">
-          <LocationMap location={location} childLocations={childLocations} mapIssues={issues} summaryCounts={summaryCounts}
+          <LocationMap location={location} childLocations={childLocations} mapIssues={issues} mapCameras={matchingCameras} summaryCounts={summaryCounts}
             pendingIssuePin={pendingIssuePin} selectedIssueId={selectedIssue?.id} selectedChildId={selectedChild?.id}
+            selectedCameraId={selectedCamera?.id}
             onMarkerHover={highlight} onMarkerClick={selectMarker} onMarkersReady={markersReady} onAreaLayersReady={areasReady}
             onViewportChange={setViewport} focusTarget={focusTarget} viewResetKey={viewResetKey} tileMode={tileMode}
             onMapClick={reporting && isAuthenticated ? onMapClick : undefined} showFullscreenControl={false}
@@ -231,9 +267,9 @@ export default function LocationMapExplorer({ location, childLocations = EMPTY, 
             {pendingIssuePin || !isAuthenticated ? reportForm : <div className="rounded-xl border border-dashed border-copper/30 bg-ivory p-5 text-center"><MapPinIcon className="mx-auto mb-3 h-8 w-8 text-copper" /><p className="text-sm font-medium text-charcoal">{t('pickPoint')}</p><p className="mt-2 text-xs text-gray-500">{t('reportHint')}</p></div>}
           </div> : <>
             <div className="flex shrink-0 gap-1 border-b border-brand-border px-4 pb-2 pt-3" role="tablist" aria-label={t('results')}>
-              {['issues', 'areas'].map(panel => <button key={panel} id={`map-tab-${panel}`} role="tab" aria-selected={activePanel === panel} aria-controls={`map-panel-${panel}`} onClick={() => { setActivePanel(panel); setSheetHeight(320); }} className={`min-h-9 rounded-lg px-3 text-xs font-semibold ${activePanel === panel ? 'bg-ivory text-copper' : 'text-gray-500 hover:bg-gray-50'}`}>{t(panel)} <span className="ml-1 text-gray-400">{panel === 'issues' ? total : matchingChildren.length}</span></button>)}
+              {['issues', 'cameras', 'areas'].map(panel => <button key={panel} id={`map-tab-${panel}`} role="tab" aria-selected={activePanel === panel} aria-controls={`map-panel-${panel}`} onClick={() => { setActivePanel(panel); setSheetHeight(320); }} className={`min-h-9 rounded-lg px-3 text-xs font-semibold ${activePanel === panel ? 'bg-ivory text-copper' : 'text-gray-500 hover:bg-gray-50'}`}>{t(panel)} <span className="ml-1 text-gray-400">{panel === 'issues' ? total : panel === 'cameras' ? matchingCameras.length : matchingChildren.length}</span></button>)}
             </div>
-            <div ref={resultsPanel} role="tabpanel" id={`map-panel-${activePanel}`} aria-labelledby={`map-tab-${activePanel}`} className="min-h-0 flex-1 overflow-y-auto overscroll-contain" aria-busy={loading && activePanel === 'issues'}>
+            <div ref={resultsPanel} role="tabpanel" id={`map-panel-${activePanel}`} aria-labelledby={`map-tab-${activePanel}`} className="min-h-0 flex-1 overflow-y-auto overscroll-contain" aria-busy={activePanel === 'cameras' ? camerasLoading : loading && activePanel === 'issues'}>
               {activePanel === 'issues' ? <>
                 <div className="flex items-center justify-between gap-2 px-4 py-3 text-[11px] text-gray-500"><span aria-live="polite">{loading ? t('loading') : t('resultCount', { count: total })}</span><span>{t('newest')}</span></div>
                 {error && <div role="alert" className="mx-4 mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">{t('loadError')} <button type="button" onClick={() => setRetryKey(value => value + 1)} className="font-semibold underline">{t('retry')}</button></div>}
@@ -254,7 +290,29 @@ export default function LocationMapExplorer({ location, childLocations = EMPTY, 
                   </article>;
                 })}
                 {data.key === queryKey && page < data.totalPages && <button type="button" disabled={loading || error} onClick={() => setPage(value => value + 1)} className="mx-4 mb-4 min-h-10 w-[calc(100%-2rem)] rounded-lg border border-brand-border text-xs font-semibold text-copper disabled:opacity-50">{t('loadMore', { count: total - issues.length })}</button>}
-              </> : <div className="p-3">
+              </> : activePanel === 'cameras' ? <div className="p-3">
+                {camerasLoading && <p role="status" className="px-3 py-4 text-sm text-gray-500">{t('camerasLoading')}</p>}
+                {cameraData.error && !camerasLoading && <div role="alert" className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">{t('camerasError')} <button type="button" onClick={() => setCameraRetryKey(value => value + 1)} className="font-semibold underline">{t('retry')}</button></div>}
+                {!camerasLoading && !cameraData.error && !matchingCameras.length && <p className="px-3 py-8 text-center text-sm text-gray-500">{t('noCameras')}</p>}
+                {matchingCameras.map(camera => {
+                  const markerId = `camera-${camera.id}`;
+                  const selected = String(camera.id) === String(selectedCameraId);
+                  const url = safeCameraUrl(camera.url);
+                  const hasPoint = hasMapPoint(camera.mapLocation);
+                  return <article key={camera.id} data-map-result={camera.id} className={`mb-3 overflow-hidden rounded-xl border ${selected || hoveredId === markerId ? 'border-copper/60 bg-ivory/60' : 'border-brand-border'}`}>
+                    <button type="button" aria-pressed={selected} onClick={() => selectMarker(markerId)} onMouseEnter={() => highlight(markerId)} onMouseLeave={() => unhighlight(markerId)} onFocus={() => highlight(markerId)} onBlur={() => unhighlight(markerId)} className="block w-full p-3.5 text-left">
+                      <div className="mb-2 flex items-center justify-between gap-2"><VideoCameraIcon className="h-6 w-6 text-teal-700" aria-hidden="true" /><span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${camera.isWorking === false ? 'bg-gray-100 text-gray-600' : 'bg-emerald-50 text-emerald-800'}`}>{cameraText(camera.isWorking === false ? 'status_unavailable' : 'status_available')}</span></div>
+                      <h3 className="text-sm font-semibold text-charcoal">{camera.label}</h3>
+                      <p className="mt-1 text-xs text-gray-500">{camera.sourceLocation?.name_local || camera.sourceLocation?.name}</p>
+                      <p className="mt-2 text-[10px] text-gray-400">{cameraText(!hasPoint ? 'map_unavailable' : camera.mapLocationSource === 'camera' ? 'pin_source_exact' : 'pin_source_source')}</p>
+                    </button>
+                    <div className="flex items-center justify-between gap-2 border-t border-brand-border px-3.5 py-2.5">
+                      {url && <a href={url} target="_blank" rel="noopener noreferrer" aria-label={cameraText('open_camera_new_tab_aria', { label: camera.label })} className="text-xs font-semibold text-copper hover:underline">{cameraText('open_camera')} ↗</a>}
+                      {hasPoint && <button type="button" onClick={() => { selectMarker(markerId); setFocusTarget({ lat: Number(camera.mapLocation.lat), lng: Number(camera.mapLocation.lng), zoom: 16 }); }} className="min-h-8 text-xs font-medium text-gray-600 hover:text-copper">{t('showOnMap')}</button>}
+                    </div>
+                  </article>;
+                })}
+              </div> : <div className="p-3">
                 {!matchingChildren.length && <p className="px-3 py-8 text-center text-sm text-gray-500">{t('noAreas')}</p>}
                 {matchingChildren.map(child => <article key={child.id} data-map-result={child.id} className={`mb-2 rounded-xl border p-3 ${hoveredId === `child-${child.id}` || String(selectedChildId) === String(child.id) ? 'border-copper/60 bg-ivory' : 'border-brand-border'}`}>
                   <button type="button" className="w-full text-left text-sm font-semibold text-charcoal" onClick={() => { selectMarker(`child-${child.id}`); showArea(child); }} onMouseEnter={() => highlight(`child-${child.id}`)} onMouseLeave={() => unhighlight(`child-${child.id}`)} onFocus={() => highlight(`child-${child.id}`)} onBlur={() => unhighlight(`child-${child.id}`)}>{child.name_local || child.name}</button>

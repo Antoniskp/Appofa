@@ -8,43 +8,37 @@ import { getCivicQuestionLifecycleStatus, getCivicQuestionStatusBadgeVariant } f
 export default function CivicQuestionCard({ civicQuestion }) {
   const t = useTranslations('civicQuestions');
   const locale = useLocale();
-  const createdAt = new Date(civicQuestion.dateAsked || civicQuestion.createdAt).toLocaleDateString(locale);
   const lifecycleStatus = getCivicQuestionLifecycleStatus(civicQuestion);
-  const deadlineDate = civicQuestion.deadline ? new Date(civicQuestion.deadline).toLocaleDateString(locale) : null;
-  const sourceCheckedDate = civicQuestion.sourceCheckedAt ? new Date(civicQuestion.sourceCheckedAt).toLocaleDateString(locale) : null;
-  const locationName = locale === 'el' ? (civicQuestion.location?.name_local || civicQuestion.location?.name) : civicQuestion.location?.name;
+  const locationName = (locale === 'el' && civicQuestion.location?.name_local) || civicQuestion.location?.name;
+  // The complete status, including dates and references after a dash, remains on the detail page.
+  const sourceStage = civicQuestion.sourceStatus?.split(/\s[—–]\s/)[0];
+  const titleId = `civic-question-${civicQuestion.id}-title`;
 
   return (
     <Link
       href={`/civic-questions/${civicQuestion.id}`}
-      className="block bg-white border border-gray-200 rounded-lg p-5 hover:border-blue-300 hover:shadow-sm transition"
+      aria-labelledby={titleId}
+      className="flex h-full flex-col rounded-xl border border-gray-200 bg-white p-5 transition hover:border-blue-300 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700"
     >
       <div className="flex flex-wrap gap-2 mb-3">
         <Badge variant="primary">{t(`source_types.${civicQuestion.sourceType}`)}</Badge>
-        <Badge variant={getCivicQuestionStatusBadgeVariant(lifecycleStatus)}>{t(`status.${lifecycleStatus}`)}</Badge>
-        {civicQuestion.status === 'archived' && lifecycleStatus !== 'archived' && (
-          <Badge variant="danger">{t('status.archived')}</Badge>
-        )}
-        {civicQuestion.visibility === 'locals_only' && <Badge variant="orange">{t('local_badge')}</Badge>}
+        <Badge variant={getCivicQuestionStatusBadgeVariant(lifecycleStatus)}>{t('card.participation_status', { status: t(`status.${lifecycleStatus}`) })}</Badge>
+        {civicQuestion.visibility === 'locals_only' && <Badge variant="warning">{t('local_badge')}</Badge>}
       </div>
-      <h2 className="text-lg font-semibold text-gray-900 leading-snug">{civicQuestion.title}</h2>
+      <h3 id={titleId} className="text-lg font-semibold text-gray-900 leading-snug">{civicQuestion.title}</h3>
       {civicQuestion.simplified && (
-        <p className="text-sm text-gray-600 mt-2 line-clamp-2">{civicQuestion.simplified}</p>
+        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-gray-600">{civicQuestion.simplified}</p>
       )}
-      {civicQuestion.category && <p className="mt-3 text-xs text-gray-500">{civicQuestion.category}</p>}
-      {civicQuestion.sourceStatus && <p className="mt-2 text-sm text-gray-600">{t('detail.source_status')}: {civicQuestion.sourceStatus}</p>}
-      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium text-gray-700">
-        {deadlineDate && <span>{t('card.deadline')}: {deadlineDate}</span>}
-        {!deadlineDate && lifecycleStatus === 'open' && <span>{t('card.no_deadline')}</span>}
-        {locationName && <span>{t('detail.location')}: {locationName}</span>}
+      {civicQuestion.category && <p className="mt-3 text-sm text-gray-600">{civicQuestion.category}</p>}
+      {sourceStage && <p className="mt-3 text-sm text-gray-700"><span className="font-medium">{t(civicQuestion.sourceType === 'parliament' ? 'detail.parliament_stage' : 'detail.source_status')}:</span> {sourceStage}</p>}
+      <div className="mt-auto pt-4">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-600">
+          <span>{t('participation_count', { count: civicQuestion.totalVotes || 0 })}</span>
+          {civicQuestion.deadline && <span>{t('card.deadline')}: {new Date(civicQuestion.deadline).toLocaleDateString(locale)}</span>}
+          {locationName && civicQuestion.sourceType !== 'parliament' && <span>{locationName}</span>}
+        </div>
+        <p className="mt-4 text-sm font-semibold text-blue-700">{t('card.read_question')} <span aria-hidden="true">→</span></p>
       </div>
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-        <span>{t('source_types.' + civicQuestion.sourceType)}</span>
-        <span>{t('participation_count', { count: civicQuestion.totalVotes || 0 })}</span>
-        {sourceCheckedDate && <span>{t('card.source_checked')}: {sourceCheckedDate}</span>}
-        <span>{t(civicQuestion.dateAsked ? 'detail.date_asked' : 'card.published')}: {createdAt}</span>
-      </div>
-      <p className="mt-4 text-sm font-semibold text-blue-700">{t('card.read_question')}{lifecycleStatus === 'open' ? ` · ${t('card.participate')}` : ''} <span aria-hidden="true">→</span></p>
     </Link>
   );
 }

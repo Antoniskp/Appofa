@@ -569,6 +569,24 @@ const listCivicQuestions = async (query, user) => {
   }
 };
 
+const getCivicQuestionCategories = async (user) => {
+  try {
+    const rows = await CivicQuestion.findAll({
+      attributes: ['category'],
+      where: await buildVisibilityWhere(user),
+      group: ['category'],
+      raw: true,
+    });
+    const categories = [...new Set(rows.flatMap(({ category }) =>
+      (category || '').split('/').map((part) => part.trim()).filter(Boolean)
+    ))].sort((a, b) => a.localeCompare(b, 'el'));
+    return { success: true, status: 200, data: categories };
+  } catch (error) {
+    console.error('Civic question categories error:', error);
+    return { success: false, status: 500, message: 'Error fetching categories.' };
+  }
+};
+
 const getFeaturedCivicQuestion = async (user) => {
   try {
     const now = new Date();
@@ -872,6 +890,7 @@ module.exports = {
   CIVIC_QUESTION_RESULTS_VISIBILITIES,
   CIVIC_QUESTION_CHOICES,
   listCivicQuestions,
+  getCivicQuestionCategories,
   getFeaturedCivicQuestion,
   getCivicQuestionById,
   createCivicQuestion,

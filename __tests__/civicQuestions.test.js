@@ -93,6 +93,26 @@ describe('Civic Questions API', () => {
     expect(response.body.success).toBe(false);
   });
 
+  test('category choices span pages, split compound categories and respect visibility', async () => {
+    const created = await CivicQuestion.bulkCreate([
+      { category: 'Energy / Consumers', visibility: 'public' },
+      { category: 'Energy / Tax', visibility: 'public', status: 'closed' },
+      { category: 'Members', visibility: 'private' },
+      { category: 'Local category', visibility: 'locals_only', locationId: localLocation.id },
+    ].map((fields) => ({ title: 'Category visibility test', creatorId: creator.id, sourceType: 'parliament', ...fields })));
+    try {
+      const anonymous = await request(app).get('/api/civic-questions/categories');
+      expect(anonymous.status).toBe(200);
+      expect(anonymous.body.data).toEqual(['Consumers', 'Energy', 'Tax']);
+      const member = await request(app).get('/api/civic-questions/categories').set('Cookie', [`auth_token=${outsider.token}`]);
+      expect(member.body.data).toEqual(['Consumers', 'Energy', 'Members', 'Tax']);
+      const local = await request(app).get('/api/civic-questions/categories').set('Cookie', [`auth_token=${voter.token}`]);
+      expect(local.body.data).toContain('Local category');
+    } finally {
+      await CivicQuestion.destroy({ where: { id: created.map((question) => question.id) } });
+    }
+  });
+
   test('features recent participation across issues, excluding expired and inaccessible issues', async () => {
     const createdIds = [];
     const makeQuestion = async (overrides = {}) => {

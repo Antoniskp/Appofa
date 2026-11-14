@@ -1,9 +1,16 @@
 # Map explorer
 
-Location pages use one explorer for public geolocated issues and child areas. The
+Location pages use one explorer for public geolocated issues, cameras and child areas. The
 map API includes descendant locations, applies category/status/date/text/bounds
 filters before pagination, and returns 100 issues per page. “Load more” adds the
 next page to the map and list. The normal suggestions feed is independent.
+
+Cameras load from `/api/locations/cameras?locationId=…`, including published
+webcams in descendant locations. Camera pins use exact coordinates when available
+and otherwise the source location's coordinates. The Cameras tab includes working
+status and stream links; cameras without coordinates remain in the list. Text and
+viewport searches filter cameras, while issue category/status/date filters apply
+only to issues. Selecting a camera opens its card; “Show on map” focuses its pin.
 
 Selecting a card or marker opens its details without changing the camera. “Show
 on map”, area selection, address selection and reset are explicit camera actions.

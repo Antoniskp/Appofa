@@ -88,7 +88,8 @@ export default function CivicQuestionDetailClient() {
   const isCreator = user && civicQuestion.creatorId === user.id;
   const canEdit = isCreator || user?.role === 'admin';
   const lifecycleStatus = getCivicQuestionLifecycleStatus(civicQuestion);
-  const canVote = user && lifecycleStatus === 'open';
+  const participationOpen = lifecycleStatus === 'open' || lifecycleStatus === 'closing_soon';
+  const canVote = user && participationOpen;
 
   const sectionCardClass = 'bg-white border border-gray-200 rounded-lg p-5';
 
@@ -99,7 +100,7 @@ export default function CivicQuestionDetailClient() {
         {/* Header card */}
         <div className={`${sectionCardClass} space-y-3`}>
           <div className="flex flex-wrap items-start gap-2">
-            <Badge variant={getCivicQuestionStatusBadgeVariant(lifecycleStatus)}>{t(`status.${lifecycleStatus}`)}</Badge>
+            <Badge variant={getCivicQuestionStatusBadgeVariant(lifecycleStatus)}>{t('card.participation_status', { status: t(`status.${lifecycleStatus}`) })}</Badge>
             <Badge variant="primary">{t(`source_types.${civicQuestion.sourceType}`)}</Badge>
 
             {civicQuestion.visibility === 'locals_only' && <Badge variant="warning">{t('local_badge')}</Badge>}
@@ -144,7 +145,7 @@ export default function CivicQuestionDetailClient() {
         <section className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-700 space-y-2">
           <p><strong>{t('detail.participation_status')}:</strong> {t(`status.${lifecycleStatus}`)}</p>
           {(civicQuestion.deadline || lifecycleStatus === 'open') && <p>{civicQuestion.deadline ? `${t('card.deadline')}: ${toDisplayDate(civicQuestion.deadline, locale, true)}` : t('card.no_deadline')}</p>}
-          {civicQuestion.sourceStatus && <p><strong>{t('detail.source_status')}:</strong> {civicQuestion.sourceStatus}</p>}
+          {civicQuestion.sourceStatus && <p><strong>{t(civicQuestion.sourceType === 'parliament' ? 'detail.parliament_stage' : 'detail.source_status')}:</strong> {civicQuestion.sourceStatus}</p>}
           {civicQuestion.sourceCheckedAt && <p>{t('detail.source_checked')}: {toDisplayDate(civicQuestion.sourceCheckedAt, locale)}</p>}
           <p className="text-gray-500">{t('detail.status_help')}</p>
           <a href="#question-sources" className="inline-block text-blue-700 underline">{t('detail.source_origin')}</a>
@@ -166,12 +167,15 @@ export default function CivicQuestionDetailClient() {
           </div>
         </section>
 
-        {!user && lifecycleStatus === 'open' && <div className={sectionCardClass}><LoginLink className="font-medium text-blue-700 underline">{t('detail.login_vote')}</LoginLink></div>}
-        {canVote && (
-          <div className={sectionCardClass}>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('detail.vote')}</h2>
-            <CivicQuestionVoting civicQuestion={civicQuestion} onVoteSuccess={() => fetchQuestion()} />
-          </div>
+        {participationOpen && (
+          <section className={sectionCardClass} aria-labelledby="participation-question">
+            <h2 id="participation-question" className="text-xl font-semibold text-gray-900">{t('detail.vote')}</h2>
+            <p className="mt-3 text-lg font-medium text-gray-900">{civicQuestion.title}</p>
+            <p className="mb-4 mt-2 text-sm text-gray-600">{t('detail.vote_help')}</p>
+            {canVote
+              ? <CivicQuestionVoting civicQuestion={civicQuestion} onVoteSuccess={() => fetchQuestion()} />
+              : <LoginLink className="font-medium text-blue-700 underline">{t('detail.login_vote')}</LoginLink>}
+          </section>
         )}
 
         <div className={sectionCardClass}>

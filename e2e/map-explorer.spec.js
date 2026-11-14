@@ -104,3 +104,42 @@ test('map explorer combines parent areas and descendant issues in a single map',
   await explorer.getByRole('link', { name: 'Explore area', exact: false }).click();
   await expect(page).toHaveURL(/\/locations\/test-municipality$/);
 });
+
+test('map explorer shows local cameras alongside issues and links camera pins to cards', async ({ page }, testInfo) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/locations/attica');
+  const explorer = page.getByRole('region', { name: 'Explore the area', exact: true });
+  const map = explorer.getByRole('region', { name: 'Map of Attica' });
+  await expect(map.locator('.map-camera-marker')).toHaveCount(2);
+  await expect.poll(() => map.locator('.map-issue-marker').count()).toBeGreaterThanOrEqual(3);
+  await explorer.getByRole('tab', { name: 'Cameras 2', exact: true }).click();
+  const panel = explorer.getByRole('tabpanel', { name: 'Cameras' });
+  await expect(panel.getByRole('heading', { name: 'Harbour camera' })).toBeVisible();
+  await expect(panel.getByText('Working', { exact: true })).toBeVisible();
+  await expect(panel.getByText('Temporarily unavailable', { exact: true })).toBeVisible();
+  await expect(panel.getByText('Exact camera pin', { exact: true })).toBeVisible();
+  await expect(panel.getByText('Source location pin', { exact: true })).toBeVisible();
+  const stream = panel.getByRole('link', { name: 'Open camera Harbour camera in a new tab' });
+  await expect(stream).toHaveAttribute('href', 'https://camera.example/harbour');
+  await expect(stream).toHaveAttribute('target', '_blank');
+  await map.locator('.leaflet-marker-icon[title="Harbour camera"]').click();
+  await expect(map.locator('.map-camera-marker.is-selected')).toHaveCount(1);
+  await expect(panel.getByRole('button', { name: /Working Harbour camera/ })).toHaveAttribute('aria-pressed', 'true');
+  if (testInfo.project.name === 'mobile') {
+    await expect.poll(async () => Math.round((await map.boundingBox()).height)).toBe(280);
+  }
+  await explorer.screenshot({ path: testInfo.outputPath('map-cameras.png') });
+  const pane = map.locator('.leaflet-map-pane');
+  const viewport = await pane.getAttribute('style');
+  await explorer.getByLabel('Issue category', { exact: true }).selectOption('trash');
+  await expect(map.locator('.map-issue-marker')).toHaveCount(1);
+  await expect(map.locator('.map-camera-marker')).toHaveCount(2);
+  expect(await pane.getAttribute('style')).toBe(viewport);
+  await explorer.getByRole('searchbox').fill('harbour');
+  await expect(map.locator('.map-camera-marker')).toHaveCount(1);
+  await expect(panel.getByRole('heading', { name: 'Town square camera' })).toHaveCount(0);
+  await panel.getByRole('button', { name: 'Show on map', exact: true }).click();
+  await expect(map.locator('.map-camera-marker.is-selected')).toHaveCount(1);
+  expect(errors).toEqual([]);
+});

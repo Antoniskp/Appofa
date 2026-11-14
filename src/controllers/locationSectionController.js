@@ -1,4 +1,5 @@
 const { LocationSection, Location, User } = require('../models');
+const { Op } = require('sequelize');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
 
 // ---------------------------------------------------------------------------
@@ -202,12 +203,18 @@ exports.getSections = async (req, res) => {
  * GET /api/locations/cameras
  * Public: returns all published webcams flattened into a single cameras feed.
  */
-exports.getAllCameras = async (_req, res) => {
+exports.getAllCameras = async (req, res) => {
+  const locationId = req.query.locationId === undefined ? null : Number(req.query.locationId);
+  if (locationId !== null && (!Number.isSafeInteger(locationId) || locationId < 1)) {
+    return res.status(400).json({ success: false, message: 'Invalid location.' });
+  }
   try {
+    const locationIds = locationId === null ? null : await getDescendantLocationIds(locationId, true);
     const sections = await LocationSection.findAll({
       where: {
         type: 'webcams',
         isPublished: true,
+        ...(locationIds ? { locationId: { [Op.in]: locationIds } } : {}),
       },
       include: [
         {

@@ -28,7 +28,7 @@
 import dynamic from 'next/dynamic';
 import { memo, useMemo } from 'react';
 import { MAP_ISSUE_TYPE_COLORS, MAP_ISSUE_TYPE_LABELS } from '@/lib/constants/mapIssues';
-import { outsideBoundaryMask, normalizeMapBoundary, mapGeometryBounds } from '@/lib/map-utils';
+import { hasMapPoint, outsideBoundaryMask, normalizeMapBoundary, mapGeometryBounds } from '@/lib/map-utils';
 
 // Dynamic import keeps Leaflet (which needs `window`) out of the SSR bundle.
 // ssr:false is required — Leaflet uses browser APIs at import time.
@@ -165,6 +165,7 @@ export default memo(function LocationMap({
   childLocations = [],
   summaryCounts,
   mapIssues = [],
+  mapCameras = [],
   pendingIssuePin = null,
   className,
   overlays = [],
@@ -178,6 +179,7 @@ export default memo(function LocationMap({
   onViewportChange,
   selectedIssueId,
   selectedChildId,
+  selectedCameraId,
   focusTarget,
   viewResetKey,
   tileMode = 'light',
@@ -294,6 +296,19 @@ export default memo(function LocationMap({
       };
     });
 
+  const cameraMarkers = mapCameras.filter(camera => hasMapPoint(camera.mapLocation)).map(camera => ({
+    id: `camera-${camera.id}`,
+    lat: Number(camera.mapLocation.lat),
+    lng: Number(camera.mapLocation.lng),
+    label: camera.label,
+    meta: camera.sourceLocation?.name_local || camera.sourceLocation?.name || '',
+    markerType: 'camera',
+    variant: String(camera.id) === String(selectedCameraId) ? 'selected' : 'explorer',
+    iconColor: camera.isWorking === false ? '#64748b' : '#0f766e',
+    tooltip: escapeHtml(camera.label),
+    popup: onMarkerClick ? undefined : `<strong>${escapeHtml(camera.label)}</strong>`,
+  }));
+
   const pendingMarker = pendingIssuePin
     && isValidCoord(pendingIssuePin.lat, -90, 90)
     && isValidCoord(pendingIssuePin.lng, -180, 180)
@@ -310,7 +325,7 @@ export default memo(function LocationMap({
     : [];
 
   // Nothing to render if we have neither valid coords nor a boundary polygon nor child markers.
-  if (!hasValidCoords && !normalizedBoundary && childMarkers.length === 0 && !childBoundaries.length && issueMarkers.length === 0 && pendingMarker.length === 0) return null;
+  if (!hasValidCoords && !normalizedBoundary && childMarkers.length === 0 && !childBoundaries.length && issueMarkers.length === 0 && cameraMarkers.length === 0 && pendingMarker.length === 0) return null;
 
   const hasDefaultCenter =
     isValidCoord(location.map_default_center_lat, -90, 90)
@@ -324,13 +339,15 @@ export default memo(function LocationMap({
             ? [childMarkers[0].lat, childMarkers[0].lng]
           : issueMarkers.length > 0
             ? [issueMarkers[0].lat, issueMarkers[0].lng]
+          : cameraMarkers.length > 0
+            ? [cameraMarkers[0].lat, cameraMarkers[0].lng]
             : pendingMarker.length > 0
               ? [pendingMarker[0].lat, pendingMarker[0].lng]
               : GREECE_CENTER
       );
   const zoom = location.map_default_zoom != null && Number(location.map_default_zoom) >= 1 && Number(location.map_default_zoom) <= 20
     ? Number(location.map_default_zoom)
-    : (hasValidCoords ? 12 : (issueMarkers.length > 0 || pendingMarker.length > 0 ? 14 : GREECE_ZOOM));
+    : (hasValidCoords ? 12 : (issueMarkers.length > 0 || cameraMarkers.length > 0 || pendingMarker.length > 0 ? 14 : GREECE_ZOOM));
   const locationHref = location.slug ? `/locations/${location.slug}` : null;
   const pollsHref = locationHref ? `${locationHref}?tab=polls#location-content` : '#location-content';
   const suggestionsHref = locationHref ? `${locationHref}?tab=suggestions#location-content` : '#location-content';
@@ -352,6 +369,7 @@ export default memo(function LocationMap({
       : []),
     ...childMarkers,
     ...issueMarkers,
+    ...cameraMarkers,
     ...pendingMarker,
   ];
   // The overview belongs to the location. Filtering the issue list must not move it.
@@ -365,7 +383,7 @@ export default memo(function LocationMap({
       zoom={zoom}
       bounds={initialBounds}
       markers={markers}
-      clusterMarkers={(childMarkers.length + issueMarkers.length) > 8}
+      clusterMarkers={(childMarkers.length + issueMarkers.length + cameraMarkers.length) > 8}
       overlays={overlays}
       polygonLayers={polygonLayers}
       className={className || 'h-64 w-full rounded-lg overflow-hidden'}

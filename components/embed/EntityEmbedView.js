@@ -15,9 +15,9 @@ const TYPE_META = {
     actionLabel: 'Άνοιγμα πρότασης',
   },
   'civic-questions': {
-    badge: 'Πολιτική Ερώτηση',
+    badge: 'Θέμα Βουλής',
     accentClass: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    actionLabel: 'Άνοιγμα πολιτικής ερώτησης',
+    actionLabel: 'Δες το θέμα',
   },
 };
 
@@ -29,7 +29,7 @@ const SUGGESTION_TYPE_LABELS = {
 };
 
 const CIVIC_SOURCE_LABELS = {
-  parliament: 'Κοινοβούλιο',
+  parliament: 'Βουλή',
   european_commission: 'Ευρωπαϊκή Επιτροπή',
   municipal_council: 'Δημοτικό συμβούλιο',
   regional_council: 'Περιφερειακό συμβούλιο',
