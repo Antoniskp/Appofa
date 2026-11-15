@@ -66,7 +66,7 @@ export function stripMarkdown(text) {
  * @param {Object} article - Article object with title, category, summary, content, author, createdAt
  * @param {string} variant - 'grid' for grid layout (compact) or 'list' for list layout (detailed)
  */
-export default function ArticleCard({ article, variant = 'grid' }) {
+export default function ArticleCard({ article, variant = 'grid', imageSizes }) {
   const tArticles = useTranslations('articles');
   const tCommon = useTranslations('common');
   const defaultBannerImageUrl = defaultArticleImage(article);
@@ -104,6 +104,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
 
     return (
       <ImageTopCard
+        imageSizes={imageSizes}
         image={thumbnailUrl}
         imageAlt={bannerAltText}
         imageFallback={defaultBannerImageUrl}
@@ -216,6 +217,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
   // Grid variant (image on top)
   return (
     <ImageTopCard
+      imageSizes={imageSizes}
       image={bannerImageUrl}
       imageAlt={bannerAltText}
       imageFallback={defaultBannerImageUrl}

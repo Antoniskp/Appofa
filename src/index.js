@@ -6,6 +6,7 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const path = require('path');
+const uploadStaticOptions = require('./config/uploadStaticOptions');
 const cors = require('cors');
 const helmet = require('helmet');
 const { helmetConfig, corsOptions } = require('./config/securityHeaders');
@@ -38,7 +39,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files (avatars, location images) as static assets.
 // Use __dirname so this resolves correctly regardless of working directory at start-up.
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads'), uploadStaticOptions));
 
 // Block blacklisted IPs before any route runs
 app.use(ipBlockMiddleware);

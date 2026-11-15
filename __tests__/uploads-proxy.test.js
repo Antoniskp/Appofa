@@ -35,15 +35,11 @@ describe('Uploads proxy route — app/uploads/[...path]/route.js', () => {
 
     const fakeImageBuffer = Buffer.from('fake-webp-data');
     global.fetch = jest.fn(() =>
-      Promise.resolve({
-        ok: true,
-        headers: new Headers({ 'content-type': 'image/webp' }),
-        arrayBuffer: () => Promise.resolve(fakeImageBuffer.buffer),
-      })
+      Promise.resolve(new Response(fakeImageBuffer, { headers: { 'content-type': 'image/webp', 'cache-control': 'public, max-age=0, must-revalidate' } }))
     );
 
     const { GET } = require('../app/uploads/[...path]/route.js');
-    await GET(makeRequest('/uploads/profiles/4.webp'));
+    await (await GET(makeRequest('/uploads/profiles/4.webp'))).arrayBuffer();
 
     const calledUrl = global.fetch.mock.calls[0][0];
     expect(calledUrl).toMatch(/^http:\/\/localhost:3000\//);
@@ -56,15 +52,11 @@ describe('Uploads proxy route — app/uploads/[...path]/route.js', () => {
     delete process.env.NEXT_PUBLIC_API_URL;
 
     global.fetch = jest.fn(() =>
-      Promise.resolve({
-        ok: true,
-        headers: new Headers({ 'content-type': 'image/webp' }),
-        arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
-      })
+      Promise.resolve(new Response(new ArrayBuffer(0), { headers: { 'content-type': 'image/webp', 'cache-control': 'public, max-age=0, must-revalidate' } }))
     );
 
     const { GET } = require('../app/uploads/[...path]/route.js');
-    await GET(makeRequest('/uploads/profiles/1.webp'));
+    await (await GET(makeRequest('/uploads/profiles/1.webp'))).arrayBuffer();
 
     expect(global.fetch.mock.calls[0][0]).toBe('http://localhost:3000/uploads/profiles/1.webp');
   });
@@ -76,19 +68,16 @@ describe('Uploads proxy route — app/uploads/[...path]/route.js', () => {
     const fakeBuffer = new ArrayBuffer(8);
 
     global.fetch = jest.fn(() =>
-      Promise.resolve({
-        ok: true,
-        headers: new Headers({ 'content-type': 'image/webp' }),
-        arrayBuffer: () => Promise.resolve(fakeBuffer),
-      })
+      Promise.resolve(new Response(fakeBuffer, { headers: { 'content-type': 'image/webp', 'cache-control': 'public, max-age=0, must-revalidate' } }))
     );
 
     const { GET } = require('../app/uploads/[...path]/route.js');
     const response = await GET(makeRequest('/uploads/profiles/4.webp'));
+    await response.arrayBuffer();
 
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toBe('image/webp');
-    expect(response.headers.get('Cache-Control')).toBe('public, max-age=86400');
+    expect(response.headers.get('Cache-Control')).toBe('public, max-age=0, must-revalidate');
   });
 
   test('returns 200 for location image', async () => {
@@ -96,15 +85,12 @@ describe('Uploads proxy route — app/uploads/[...path]/route.js', () => {
     const fakeBuffer = new ArrayBuffer(8);
 
     global.fetch = jest.fn(() =>
-      Promise.resolve({
-        ok: true,
-        headers: new Headers({ 'content-type': 'image/webp' }),
-        arrayBuffer: () => Promise.resolve(fakeBuffer),
-      })
+      Promise.resolve(new Response(fakeBuffer, { headers: { 'content-type': 'image/webp', 'cache-control': 'public, max-age=0, must-revalidate' } }))
     );
 
     const { GET } = require('../app/uploads/[...path]/route.js');
     const response = await GET(makeRequest('/uploads/locations/7.webp'));
+    await response.arrayBuffer();
 
     expect(response.status).toBe(200);
     const calledUrl = global.fetch.mock.calls[0][0];
@@ -117,15 +103,11 @@ describe('Uploads proxy route — app/uploads/[...path]/route.js', () => {
     process.env.API_URL = 'http://localhost:3000';
 
     global.fetch = jest.fn(() =>
-      Promise.resolve({
-        ok: true,
-        headers: new Headers({ 'content-type': 'image/webp' }),
-        arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
-      })
+      Promise.resolve(new Response(new ArrayBuffer(0), { headers: { 'content-type': 'image/webp', 'cache-control': 'public, max-age=0, must-revalidate' } }))
     );
 
     const { GET } = require('../app/uploads/[...path]/route.js');
-    await GET(makeRequest('/uploads/profiles/4.webp', '?v=1777377161246'));
+    await (await GET(makeRequest('/uploads/profiles/4.webp', '?v=1777377161246'))).arrayBuffer();
 
     const calledUrl = global.fetch.mock.calls[0][0];
     expect(calledUrl).toBe(
@@ -163,6 +145,7 @@ describe('Uploads proxy route — app/uploads/[...path]/route.js', () => {
 
     const { GET } = require('../app/uploads/[...path]/route.js');
     const response = await GET(makeRequest('/uploads/profiles/4.webp'));
+    await response.arrayBuffer();
 
     expect(response.status).toBe(502);
   });
@@ -176,7 +159,56 @@ describe('Uploads proxy route — app/uploads/[...path]/route.js', () => {
 
     const { GET } = require('../app/uploads/[...path]/route.js');
     const response = await GET(makeRequest('/uploads/profiles/4.webp'));
+    await response.arrayBuffer();
 
     expect(response.status).toBe(504);
+  });
+
+  test('streams the first chunk before the upstream photo finishes', async () => {
+    let upstream;
+    const stream = new ReadableStream({ start(controller) { upstream = controller; } });
+    global.fetch = jest.fn().mockResolvedValue(new Response(stream, {
+      headers: { 'content-type': 'image/webp', 'cache-control': 'public, max-age=31536000, immutable' },
+    }));
+    const { GET } = require('../app/uploads/[...path]/route.js');
+    const response = await GET(makeRequest('/uploads/media/photo.webp'));
+    const reader = response.body.getReader();
+    upstream.enqueue(new Uint8Array([1, 2]));
+    expect(await reader.read()).toEqual({ value: new Uint8Array([1, 2]), done: false });
+    expect(response.headers.get('cache-control')).toBe('public, max-age=31536000, immutable');
+    upstream.close();
+    expect((await reader.read()).done).toBe(true);
+  });
+
+  test('forwards validators and returns a bodyless 304', async () => {
+    global.fetch = jest.fn().mockResolvedValue(new Response(null, {
+      status: 304, headers: { etag: '"photo-v1"', 'cache-control': 'public, max-age=0, must-revalidate' },
+    }));
+    const { GET } = require('../app/uploads/[...path]/route.js');
+    const response = await GET({ ...makeRequest('/uploads/profiles/1.webp'), headers: new Headers({ 'if-none-match': '"photo-v1"' }) });
+    expect(global.fetch.mock.calls[0][1].headers.get('if-none-match')).toBe('"photo-v1"');
+    expect(global.fetch.mock.calls[0][1].cache).toBe('no-store');
+    expect(response.status).toBe(304);
+    expect(response.body).toBeNull();
+    expect(response.headers.get('etag')).toBe('"photo-v1"');
+  });
+
+  test('HEAD does not download the photo body', async () => {
+    global.fetch = jest.fn().mockResolvedValue(new Response(null, { headers: { 'content-length': '1234' } }));
+    const { HEAD } = require('../app/uploads/[...path]/route.js');
+    const response = await HEAD({ ...makeRequest('/uploads/profiles/1.webp'), method: 'HEAD' });
+    expect(global.fetch.mock.calls[0][1].method).toBe('HEAD');
+    expect(response.body).toBeNull();
+    expect(response.headers.get('content-length')).toBe('1234');
+  });
+
+  test('cancelling the client stream cancels the upstream fetch', async () => {
+    const cancel = jest.fn();
+    global.fetch = jest.fn().mockResolvedValue(new Response(new ReadableStream({ cancel })));
+    const { GET } = require('../app/uploads/[...path]/route.js');
+    const response = await GET(makeRequest('/uploads/profiles/1.webp'));
+    await response.body.cancel();
+    expect(cancel).toHaveBeenCalled();
+    expect(global.fetch.mock.calls[0][1].signal.aborted).toBe(true);
   });
 });

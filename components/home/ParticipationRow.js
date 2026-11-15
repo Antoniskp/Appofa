@@ -69,7 +69,7 @@ export default function ParticipationRow({ user, featuredPoll, featuredPollLoadi
       ? <div className="rounded-xl bg-slate-900 text-white"><FeaturedLivePoll poll={featuredPoll} loading={featuredPollLoading} user={user} /></div>
       : <article className={card}><p className={label}>Ψηφοφορίες</p><h2 className="mb-4 text-xl font-bold">Σε ποια θέματα θέλεις να ψηφίσεις;</h2><Link className={button} href="/polls">Δες τις ψηφοφορίες</Link></article>}
     {analysis && <div className="min-w-0">
-      <h2 className={label}>Τελευταία ανάλυση</h2>
+      <h2 className={`${label} lg:sr-only`}>Τελευταία ανάλυση</h2>
       <ArticleCard article={analysis} variant="grid" />
     </div>}
   </section>;

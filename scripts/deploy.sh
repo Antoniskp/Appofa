@@ -85,7 +85,11 @@ if [ "$RUN_SEEDS" = "1" ]; then
 fi
 
 echo "🧹 Cleaning build artifacts..."
-rm -rf .next
+# Keep Next's image/compilation caches across deploys. Deleting optimized photos
+# forces the frontend to encode every size again as visitors request them.
+if [ -d .next ]; then
+	find .next -mindepth 1 -maxdepth 1 ! -name cache -exec rm -rf -- {} +
+fi
 
 echo "🏗️  Building frontend..."
 NODE_ENV=production npm run frontend:build

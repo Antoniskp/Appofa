@@ -133,6 +133,7 @@ export function ImageCard({
   imageAlt,
   imageFallback,
   imageClassName = 'w-32 h-24',
+  imageSizes = '128px',
   children,
   href,
   onClick,
@@ -150,7 +151,7 @@ export function ImageCard({
           alt={imageAlt} 
           width={1280}
           height={720}
-          sizes="(max-width: 768px) 100vw, 40vw"
+          sizes={imageSizes}
           className="w-full h-full object-cover"
           loading="lazy"
           onError={(_e) => {
@@ -187,6 +188,7 @@ export function ImageTopCard({
   imageAlt,
   imageFallback,
   imageClassName = 'h-48',
+  imageSizes = '(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 33vw',
   imageOverlay,
   children,
   footer,
@@ -205,7 +207,7 @@ export function ImageTopCard({
           alt={imageAlt} 
           width={1280}
           height={720}
-          sizes="100vw"
+          sizes={imageSizes}
           className="w-full h-full object-cover"
           loading="lazy"
           onError={(_e) => {

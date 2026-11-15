@@ -32,7 +32,8 @@ const nextConfig = {
         hostname: '127.0.0.1',
       },
     ],
-    formats: ['image/avif', 'image/webp'],
+    // Prefer the faster encoder on cache misses and keep one format per size.
+    formats: ['image/webp'],
   },
 };
 

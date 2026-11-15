@@ -18,35 +18,73 @@ const handler = async (request) => {
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let streaming = false;
 
   try {
+    const headers = new Headers();
+    for (const name of ['if-none-match', 'if-modified-since']) {
+      const value = request.headers?.get(name);
+      if (value) headers.set(name, value);
+    }
     const response = await fetch(targetUrl, {
-      method: 'GET',
+      method: request.method === 'HEAD' ? 'HEAD' : 'GET',
+      headers,
       signal: controller.signal,
+      cache: 'no-store',
     });
 
-    if (!response.ok) {
-      return new Response(null, { status: response.status });
+    if (!response.ok && response.status !== 304) {
+      await response.body?.cancel();
+      return new Response(null, { status: response.status, headers: { 'Cache-Control': 'no-store' } });
     }
 
-    const contentType = response.headers.get('content-type') || 'application/octet-stream';
-    const buffer = await response.arrayBuffer();
+    const responseHeaders = new Headers();
+    for (const name of ['content-type', 'content-length', 'cache-control', 'etag', 'last-modified']) {
+      const value = response.headers.get(name);
+      if (value) responseHeaders.set(name, value);
+    }
+    responseHeaders.set('Cache-Control', responseHeaders.get('Cache-Control') || 'public, max-age=0, must-revalidate');
+    responseHeaders.set('X-Content-Type-Options', 'nosniff');
 
-    return new Response(buffer, {
-      status: 200,
-      headers: {
-        'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=86400',
+    if (response.status === 304 || request.method === 'HEAD' || !response.body) {
+      await response.body?.cancel();
+      return new Response(null, { status: response.status, headers: responseHeaders });
+    }
+
+    // Stream with backpressure instead of buffering the whole photo per visitor.
+    // Keep the upstream timeout alive until the body completes or is cancelled.
+    const reader = response.body.getReader();
+    const body = new ReadableStream({
+      async pull(streamController) {
+        try {
+          const { done, value } = await reader.read();
+          if (done) {
+            clearTimeout(timeoutId);
+            streamController.close();
+          } else {
+            streamController.enqueue(value);
+          }
+        } catch (error) {
+          clearTimeout(timeoutId);
+          streamController.error(error);
+        }
+      },
+      async cancel(reason) {
+        clearTimeout(timeoutId);
+        controller.abort();
+        await reader.cancel(reason);
       },
     });
+    streaming = true;
+    return new Response(body, { status: response.status, headers: responseHeaders });
   } catch (err) {
     if (err.name === 'AbortError') {
       return new Response(null, { status: 504 });
     }
     return new Response(null, { status: 502 });
   } finally {
-    clearTimeout(timeoutId);
+    if (!streaming) clearTimeout(timeoutId);
   }
 };
 
-export { handler as GET };
+export { handler as GET, handler as HEAD };

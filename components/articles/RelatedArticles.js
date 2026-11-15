@@ -28,7 +28,7 @@ export default function RelatedArticles({ article }) {
         <p className="mt-2 text-sm text-gray-600">{t('related_stories_description')}</p>
       </div>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        {articles.map((related) => <ArticleCard key={related.id} article={related} />)}
+        {articles.map((related) => <ArticleCard key={related.id} article={related} imageSizes="(max-width: 639px) 100vw, 50vw" />)}
       </div>
     </section>
   );
