@@ -62,7 +62,8 @@ function getHolderDisplayName(holder) {
   const user = holder?.user;
   if (!user) return null;
   const fullName = [user.firstNameNative, user.lastNameNative].filter(Boolean).join(' ').trim();
-  return fullName || user.username || null;
+  const englishName = [user.firstNameEn, user.lastNameEn].filter(Boolean).join(' ').trim();
+  return fullName || englishName || user.nickname || user.username || null;
 }
 
 function formatSinceDate(since) {
@@ -137,15 +138,41 @@ function HolderAvatar({ photo, name, avatarColor, size = 'md' }) {
   );
 }
 
+function HolderProfile({ holder, size = 'md' }) {
+  const user = holder?.user;
+  const name = getHolderDisplayName(holder);
+  const href = user?.slug
+    ? `/persons/${encodeURIComponent(user.slug)}`
+    : user?.username ? `/users/${encodeURIComponent(user.username)}` : null;
+  const sinceLabel = holder?.since ? formatSinceDate(holder.since) : null;
+  const content = (
+    <>
+      <HolderAvatar
+        photo={user?.photo || user?.avatar || holder?.holderPhoto || null}
+        name={name}
+        avatarColor={user?.avatarColor || holder?.holderAvatarColor || null}
+        size={size}
+      />
+      <div className="min-w-0">
+        <p className={`${size === 'lg' ? 'font-semibold' : 'text-sm font-medium'} truncate`}>{name}</p>
+        {sinceLabel && <p className="text-xs text-gray-500 mt-0.5">Από {sinceLabel}</p>}
+      </div>
+    </>
+  );
+
+  return href ? (
+    <Link href={href} className="flex items-center gap-3 rounded-md text-gray-800 hover:text-blue-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600">
+      {content}
+    </Link>
+  ) : <div className="flex items-center gap-3 text-gray-800">{content}</div>;
+}
+
 function LeadershipCard({ position }) {
   const icon = getPositionIcon(position);
   const badgeColor = getTypeBadgeColor(position.positionTypeKey);
   const typeLabel = getTypeLabel(position.positionTypeKey);
   const holder = position.currentHolders?.[0] || null;
   const holderName = holder ? getHolderDisplayName(holder) : null;
-  const holderPhoto = holder?.holderPhoto || null;
-  const holderAvatarColor = holder?.holderAvatarColor || null;
-  const sinceLabel = holder?.since ? formatSinceDate(holder.since) : null;
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
@@ -163,15 +190,7 @@ function LeadershipCard({ position }) {
       {/* Holder */}
       <div className="border-t border-gray-100 pt-3">
         {holderName ? (
-          <div className="flex items-center gap-3">
-            <HolderAvatar photo={holderPhoto} name={holderName} avatarColor={holderAvatarColor} size="lg" />
-            <div className="min-w-0">
-              <p className="font-semibold text-gray-900 truncate">{holderName}</p>
-              {sinceLabel && (
-                <p className="text-xs text-gray-500 mt-0.5">Από {sinceLabel}</p>
-              )}
-            </div>
-          </div>
+          <HolderProfile holder={holder} size="lg" />
         ) : (
           <p className="text-sm text-gray-400 italic">Δεν έχει καταχωρηθεί επίσημος κάτοχος</p>
         )}
@@ -184,9 +203,6 @@ function MinisterCard({ position }) {
   const icon = getPositionIcon(position);
   const holder = position.currentHolders?.[0] || null;
   const holderName = holder ? getHolderDisplayName(holder) : null;
-  const holderPhoto = holder?.holderPhoto || null;
-  const holderAvatarColor = holder?.holderAvatarColor || null;
-  const sinceLabel = holder?.since ? formatSinceDate(holder.since) : null;
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-start gap-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
@@ -199,15 +215,7 @@ function MinisterCard({ position }) {
 
         {/* Holder */}
         {holderName ? (
-          <div className="flex items-center gap-2">
-            <HolderAvatar photo={holderPhoto} name={holderName} avatarColor={holderAvatarColor} size="sm" />
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-700 truncate">{holderName}</p>
-              {sinceLabel && (
-                <p className="text-xs text-gray-400">Από {sinceLabel}</p>
-              )}
-            </div>
-          </div>
+          <HolderProfile holder={holder} size="sm" />
         ) : (
           <p className="text-xs text-gray-400 italic">Κενή θέση</p>
         )}
@@ -279,8 +287,9 @@ export default async function GovernmentPositionsPage() {
       {/* Intro */}
       <section>
         <p className="text-xl text-gray-700 leading-relaxed">
-          Κατάλογος των βασικών κυβερνητικών θέσεων της Ελληνικής Δημοκρατίας και των επίσημων
-          τωρινών κατόχων τους, όπως καταγράφονται στο μητρώο θέσεων της πλατφόρμας.
+          Κατάλογος των βασικών κυβερνητικών θέσεων της Ελληνικής Δημοκρατίας και των
+          τωρινών κατόχων τους. Επιλέξτε ένα όνομα ή μια φωτογραφία για να δείτε το
+          καταχωρισμένο προφίλ του προσώπου στην πλατφόρμα.
         </p>
         {error && (
           <p className="mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
@@ -376,8 +385,8 @@ export default async function GovernmentPositionsPage() {
       {/* Disclaimer */}
       <section>
         <p className="text-xs text-gray-400 leading-relaxed border-t border-gray-200 pt-4">
-          <strong>Σημείωση:</strong> Η σελίδα αντλεί δεδομένα από το επίσημο μητρώο
-          GovernmentPositions/GovernmentCurrentHolders που χρησιμοποιεί και η διαχείριση Dream Team.
+          <strong>Σημείωση:</strong> Οι κάτοχοι των θέσεων συνδέονται με τα υπάρχοντα
+          προφίλ προσώπων και χρηστών της πλατφόρμας.
           Για επιβεβαίωση σε πραγματικό χρόνο απευθυνθείτε και στο{' '}
           <a
             href="https://primeminister.gr"

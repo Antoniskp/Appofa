@@ -55,7 +55,7 @@ const dreamTeamController = {
               {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo', 'avatarColor'],
+                attributes: ['id', 'username', 'slug', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'photo', 'avatarColor'],
                 required: false,
               },
             ],
