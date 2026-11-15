@@ -14,6 +14,7 @@
  *   polygonLayers {Array<PolygonLayerDef>} – interactive polygon/boundary layers with hover, tooltip, popup, click-to-zoom
  *   className     {string}         – wrapper class for sizing (default: 'h-64 w-full rounded-lg')
  *   scrollWheelZoom {boolean}      – enable/disable scroll-wheel zoom (default false)
+ *   zoomAnimation {boolean}        – animate zoom transitions (default true; mount-time option)
  *   interactive   {boolean}        – when false, disables all interaction
  *   onMapClick    {function}       – called with (lat, lng) when the map is clicked; enables picker mode
  *
@@ -314,6 +315,7 @@ export default function BaseMap({
   polygonLayers = [],
   className = 'h-64 w-full rounded-lg overflow-hidden',
   scrollWheelZoom = false,
+  zoomAnimation = true,
   interactive = true,
   tileMode = 'light',
   showFullscreenControl = false,
@@ -329,7 +331,7 @@ export default function BaseMap({
   ariaLabel = 'Interactive map',
   showResetControl = false,
 }) {
-  const initialMapOptionsRef = useRef({ scrollWheelZoom, interactive, tileMode });
+  const initialMapOptionsRef = useRef({ scrollWheelZoom, zoomAnimation, interactive, tileMode });
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   // Layer groups for dynamic updates
@@ -358,6 +360,7 @@ export default function BaseMap({
 
     const map = L.map(mapContainerRef.current, {
       scrollWheelZoom: initialOptions.scrollWheelZoom,
+      zoomAnimation: initialOptions.zoomAnimation,
       zoomControl: initialOptions.interactive,
       dragging: initialOptions.interactive,
       touchZoom: initialOptions.interactive,

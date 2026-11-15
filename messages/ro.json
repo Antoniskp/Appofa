@@ -3356,6 +3356,24 @@
     }
   },
   "homeMap": {
+    "parliamentarians": "Deputați",
+    "electoral": {
+      "title": "Circumscripții electorale și deputați",
+      "search": "Caută o circumscripție, un deputat sau un partid",
+      "district": "Circumscripție electorală",
+      "allDistricts": "Toate circumscripțiile electorale",
+      "mapLabel": "Circumscripțiile electorale și deputații lor",
+      "hint": "Selectează o circumscripție pentru a vedea deputații săi",
+      "mpCount": "{count, plural, one {# deputat} few {# deputați} other {# de deputați}}",
+      "loading": "Se încarcă deputații…",
+      "error": "Datele hărții electorale nu au putut fi încărcate.",
+      "empty": "Nu s-au găsit deputați pentru această circumscripție cu aceste filtre.",
+      "independent": "Independent",
+      "state": "Lista națională",
+      "stateHint": "Deputații de pe lista națională reprezintă întreaga țară și nu au o circumscripție geografică.",
+      "boundaries": "Limite electorale și surse",
+      "directory": "Toți deputații"
+    },
     "country": "Grecia",
     "search": "Caută un municipiu sau o zonă",
     "clearSearch": "Șterge căutarea zonei",

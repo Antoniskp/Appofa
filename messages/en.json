@@ -3356,6 +3356,24 @@
     }
   },
   "homeMap": {
+    "parliamentarians": "MPs",
+    "electoral": {
+      "title": "Electoral districts & MPs",
+      "search": "Search a district, MP or party",
+      "district": "Electoral district",
+      "allDistricts": "All electoral districts",
+      "mapLabel": "Electoral districts and their MPs",
+      "hint": "Select an electoral district to see its MPs",
+      "mpCount": "{count, plural, one {# MP} other {# MPs}}",
+      "loading": "Loading MPs…",
+      "error": "Electoral map data could not be loaded.",
+      "empty": "No MPs found for this district with these filters.",
+      "independent": "Independent",
+      "state": "Nationwide list",
+      "stateHint": "Nationwide MPs represent the whole country and have no geographic district.",
+      "boundaries": "Electoral boundaries & sources",
+      "directory": "All MPs"
+    },
     "country": "Greece",
     "search": "Search a municipality or area",
     "clearSearch": "Clear area search",

@@ -76,3 +76,14 @@ test('failed activity shows a retry instead of a false zero count', async () => 
   expect(container.querySelector('[role="alert"]')).toBeNull();
   expect(container.textContent).toContain('Attica');
 });
+
+test('MP mode avoids sending an unsupported activity layer and can return to issues', async () => {
+  await render();
+  locationAPI.getMapActivity.mockClear();
+  await act(async () => button(t.parliamentarians).click());
+  expect(locationAPI.getMapActivity).not.toHaveBeenCalled();
+  expect(container.querySelector('input[type="search"]')).toBeNull();
+  await act(async () => button(t.issues).click());
+  expect(locationAPI.getMapActivity).toHaveBeenLastCalledWith(expect.objectContaining({ layer: 'issues' }));
+  expect(container.querySelector('input[type="search"]')).toBeTruthy();
+});

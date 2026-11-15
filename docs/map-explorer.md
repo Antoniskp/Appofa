@@ -41,6 +41,20 @@ The existing OpenStreetMap tiles retain their attribution and browser caching.
 CSS quiets the background. Satellite tiles retain Esri attribution. No new map
 SDK, key or paid tile service is required.
 
+## Homepage electoral mode
+
+The homepage's MPs mode loads independently of public activity. It uses the 59
+existing electoral district polygons via the static `/api/electoral-districts`
+route and all pages of `/api/persons?position=parliamentary`. District selection
+zooms the map and lists representatives with party names and profile links.
+Search matches district names, MP names and parties without requiring accents.
+Nationwide-list MPs are available in the selector and list without a polygon.
+
+The map and parliamentarian directory share `lib/parliamentary-districts.js`:
+curated parliamentary assignments take precedence over profile constituencies.
+Failed requests show a retry action and do not display incomplete MP counts.
+Boundary attribution links to the existing electoral mapping page.
+
 ## Address lookup
 
 Address searches run only when submitted, through `/api/geo/search`. The default

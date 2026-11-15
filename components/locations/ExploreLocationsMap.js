@@ -4,14 +4,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
-import { MagnifyingGlassIcon, MapPinIcon, VideoCameraIcon, HandRaisedIcon, XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, MapPinIcon, VideoCameraIcon, HandRaisedIcon, XMarkIcon, ArrowPathIcon, BuildingLibraryIcon } from '@heroicons/react/24/outline';
 import { locationAPI } from '@/lib/api/locations';
 import { hasMapPoint, mapGeometryBounds, normalizeMapBoundary } from '@/lib/map-utils';
 
 const Canvas = dynamic(() => import('./HomeMapCanvas'), { ssr: false });
+const ElectoralMap = dynamic(() => import('./HomeElectoralMap'), { ssr: false });
 const EMPTY = [];
 const LAYERS = ['issues', 'polls', 'cameras'];
-const ICONS = { issues: MapPinIcon, polls: HandRaisedIcon, cameras: VideoCameraIcon };
+const MODES = [...LAYERS, 'parliamentarians'];
+const ICONS = { issues: MapPinIcon, polls: HandRaisedIcon, cameras: VideoCameraIcon, parliamentarians: BuildingLibraryIcon };
 
 export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationId, className, loading: initialLoading = false }) {
   const t = useTranslations('homeMap');
@@ -54,7 +56,7 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
     return () => clearTimeout(timer);
   }, [viewport]);
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || layer === 'parliamentarians') return;
     const [scope, kind, viewBounds] = JSON.parse(requestKey);
     let cancelled = false;
     setLoading(true); setError(false);
@@ -75,8 +77,9 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
       }
     }).catch(() => { if (!cancelled) setError(true); }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [enabled, page, requestKey]);
+  }, [enabled, layer, page, requestKey]);
   useEffect(() => {
+    if (layer === 'parliamentarians') return;
     const term = query.trim();
     if (term.length < 2) { setSearch({ query: term, locations: EMPTY, loading: false, error: false }); return; }
     let cancelled = false;
@@ -88,7 +91,7 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
       }).catch(() => { if (!cancelled) setSearch({ query: term, locations: EMPTY, loading: false, error: true }); });
     }, 250);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [query, retry]);
+  }, [query, retry, layer]);
 
   const chooseArea = useCallback(id => {
     setRootId(Number(id)); setPage(1); setSelectedId(null); setQuery(''); setSheetOpen(true);
@@ -121,7 +124,7 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
 
   return <div ref={element} className={`home-map overflow-hidden rounded-2xl border border-brand-border bg-white shadow-sm ${className || ''}`}>
     <div className="relative z-[600] border-b border-brand-border p-3 sm:p-4">
-      <div className="flex flex-wrap gap-2">
+      {layer !== 'parliamentarians' && <><div className="flex flex-wrap gap-2">
         <div className="relative flex min-w-0 basis-full items-center gap-2 rounded-xl border border-brand-border bg-ivory/50 px-3 sm:flex-1 sm:basis-auto">
           <MagnifyingGlassIcon className="h-5 w-5 shrink-0 text-copper" aria-hidden="true" />
           <input type="search" value={query} maxLength={100} onChange={event => setQuery(event.target.value)} aria-label={t('search')} aria-controls={showSearch ? 'home-map-search-results' : undefined} placeholder={t('search')} className="min-h-11 min-w-0 flex-1 bg-transparent text-sm outline-none" />
@@ -132,12 +135,12 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
       </div>
       {showSearch && <div id="home-map-search-results" className="mt-2 max-h-64 overflow-y-auto rounded-xl border border-brand-border bg-white p-2" aria-live="polite">
         {search.loading || search.query !== query.trim() ? <p className="p-3 text-sm text-gray-500">{t('searching')}</p> : search.error ? <p role="alert" className="p-3 text-sm text-red-700">{t('searchError')} <button type="button" onClick={() => setRetry(value => value + 1)} className="underline">{t('retry')}</button></p> : search.locations.length ? <ul>{search.locations.map(area => <li key={area.id}><button type="button" onClick={() => chooseArea(area.id)} className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-ivory"><span className="font-semibold">{area.name_local || area.name}</span><span className="text-xs text-gray-500">{t(`types.${area.type}`)}</span></button></li>)}</ul> : <p className="p-3 text-sm text-gray-500">{t('noAreas')}</p>}
-      </div>}
+      </div>}</>}
       <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label={t('layers')}>
-        {LAYERS.map(kind => { const Icon = ICONS[kind]; return <button key={kind} type="button" aria-pressed={layer === kind} onClick={() => { setLayer(kind); setPage(1); setSelectedId(null); }} className={`inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs font-semibold ${layer === kind ? 'bg-charcoal text-white' : 'bg-ivory text-gray-600 hover:text-copper'}`}><Icon className="h-4 w-4" aria-hidden="true" />{t(kind)}</button>; })}
+        {MODES.map(kind => { const Icon = ICONS[kind]; return <button key={kind} type="button" aria-pressed={layer === kind} onClick={() => { setLayer(kind); setPage(1); setSelectedId(null); setHoveredId(null); }} className={`inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs font-semibold ${layer === kind ? 'bg-charcoal text-white' : 'bg-ivory text-gray-600 hover:text-copper'}`}><Icon className="h-4 w-4" aria-hidden="true" />{t(kind)}</button>; })}
       </div>
     </div>
-    <div className="md:grid md:h-[560px] md:grid-cols-[minmax(0,1fr)_340px]">
+    {layer === 'parliamentarians' ? enabled && <ElectoralMap tileMode={tileMode} onTileModeChange={setTileMode} /> : <><div className="md:grid md:h-[560px] md:grid-cols-[minmax(0,1fr)_340px]">
       <div className="relative h-[320px] min-w-0 bg-ivory md:h-full" aria-busy={loading || initialLoading}>
         {enabled ? <Canvas areas={mapAreas} items={items} location={current?.location} layer={layer} detail={detail} loading={loading || !current} selectedId={selected?.id} hoveredId={hoveredId} onMarkerClick={selectMarker} onHover={setHoveredId} onViewportChange={setViewport} focusTarget={focusTarget} viewResetKey={viewResetKey} tileMode={tileMode} label={t('mapLabel', { name: areaName })} controlLabels={{ reset: t('reset'), expand: t('expand'), close: t('close') }} />
           : <div className="flex h-full items-center justify-center text-sm text-gray-500">{t('mapLoading')}</div>}
@@ -189,6 +192,6 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
       <div className="flex flex-wrap items-center gap-3" aria-label={t('legend')}>
         {loading || error || !current ? <span>{t(error ? 'error' : 'loading')}</span> : detail ? <span>{t('pinLegend')}</span> : <>{[['#e5e7eb', '0'], ['#e9cbb9', '1–5'], ['#bc8868', '6–20'], ['#80462f', '21+']].map(([color, label]) => <span key={label} className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm border border-black/10" style={{ backgroundColor: color }} />{label}</span>)}<span>{t(layer)}</span></>}
       </div>
-    </div>
+    </div></>}
   </div>;
 }

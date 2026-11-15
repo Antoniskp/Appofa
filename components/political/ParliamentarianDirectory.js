@@ -8,8 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import { personAPI, organizationAPI } from '@/lib/api';
 import regionsMetaData from '@/config/map-data/regions.metadata.json';
 import districtsMetaData from '@/config/map-data/electoral-districts.metadata.json';
-import districtLocationSlugs from '@/config/map-data/electoral-district-location-slugs.json';
-import parliamentaryAssignments from '@/src/data/currentParliamentaryAssignments';
+import { getProfileDistrictId } from '@/lib/parliamentary-districts';
 
 const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false });
 const normalize = (value) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('el').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
@@ -26,19 +25,8 @@ const districtById = new Map([
   [STATE_DISTRICT.id, STATE_DISTRICT],
 ]);
 const regionById = new Map(regionsMetaData.regions.map((region) => [region.id, region]));
-const districtIdByLocationSlug = new Map(Object.entries(districtLocationSlugs));
-const assignmentByProfileSlug = new Map(
-  parliamentaryAssignments.map((assignment) => [assignment.profileSlug, assignment])
-);
 const sortedRegions = [...regionsMetaData.regions].sort((a, b) => a.name.localeCompare(b.name, 'el'));
 const sortedDistricts = [...districtsMetaData.electoralDistricts].sort((a, b) => a.name.localeCompare(b.name, 'el'));
-
-function getProfileDistrictId(profile) {
-  const rosterSlug = assignmentByProfileSlug.get(profile.slug)?.electoralDistrictSlug;
-  return districtIdByLocationSlug.get(rosterSlug)
-    || districtIdByLocationSlug.get(profile.constituency?.slug)
-    || null;
-}
 
 export default function ParliamentarianDirectory({ districtsGeoJson }) {
   const searchParams = useSearchParams();

@@ -70,3 +70,47 @@ test('homepage local map distinguishes unavailable data from no activity and ret
   await expect(section.getByRole('alert')).toHaveCount(0);
   await expect(section.locator('.home-map-count')).toHaveCount(1);
 });
+
+test('homepage local map shows electoral districts and their MPs', async ({ page }, testInfo) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.route('**/api/persons?**', route => route.fulfill({ json: { success: true, data: {
+    profiles: [{ id: 1001, slug: 'test-athens-mp', firstNameNative: 'Άννα', lastNameNative: 'Δοκιμή',
+      constituency: { slug: 'gr-electoral-athens-a' }, politicalAffiliations: [{ organization: { name: 'Test Party' } }] }],
+    pagination: { totalPages: 1 },
+  } } }));
+  await page.goto('/');
+  const section = page.getByRole('region', { name: 'What’s happening in your area', exact: true });
+  await section.scrollIntoViewIfNeeded();
+  const layers = section.getByRole('group', { name: 'Map content' });
+  await layers.getByRole('button', { name: 'MPs', exact: true }).click();
+  await expect(layers.getByRole('button', { name: 'MPs', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  const districts = section.getByRole('list', { name: 'All electoral districts', exact: true });
+  await expect(districts.getByRole('button')).toHaveCount(60);
+  await expect(section.locator('path.leaflet-interactive')).toHaveCount(59);
+  await districts.getByRole('button', { name: 'Α΄ Αθηνών 1 MP', exact: true }).click();
+  await expect(section.getByRole('link', { name: 'Άννα Δοκιμή Test Party', exact: true })).toHaveAttribute('href', '/persons/test-athens-mp');
+  await expect(section.getByRole('heading', { name: 'Α΄ Αθηνών', exact: true })).toBeVisible();
+  await section.getByRole('button', { name: 'All Greece', exact: true }).click();
+  // A real Leaflet feature event must select its electoral district.
+  await section.locator('path.leaflet-interactive').first().dispatchEvent('click');
+  await expect(section.getByRole('heading', { name: 'Αχαΐας', exact: true })).toBeVisible();
+  const search = section.getByRole('searchbox', { name: 'Search a district, MP or party', exact: true });
+  await search.fill('αννα');
+  await expect(districts.getByRole('button')).toHaveCount(1);
+  await districts.getByRole('button').click();
+  await expect(section.getByRole('link', { name: 'Άννα Δοκιμή Test Party', exact: true })).toBeVisible();
+  await expect(section.locator('.leaflet-zoom-anim')).toHaveCount(0);
+  await expect.poll(async () => {
+    const map = await section.locator('.leaflet-container').boundingBox();
+    const selected = await section.locator('path[fill="#bc8868"]').boundingBox();
+    if (!map || !selected || selected.width < 10 || selected.height < 10) return false;
+    const x = selected.x + selected.width / 2, y = selected.y + selected.height / 2;
+    return x >= map.x && x <= map.x + map.width && y >= map.y && y <= map.y + map.height;
+  }).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await section.screenshot({ path: testInfo.outputPath('homepage-electoral-map.png') });
+  await layers.getByRole('button', { name: 'Issues', exact: true }).click();
+  await expect(section.getByRole('searchbox', { name: 'Search a municipality or area', exact: true })).toBeVisible();
+  expect(errors).toEqual([]);
+});
