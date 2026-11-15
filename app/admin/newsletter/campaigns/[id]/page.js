@@ -7,6 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
 import NewsletterAudienceFields from '@/components/admin/NewsletterAudienceFields';
 import NewsletterPollPicker from '@/components/admin/NewsletterPollPicker';
+import NewsletterCivicQuestionPicker from '@/components/admin/NewsletterCivicQuestionPicker';
 import AdminHeader from '@/components/admin/AdminHeader';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -288,6 +289,7 @@ function AdminNewsletterCampaignDetailContent() {
                   </div>
 
                   <NewsletterPollPicker disabled={!canEdit || busy} locale={form.locale || 'el'} onInsert={(block) => setForm((prev) => ({ ...prev, htmlContent: `${prev.htmlContent}\n${block.html}`, textContent: `${prev.textContent}\n\n${block.text}` }))} />
+                  <NewsletterCivicQuestionPicker disabled={!canEdit || busy} locale={form.locale || 'el'} onInsert={(block) => setForm((prev) => ({ ...prev, htmlContent: `${prev.htmlContent}\n${block.html}`, textContent: `${prev.textContent}\n\n${block.text}` }))} />
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">HTML content</label>

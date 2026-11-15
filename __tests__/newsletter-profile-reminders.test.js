@@ -185,7 +185,7 @@ test('follow-up templates and poll cards render real links in HTML and text with
   expect(() => buildFeaturedPollBlock({ ...poll, visibility: 'private' })).toThrow();
   expect(() => buildFeaturedPollBlock({ ...poll, voteRestriction: 'locals_only' })).toThrow();
   expect(() => buildFeaturedPollBlock({ ...poll, deadline: '2020-01-01' })).toThrow();
-  expect(FOLLOWUP_TEMPLATES).toHaveLength(6);
+  expect(FOLLOWUP_TEMPLATES).toHaveLength(8);
   for (const template of FOLLOWUP_TEMPLATES) {
     const campaign = await service.createCampaignDraft({ ...template, htmlContent: template.htmlContent + block.html, textContent: template.textContent + block.text }, admin.id);
     await service.sendCampaignTestEmail(campaign.id, { email: admin.email });

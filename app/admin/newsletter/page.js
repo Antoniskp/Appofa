@@ -6,6 +6,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { NEWSLETTER_SEGMENTS } from '@/components/admin/NewsletterAudienceFields';
 import AdminHeader from '@/components/admin/AdminHeader';
+import NewsletterUserCampaigns from '@/components/admin/NewsletterUserCampaigns';
 import { StatsCard } from '@/components/ui/Card';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import Pagination from '@/components/ui/Pagination';
@@ -225,7 +226,7 @@ function AdminNewsletterContent() {
     <AdminLayout>
       <div className="bg-gray-50 min-h-screen py-8">
         <div className="app-container max-w-7xl">
-          <AdminHeader title="Newsletter" subtitle={`${pagination.total || 0} subscribers`} />
+          <AdminHeader title="Newsletter & user emails" subtitle="Prepare user follow-ups, review campaigns and manage email subscribers" />
 
           {canWrite && (
             <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -238,20 +239,14 @@ function AdminNewsletterContent() {
             </div>
           )}
 
+          {canWrite && <NewsletterUserCampaigns />}
+
           <section className="mb-6 rounded-xl border bg-white p-4">
             <h2 className="font-semibold">Accounts and email subscriptions</h2>
             <p className="mt-1 text-sm text-gray-600">An account is separate from email consent. These account counts include people without newsletter subscriptions.</p>
             <dl className="my-4 grid gap-3 sm:grid-cols-3">
               {Object.entries({ registered: 'Registered accounts', missingLocation: 'Accounts missing a location', locatedWithoutSubscription: 'With location, not subscribed', registeredSubscribed: 'Registered and subscribed', addressesWithSendFailures: 'Addresses with send failures (not confirmed bounces)', completedAfterReminder: 'Reminded profiles now with a location' }).map(([key, label]) => <div key={key}><dt className="text-xs text-gray-500">{label}</dt><dd className="text-xl font-semibold">{stats.accounts?.[key] ?? '—'}</dd></div>)}
             </dl>
-            {canWrite && <div className="mt-3 space-y-2">
-              <p className="text-sm text-gray-600">Prepare a follow-up, send yourself a test, then review before subscriber delivery.</p>
-              <div className="flex flex-wrap gap-3">
-                <Link href="/admin/newsletter/campaigns/new?template=profile_location_el" className="text-sm font-semibold text-blue-700">Complete profiles →</Link>
-                <Link href="/admin/newsletter/campaigns/new?template=polls_followup_el" className="text-sm font-semibold text-blue-700">Invite poll participation →</Link>
-                <Link href="/admin/newsletter/campaigns/new?template=community_followup_el" className="text-sm font-semibold text-blue-700">Locations, events & problems →</Link>
-              </div>
-            </div>}
           </section>
           {statsLoading ? (
             <SkeletonLoader count={3} type="card" />
@@ -265,6 +260,7 @@ function AdminNewsletterContent() {
           )}
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+            <h2 className="mb-3 text-lg font-semibold text-gray-900">Email subscribers · {pagination.total || 0} matching</h2>
             <label className="mb-4 block text-sm font-medium">Subscriber account segment
               <select value={segment} onChange={(e) => { setSegment(e.target.value); setPage(1); }} className="ml-2 rounded-lg border p-2">
                 {NEWSLETTER_SEGMENTS.map(([key, label]) => <option key={key} value={key}>{label}</option>)}

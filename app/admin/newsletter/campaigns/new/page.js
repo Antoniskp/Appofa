@@ -7,6 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
 import NewsletterAudienceFields from '@/components/admin/NewsletterAudienceFields';
 import NewsletterPollPicker from '@/components/admin/NewsletterPollPicker';
+import NewsletterCivicQuestionPicker from '@/components/admin/NewsletterCivicQuestionPicker';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { newsletterAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
@@ -158,6 +159,7 @@ function AdminNewsletterCampaignCreateContent() {
             </div>
 
             <NewsletterPollPicker locale={form.audienceFilters.locale || 'el'} onInsert={(block) => setForm((prev) => ({ ...prev, htmlContent: `${prev.htmlContent}\n${block.html}`, textContent: `${prev.textContent}\n\n${block.text}` }))} />
+            <NewsletterCivicQuestionPicker locale={form.audienceFilters.locale || 'el'} onInsert={(block) => setForm((prev) => ({ ...prev, htmlContent: `${prev.htmlContent}\n${block.html}`, textContent: `${prev.textContent}\n\n${block.text}` }))} />
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="campaign-html">HTML content</label>
