@@ -2375,7 +2375,11 @@
       "read_question": "View topic",
       "participate": "Participate",
       "source_checked": "Source checked",
-      "participation_status": "Participation: {status}"
+    "participation_status": "Participation: {status}",
+    "unsure": "Not sure",
+    "no_votes": "No votes yet",
+    "vote_saved": "Your vote has been saved.",
+    "local_voting": "Voting is limited to users in this area."
     },
     "results": {
       "leading": "Leading",

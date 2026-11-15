@@ -2375,7 +2375,11 @@
       "read_question": "Vezi tema",
       "participate": "Participă",
       "source_checked": "Sursă verificată",
-      "participation_status": "Participare: {status}"
+    "participation_status": "Participare: {status}",
+    "unsure": "Nu sunt sigur",
+    "no_votes": "Încă nu există voturi",
+    "vote_saved": "Votul tău a fost salvat.",
+    "local_voting": "Participarea este limitată la utilizatorii din această zonă."
     },
     "results": {
       "leading": "Leading",

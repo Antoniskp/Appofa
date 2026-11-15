@@ -2,6 +2,11 @@
 const React = require('react');
 const { act } = React;
 const { createRoot } = require('react-dom/client');
+jest.mock('next/image', () => ({
+  __esModule: true,
+  default: jest.fn(({ unoptimized, ...props }) => React.createElement('img', props)),
+}));
+const Image = require('next/image').default;
 const OrgAvatar = require('../components/organization/OrgAvatar').default;
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
@@ -22,6 +27,17 @@ describe('organization logos', () => {
     const img = await render({ type: 'party', name: 'ΚΚΕ', logo: '/custom-party.png' });
     expect(img.getAttribute('src')).toBe('/custom-party.png');
     expect(img.className).toContain('object-contain');
+    expect(Image.mock.lastCall[0].unoptimized).toBe(false);
+  });
+
+  test('loads Elpida’s saved external logo directly when its host blocks the image optimizer', async () => {
+    const logo = 'https://elpidagiatidimokratia.com/wp-content/uploads/2026/06/logo-elpida-Final-01.png';
+    const img = await render({ type: 'party', name: 'Ελπίδα για τη Δημοκρατία', logo });
+    expect(img.getAttribute('src')).toBe(logo);
+    expect(Image.mock.lastCall[0].unoptimized).toBe(true);
+    await act(async () => img.dispatchEvent(new Event('error')));
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.querySelector('svg')).not.toBeNull();
   });
 
   test('does not assign a logo by party name when the saved logo is empty', async () => {

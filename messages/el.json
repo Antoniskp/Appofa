@@ -2375,7 +2375,11 @@
       "read_question": "Δες το θέμα",
       "participate": "Συμμετοχή",
       "source_checked": "Έλεγχος πηγής",
-      "participation_status": "Συμμετοχή: {status}"
+    "participation_status": "Συμμετοχή: {status}",
+    "unsure": "Δεν είμαι σίγουρος",
+    "no_votes": "Δεν υπάρχουν ακόμη ψήφοι",
+    "vote_saved": "Η ψήφος σου αποθηκεύτηκε.",
+    "local_voting": "Η συμμετοχή περιορίζεται στους χρήστες της περιοχής."
     },
     "results": {
       "leading": "Πρώτη επιλογή",

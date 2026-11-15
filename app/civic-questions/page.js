@@ -44,7 +44,7 @@ export default function CivicQuestionsPage() {
   const filterCount = activeFilters.length;
   const hasCustomFilters = activeFilters.length > 0 || filters.search || filters.myArea || filters.closingSoon;
   const showAllIssues = () => updateFilters(ALL_FILTERS);
-  const { data: civicQuestions, loading, error, refetch } = useAsyncData(
+  const { data: civicQuestions, setData: setCivicQuestions, loading, error, refetch } = useAsyncData(
     async () => {
       const params = { page, limit: 12, ...filters };
       Object.keys(params).forEach((key) => { if (!params[key]) delete params[key]; });
@@ -52,7 +52,7 @@ export default function CivicQuestionsPage() {
       if (!response.success) throw new Error(response.message || t('list.error_description'));
       return response;
     },
-    [page, filters],
+    [page, filters, user?.id, user?.homeLocationId, user?.role],
     {
       initialData: [],
       transform: (response) => {
@@ -170,11 +170,11 @@ export default function CivicQuestionsPage() {
             </div>
             {user && <Link href="/civic-questions/create" className="inline-flex items-center gap-1.5 py-2 text-sm font-medium text-blue-700 hover:underline"><PlusCircleIcon aria-hidden="true" className="h-4 w-4" />{t('list.new_civic_question')}</Link>}
           </div>
-          {loading && <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3"><SkeletonLoader type="card" count={6} /></div>}
+          {loading && <div className="grid grid-cols-1 gap-5 md:grid-cols-2"><SkeletonLoader type="card" count={6} /></div>}
           {error && <EmptyState type="error" title={t('list.error_title')} description={error} action={{ text: t('list.retry'), onClick: refetch }} />}
           {!loading && !error && civicQuestions.length === 0 && <EmptyState type="empty" title={t('list.empty_title')} description={t('list.empty_description')} action={Object.values(filters).some((value) => value && value !== 'newest') ? { text: t('list.show_all'), onClick: showAllIssues } : user ? { text: t('list.create_action'), href: '/civic-questions/create' } : undefined} />}
           {!loading && !error && civicQuestions.length > 0 && <>
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">{civicQuestions.map((civicQuestion) => <CivicQuestionCard key={civicQuestion.id} civicQuestion={civicQuestion} />)}</div>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">{civicQuestions.map((civicQuestion) => <CivicQuestionCard key={civicQuestion.id} civicQuestion={civicQuestion} user={user} onVoteSuccess={(updated) => setCivicQuestions((questions) => questions.map((question) => question.id === updated.id ? updated : question))} />)}</div>
             <Pagination currentPage={page} totalPages={totalPages} onPageChange={goToPage} onNext={nextPage} onPrevious={prevPage} />
           </>}
         </section>

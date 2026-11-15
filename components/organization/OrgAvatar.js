@@ -14,6 +14,8 @@ export default function OrgAvatar({ org, size = 'h-6 w-6', fallback }) {
         alt={org.name}
         width={96}
         height={96}
+        // External logo hosts may reject requests from the image optimizer.
+        unoptimized={/^https?:\/\//i.test(src)}
         onError={() => setFailedSrc(src)}
         className={`${size} rounded object-contain p-1 border border-gray-200 flex-shrink-0 bg-white`}
       />

@@ -1,6 +1,6 @@
 const React = require('react');
 
-function NextImageMock({ src, alt, ...props }) {
+function NextImageMock({ src, alt, unoptimized: _unoptimized, ...props }) {
   return React.createElement('img', { src, alt, ...props });
 }
 
