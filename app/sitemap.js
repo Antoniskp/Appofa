@@ -28,6 +28,7 @@ const STATIC_ROUTES = [
   { url: '/citizen-help/public-officials-salaries', priority: 0.5, changeFrequency: 'monthly' },
   { url: '/citizen-help/regions-electoral-map', priority: 0.6, changeFrequency: 'monthly' },
   { url: '/elections', priority: 0.7, changeFrequency: 'weekly' },
+  { url: '/elections/representation', priority: 0.6, changeFrequency: 'monthly' },
   { url: '/elections/political-parties', priority: 0.7, changeFrequency: 'weekly' },
   { url: '/economy', priority: 0.6, changeFrequency: 'weekly' },
   { url: '/education', priority: 0.6, changeFrequency: 'weekly' },

@@ -38,6 +38,12 @@ const categories = [
     title: '🗳️ Εκλογές & Κόμματα',
     pages: [
       {
+        href: '/elections/representation',
+        label: 'Ευρωβουλευτές & Βουλευτές Επικρατείας',
+        description: 'Πόσοι είναι, πότε και πώς εκλέγονται — και τι ισχύει για άλλα αξιώματα',
+        Icon: BuildingLibraryIcon,
+      },
+      {
         href: '/elections/political-parties',
         label: 'Πολιτικά Κόμματα',
         description: 'Τα ενεργά πολιτικά κόμματα στην Ελλάδα',
