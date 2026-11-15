@@ -12,7 +12,7 @@ const {
   NewsletterCampaign,
   NewsletterSendLog,
 } = require('../src/models');
-const { issueUnsubscribeToken } = require('../src/services/newsletterService');
+const { issueUnsubscribeToken, sendCampaignTestEmail, scheduleCampaign } = require('../src/services/newsletterService');
 
 const authRoutes = require('../src/routes/authRoutes');
 const newsletterRoutes = require('../src/routes/newsletterRoutes');
@@ -511,6 +511,7 @@ describe('Newsletter API', () => {
       }
       return { messageId: `msg-${to}` };
     });
+    await sendCampaignTestEmail(campaignId, { email: 'reviewer@test.com' });
 
     const sendCsrf = csrfHeadersFor('newsletter-campaign-send-now-csrf', adminUserId);
     const sendResponse = await request(app)
@@ -576,13 +577,14 @@ describe('Newsletter API', () => {
       .send({
         subject: 'Scheduled campaign',
         htmlContent: '<p>Scheduled body</p>',
-        scheduledAt: '2025-01-01T00:00:00.000Z',
         audienceFilters: { locale: 'en', source: 'website' },
       });
 
     expect(createResponse.status).toBe(201);
     const campaignId = createResponse.body.data.campaign.id;
-    expect(createResponse.body.data.campaign.status).toBe('scheduled');
+    expect(createResponse.body.data.campaign.status).toBe('draft');
+    await sendCampaignTestEmail(campaignId, { email: 'reviewer@test.com' });
+    await scheduleCampaign(campaignId, { scheduledAt: '2025-01-01T00:00:00.000Z' });
 
     const processCsrf = csrfHeadersFor('newsletter-campaign-scheduled-process-csrf', adminUserId);
     const processResponse = await request(app)

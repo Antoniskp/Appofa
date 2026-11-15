@@ -6,6 +6,7 @@ import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
 import NewsletterAudienceFields from '@/components/admin/NewsletterAudienceFields';
+import NewsletterPollPicker from '@/components/admin/NewsletterPollPicker';
 import AdminHeader from '@/components/admin/AdminHeader';
 import { newsletterAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
@@ -16,7 +17,6 @@ const INITIAL_FORM = {
   previewText: '',
   htmlContent: '',
   textContent: '',
-  scheduledAt: '',
   templateKey: '',
   audienceFilters: {
     status: 'subscribed',
@@ -79,7 +79,6 @@ function AdminNewsletterCampaignCreateContent() {
         previewText: form.previewText || undefined,
         htmlContent: form.htmlContent,
         textContent: form.textContent || undefined,
-        ...(form.scheduledAt ? { scheduledAt: form.scheduledAt } : {}),
         audienceFilters: {
           locationId: form.audienceFilters.locationId, segment: form.audienceFilters.segment, topic: form.audienceFilters.topic, purpose: form.audienceFilters.purpose,
           ...(form.audienceFilters.status ? { status: form.audienceFilters.status } : {}),
@@ -108,7 +107,7 @@ function AdminNewsletterCampaignCreateContent() {
     <AdminLayout>
       <div className="bg-gray-50 min-h-screen py-8">
         <div className="app-container max-w-4xl">
-          <AdminHeader title="New Newsletter Campaign" subtitle="Create a draft campaign" />
+          <AdminHeader title="New Newsletter Campaign" subtitle="Prepare a draft, send yourself a test, then review before delivery" />
 
           <div className="mb-4">
             <Link href="/admin/newsletter/campaigns" className="text-sm text-blue-600 hover:text-blue-700">
@@ -117,6 +116,7 @@ function AdminNewsletterCampaignCreateContent() {
           </div>
 
           <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+            <p className="rounded-lg bg-blue-50 p-3 text-sm text-blue-800">Start with a follow-up template below. Saving only creates a draft. On the next screen, send it to your inbox and improve it before sending or scheduling for subscribers.</p>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="campaign-template">Template</label>
               <select
@@ -157,6 +157,8 @@ function AdminNewsletterCampaignCreateContent() {
               />
             </div>
 
+            <NewsletterPollPicker locale={form.audienceFilters.locale || 'el'} onInsert={(block) => setForm((prev) => ({ ...prev, htmlContent: `${prev.htmlContent}\n${block.html}`, textContent: `${prev.textContent}\n\n${block.text}` }))} />
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="campaign-html">HTML content</label>
               <textarea
@@ -175,17 +177,6 @@ function AdminNewsletterCampaignCreateContent() {
                 value={form.textContent}
                 onChange={(event) => setForm((prev) => ({ ...prev, textContent: event.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[140px]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="campaign-scheduled-at">Schedule send (optional)</label>
-              <input
-                id="campaign-scheduled-at"
-                type="datetime-local"
-                value={form.scheduledAt}
-                onChange={(event) => setForm((prev) => ({ ...prev, scheduledAt: event.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
               />
             </div>
 
@@ -291,7 +282,7 @@ function AdminNewsletterCampaignCreateContent() {
                 disabled={saving}
                 className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
               >
-                {saving ? 'Saving…' : form.scheduledAt ? 'Create scheduled campaign' : 'Create draft'}
+                {saving ? 'Saving…' : 'Create draft & review'}
               </button>
               <Link
                 href="/admin/newsletter/campaigns"

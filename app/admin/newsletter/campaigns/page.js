@@ -81,17 +81,6 @@ function AdminNewsletterCampaignsContent() {
   const campaigns = data?.campaigns || [];
   const pagination = data?.pagination || { total: 0, page: 1, limit: PAGE_SIZE, totalPages: 1 };
 
-  const handleSendNow = async (campaign) => {
-    if (!['draft', 'failed', 'scheduled'].includes(campaign.status)) return;
-    try {
-      await newsletterAPI.adminSendCampaignNow(campaign.id);
-      addToast('Campaign sent successfully.', { type: 'success' });
-      await refetch();
-    } catch (error) {
-      addToast(error.message || 'Failed to send campaign.', { type: 'error' });
-    }
-  };
-
   const handleProcessDue = async () => {
     try {
       const response = await newsletterAPI.adminProcessDueCampaigns();
@@ -196,13 +185,12 @@ function AdminNewsletterCampaignsContent() {
                               Open
                             </Link>
                             {['draft', 'failed', 'scheduled'].includes(campaign.status) && (
-                              <button
-                                type="button"
-                                onClick={() => handleSendNow(campaign)}
+                              <Link
+                                href={`/admin/newsletter/campaigns/${campaign.id}`}
                                 className="text-xs px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
                               >
-                                Send now
-                              </button>
+                                Review & test
+                              </Link>
                             )}
                           </div>
                         </td>

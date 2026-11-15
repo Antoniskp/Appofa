@@ -244,7 +244,14 @@ function AdminNewsletterContent() {
             <dl className="my-4 grid gap-3 sm:grid-cols-3">
               {Object.entries({ registered: 'Registered accounts', missingLocation: 'Accounts missing a location', locatedWithoutSubscription: 'With location, not subscribed', registeredSubscribed: 'Registered and subscribed', addressesWithSendFailures: 'Addresses with send failures (not confirmed bounces)', completedAfterReminder: 'Reminded profiles now with a location' }).map(([key, label]) => <div key={key}><dt className="text-xs text-gray-500">{label}</dt><dd className="text-xl font-semibold">{stats.accounts?.[key] ?? '—'}</dd></div>)}
             </dl>
-            {canWrite && <Link href="/admin/newsletter/campaigns/new?template=profile_location_el" className="text-sm font-semibold text-blue-700">Prepare location reminder draft →</Link>}
+            {canWrite && <div className="mt-3 space-y-2">
+              <p className="text-sm text-gray-600">Prepare a follow-up, send yourself a test, then review before subscriber delivery.</p>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/admin/newsletter/campaigns/new?template=profile_location_el" className="text-sm font-semibold text-blue-700">Complete profiles →</Link>
+                <Link href="/admin/newsletter/campaigns/new?template=polls_followup_el" className="text-sm font-semibold text-blue-700">Invite poll participation →</Link>
+                <Link href="/admin/newsletter/campaigns/new?template=community_followup_el" className="text-sm font-semibold text-blue-700">Locations, events & problems →</Link>
+              </div>
+            </div>}
           </section>
           {statsLoading ? (
             <SkeletonLoader count={3} type="card" />

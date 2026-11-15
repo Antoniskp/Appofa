@@ -66,6 +66,9 @@ const NewsletterCampaign = sequelize.define('NewsletterCampaign', {
     type: DataTypes.DATE,
     allowNull: true,
   },
+  lastTestSentAt: { type: DataTypes.DATE, allowNull: true },
+  lastTestSentTo: { type: DataTypes.STRING(255), allowNull: true },
+  lastTestContentHash: { type: DataTypes.STRING(64), allowNull: true },
   totalRecipients: {
     type: DataTypes.INTEGER,
     allowNull: false,

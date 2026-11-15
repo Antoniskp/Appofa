@@ -6,12 +6,14 @@ import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
 import NewsletterAudienceFields from '@/components/admin/NewsletterAudienceFields';
+import NewsletterPollPicker from '@/components/admin/NewsletterPollPicker';
 import AdminHeader from '@/components/admin/AdminHeader';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { newsletterAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import { NEWSLETTER_TEMPLATES } from '@/lib/constants/newsletterTemplates';
+import { useAuth } from '@/lib/auth-context';
 
 function formatDate(value) {
   if (!value) return '—';
@@ -26,6 +28,12 @@ function formatDate(value) {
   } catch {
     return '—';
   }
+}
+
+function localDateTime(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 }
 
 function CampaignStatusBadge({ status }) {
@@ -50,12 +58,15 @@ function AdminNewsletterCampaignDetailContent() {
   const params = useParams();
   const campaignId = params?.id;
   const { addToast } = useToast();
+  const { user } = useAuth();
 
   const [saving, setSaving] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
   const [sendingCampaign, setSendingCampaign] = useState(false);
   const [schedulingCampaign, setSchedulingCampaign] = useState(false);
   const [testEmail, setTestEmail] = useState('');
+  const [reviewed, setReviewed] = useState(false);
+  useEffect(() => { if (user?.email) setTestEmail(user.email); }, [user?.email]);
 
   const { data, loading, refetch } = useAsyncData(
     async () => {
@@ -88,7 +99,7 @@ function AdminNewsletterCampaignDetailContent() {
     previewText: campaign?.previewText || '',
     htmlContent: campaign?.htmlContent || '',
     textContent: campaign?.textContent || '',
-    scheduledAt: campaign?.scheduledAt ? new Date(campaign.scheduledAt).toISOString().slice(0, 16) : '',
+    scheduledAt: localDateTime(campaign?.scheduledAt),
     status: 'subscribed',
     locationId: campaign?.audienceFilters?.locationId || null,
     purpose: campaign?.audienceFilters?.purpose || 'newsletter',
@@ -108,20 +119,22 @@ function AdminNewsletterCampaignDetailContent() {
     setForm(formState);
   }, [formState]);
 
-  const hasUnsavedChanges = JSON.stringify(form) !== JSON.stringify(formState);
+  const hasUnsavedChanges = JSON.stringify({ ...form, scheduledAt: '' }) !== JSON.stringify({ ...formState, scheduledAt: '' });
+  const currentTest = Boolean(data?.testReview?.current);
+  const busy = saving || sendingTest || sendingCampaign || schedulingCampaign;
+  useEffect(() => { setReviewed(false); }, [campaign?.lastTestContentHash, campaign?.lastTestSentAt, hasUnsavedChanges]);
 
   const handleSave = async (event) => {
     event.preventDefault();
-    if (!canEdit || saving) return;
+    if (!canEdit || busy) return;
     setSaving(true);
 
     try {
       await newsletterAPI.adminUpdateCampaign(campaignId, {
         subject: form.subject,
-        ...(form.previewText ? { previewText: form.previewText } : {}),
+        previewText: form.previewText || null,
         htmlContent: form.htmlContent,
-        ...(form.textContent ? { textContent: form.textContent } : {}),
-        ...(form.scheduledAt ? { scheduledAt: form.scheduledAt } : { scheduledAt: null }),
+        textContent: form.textContent || null,
         audienceFilters: {
           locationId: form.locationId, segment: form.segment, topic: form.topic, purpose: form.purpose,
           ...(form.status ? { status: form.status } : {}),
@@ -144,11 +157,13 @@ function AdminNewsletterCampaignDetailContent() {
   };
 
   const handleSendTest = async () => {
-    if (!testEmail || sendingTest || hasUnsavedChanges) return;
+    if (!testEmail || busy || hasUnsavedChanges) return;
     setSendingTest(true);
     try {
       await newsletterAPI.adminSendCampaignTest(campaignId, { email: testEmail });
       addToast('Test email sent.', { type: 'success' });
+      setReviewed(false);
+      await refetch();
     } catch (error) {
       addToast(error.message || 'Failed to send test email.', { type: 'error' });
     } finally {
@@ -157,7 +172,7 @@ function AdminNewsletterCampaignDetailContent() {
   };
 
   const handleSendNow = async () => {
-    if (sendingCampaign || hasUnsavedChanges) return;
+    if (busy || hasUnsavedChanges || !currentTest || !reviewed) return;
     setSendingCampaign(true);
     try {
       await newsletterAPI.adminSendCampaignNow(campaignId);
@@ -171,14 +186,29 @@ function AdminNewsletterCampaignDetailContent() {
   };
 
   const handleSchedule = async () => {
-    if (!form.scheduledAt || schedulingCampaign || hasUnsavedChanges) return;
+    if (!form.scheduledAt || busy || hasUnsavedChanges || !currentTest || !reviewed) return;
     setSchedulingCampaign(true);
     try {
-      await newsletterAPI.adminScheduleCampaign(campaignId, { scheduledAt: form.scheduledAt });
+      await newsletterAPI.adminScheduleCampaign(campaignId, { scheduledAt: new Date(form.scheduledAt).toISOString() });
       addToast('Campaign scheduled.', { type: 'success' });
       await refetch();
     } catch (error) {
       addToast(error.message || 'Failed to schedule campaign.', { type: 'error' });
+    } finally {
+      setSchedulingCampaign(false);
+    }
+  };
+
+  const handleCancelSchedule = async () => {
+    if (busy || hasUnsavedChanges) return;
+    setSchedulingCampaign(true);
+    try {
+      await newsletterAPI.adminUpdateCampaign(campaignId, { scheduledAt: null });
+      setReviewed(false);
+      addToast('Scheduled delivery cancelled. Campaign is a draft.', { type: 'success' });
+      await refetch();
+    } catch (error) {
+      addToast(error.message || 'Failed to cancel scheduled delivery.', { type: 'error' });
     } finally {
       setSchedulingCampaign(false);
     }
@@ -219,6 +249,7 @@ function AdminNewsletterCampaignDetailContent() {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               <div className="xl:col-span-2 space-y-6">
                 <form onSubmit={handleSave} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+                  <fieldset disabled={busy} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Template</label>
                     <select
@@ -255,6 +286,8 @@ function AdminNewsletterCampaignDetailContent() {
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
                     />
                   </div>
+
+                  <NewsletterPollPicker disabled={!canEdit || busy} locale={form.locale || 'el'} onInsert={(block) => setForm((prev) => ({ ...prev, htmlContent: `${prev.htmlContent}\n${block.html}`, textContent: `${prev.textContent}\n\n${block.text}` }))} />
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">HTML content</label>
@@ -371,6 +404,7 @@ function AdminNewsletterCampaignDetailContent() {
                       {saving ? 'Saving…' : 'Save draft'}
                     </button>
                   )}
+                  </fieldset>
                 </form>
 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -438,8 +472,11 @@ function AdminNewsletterCampaignDetailContent() {
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 space-y-3">
-                  <h2 className="text-sm font-semibold text-gray-900">Send test email</h2>
+                  <h2 className="text-sm font-semibold text-gray-900">1. Send to your inbox</h2>
+                  <p className="text-xs text-gray-600">This sends only to the address below. It does not contact the campaign audience or count as a profile reminder.</p>
+                  <label htmlFor="campaign-test-email" className="block text-sm font-medium">Test recipient</label>
                   <input
+                    id="campaign-test-email"
                     type="email"
                     value={testEmail}
                     onChange={(event) => setTestEmail(event.target.value)}
@@ -449,11 +486,17 @@ function AdminNewsletterCampaignDetailContent() {
                   <button
                     type="button"
                     onClick={handleSendTest}
-                    disabled={sendingTest || !testEmail || hasUnsavedChanges}
+                    disabled={busy || !testEmail || hasUnsavedChanges}
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-100 disabled:opacity-60"
                   >
                     {sendingTest ? 'Sending test…' : 'Send test email'}
                   </button>
+                  {data?.testReview?.sentAt && <p className="text-xs text-gray-600">Last test: {data.testReview.email} · {formatDate(data.testReview.sentAt)}</p>}
+                  <p role="status" className={`text-sm ${currentTest ? 'text-emerald-700' : 'text-amber-700'}`}>{currentTest ? 'The saved content and audience have been test sent.' : 'Send a fresh test before delivery. Content or audience changes require another test.'}</p>
+                  <label className="flex items-start gap-2 text-sm text-gray-700">
+                    <input type="checkbox" checked={reviewed} disabled={!currentTest || hasUnsavedChanges || busy} onChange={(event) => setReviewed(event.target.checked)} className="mt-1" />
+                    I checked the email in my inbox and reviewed the audience.
+                  </label>
                 </div>
 
                 {canEdit && (
@@ -461,11 +504,12 @@ function AdminNewsletterCampaignDetailContent() {
                     <button
                       type="button"
                       onClick={handleSchedule}
-                      disabled={schedulingCampaign || !form.scheduledAt || hasUnsavedChanges}
+                      disabled={busy || !form.scheduledAt || hasUnsavedChanges || !currentTest || !reviewed}
                       className="w-full px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-100 disabled:opacity-60"
                     >
-                      {schedulingCampaign ? 'Scheduling…' : 'Schedule campaign'}
+                      {schedulingCampaign ? 'Scheduling…' : '2. Schedule reviewed campaign'}
                     </button>
+                    {campaign.status === 'scheduled' && <button type="button" onClick={handleCancelSchedule} disabled={busy || hasUnsavedChanges} className="mt-3 w-full rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-60">Cancel scheduled delivery</button>}
                   </div>
                 )}
 
@@ -474,10 +518,10 @@ function AdminNewsletterCampaignDetailContent() {
                     <button
                       type="button"
                       onClick={handleSendNow}
-                      disabled={sendingCampaign || hasUnsavedChanges || !estimatedRecipients}
+                      disabled={busy || hasUnsavedChanges || !estimatedRecipients || !currentTest || !reviewed}
                       className="w-full px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
                     >
-                      {sendingCampaign ? 'Sending…' : 'Send campaign now'}
+                      {sendingCampaign ? 'Sending…' : `2. Send to ${estimatedRecipients} subscribers now`}
                     </button>
                   </div>
                 )}

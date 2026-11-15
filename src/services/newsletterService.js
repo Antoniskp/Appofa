@@ -84,6 +84,24 @@ const applyStatusDates = (subscriber, status) => {
 
 const getFrontendUrl = () => (process.env.FRONTEND_URL || 'http://localhost:3001').replace(/\/+$/, '');
 
+const campaignContentHash = (campaign) => {
+  const canonical = (value) => {
+    if (Array.isArray(value)) return value.map(canonical);
+    if (value && typeof value === 'object') return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])]));
+    return value;
+  };
+  return hashToken(JSON.stringify(canonical({
+    subject: campaign.subject, previewText: campaign.previewText || '',
+    htmlContent: campaign.htmlContent, textContent: campaign.textContent || '',
+    audienceFilters: campaign.audienceFilters || {}, siteUrl: getFrontendUrl(),
+  })));
+};
+
+const hasCurrentTest = (campaign) => Boolean(campaign.lastTestSentAt && campaign.lastTestContentHash === campaignContentHash(campaign));
+const requireCurrentTest = (campaign) => {
+  if (!hasCurrentTest(campaign)) throw new ServiceError(409, 'Send a test email of the saved content and audience before sending or scheduling this campaign.');
+};
+
 const escapeHtml = (value) => String(value)
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
@@ -1018,12 +1036,12 @@ async function createCampaignDraft(payload = {}, createdByAdminId) {
   const normalized = normalizeCampaignPayload(payload, { isCreate: true });
   if (normalized.error) throw new ServiceError(400, normalized.error);
 
-  const shouldSchedule = normalized.value.scheduledAt instanceof Date;
+  if (normalized.value.scheduledAt) throw new ServiceError(400, 'Create a draft, send yourself a test, then schedule the campaign.');
 
   return NewsletterCampaign.create({
     ...normalized.value,
     createdByAdminId,
-    status: shouldSchedule ? 'scheduled' : 'draft',
+    status: 'draft',
   });
 }
 
@@ -1056,6 +1074,7 @@ async function getCampaignById(id) {
     estimatedRecipients: review.eligible.length,
     audienceSummary: review.byStatus,
     exclusions: review.excluded,
+    testReview: { current: hasCurrentTest(campaign), sentAt: campaign.lastTestSentAt, email: campaign.lastTestSentTo },
     previewHtml: buildCampaignMessage({ campaign, unsubscribeLink: getFrontendUrl() + '/newsletter/unsubscribe', isTest: true }).html,
     sampleRecipients: review.eligible.slice(0, 5).map((subscriber) => subscriber.email),
     completedProfiles: campaign.audienceFilters?.purpose === 'profile_location'
@@ -1083,11 +1102,23 @@ async function updateCampaignDraft(id, payload = {}) {
     throw new ServiceError(400, 'No campaign fields were provided for update.');
   }
 
+  const previousHash = campaignContentHash(campaign);
   Object.assign(campaign, normalized.value);
-  if (Object.prototype.hasOwnProperty.call(normalized.value, 'scheduledAt')) {
-    campaign.status = normalized.value.scheduledAt ? 'scheduled' : 'draft';
+  if (campaignContentHash(campaign) !== previousHash) {
+    campaign.lastTestContentHash = null;
+    campaign.status = 'draft';
+    campaign.scheduledAt = null;
+  } else if (Object.prototype.hasOwnProperty.call(normalized.value, 'scheduledAt')) {
+    // Saving a date never arms the scheduler. Scheduling is an explicit reviewed action.
+    campaign.status = 'draft';
   }
-  await campaign.save();
+  const [updated] = await NewsletterCampaign.update({
+    ...normalized.value,
+    status: campaign.status, scheduledAt: campaign.scheduledAt,
+    lastTestContentHash: campaign.lastTestContentHash,
+  }, { where: { id: campaign.id, updatedAt: campaign.updatedAt, status: { [Op.in]: ['draft', 'scheduled'] } } });
+  if (!updated) throw new ServiceError(409, 'Campaign changed. Refresh before saving.');
+  await campaign.reload();
   return campaign;
 }
 
@@ -1103,13 +1134,19 @@ async function scheduleCampaign(id, payload = {}) {
     throw new ServiceError(409, 'Only draft, failed, or scheduled campaigns can be scheduled.');
   }
 
+  requireCurrentTest(campaign);
+
   const scheduledAtResult = normalizeDateInput(payload.scheduledAt, 'Scheduled at');
   if (scheduledAtResult.error) throw new ServiceError(400, scheduledAtResult.error);
   if (!scheduledAtResult.value) throw new ServiceError(400, 'Scheduled at is required.');
 
   campaign.scheduledAt = scheduledAtResult.value;
   campaign.status = 'scheduled';
-  await campaign.save();
+  const [scheduled] = await NewsletterCampaign.update({ scheduledAt: campaign.scheduledAt, status: 'scheduled' }, {
+    where: { id: campaign.id, updatedAt: campaign.updatedAt, lastTestContentHash: campaign.lastTestContentHash, status: { [Op.in]: ['draft', 'failed', 'scheduled'] } },
+  });
+  if (!scheduled) throw new ServiceError(409, 'Campaign changed. Refresh and review it again.');
+  await campaign.reload();
   return campaign;
 }
 
@@ -1122,17 +1159,8 @@ async function renderCampaignEmail(campaign, recipientEmail) {
   });
 }
 
-async function renderCampaignTestEmail(campaign, testEmail) {
-  let unsubscribeLink = `${getFrontendUrl()}/newsletter/unsubscribe`;
-
-  try {
-    unsubscribeLink = await createUnsubscribeLinkForSubscriberEmail(testEmail);
-  } catch (error) {
-    if (!(error instanceof ServiceError) || error.status !== 404) {
-      throw error;
-    }
-  }
-
+async function renderCampaignTestEmail(campaign) {
+  const unsubscribeLink = `${getFrontendUrl()}/newsletter/unsubscribe`;
   return buildCampaignMessage({
     campaign,
     unsubscribeLink,
@@ -1144,8 +1172,8 @@ function buildCampaignMessage({ campaign, unsubscribeLink, isTest }) {
   const safeUnsubscribeLink = escapeHtml(unsubscribeLink);
   const safePreviewText = campaign.previewText ? escapeHtml(campaign.previewText) : '';
   const onboardingUrl = getFrontendUrl() + '/onboarding?step=location';
-  const htmlBody = (campaign.htmlContent || '').replaceAll('{{onboardingUrl}}', escapeHtml(onboardingUrl));
-  const textBody = (campaign.textContent || stripHtml(htmlBody)).replaceAll('{{onboardingUrl}}', onboardingUrl);
+  const htmlBody = (campaign.htmlContent || '').replaceAll('{{onboardingUrl}}', escapeHtml(onboardingUrl)).replaceAll('{{siteUrl}}', escapeHtml(getFrontendUrl()));
+  const textBody = (campaign.textContent || stripHtml(htmlBody)).replaceAll('{{onboardingUrl}}', onboardingUrl).replaceAll('{{siteUrl}}', getFrontendUrl());
   const title = isTest ? 'Appofasi Newsletter (Test)' : 'Appofasi Newsletter';
   const footerIntro = isTest
     ? 'This is a test send for an Appofasi newsletter campaign.'
@@ -1227,7 +1255,10 @@ async function sendCampaignTestEmail(campaignId, payload = {}) {
     headers: rendered.headers,
   });
 
-  return { email: emailResult.value };
+  const [recorded] = await NewsletterCampaign.update({
+    lastTestSentAt: new Date(), lastTestSentTo: emailResult.value, lastTestContentHash: campaignContentHash(campaign),
+  }, { where: { id: campaign.id, updatedAt: campaign.updatedAt } });
+  return { email: emailResult.value, current: recorded === 1 };
 }
 
 async function sendCampaignNow(campaignId) {
@@ -1246,6 +1277,8 @@ async function sendCampaignNow(campaignId) {
     throw new ServiceError(409, 'Only draft, scheduled, or failed campaigns can be sent.');
   }
 
+  requireCurrentTest(campaign);
+
   const [claimed] = await NewsletterCampaign.update({
     status: 'sending',
     sentAt: null,
@@ -1256,6 +1289,8 @@ async function sendCampaignNow(campaignId) {
   }, {
     where: {
       id: campaign.id,
+      updatedAt: campaign.updatedAt,
+      lastTestContentHash: campaign.lastTestContentHash,
       status: { [Op.in]: ['draft', 'failed', 'scheduled'] },
     },
   });

@@ -4,6 +4,8 @@ const service = require('../src/services/newsletterService');
 const { sendMail } = require('../src/services/mailService');
 const { updateUserProfile } = require('../src/services/userService');
 const migration = require('../src/migrations/20261024000000-newsletter-preferences-and-profile-reminders');
+const reviewMigration = require('../src/migrations/20261115000000-newsletter-test-review');
+const { FOLLOWUP_TEMPLATES, buildFeaturedPollBlock } = require('../lib/constants/newsletterFollowups');
 const { DataTypes } = require('sequelize');
 
 let admin;
@@ -17,6 +19,11 @@ async function account(overrides = {}, subscriberOverrides = {}) {
 }
 async function draft(filters = {}) {
   return service.createCampaignDraft({ subject: 'Choose your area', htmlContent: '<a href="{{onboardingUrl}}">Complete your profile</a>', textContent: '{{onboardingUrl}}', audienceFilters: { purpose: 'profile_location', ...filters } }, admin.id);
+}
+const deliveries = () => sendMail.mock.calls.filter(([mail]) => !mail.subject.startsWith('[TEST]'));
+async function sendReviewed(campaign) {
+  await service.sendCampaignTestEmail(campaign.id, { email: admin.email });
+  return service.sendCampaignNow(campaign.id);
 }
 
 beforeAll(async () => {
@@ -57,8 +64,8 @@ test('completion after preview removes recipient and saving location does not su
   expect((await service.getCampaignById(campaign.id)).estimatedRecipients).toBe(1);
   await updateUserProfile(user.id, { homeLocationId: city.id, isDiaspora: true });
   expect((await User.findByPk(user.id)).isDiaspora).toBe(true);
-  await service.sendCampaignNow(campaign.id);
-  expect(sendMail).not.toHaveBeenCalled();
+  await sendReviewed(campaign);
+  expect(deliveries()).toHaveLength(0);
   await subscriber.destroy();
   await updateUserProfile(user.id, { isDiaspora: false });
   expect((await service.getUserNewsletterPreference(user)).subscribed).toBe(false);
@@ -67,14 +74,14 @@ test('completion after preview removes recipient and saving location does not su
 test('one successful reminder across campaigns, with completion reporting and real CTA', async () => {
   const { user, subscriber } = await account();
   const first = await draft();
-  await service.sendCampaignNow(first.id);
-  expect(sendMail).toHaveBeenCalledTimes(1);
-  expect(sendMail.mock.calls[0][0].html).toContain('https://appofasi.gr/onboarding?step=location');
-  expect(sendMail.mock.calls[0][0].text).not.toContain('{{onboardingUrl}}');
+  await sendReviewed(first);
+  expect(deliveries()).toHaveLength(1);
+  expect(deliveries()[0][0].html).toContain('https://appofasi.gr/onboarding?step=location');
+  expect(deliveries()[0][0].text).not.toContain('{{onboardingUrl}}');
   expect((await subscriber.reload()).profileReminderSentAt).toBeTruthy();
   const second = await draft();
-  await service.sendCampaignNow(second.id);
-  expect(sendMail).toHaveBeenCalledTimes(1);
+  await sendReviewed(second);
+  expect(deliveries()).toHaveLength(1);
   await user.update({ homeLocationId: city.id });
   expect((await service.getCampaignById(first.id)).completedProfiles).toBe(1);
 });
@@ -101,8 +108,8 @@ test('test sends do not mark reminders and failed reminder deliveries are held a
   expect(subscriber.profileReminderSentAt).toBeNull();
   const second = await draft();
   expect((await service.getCampaignById(second.id)).exclusions.reminderInProgress).toBe(1);
-  await service.sendCampaignNow(second.id);
-  expect(sendMail).toHaveBeenCalledTimes(2);
+  await sendReviewed(second);
+  expect(deliveries()).toHaveLength(1);
 });
 
 test('location targeting includes descendants and excludes other locations', async () => {
@@ -120,4 +127,96 @@ test('migration can be applied repeatedly without data loss', async () => {
   await migration.up(qi, DataTypes);
   await migration.up(qi, DataTypes);
   expect((await subscriber.reload()).preferences.local).toBe(true);
+});
+
+test('a saved campaign cannot send, schedule or be created as scheduled before a successful test', async () => {
+  await account();
+  const campaign = await draft();
+  await expect(service.sendCampaignNow(campaign.id)).rejects.toMatchObject({ status: 409 });
+  await expect(service.scheduleCampaign(campaign.id, { scheduledAt: '2027-01-01' })).rejects.toMatchObject({ status: 409 });
+  await expect(service.createCampaignDraft({ subject: 'Unsafe', htmlContent: '<p>Body</p>', scheduledAt: '2027-01-01' }, admin.id)).rejects.toMatchObject({ status: 400 });
+  expect(sendMail).not.toHaveBeenCalled();
+  expect((await campaign.reload()).status).toBe('draft');
+  sendMail.mockRejectedValueOnce(new Error('SMTP unavailable'));
+  await expect(service.sendCampaignTestEmail(campaign.id, { email: admin.email })).rejects.toThrow('SMTP unavailable');
+  expect((await service.getCampaignById(campaign.id)).testReview.current).toBe(false);
+  await expect(service.sendCampaignNow(campaign.id)).rejects.toMatchObject({ status: 409 });
+});
+
+test('content and audience edits invalidate the test and cancel scheduled delivery', async () => {
+  const campaign = await draft();
+  await service.sendCampaignTestEmail(campaign.id, { email: admin.email });
+  expect((await service.getCampaignById(campaign.id)).testReview).toMatchObject({ current: true, email: admin.email });
+  await service.scheduleCampaign(campaign.id, { scheduledAt: '2027-01-01' });
+  await service.updateCampaignDraft(campaign.id, { htmlContent: '<p>Revised</p>' });
+  expect((await campaign.reload()).status).toBe('draft');
+  expect(campaign.scheduledAt).toBeNull();
+  await expect(service.sendCampaignNow(campaign.id)).rejects.toMatchObject({ status: 409 });
+  await service.sendCampaignTestEmail(campaign.id, { email: admin.email });
+  await service.updateCampaignDraft(campaign.id, { audienceFilters: { purpose: 'profile_location', locale: 'en' } });
+  expect((await service.getCampaignById(campaign.id)).testReview.current).toBe(false);
+  await expect(service.scheduleCampaign(campaign.id, { scheduledAt: '2027-01-01' })).rejects.toMatchObject({ status: 409 });
+});
+
+test('test sends leave subscriptions and unsubscribe tokens untouched, including changes during SMTP', async () => {
+  const { subscriber } = await account();
+  const token = await service.issueUnsubscribeToken(subscriber);
+  const tokenHash = subscriber.unsubscribeTokenHash;
+  const campaign = await draft();
+  sendMail.mockImplementationOnce(async () => {
+    await service.updateCampaignDraft(campaign.id, { subject: 'Changed during test delivery' });
+    return { messageId: 'test' };
+  });
+  const result = await service.sendCampaignTestEmail(campaign.id, { email: subscriber.email });
+  expect(result.current).toBe(false);
+  expect((await service.getCampaignById(campaign.id)).testReview.current).toBe(false);
+  expect((await subscriber.reload()).unsubscribeTokenHash).toBe(tokenHash);
+  expect(subscriber.profileReminderSentAt).toBeNull();
+  expect(subscriber.profileReminderClaimedAt).toBeNull();
+  expect(subscriber.status).toBe('subscribed');
+  expect(sendMail.mock.calls[0][0].html).not.toContain(token);
+  expect(await NewsletterSendLog.count()).toBe(0);
+});
+
+test('follow-up templates and poll cards render real links in HTML and text without leaking markup', async () => {
+  const poll = { id: 42, title: 'A question <script>alert(1)</script> & answers', status: 'active', visibility: 'public', voteRestriction: 'authenticated' };
+  const block = buildFeaturedPollBlock(poll, 'en');
+  expect(block.html).toContain('&lt;script&gt;');
+  expect(() => buildFeaturedPollBlock({ ...poll, visibility: 'private' })).toThrow();
+  expect(() => buildFeaturedPollBlock({ ...poll, voteRestriction: 'locals_only' })).toThrow();
+  expect(() => buildFeaturedPollBlock({ ...poll, deadline: '2020-01-01' })).toThrow();
+  expect(FOLLOWUP_TEMPLATES).toHaveLength(6);
+  for (const template of FOLLOWUP_TEMPLATES) {
+    const campaign = await service.createCampaignDraft({ ...template, htmlContent: template.htmlContent + block.html, textContent: template.textContent + block.text }, admin.id);
+    await service.sendCampaignTestEmail(campaign.id, { email: admin.email });
+    const email = sendMail.mock.calls.at(-1)[0];
+    for (const path of ['/polls', '/locations', '/calendar', '/suggestions/new', '/polls/42']) {
+      expect(email.html).toContain(`https://appofasi.gr${path}`);
+      expect(email.text).toContain(`https://appofasi.gr${path}`);
+    }
+    expect(email.html).not.toContain('{{');
+    expect(email.text).not.toContain('{{');
+  }
+});
+
+test('review migration preserves a recorded test when applied repeatedly', async () => {
+  const campaign = await draft();
+  await service.sendCampaignTestEmail(campaign.id, { email: admin.email });
+  await reviewMigration.up(sequelize.getQueryInterface(), DataTypes);
+  await reviewMigration.up(sequelize.getQueryInterface(), DataTypes);
+  expect((await service.getCampaignById(campaign.id)).testReview.current).toBe(true);
+});
+
+test('saving a schedule date cannot arm delivery and cancellation preserves the tested content', async () => {
+  const campaign = await draft();
+  await service.sendCampaignTestEmail(campaign.id, { email: admin.email });
+  await service.updateCampaignDraft(campaign.id, { scheduledAt: '2020-01-01' });
+  expect((await campaign.reload()).status).toBe('draft');
+  expect((await service.processDueScheduledCampaigns()).due).toBe(0);
+  await service.scheduleCampaign(campaign.id, { scheduledAt: '2027-01-01' });
+  await service.updateCampaignDraft(campaign.id, { scheduledAt: null });
+  expect((await campaign.reload()).status).toBe('draft');
+  expect(campaign.scheduledAt).toBeNull();
+  expect((await service.getCampaignById(campaign.id)).testReview.current).toBe(true);
+  expect(deliveries()).toHaveLength(0);
 });
