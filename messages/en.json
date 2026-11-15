@@ -3359,6 +3359,7 @@
     "parliamentarians": "MPs",
     "electoral": {
       "title": "Electoral districts & MPs",
+      "results": "MPs by electoral district",
       "search": "Search a district, MP or party",
       "district": "Electoral district",
       "allDistricts": "All electoral districts",

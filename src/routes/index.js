@@ -79,6 +79,7 @@ const routes = [
   { prefix: '/api/admin/geo-stats', router: geoStatsRoutes },
   { prefix: '/api/admin/geo-access', router: geoAccessAdminRoutes },
   { prefix: '/api/geo', router: geoRoutes },
+  { prefix: '/api/electoral-districts', router: require('./electoralMapRoutes') },
   { prefix: '/api/organizations', router: organizationRoutes },
   { prefix: '/api/official-posts', router: officialPostsRoutes },
   { prefix: '/api/newsletter', router: newsletterRoutes },

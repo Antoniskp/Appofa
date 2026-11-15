@@ -57,6 +57,29 @@ test('homepage local map searches areas and shows public issue, vote and camera 
   expect(errors).toEqual([]);
 });
 
+test('homepage local map loads electoral boundaries in Greek without translation errors', async ({ page, context }) => {
+  const messages = require('../messages/el.json');
+  const labels = messages.homeMap;
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => {
+    if (message.type() === 'error' && /MISSING_MESSAGE|IntlError/.test(message.text())) errors.push(message.text());
+  });
+  await context.addCookies([{ name: 'NEXT_LOCALE', value: 'el', domain: '127.0.0.1', path: '/' }]);
+  await page.goto('/');
+  const section = page.getByRole('region', { name: messages.home.explore_locations_title, exact: true });
+  await section.scrollIntoViewIfNeeded();
+  const boundaries = page.waitForResponse(response => new URL(response.url()).pathname === '/api/electoral-districts');
+  await section.getByRole('button', { name: labels.parliamentarians, exact: true }).click();
+  const response = await boundaries;
+  expect(response.status()).toBe(200);
+  expect((await response.json()).features).toHaveLength(59);
+  const panel = section.getByRole('complementary', { name: labels.electoral.results, exact: true });
+  await expect(panel.getByRole('list', { name: labels.electoral.allDistricts, exact: true }).getByRole('button')).toHaveCount(60);
+  await expect(section.getByRole('alert')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('homepage local map distinguishes unavailable data from no activity and retries', async ({ page }) => {
   let failing = true;
   await page.route('**/api/locations/map-activity**', route => failing
@@ -74,6 +97,9 @@ test('homepage local map distinguishes unavailable data from no activity and ret
 test('homepage local map shows electoral districts and their MPs', async ({ page }, testInfo) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => {
+    if (message.type() === 'error' && /MISSING_MESSAGE|IntlError/.test(message.text())) errors.push(message.text());
+  });
   await page.route('**/api/persons?**', route => route.fulfill({ json: { success: true, data: {
     profiles: [{ id: 1001, slug: 'test-athens-mp', firstNameNative: 'Άννα', lastNameNative: 'Δοκιμή',
       constituency: { slug: 'gr-electoral-athens-a' }, politicalAffiliations: [{ organization: { name: 'Test Party' } }] }],

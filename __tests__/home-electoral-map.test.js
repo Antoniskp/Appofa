@@ -2,6 +2,8 @@
 const React = require('react');
 const { act } = React;
 const { createRoot } = require('react-dom/client');
+const fs = require('node:fs');
+const path = require('node:path');
 const text = require('../messages/el.json').homeMap;
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
@@ -88,4 +90,15 @@ test('uses curated assignments before stale profile constituencies', () => {
   expect(getProfileDistrictId({ slug: 'dimitris-avramopoulos', constituency: { slug: 'gr-electoral-athens-a' } })).toBe('district-ilia');
   expect(getProfileDistrictId({ slug: 'unknown', constituency: { slug: 'gr-electoral-state' } })).toBe('district-state');
   expect(getProfileDistrictId({ slug: 'unknown' })).toBeNull();
+});
+
+test.each(['el', 'en', 'ro'])('every electoral map label exists in %s', locale => {
+  const messages = require(`../messages/${locale}.json`).homeMap;
+  const source = fs.readFileSync(path.join(__dirname, '../components/locations/HomeElectoralMap.js'), 'utf8');
+  const keys = [...source.matchAll(/\bt\('([^']+)'/g)].map(match => match[1]);
+  for (const key of keys) {
+    const label = key.split('.').reduce((value, part) => value?.[part], messages);
+    expect({ key, label }).toEqual({ key, label: expect.any(String) });
+    expect(label.trim()).not.toBe('');
+  }
 });

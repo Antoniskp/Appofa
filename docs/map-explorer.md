@@ -44,8 +44,10 @@ SDK, key or paid tile service is required.
 ## Homepage electoral mode
 
 The homepage's MPs mode loads independently of public activity. It uses the 59
-existing electoral district polygons via the static `/api/electoral-districts`
-route and all pages of `/api/persons?position=parliamentary`. District selection
+existing electoral district polygons via the public Express `/api/electoral-districts`
+route and all pages of `/api/persons?position=parliamentary`. Production nginx
+forwards API requests directly to Express; local Next.js uses its API proxy.
+District selection
 zooms the map and lists representatives with party names and profile links.
 Search matches district names, MP names and parties without requiring accents.
 Nationwide-list MPs are available in the selector and list without a polygon.
