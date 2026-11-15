@@ -1753,8 +1753,8 @@
     "mission_goal_title": "What we are trying to achieve",
     "mission_goal_intro": "A clear and transparent way to understand both public information and public sentiment.",
     "mission_goal_body": "Apofasi aims to combine complete information with an honest signal of how people feel. We do not replace polls; we provide an open and simple indicator of social direction.",
-    "mission_no_parties_title": "Why we avoid party structures",
-    "mission_no_parties_body": "Political parties often prioritize internal discipline over public will. We want citizens to have the upper hand and representatives to serve, not to manage party interests.",
+    "mission_inclusion_title": "Open to every political perspective",
+    "mission_inclusion_body": "We welcome supporters of every political party, as well as independent and undecided citizens. Our aim is to bring different experiences and viewpoints into the same conversation, encourage respectful disagreement, and find common ground. Everyone participates under the same community rules.",
     "mission_legal_reset_title": "A legal system that needs a reset",
     "mission_legal_reset_body": "Today’s legal framework is too large and complex. Representatives should simplify it, remove obsolete laws, and restart where needed so citizens can understand and control what is voted.",
     "mission_principles_title": "Our principles",
@@ -2799,6 +2799,10 @@
     "status_suggestions_rejected": "Rejected"
   },
   "democracy": {
+    "diversityTitle": "Every political perspective belongs here.",
+    "diversityInvitation": "Whether you support a party, are undecided, or support none, your voice is welcome. A wider range of participants brings more diverse opinions and helps our discussions and votes reflect more perspectives.",
+    "diversityPollInvitation": "Help broaden participation: invite someone with a different political perspective.",
+    "pollResultsScope": "Results reflect those who take part and are not a representative opinion poll.",
     "participationLink": "How participation works",
     "participationTitle": "Participation and privacy in polls",
     "eligibilityTitle": "Who can participate",

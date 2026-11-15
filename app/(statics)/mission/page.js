@@ -44,9 +44,9 @@ export default async function MissionPage() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold mb-3">{tStatic('mission_no_parties_title')}</h2>
+        <h2 className="text-2xl font-semibold mb-3">{tStatic('mission_inclusion_title')}</h2>
         <p className="text-gray-700">
-          {tStatic('mission_no_parties_body')}
+          {tStatic('mission_inclusion_body')}
         </p>
       </section>
 

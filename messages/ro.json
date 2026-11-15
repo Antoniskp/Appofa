@@ -1753,8 +1753,8 @@
     "mission_goal_title": "What we are trying to achieve",
     "mission_goal_intro": "A clear and transparent way to understand both public information and public sentiment.",
     "mission_goal_body": "Apofasi aims to combine complete information with an honest signal of how people feel. We do not replace polls; we provide an open and simple indicator of social direction.",
-    "mission_no_parties_title": "Why we avoid party structures",
-    "mission_no_parties_body": "Political parties often prioritize internal discipline over public will. We want citizens to have the upper hand and representatives to serve, not to manage party interests.",
+    "mission_inclusion_title": "Deschisă tuturor perspectivelor politice",
+    "mission_inclusion_body": "Îi primim pe susținătorii tuturor partidelor politice, precum și pe cetățenii fără afiliere politică și pe cei nehotărâți. Scopul nostru este să aducem experiențe și opinii diferite în aceeași conversație, să încurajăm dezacordul exprimat cu respect și să găsim puncte comune. Toți participă după aceleași reguli ale comunității.",
     "mission_legal_reset_title": "A legal system that needs a reset",
     "mission_legal_reset_body": "Today’s legal framework is too large and complex. Representatives should simplify it, remove obsolete laws, and restart where needed so citizens can understand and control what is voted.",
     "mission_principles_title": "Our principles",
@@ -2799,6 +2799,10 @@
     "status_suggestions_rejected": "Respins"
   },
   "democracy": {
+    "diversityTitle": "Fiecare perspectivă politică își are locul aici.",
+    "diversityInvitation": "Indiferent dacă susții un partid, ești nehotărât sau nu susții niciunul, vocea ta este binevenită. Participarea unor oameni cu opinii diferite îmbogățește dialogul și ajută discuțiile și voturile noastre să reflecte mai multe perspective.",
+    "diversityPollInvitation": "Ajută la lărgirea participării: invită pe cineva cu o perspectivă politică diferită.",
+    "pollResultsScope": "Rezultatele reflectă opiniile celor care participă și nu constituie un sondaj de opinie reprezentativ.",
     "identity": "Identitatea votului",
     "hiddenName": "Ascunde numele față de alți utilizatori",
     "publicName": "Arată numele meu",

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { 
   CalendarIcon, 
   UserIcon, 
@@ -34,6 +35,7 @@ import ReportButton from '@/components/ReportButton';
 import ShareModal from '@/components/ui/ShareModal';
 
 export default function PollDetailPage() {
+  const t = useTranslations('democracy');
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
@@ -335,6 +337,10 @@ export default function PollDetailPage() {
         {showResults && (
           <section className="mb-6 rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
             <h2 className="mb-4 text-xl font-semibold text-gray-900">Αποτελέσματα</h2>
+            <p className="mb-4 text-sm leading-6 text-gray-600">
+              {isPollActive && <span>{t('diversityPollInvitation')} </span>}
+              {t('pollResultsScope')}
+            </p>
             <PollResults poll={poll} canView={showResults} canEdit={canEdit} />
           </section>
         )}

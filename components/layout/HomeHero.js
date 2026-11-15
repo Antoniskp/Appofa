@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
 import { heroSettingsAPI, pollAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -175,6 +176,7 @@ export function FeaturedLivePoll({ poll, loading, user }) {
 }
 
 export default function HomeHero() {
+  const t = useTranslations('democracy');
   const { user, loading: authLoading } = useAuth();
   const area = user?.homeLocation;
   const areaKey = area?.slug || area?.id || user?.homeLocationId;
@@ -234,6 +236,10 @@ export default function HomeHero() {
 
               <h1 className={`max-w-4xl text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl ${areaKey ? 'md:text-4xl' : 'md:text-6xl'}`}>{areaKey ? (area?.name ? `Τι συμβαίνει στην περιοχή σου: ${area.name}` : 'Τι συμβαίνει στην περιοχή σου') : user ? DEFAULT_TITLE : GUEST_TITLE}</h1>
               {!areaKey && <p className="mt-5 max-w-2xl text-base leading-7 text-white/85 sm:text-lg sm:leading-8">{user ? DEFAULT_SUBTITLE : GUEST_SUBTITLE}</p>}
+              <div className="mt-5 max-w-2xl text-sm leading-6 text-white/85">
+                <p className="font-semibold text-sand">{t('diversityTitle')}</p>
+                <p className="mt-1">{t('diversityInvitation')}</p>
+              </div>
               <div className="my-7 flex flex-wrap gap-3">
                 {!user && <Link href="/register" className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-white px-5 py-3 font-bold text-charcoal shadow-lg transition hover:-translate-y-0.5 hover:bg-ivory hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Δημιούργησε λογαριασμό <ArrowRightIcon className="h-4 w-4" /></Link>}
                 <Link href={user ? areaHref : '/locations'} className={`inline-flex min-h-12 items-center gap-2 rounded-xl px-5 py-3 font-semibold transition hover:-translate-y-0.5 ${user ? 'bg-white text-charcoal shadow-lg hover:bg-ivory' : 'border border-white/45 bg-white/10 text-white backdrop-blur-sm hover:border-white/80 hover:bg-white/15'}`}>
