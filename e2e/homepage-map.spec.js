@@ -9,6 +9,39 @@ test.beforeEach(async ({ context }) => {
   });
 });
 
+test('homepage local map keeps background tiles visible after expanding and closing', async ({ page }, testInfo) => {
+  // Keep the rendering check independent of the tile provider's network status.
+  await page.route('https://tile.openstreetmap.org/**', route => route.fulfill({
+    contentType: 'image/svg+xml',
+    body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><path fill="#cbd5e1" d="M0 0h256v256H0z"/></svg>',
+  }));
+  await page.goto('/');
+  const section = page.getByRole('region', { name: 'What’s happening in your area', exact: true });
+  await section.scrollIntoViewIfNeeded();
+  const map = section.getByRole('region', { name: /^Local activity map:/ });
+  const expectVisibleTiles = async () => {
+    // A loaded image can still disappear when CSS collapses its width to zero.
+    await expect.poll(() => map.locator('img.leaflet-tile-loaded').evaluateAll(tiles => tiles.some(tile => {
+      const bounds = tile.getBoundingClientRect();
+      const viewport = tile.closest('[role="region"]').getBoundingClientRect();
+      return tile.naturalWidth === 256 && bounds.width >= 255 && bounds.height >= 255
+        && bounds.right > viewport.left && bounds.left < viewport.right
+        && bounds.bottom > viewport.top && bounds.top < viewport.bottom;
+    }))).toBe(true);
+  };
+
+  await expectVisibleTiles();
+  for (let cycle = 0; cycle < 2; cycle += 1) {
+    await section.getByRole('button', { name: 'Expand map', exact: true }).click();
+    await expectVisibleTiles();
+    if (cycle === 0) await section.getByRole('button', { name: 'Close map', exact: true }).click();
+    else await page.keyboard.press('Escape');
+    await expect(section.getByRole('button', { name: 'Expand map', exact: true })).toBeVisible();
+    await expectVisibleTiles();
+  }
+  await section.screenshot({ path: testInfo.outputPath('homepage-map-after-expanding.png') });
+});
+
 test('homepage local map searches areas and shows public issue, vote and camera layers', async ({ page }, testInfo) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
