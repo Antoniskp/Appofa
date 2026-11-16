@@ -24,6 +24,7 @@ function matchesSegment(user, segment = 'all') {
 }
 
 function exclusionReason(subscriber, user, filters = {}) {
+  if (filters.recipientMode === 'individual' && (!user || user.id !== Number(filters.recipientUserId))) return 'outsideRecipient';
   if (filters.status && filters.status !== 'subscribed') return 'invalidCampaignStatus';
   if (subscriber.status !== 'subscribed') return subscriber.status || 'unsubscribed';
   if (!matchesSegment(user, filters.segment)) return 'outsideSegment';
@@ -68,7 +69,10 @@ async function claimReminder(id) {
 }
 
 async function resolveFilters(filters = {}) {
-  return { ...filters, ...(filters.locationId ? { locationIds: await getDescendantLocationIds(filters.locationId, true) } : {}) };
+  const recipientId = Number(filters.recipientUserId);
+  const recipientUser = filters.recipientMode === 'individual' && Number.isSafeInteger(recipientId) && recipientId > 0
+    ? await User.findOne({ where: { id: recipientId, claimStatus: null }, attributes: ['id', 'username', 'email'] }) : null;
+  return { ...filters, recipientUser, ...(filters.locationId ? { locationIds: await getDescendantLocationIds(filters.locationId, true) } : {}) };
 }
 
 module.exports = { TOPICS, SEGMENTS, DEFAULT_PREFERENCES, emailKey, accountMap, matchesSegment, exclusionReason, accountStats, claimReminder, resolveFilters };

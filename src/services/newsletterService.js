@@ -126,6 +126,17 @@ const normalizeAudienceFilters = (value) => {
   }
 
   const normalized = {};
+  const recipientMode = normalizeEnum(value.recipientMode, ['audience', 'individual'], 'Recipient mode');
+  if (recipientMode.error) return recipientMode;
+  if (recipientMode.value === 'individual') {
+    if (!['string', 'number'].includes(typeof value.recipientUserId)) return { error: 'Choose one registered user for individual delivery.' };
+    const recipientId = Number(value.recipientUserId);
+    if (!Number.isSafeInteger(recipientId) || recipientId <= 0) return { error: 'Choose one registered user for individual delivery.' };
+    normalized.recipientMode = 'individual';
+    normalized.recipientUserId = recipientId;
+  } else if (value.recipientUserId != null && value.recipientUserId !== '') {
+    return { error: 'A selected user requires individual recipient mode.' };
+  }
   if (value.locationId != null && value.locationId !== '') {
     const id = Number(value.locationId);
     if (!Number.isSafeInteger(id) || id <= 0) return { error: 'Location must be a positive integer.' };
@@ -183,6 +194,12 @@ const normalizeAudienceFilters = (value) => {
   if (createdToResult.error) return createdToResult;
   if (createdToResult.value) normalized.createdTo = createdToResult.value.toISOString();
 
+  if (normalized.recipientMode === 'individual') {
+    // Locale chooses the message language; geographic and subscriber grouping do not narrow a named user.
+    for (const key of ['locationId', 'source', 'tags', 'subscribedFrom', 'subscribedTo', 'createdFrom', 'createdTo']) delete normalized[key];
+    normalized.segment = normalized.purpose === 'profile_location' ? 'missing_location' : 'registered';
+  }
+
   return { value: normalized };
 };
 
@@ -192,6 +209,12 @@ const buildAudienceWhere = (audienceFilters = {}, { defaultStatus = 'subscribed'
     where.status = audienceFilters.status;
   } else if (defaultStatus) {
     where.status = defaultStatus;
+  }
+
+  if (audienceFilters.recipientMode === 'individual') {
+    if (audienceFilters.recipientUser) where.email = audienceFilters.recipientUser.email;
+    else where.id = -1; // Missing/deleted recipients must never expand to the whole audience.
+    return where;
   }
 
   if (audienceFilters.locale) {
@@ -249,6 +272,8 @@ async function reviewAudience(audienceFilters = {}) {
   const eligible = [];
   const excluded = {};
   const byStatus = {};
+  if (filters.recipientMode === 'individual' && !filters.recipientUser) excluded.recipientUnavailable = 1;
+  else if (filters.recipientMode === 'individual' && subscribers.length === 0) excluded.notSubscribed = 1;
   for (const subscriber of subscribers) {
     if (!isSubscriberEligibleByTags(subscriber, filters.tags)) continue;
     byStatus[subscriber.status] = (byStatus[subscriber.status] || 0) + 1;
@@ -256,7 +281,7 @@ async function reviewAudience(audienceFilters = {}) {
     if (reason) excluded[reason] = (excluded[reason] || 0) + 1;
     else eligible.push(subscriber);
   }
-  return { eligible, excluded, byStatus };
+  return { eligible, excluded, byStatus, individualRecipient: filters.recipientUser || null };
 }
 
 async function getEligibleSubscribers(audienceFilters = {}) {
@@ -505,7 +530,10 @@ async function listSubscribers(query = {}) {
   });
 
   return {
-    subscribers: rows.map((row) => ({ ...row.toJSON(), registered: accounts.has(audience.emailKey(row.email)), homeLocationId: accounts.get(audience.emailKey(row.email))?.homeLocationId || null })),
+    subscribers: rows.map((row) => {
+      const account = accounts.get(audience.emailKey(row.email));
+      return { ...row.toJSON(), registered: Boolean(account), userId: account?.id || null, homeLocationId: account?.homeLocationId || null };
+    }),
     pagination: {
       total: count,
       page,
@@ -1074,6 +1102,7 @@ async function getCampaignById(id) {
     estimatedRecipients: review.eligible.length,
     audienceSummary: review.byStatus,
     exclusions: review.excluded,
+    individualRecipient: review.individualRecipient,
     testReview: { current: hasCurrentTest(campaign), sentAt: campaign.lastTestSentAt, email: campaign.lastTestSentTo },
     previewHtml: buildCampaignMessage({ campaign, unsubscribeLink: getFrontendUrl() + '/newsletter/unsubscribe', isTest: true }).html,
     sampleRecipients: review.eligible.slice(0, 5).map((subscriber) => subscriber.email),

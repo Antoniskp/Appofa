@@ -536,7 +536,9 @@ function AdminNewsletterContent() {
                         <td className="px-4 py-3 text-sm text-gray-700">{formatDate(subscriber.subscribedAt)}</td>
                         <td className="px-4 py-3 text-right">
                           {canWrite ? (
-                            <div className="inline-flex gap-2">
+                            <div className="inline-flex flex-wrap items-center gap-2">
+                              {subscriber.userId && <Link href={`/admin/newsletter/campaigns/new?recipientUserId=${subscriber.userId}`} className="text-xs font-medium text-blue-700">Email user</Link>}
+                              {subscriber.userId && !subscriber.homeLocationId && <Link href={`/admin/newsletter/campaigns/new?template=profile_location_el&recipientUserId=${subscriber.userId}`} className="text-xs font-medium text-blue-700">Location reminder</Link>}
                               <button
                                 type="button"
                                 disabled={updatingId === subscriber.id}

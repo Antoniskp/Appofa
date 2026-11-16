@@ -12,6 +12,9 @@ Migration `20261115000000-newsletter-test-review.js` adds successful test-send r
 
 ## Admin flow
 
+- Each campaign supports "An audience" or "One registered user". Individual mode searches registered accounts by name, username or email and saves the chosen user ID. Admin user rows offer "Email user" and, when location is missing, a prefilled "Location reminder" shortcut. These actions only open a draft.
+- Individual delivery resolves that user’s current email, shows it in the saved preview and checks their subscription, selected topic and reminder eligibility. It never adds a subscription. Missing/deleted recipients cannot fall back to a bulk audience. The template language applies directly; subscriber locale and other audience grouping filters apply only to audience campaigns. Changing the selected user invalidates the test and cancels any schedule.
+
 - `/admin/newsletter` distinguishes registered accounts, missing locations, located accounts without subscriptions, subscribed accounts, and addresses with historical send failures. A send failure is not proof of a bounce or an invalid address.
 - Subscriber lists and CSV exports support account segments. Campaigns additionally support topic and geographic targeting, including descendants of the chosen location.
 - The newsletter dashboard separates "Emails for registered users" from subscriber management. It offers profile completion, popular polls, new parliament questions, and locations/events/problem reporting follow-ups. Each has Greek and English draft shortcuts. Templates restrict by locale; review the locale filter deliberately for older subscribers without a saved locale.

@@ -92,3 +92,15 @@ test('a reviewed campaign can be scheduled explicitly or its schedule cancelled'
   await act(async () => button('Cancel scheduled delivery').click());
   expect(mockApi.adminUpdateCampaign).toHaveBeenCalledWith('1', { scheduledAt: null });
 });
+
+test('saving an individual draft retains its selected user and displays that recipient', async () => {
+  saved.campaign.audienceFilters = { recipientMode: 'individual', recipientUserId: 42 };
+  saved.individualRecipient = { id: 42, username: 'member', email: 'member@test.com' };
+  saved.estimatedRecipients = 1;
+  mockApi.adminUpdateCampaign.mockResolvedValue({ success: true });
+  await act(async () => root.render(React.createElement(Page)));
+  expect(container.textContent).toContain('member · member@test.com');
+  expect(button('Send to selected user').disabled).toBe(true);
+  await act(async () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+  expect(mockApi.adminUpdateCampaign).toHaveBeenCalledWith('1', expect.objectContaining({ audienceFilters: expect.objectContaining({ recipientMode: 'individual', recipientUserId: 42 }) }));
+});

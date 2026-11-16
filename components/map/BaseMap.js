@@ -734,11 +734,12 @@ export default function BaseMap({
 
   return (
     <div className={`${wrapperClassName} app-map ${tileMode === 'satellite' ? 'app-map-satellite' : 'app-map-light'}`}>
+      {/* Keep this className stable so React preserves Leaflet's added classes. */}
       <div
         ref={mapContainerRef}
         role="region"
         aria-label={ariaLabel}
-        className={isExpanded ? 'h-full w-full rounded-lg overflow-hidden' : 'h-full w-full'}
+        className="h-full w-full rounded-lg overflow-hidden"
       />
       {showFullscreenControl && (
         <button

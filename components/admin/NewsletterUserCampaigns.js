@@ -10,7 +10,7 @@ const CAMPAIGNS = [
 export default function NewsletterUserCampaigns() {
   return <section aria-labelledby="user-email-campaigns" className="mb-6 rounded-xl border border-blue-100 bg-blue-50 p-5">
     <h2 id="user-email-campaigns" className="text-xl font-semibold text-gray-900">Emails for registered users</h2>
-    <p className="mt-2 text-sm text-gray-700">Choose a reason to contact users. Create a draft, send it to your own inbox, then improve and approve it before sending to the selected audience.</p>
+    <p className="mt-2 text-sm text-gray-700">Choose a reason to contact users. Send to one registered user or an audience. Create a draft, send it to your own inbox, then improve and approve it before delivery.</p>
     <div className="mt-4 grid gap-4 sm:grid-cols-2">
       {CAMPAIGNS.map((campaign) => <article key={campaign.key} className="flex flex-col rounded-xl border border-gray-200 bg-white p-4">
         <h3 className="font-semibold text-gray-900">{campaign.title}</h3>

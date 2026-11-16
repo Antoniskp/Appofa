@@ -353,6 +353,10 @@ function AdminUsersContent() {
 
                         {/* Actions */}
                         <td className="px-4 py-3 text-right">
+                          {user?.role === 'admin' && u.claimStatus === null && <div className="mb-2 flex flex-col items-end gap-1 text-xs font-medium text-blue-700">
+                            <Link href={`/admin/newsletter/campaigns/new?recipientUserId=${u.id}`}>Email user</Link>
+                            {!(u.homeLocationId || u.homeLocation?.id) && <Link href={`/admin/newsletter/campaigns/new?template=profile_location_el&recipientUserId=${u.id}`}>Location reminder</Link>}
+                          </div>}
                           {user?.role === 'admin' && u.role !== 'admin' && u.id !== user?.id && u.claimStatus === null && (
                             <TooltipIconButton
                               icon={TrashIcon}

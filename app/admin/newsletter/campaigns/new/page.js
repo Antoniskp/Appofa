@@ -20,6 +20,7 @@ const INITIAL_FORM = {
   textContent: '',
   templateKey: '',
   audienceFilters: {
+    recipientMode: 'audience', recipientUserId: null,
     status: 'subscribed',
     segment: 'all', topic: 'general', purpose: 'newsletter',
     locale: '',
@@ -65,8 +66,10 @@ function AdminNewsletterCampaignCreateContent() {
   };
 
   useEffect(() => {
-    const templateKey = new URLSearchParams(window.location.search).get('template');
+    const query = new URLSearchParams(window.location.search);
+    const templateKey = query.get('template');
     if (templateKey) handleTemplateApply(templateKey);
+    if (query.has('recipientUserId')) setForm((prev) => ({ ...prev, audienceFilters: { ...prev.audienceFilters, recipientMode: 'individual', recipientUserId: query.get('recipientUserId') } }));
   }, []);
 
   const handleSubmit = async (event) => {
@@ -81,6 +84,7 @@ function AdminNewsletterCampaignCreateContent() {
         htmlContent: form.htmlContent,
         textContent: form.textContent || undefined,
         audienceFilters: {
+          recipientMode: form.audienceFilters.recipientMode, recipientUserId: form.audienceFilters.recipientUserId,
           locationId: form.audienceFilters.locationId, segment: form.audienceFilters.segment, topic: form.audienceFilters.topic, purpose: form.audienceFilters.purpose,
           ...(form.audienceFilters.status ? { status: form.audienceFilters.status } : {}),
           ...(form.audienceFilters.locale ? { locale: form.audienceFilters.locale } : {}),
@@ -183,9 +187,9 @@ function AdminNewsletterCampaignCreateContent() {
             </div>
 
             <div className="rounded-lg border border-gray-200 p-4">
-              <h2 className="text-sm font-semibold text-gray-900 mb-3">Audience filters</h2>
+              <h2 className="text-sm font-semibold text-gray-900 mb-3">Recipients</h2>
               <NewsletterAudienceFields value={form.audienceFilters} onChange={(updates) => setForm((prev) => ({ ...prev, audienceFilters: { ...prev.audienceFilters, ...updates } }))} />
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              {form.audienceFilters.recipientMode !== 'individual' && <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1" htmlFor="campaign-audience-status">Status</label>
                   <select
@@ -275,13 +279,13 @@ function AdminNewsletterCampaignCreateContent() {
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                   />
                 </div>
-              </div>
+              </div>}
             </div>
 
             <div className="flex items-center gap-3">
               <button
                 type="submit"
-                disabled={saving}
+                disabled={saving || (form.audienceFilters.recipientMode === 'individual' && !form.audienceFilters.recipientUserId)}
                 className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
               >
                 {saving ? 'Saving…' : 'Create draft & review'}

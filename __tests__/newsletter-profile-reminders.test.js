@@ -220,3 +220,76 @@ test('saving a schedule date cannot arm delivery and cancellation preserves the 
   expect((await service.getCampaignById(campaign.id)).testReview.current).toBe(true);
   expect(deliveries()).toHaveLength(0);
 });
+
+test('all email templates can be pinned to one registered user regardless of subscriber locale', async () => {
+  const { subscriber: other } = await account();
+  for (const template of FOLLOWUP_TEMPLATES) {
+    const { user, subscriber } = await account({}, { locale: null, preferences: { general: true, local: true, activity: true } });
+    const campaign = await service.createCampaignDraft({ ...template, audienceFilters: { ...template.audienceFilters, recipientMode: 'individual', recipientUserId: user.id } }, admin.id);
+    const review = await service.getCampaignById(campaign.id);
+    expect(review.estimatedRecipients).toBe(1);
+    expect(review.individualRecipient).toMatchObject({ id: user.id, email: user.email });
+    expect(review.sampleRecipients).toEqual([subscriber.email]);
+    const result = await sendReviewed(campaign);
+    expect(result.summary.totalRecipients).toBe(1);
+    expect(deliveries().at(-1)[0].to).toBe(subscriber.email);
+  }
+  expect(deliveries()).toHaveLength(FOLLOWUP_TEMPLATES.length);
+  expect(deliveries().some(([mail]) => mail.to === other.email)).toBe(false);
+});
+
+test('missing, invalid and deleted individual recipients never fall back to a bulk audience', async () => {
+  const { user } = await account();
+  await account();
+  for (const id of [null, '', 0, -1, 'not-a-user', 1.5, true, []]) {
+    await expect(draft({ recipientMode: 'individual', recipientUserId: id })).rejects.toMatchObject({ status: 400 });
+  }
+  await expect(draft({ recipientUserId: user.id })).rejects.toMatchObject({ status: 400 });
+  const campaign = await draft({ recipientMode: 'individual', recipientUserId: user.id });
+  await service.sendCampaignTestEmail(campaign.id, { email: admin.email });
+  await user.destroy();
+  const review = await service.getCampaignById(campaign.id);
+  expect(review.estimatedRecipients).toBe(0);
+  expect(review.exclusions.recipientUnavailable).toBe(1);
+  await service.sendCampaignNow(campaign.id);
+  expect(deliveries()).toHaveLength(0);
+  expect(await service.getEligibleSubscribers({ recipientMode: 'individual' })).toHaveLength(0);
+});
+
+test('individual reminders still exclude unsubscribed, unverified, completed and previously reminded users', async () => {
+  const cases = [
+    [{}, { status: 'unsubscribed' }, 'unsubscribed'],
+    [{ emailVerified: false }, {}, 'unverifiedEmail'],
+    [{ homeLocationId: city.id }, {}, 'outsideSegment'],
+    [{}, { profileReminderSentAt: new Date() }, 'alreadyReminded'],
+    [{}, { preferences: { general: false, local: true, activity: true } }, 'topicOptOut'],
+  ];
+  for (const [userOverrides, subscriberOverrides, reason] of cases) {
+    const { user } = await account(userOverrides, subscriberOverrides);
+    const campaign = await draft({ recipientMode: 'individual', recipientUserId: user.id });
+    const review = await service.getCampaignById(campaign.id);
+    expect(review.estimatedRecipients).toBe(0);
+    expect(review.exclusions[reason]).toBe(1);
+    await sendReviewed(campaign);
+  }
+  const { user, subscriber } = await account();
+  await subscriber.destroy();
+  const campaign = await draft({ recipientMode: 'individual', recipientUserId: user.id });
+  expect((await service.getCampaignById(campaign.id)).exclusions.notSubscribed).toBe(1);
+  expect(deliveries()).toHaveLength(0);
+  expect(await NewsletterSubscriber.findOne({ where: { email: user.email } })).toBeNull();
+});
+
+test('changing a selected user invalidates the test; completion after review prevents delivery', async () => {
+  const { user: first } = await account();
+  const { user: second } = await account();
+  const campaign = await draft({ recipientMode: 'individual', recipientUserId: first.id });
+  await service.sendCampaignTestEmail(campaign.id, { email: admin.email });
+  await service.updateCampaignDraft(campaign.id, { audienceFilters: { purpose: 'profile_location', recipientMode: 'individual', recipientUserId: second.id } });
+  expect((await service.getCampaignById(campaign.id)).testReview.current).toBe(false);
+  await expect(service.sendCampaignNow(campaign.id)).rejects.toMatchObject({ status: 409 });
+  await service.sendCampaignTestEmail(campaign.id, { email: admin.email });
+  await second.update({ homeLocationId: city.id });
+  await service.sendCampaignNow(campaign.id);
+  expect(deliveries()).toHaveLength(0);
+});

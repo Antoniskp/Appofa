@@ -102,6 +102,8 @@ function AdminNewsletterCampaignDetailContent() {
     textContent: campaign?.textContent || '',
     scheduledAt: localDateTime(campaign?.scheduledAt),
     status: 'subscribed',
+    recipientMode: campaign?.audienceFilters?.recipientMode || 'audience',
+    recipientUserId: campaign?.audienceFilters?.recipientUserId || null,
     locationId: campaign?.audienceFilters?.locationId || null,
     purpose: campaign?.audienceFilters?.purpose || 'newsletter',
     segment: campaign?.audienceFilters?.segment || 'all',
@@ -137,6 +139,7 @@ function AdminNewsletterCampaignDetailContent() {
         htmlContent: form.htmlContent,
         textContent: form.textContent || null,
         audienceFilters: {
+          recipientMode: form.recipientMode, recipientUserId: form.recipientUserId,
           locationId: form.locationId, segment: form.segment, topic: form.topic, purpose: form.purpose,
           ...(form.status ? { status: form.status } : {}),
           ...(form.locale ? { locale: form.locale } : {}),
@@ -323,9 +326,9 @@ function AdminNewsletterCampaignDetailContent() {
                   </div>
 
                   <div className="rounded-lg border border-gray-200 p-4">
-                    <h2 className="text-sm font-semibold text-gray-900 mb-3">Audience filters</h2>
+                    <h2 className="text-sm font-semibold text-gray-900 mb-3">Recipients</h2>
                     <NewsletterAudienceFields value={form} disabled={!canEdit} onChange={(updates) => setForm((prev) => ({ ...prev, ...updates }))} />
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    {form.recipientMode !== 'individual' && <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                       <select
                         value={form.status}
                         disabled={!canEdit}
@@ -394,13 +397,13 @@ function AdminNewsletterCampaignDetailContent() {
                         onChange={(event) => setForm((prev) => ({ ...prev, createdTo: event.target.value }))}
                         className="border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
                       />
-                    </div>
+                    </div>}
                   </div>
 
                   {canEdit && (
                     <button
                       type="submit"
-                      disabled={saving}
+                      disabled={saving || (form.recipientMode === 'individual' && !form.recipientUserId)}
                       className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
                     >
                       {saving ? 'Saving…' : 'Save draft'}
@@ -447,6 +450,11 @@ function AdminNewsletterCampaignDetailContent() {
               <div className="space-y-6">
                 <section className="rounded-xl border bg-white p-5">
                   <h2 className="font-semibold">Saved email preview</h2>
+                  {campaign.audienceFilters?.recipientMode === 'individual' && <div className="mt-3 rounded-lg bg-blue-50 p-3 text-sm text-blue-900">
+                    <p className="font-semibold">Individual delivery</p>
+                    <p>{data?.individualRecipient ? `${data.individualRecipient.username} · ${data.individualRecipient.email}` : 'The selected user is no longer available.'}</p>
+                    <p className="mt-1 text-xs">Only this user is considered for delivery. Their email preferences and current eligibility still apply.</p>
+                  </div>}
                   <iframe title="Campaign email preview" sandbox="" srcDoc={data?.previewHtml || ''} className="mt-3 h-96 w-full border" />
                   <h3 className="mt-3 text-sm font-semibold">Sample eligible recipients</h3>
                   <ul className="text-xs text-gray-600">{(data?.sampleRecipients || []).map((email) => <li key={email}>{email}</li>)}</ul>
@@ -457,7 +465,7 @@ function AdminNewsletterCampaignDetailContent() {
                   <p className="mb-3 text-xs text-gray-500">Counts and preview reflect the saved draft. Save changes before reviewing or sending.</p>
                   <dl className="space-y-2 text-sm">
                     {data?.completedProfiles != null && <div><dt>Reminded profiles now with a location</dt><dd>{data.completedProfiles}</dd></div>}
-                    {Object.entries(data?.exclusions || {}).map(([reason, count]) => <div key={reason} className="flex justify-between"><dt>Excluded: {({ outsideSegment: 'outside segment', outsideLocation: 'outside selected area', topicOptOut: 'topic not selected', locationCompleteOrNoAccount: 'location complete / no account', unverifiedEmail: 'unverified email', alreadyReminded: 'already reminded', reminderInProgress: 'delivery held for review', pending: 'pending', unsubscribed: 'unsubscribed' })[reason] || reason}</dt><dd>{count}</dd></div>)}
+                    {Object.entries(data?.exclusions || {}).map(([reason, count]) => <div key={reason} className="flex justify-between"><dt>Excluded: {({ recipientUnavailable: 'selected user unavailable', notSubscribed: 'selected user is not subscribed', outsideRecipient: 'not the selected user', outsideSegment: 'outside segment', outsideLocation: 'outside selected area', topicOptOut: 'topic not selected', locationCompleteOrNoAccount: 'location complete / no account', unverifiedEmail: 'unverified email', alreadyReminded: 'already reminded', reminderInProgress: 'delivery held for review', pending: 'pending', unsubscribed: 'unsubscribed' })[reason] || reason}</dt><dd>{count}</dd></div>)}
 
                     <div className="flex items-center justify-between"><dt className="text-gray-500">Estimated recipients</dt><dd className="font-medium text-gray-900">{estimatedRecipients}</dd></div>
                     <div className="flex items-center justify-between"><dt className="text-gray-500">Audience subscribed</dt><dd className="font-medium text-gray-900">{audienceSummary.subscribed || 0}</dd></div>
@@ -523,7 +531,7 @@ function AdminNewsletterCampaignDetailContent() {
                       disabled={busy || hasUnsavedChanges || !estimatedRecipients || !currentTest || !reviewed}
                       className="w-full px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
                     >
-                      {sendingCampaign ? 'Sending…' : `2. Send to ${estimatedRecipients} subscribers now`}
+                      {sendingCampaign ? 'Sending…' : campaign.audienceFilters?.recipientMode === 'individual' ? '2. Send to selected user' : `2. Send to ${estimatedRecipients} subscribers now`}
                     </button>
                   </div>
                 )}
