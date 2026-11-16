@@ -4,7 +4,7 @@ process.env.NODE_ENV = 'test';
 process.env.DB_DIALECT = 'sqlite';
 process.env.DB_STORAGE = ':memory:';
 process.env.JWT_SECRET = 'e2e-only-local-secret-not-for-production';
-process.env.FRONTEND_URL = 'http://127.0.0.1:3101';
+process.env.FRONTEND_URL = `http://127.0.0.1:${process.env.E2E_FRONTEND_PORT || 3101}`;
 process.env.GITHUB_CLIENT_ID = '';
 process.env.GOOGLE_CLIENT_ID = '';
 process.env.SMTP_HOST = '';
@@ -46,7 +46,7 @@ async function start() {
     { title: 'Συμφωνείτε με τις φορολογικές και κοινωνικές ρυθμίσεις για εισόδημα, αποταμίευση και επενδύσεις;', category: 'Οικονομία / Φορολογία', sourceStatus: 'Κατατέθηκε — στοιχεία επίσημης πηγής', simplified: 'Πρόταση αλλαγών στη φορολογία εισοδήματος, την αποταμίευση και τις επενδύσεις.' },
     { title: 'Συμφωνείτε με το προηγούμενο προσχέδιο προϋπολογισμού;', category: 'Οικονομία', status: 'closed', simplified: 'Προηγούμενο προσχέδιο προϋπολογισμού.' },
   ].map((topic) => ({ sourceType: 'parliament', visibility: 'public', creatorId: author.id, ...topic })));
-  const server = app.listen(3100, '127.0.0.1', () => console.log('Disposable E2E API ready'));
+  const server = app.listen(Number(process.env.E2E_API_PORT || 3100), '127.0.0.1', () => console.log('Disposable E2E API ready'));
   const close = () => server.close(() => sequelize.close().finally(() => process.exit(0)));
   process.on('SIGTERM', close);
   process.on('SIGINT', close);

@@ -552,7 +552,14 @@
     "verify_email_resend_fallback_error": "Retrimiterea e-mailului de verificare a eșuat.",
     "gdpr_consent_required": "Sunt de acord cu Termenii de utilizare și Politica de confidențialitate",
     "gdpr_consent_marketing": "Vreau să primesc ocazional noutăți civice, informații locale și anunțuri importante de la Appofasi (opțional). Mă pot dezabona oricând.",
-    "gdpr_consent_error": "Trebuie să accepți termenii pentru a te înregistra."
+    "gdpr_consent_error": "Trebuie să accepți termenii pentru a te înregistra.",
+    "register_subtitle_simple": "Urmărește subiecte locale și publică propunerile tale. Contul este gratuit.",
+    "email_invalid": "Introdu o adresă de e-mail validă, de exemplu name@example.com.",
+    "generated_username_hint": "Îți vom atribui un nume de utilizator. Îl poți schimba ulterior în profil.",
+    "other_signup_options": "Altă metodă de înregistrare",
+    "register_creating": "Se creează contul…",
+    "register_retry": "Contul nu a putut fi creat. Verifică conexiunea și încearcă din nou.",
+    "email_already_registered": "Există deja un cont cu acest e-mail. Conectează-te sau resetează parola."
   },
   "articles": {
     "analyses_title": "Analize",
@@ -1741,6 +1748,18 @@
     "rules_encourage_7": "Reporting problematic content when you spot it",
     "rules_encourage_8": "Collaboration to resolve disagreements",
     "contact_intro": "Fill out the form and our team will reply as soon as possible.",
+    "contact_people_title": "Oamenii din spatele Appofasi",
+    "contact_people_intro": "Cunoaște oamenii care administrează platforma și membrii comunității care au susținut-o la început. Deschide un profil pentru a afla mai multe.",
+    "contact_people_loading": "Se încarcă profilurile…",
+    "contact_people_error": "Profilurile sunt temporar indisponibile. Ne poți contacta în continuare prin formularul de mai jos.",
+    "contact_people_retry": "Încearcă din nou",
+    "contact_admins_title": "Administratorii actuali",
+    "contact_admin_label": "Administrator",
+    "contact_admins_empty": "Niciun profil de administrator nu este public în acest moment. Folosește formularul de mai jos pentru a contacta echipa.",
+    "contact_early_members_title": "Primii membri ai comunității",
+    "contact_early_members_intro": "Le mulțumim celor care au ajutat Appofasi să pornească. Aceste mulțumiri sunt separate de responsabilitățile actuale pe platformă.",
+    "contact_early_contributor_label": "Contribuitor de la început · mulțumiri speciale",
+    "contact_early_member_label": "Membru de la început",
     "contact_discord_title": "Or contact us via Discord",
     "contact_discord_description": "Alternatively, join our Discord community for faster communication.",
     "contact_discord_cta": "Join Discord",
@@ -2375,11 +2394,11 @@
       "read_question": "Vezi tema",
       "participate": "Participă",
       "source_checked": "Sursă verificată",
-    "participation_status": "Participare: {status}",
-    "unsure": "Nu sunt sigur",
-    "no_votes": "Încă nu există voturi",
-    "vote_saved": "Votul tău a fost salvat.",
-    "local_voting": "Participarea este limitată la utilizatorii din această zonă."
+      "participation_status": "Participare: {status}",
+      "unsure": "Nu sunt sigur",
+      "no_votes": "Încă nu există voturi",
+      "vote_saved": "Votul tău a fost salvat.",
+      "local_voting": "Participarea este limitată la utilizatorii din această zonă."
     },
     "results": {
       "leading": "Leading",
@@ -2693,7 +2712,7 @@
     "step_candidate_register_action": "Înregistrează-te ca și candidat",
     "step_first_content": "Prima contribuție",
     "step_first_content_action": "Creează primul tău conținut",
-    "card_title": "Continuă configurarea",
+    "card_title": "Vezi subiecte din apropiere",
     "card_dismiss": "Ascunde",
     "card_cta": "Continuă configurarea",
     "card_complete": "Configurare finalizată",
@@ -2745,7 +2764,7 @@
     "independent_preview_link": "Vezi profilul tău public",
     "go_to_moderator_workspace": "Accesați spațiul de lucru Moderator",
     "go_to_creator_workspace": "Accesați spațiul de lucru Creator",
-    "location_prompt": "Alege zona pentru a descoperi probleme locale și propuneri de vot. Poți opta și pentru actualizări relevante prin email."
+    "location_prompt": "Alege zona ta pentru subiecte mai relevante."
   },
   "moderator": {
     "title": "Spațiu de lucru Moderator",
@@ -2995,7 +3014,8 @@
     "participationTitle": "O contribuție mică poate începe ceva important.",
     "participationDescription": "Votează un subiect deschis, propune o soluție, semnalează o problemă sau ajută comunitatea locală.",
     "more": "Mai multe moduri de a participa",
-    "explore": "Mai multe secțiuni"
+    "explore": "Mai multe secțiuni",
+    "benefitProposals": "Publică propriile propuneri"
   },
   "homeRecovery": {
     "title": "Această secțiune nu s-a putut încărca",
@@ -3149,7 +3169,7 @@
     "loading": "Se încarcă…",
     "clear": "Șterge localitatea",
     "eligibility": "Locația te ajută să descoperi voturi relevante. Fiecare vot are propriile reguli; alegerea locației nu verifică domiciliul.",
-    "saveLocation": "Salvează locația și continuă",
+    "saveLocation": "Arată subiectele din zona mea",
     "skip": "Omite pentru moment",
     "saving": "Se salvează…",
     "saveError": "Salvarea a eșuat. Încearcă din nou.",
@@ -3162,7 +3182,8 @@
     "savePreferences": "Salvează preferințele email",
     "preferencesSaved": "Preferințele email au fost salvate.",
     "loadError": "Preferințele email nu au putut fi încărcate.",
-    "retry": "Încearcă din nou"
+    "retry": "Încearcă din nou",
+    "optional": "opțional"
   },
   "adminWorkspace": {
     "needsAttention": "Necesită atenție",
@@ -3431,5 +3452,44 @@
       "electoral_district": "Circumscripție",
       "international": "Internațional"
     }
+  },
+  "signupJourney": {
+    "hero_title": "Vezi ce se întâmplă în zona ta. Votează și propune soluții.",
+    "hero_body": "Pe Appofasi, cetățenii discută probleme locale și propun schimbări. Citește subiectele sau creează un cont gratuit pentru a participa.",
+    "register_free": "Creează un cont gratuit",
+    "preview_topics": "Vezi mai întâi subiectele",
+    "advisory_note": "Voturile arată opiniile participanților. Nu sunt decizii oficiale sau sondaje reprezentative.",
+    "who_can_join": "Cine poate participa?",
+    "identity_note": "Conectarea cu Google nu confirmă o persoană unică.",
+    "policy_title": "Ești de acord cu această propunere?",
+    "policy_help": "Citește o poziție politică reală. Răspunde pentru a afla de la ce partid sau echipă Appofasi provine.",
+    "loading_policy": "Se încarcă o poziție…",
+    "no_policy": "Nu există o poziție disponibilă acum. Explorează voturile deschise.",
+    "policy_participation": "{count, plural, =0 {Nu există încă răspunsuri.} one {# persoană a răspuns.} few {# persoane au răspuns.} other {# de persoane au răspuns.}}",
+    "register_to_answer": "Creează un cont pentru a răspunde",
+    "already_member": "Ai un cont? Conectează-te",
+    "register_to_vote": "Creează un cont pentru a vota",
+    "poll_requirements": "Deschide detaliile pentru a vedea regulile de participare la acest vot.",
+    "account_ready": "Contul tău este gata!",
+    "start_help": "Alege zona ta pentru a vedea subiecte relevante. Poți sări peste acest pas și să explorezi voturile.",
+    "other_ways": "Vrei să ajuți mai mult?",
+    "other_ways_help": "Poți deveni moderator sau poți participa ca persoană candidată mai târziu. Nu trebuie să alegi un rol pentru a începe.",
+    "advanced_setup": "Vezi rolurile și setările opționale",
+    "verification_title": "Confirmă adresa de e-mail",
+    "verification_destination": "Verifică mesajele primite și dosarul spam pentru {email} și deschide linkul de confirmare.",
+    "verification_help": "Poți deja explora subiectele. Confirmarea e-mailului este necesară pentru verificarea profilului. Fiecare vot are propriile reguli de participare.",
+    "resend": "Trimite e-mailul din nou",
+    "sending": "Se trimite…",
+    "sent": "E-mail trimis",
+    "correct_email": "Adresă de e-mail greșită?",
+    "correct_email_label": "Adresa de e-mail corectă",
+    "save_email": "Salvează și trimite un link nou",
+    "cancel": "Anulează",
+    "verification_sent": "Am trimis un link nou de confirmare. Verifică și dosarul spam.",
+    "verification_error": "Nu am putut trimite e-mailul. Verifică adresa și încearcă din nou.",
+    "email_in_use": "Această adresă este deja folosită. Încearcă altă adresă.",
+    "back_home": "Înapoi la început",
+    "terms": "Termeni",
+    "privacy": "Confidențialitate"
   }
 }

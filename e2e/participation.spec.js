@@ -57,17 +57,17 @@ test('homepage prioritizes the area journey and recovers a failed section withou
 test('registers, submits a proposal, votes and rejects admin access', async ({ page }) => {
   const username = `citizen-${Date.now()}`;
   await page.goto('/register');
-  await page.locator('[name="username"]').fill(username);
   await page.locator('[name="email"]').fill(`${username}@example.test`);
   await page.locator('[name="password"]').fill('TestPassword123!');
-  await page.locator('[name="confirmPassword"]').fill('TestPassword123!');
   await page.locator('[name="gdpr_consent"]').check();
   const registration = page.waitForResponse(response => response.url().endsWith('/api/auth/register') && response.request().method() === 'POST');
   await page.getByRole('button', { name: en.auth.submit_register, exact: true }).click();
   expect((await registration).status()).toBe(201);
   await expect(page).toHaveURL(/\/onboarding/);
   const profile = await (await page.request.get('/api/auth/profile')).json();
-  expect(profile.data.user.username).toBe(username);
+  expect(profile.data.user.username).toMatch(/^citizen-[a-f0-9]+$/);
+  await expect(page.getByRole('heading', { name: en.signupJourney.account_ready })).toBeVisible();
+  await expect(page.getByRole('heading', { name: en.signupJourney.verification_title })).toBeVisible();
 
   await page.goto('/suggestions/new');
   const title = `Safer paths ${username}`;

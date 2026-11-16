@@ -1016,6 +1016,29 @@ async function verifyUser(actorId, actorRole, actorHomeLocationId, targetId, isV
   return updatedUser;
 }
 
+// Contact-page discovery is public for every visitor, including signed-in admins.
+async function getContactPeople() {
+  // Acknowledgements are curated; account age alone does not imply a contribution.
+  const earlyMemberUsernames = ['Simeon', 'mariosliviri', 'Panos'];
+  const query = {
+    where: {
+      claimStatus: null,
+      profileVisibility: PROFILE_VISIBILITY.PUBLIC,
+      username: { [Op.ne]: null, [Op.notIn]: [''] },
+    },
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'avatar', 'avatarColor', 'createdAt', 'isVerified'],
+    order: [['createdAt', 'ASC'], ['id', 'ASC']],
+  };
+  const [admins, earlyMembers] = await Promise.all([
+    User.findAll({ ...query, where: { ...query.where, role: 'admin' } }),
+    User.findAll({ ...query, where: { ...query.where, username: { [Op.in]: earlyMemberUsernames } } }),
+  ]);
+  return {
+    admins,
+    earlyMembers: earlyMemberUsernames.flatMap((username) => earlyMembers.filter((user) => user.username === username)),
+  };
+}
+
 async function getPublicUserProfile(userId, viewer = null) {
   if (!userId) throw new ServiceError(400, 'Invalid user id.');
 
@@ -1345,6 +1368,7 @@ module.exports = {
   getUserStats,
   updateUserRole,
   verifyUser,
+  getContactPeople,
   getPublicUserProfile,
   getPublicUserProfileByUsername,
   searchUsers,

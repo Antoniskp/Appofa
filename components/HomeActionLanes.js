@@ -258,9 +258,9 @@ export default function HomeActionLanes({ user }) {
             <ActionCard key={action.href} action={action} />
           ))}
         </div>
+        {!user && <GuestRegistrationBridge />}
         <details className="mt-5 rounded-2xl border border-brand-border bg-ivory/70 p-4 sm:p-5">
           <summary className="cursor-pointer rounded font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">{t('more')}</summary>
-        {!user && <GuestRegistrationBridge />}
         <div className="mt-6 border-y border-blue-100 bg-gradient-to-r from-blue-50 via-white to-blue-50 py-8 text-gray-900">
           <div className="grid gap-7 px-1 sm:px-2 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.45fr)] lg:items-start">
             <div>

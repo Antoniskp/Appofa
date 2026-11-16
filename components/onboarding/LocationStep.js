@@ -18,13 +18,13 @@ export default function LocationStep({ onContinue }) {
     setSaving(true); setError('');
     try {
       await updateProfile({ homeLocationId: locationId, isDiaspora: abroad });
-      await onContinue();
+      await onContinue(locationId);
     } catch (err) { setError(err.message || t('saveError')); }
     finally { setSaving(false); }
   };
   return <div className="space-y-6">
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+      <h2 className="text-2xl font-bold text-gray-900">{t('title')}</h2>
       <p className="mt-2 text-gray-600">{t('description')}</p>
     </div>
     <section className="space-y-4 rounded-xl border border-blue-200 bg-white p-5">
@@ -39,6 +39,9 @@ export default function LocationStep({ onContinue }) {
         <button type="button" onClick={async () => { setSaving(true); setError(''); try { await onContinue(); } catch { setError(t('saveError')); } finally { setSaving(false); } }} disabled={saving} className="px-3 py-2 text-sm text-gray-600">{t('skip')}</button>
       </div>
     </section>
-    <EmailPreferences />
+    <details className="rounded-xl border border-gray-200 bg-white p-4">
+      <summary className="cursor-pointer py-1 text-sm font-semibold text-gray-700">{t('emailTitle')} ({t('optional')})</summary>
+      <div className="mt-4"><EmailPreferences /></div>
+    </details>
   </div>;
 }

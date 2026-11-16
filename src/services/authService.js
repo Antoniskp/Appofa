@@ -26,9 +26,9 @@ const EMAIL_VERIF_DEFAULT_TTL_HOURS = 24;
 const EMAIL_VERIF_TOKEN_BYTES = 32;
 const SUPPORTED_LOCALES = ['el', 'en', 'ro'];
 const verificationCopy = {
-  el: { subject: 'Επιβεβαίωσε το email σου για το Appofasi', welcome: 'Καλώς ήρθες στο Appofasi', intro: 'Επιβεβαίωσε τη διεύθυνση email σου για να συνεχίσεις.', action: 'Επιβεβαίωση email', expiry: 'Ο σύνδεσμος ισχύει για 24 ώρες.', next: 'Μετά την επιβεβαίωση, διάλεξε πώς θέλεις να συμμετέχεις και δες το επόμενο βήμα σου.', fallback: 'Αν το κουμπί δεν λειτουργεί, άνοιξε αυτόν τον σύνδεσμο:', ignore: 'Αν δεν δημιούργησες εσύ αυτόν τον λογαριασμό, αγνόησε αυτό το email.' },
-  en: { subject: 'Verify your Appofasi email address', welcome: 'Welcome to Appofasi', intro: 'Verify your email address to continue.', action: 'Verify email', expiry: 'This link is valid for 24 hours.', next: 'After verifying, choose how you want to take part and see your next step.', fallback: 'If the button does not work, open this link:', ignore: 'If you did not create this account, you can ignore this email.' },
-  ro: { subject: 'Confirmă adresa de e-mail pentru Appofasi', welcome: 'Bun venit pe Appofasi', intro: 'Confirmă adresa de e-mail pentru a continua.', action: 'Confirmă e-mailul', expiry: 'Linkul este valabil timp de 24 de ore.', next: 'După confirmare, alege cum vrei să participi și vezi care este următorul pas.', fallback: 'Dacă butonul nu funcționează, deschide acest link:', ignore: 'Dacă nu ai creat acest cont, poți ignora acest e-mail.' },
+  el: { subject: 'Επιβεβαίωσε το email σου για το Appofasi', welcome: 'Καλώς ήρθες στο Appofasi', intro: 'Επιβεβαίωσε τη διεύθυνση email σου για να συνεχίσεις.', action: 'Επιβεβαίωση email', expiry: 'Ο σύνδεσμος ισχύει για 24 ώρες.', next: 'Δες τα θέματα της περιοχής σου και ξεκίνα να συμμετέχεις.', fallback: 'Αν το κουμπί δεν λειτουργεί, άνοιξε αυτόν τον σύνδεσμο:', ignore: 'Αν δεν δημιούργησες εσύ αυτόν τον λογαριασμό, αγνόησε αυτό το email.' },
+  en: { subject: 'Verify your Appofasi email address', welcome: 'Welcome to Appofasi', intro: 'Verify your email address to continue.', action: 'Verify email', expiry: 'This link is valid for 24 hours.', next: 'Explore topics in your area and start taking part.', fallback: 'If the button does not work, open this link:', ignore: 'If you did not create this account, you can ignore this email.' },
+  ro: { subject: 'Confirmă adresa de e-mail pentru Appofasi', welcome: 'Bun venit pe Appofasi', intro: 'Confirmă adresa de e-mail pentru a continua.', action: 'Confirmă e-mailul', expiry: 'Linkul este valabil timp de 24 de ore.', next: 'Descoperă subiecte din zona ta și începe să participi.', fallback: 'Dacă butonul nu funcționează, deschide acest link:', ignore: 'Dacă nu ai creat acest cont, poți ignora acest e-mail.' },
 };
 const normalizeLocale = (locale) => SUPPORTED_LOCALES.includes(String(locale || '').toLowerCase()) ? String(locale).toLowerCase() : 'el';
 
@@ -154,7 +154,11 @@ async function registerUser({
   newsletterOptIn,
   locale
 }) {
-  const usernameResult = normalizeRequiredText(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
+  // Do not derive public handles from email addresses or require one during signup.
+  const generatedUsername = username == null || username === ''
+    ? `citizen-${crypto.randomBytes(12).toString('hex')}`
+    : username;
+  const usernameResult = normalizeRequiredText(generatedUsername, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
   if (usernameResult.error) throw new ServiceError(400, usernameResult.error);
 
   const emailResult = normalizeEmail(email);
@@ -372,37 +376,61 @@ async function verifyEmailWithToken(token) {
   }
 
   if (!user.emailVerifExpires || user.emailVerifExpires.getTime() <= Date.now()) {
-    user.emailVerifToken = null;
-    user.emailVerifExpires = null;
-    await user.save();
+    await User.update({ emailVerifToken: null, emailVerifExpires: null }, { where: { id: user.id, emailVerifToken: tokenHash } });
     const error = new ServiceError(400, 'Email verification token has expired.');
     error.code = 'EMAIL_VERIF_TOKEN_EXPIRED';
     throw error;
   }
 
-  user.emailVerified = true;
-  user.emailVerifToken = null;
-  user.emailVerifExpires = null;
-  await user.save();
+  // A correction or resend can rotate the token while verification is in flight.
+  const [verified] = await User.update({ emailVerified: true, emailVerifToken: null, emailVerifExpires: null }, {
+    where: { id: user.id, emailVerifToken: tokenHash, emailVerifExpires: { [Op.gt]: new Date() } },
+  });
+  if (!verified) {
+    const error = new ServiceError(400, 'Invalid email verification token.');
+    error.code = 'EMAIL_VERIF_TOKEN_INVALID';
+    throw error;
+  }
+  user.set({ emailVerified: true, emailVerifToken: null, emailVerifExpires: null });
 
   return { user };
 }
 
-async function resendVerificationEmail(userId) {
+async function resendVerificationEmail(userId, correctedEmail) {
   const user = await User.findByPk(userId);
   if (!user) throw new ServiceError(404, 'User not found.');
   if (user.emailVerified) throw new ServiceError(400, 'Email is already verified.');
+  const previousEmail = user.email;
+  const previousToken = user.emailVerifToken;
+  if (correctedEmail !== undefined) {
+    const result = normalizeEmail(correctedEmail);
+    if (result.error) throw new ServiceError(400, result.error);
+    if (result.value !== user.email) {
+      // Only an unverified password account can correct its signup address.
+      if (!user.password || user.googleId || user.githubId) {
+        throw new ServiceError(400, 'This account cannot change its email during verification.');
+      }
+      if (await User.findOne({ where: { email: result.value, id: { [Op.ne]: user.id } } })) {
+        throw new ServiceError(400, 'This email address is already in use.');
+      }
+      user.email = result.value;
+    }
+  }
   if (!user.email) throw new ServiceError(400, 'No email address on this account.');
 
   const rawToken = crypto.randomBytes(EMAIL_VERIF_TOKEN_BYTES).toString('hex');
   user.emailVerifToken = getEmailVerifTokenHash(rawToken);
   user.emailVerifExpires = new Date(Date.now() + EMAIL_VERIF_DEFAULT_TTL_HOURS * 60 * 60 * 1000);
-  await user.save();
+  const [updated] = await User.update({ email: user.email, emailVerifToken: user.emailVerifToken, emailVerifExpires: user.emailVerifExpires }, {
+    where: { id: user.id, emailVerified: false, email: previousEmail, emailVerifToken: previousToken },
+  });
+  if (!updated) throw new ServiceError(409, 'The account changed. Please refresh and try again.');
 
   try {
     await sendVerificationEmail(user.email, rawToken, user.preferredLocale);
   } catch (error) {
     console.error('[resendVerificationEmail] SMTP send failed:', error);
+    throw new ServiceError(503, 'The verification email could not be sent. Please try again.');
   }
 
   return { message: 'Verification email sent.' };

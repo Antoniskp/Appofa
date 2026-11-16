@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import PolicyExplanation from '@/components/positions/PolicyExplanation';
 import ArticleCard from '@/components/articles/ArticleCard';
 import Link from 'next/link';
@@ -13,12 +14,12 @@ const label = 'mb-3 text-xs font-bold uppercase tracking-widest text-copper';
 const button = 'inline-flex min-h-11 items-center rounded-lg border border-current px-4 text-sm font-semibold';
 
 function PolicyVote({ user }) {
+  const t = useTranslations('signupJourney');
   const [round, setRound] = useState(0);
   const [state, setState] = useState({ loading: true });
   useEffect(() => {
-    if (!user) return;
     let current = true;
-    positionAPI.list({ pool: 'home', voteView: 'unanswered', sort: 'shuffle', seed: 1 + Math.floor(Math.random() * 2147483646) })
+    positionAPI.list({ pool: 'home', voteView: user ? 'unanswered' : 'all', sort: 'shuffle', seed: 1 + Math.floor(Math.random() * 2147483646) })
       .then(({ data }) => { if (current) setState({ policy: data.positions[0] }); })
       .catch(() => { if (current) setState({ loadError: true }); });
     return () => { current = false; };
@@ -39,17 +40,20 @@ function PolicyVote({ user }) {
   }
   const { policy } = state;
   return <article id="policy-vote" className={card} aria-live="polite">
-    <h2 className="text-xl font-bold">Συμφωνείς με τη θέση;</h2>
-    <p className="my-4">Διάβασε μια πολιτική θέση και διάλεξε την απάντησή σου. Μετά θα δεις από ποιο κόμμα ή την ομάδα του Appofasi προέρχεται.</p>
-    {!user ? <>
-      <div className="flex flex-wrap gap-2">{[['/login', 'Σύνδεση'], ['/register', 'Εγγραφή']].map(([path, title]) =>
-        <Link className={button} key={path} href={buildAuthPath(path, '/#policy-vote')}>{title}</Link>)}</div>
-    </> : state.loading ? <p>Αναζήτηση θέσης…</p> : state.loadError ? <>
+    <h2 className="text-xl font-bold">{t('policy_title')}</h2>
+    <p className="my-4">{t('policy_help')}</p>
+    {state.loading ? <p>{t('loading_policy')}</p> : state.loadError ? <>
       <p>Η θέση δεν φορτώθηκε.</p><button className={button} onClick={next}>Δοκίμασε ξανά</button>
-    </> : !policy ? <p>Δεν υπάρχουν άλλες θέσεις για να ψηφίσεις τώρα.</p> : <>
+    </> : !policy ? <><p>{user ? 'Δεν υπάρχουν άλλες θέσεις για να ψηφίσεις τώρα.' : t('no_policy')}</p>{!user && <Link className={`${button} mt-4`} href="/polls">{t('preview_topics')}</Link>}</> : <>
       <h3 className="text-lg font-bold">{policy.title}</h3>
       <p className="my-3 max-h-48 overflow-y-auto whitespace-pre-line">{policy.body}</p>
-      {state.revealed ? <>
+      {!user ? <>
+        <p className="mb-4 text-sm text-gray-600">{t('policy_participation', { count: (policy.support || 0) + (policy.oppose || 0) + (policy.unsure || 0) })}</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link className={`${button} bg-blue-700 text-white`} href={buildAuthPath('/register', '/#policy-vote')}>{t('register_to_answer')}</Link>
+          <Link className="min-h-11 py-3 text-sm font-semibold text-blue-700 underline" href={buildAuthPath('/login', '/#policy-vote')}>{t('already_member')}</Link>
+        </div>
+      </> : state.revealed ? <>
         <p className="mb-3">Η θέση αποδίδεται σε: <strong>{policy.position.organization.name}</strong></p>
         <button className={button} onClick={next}>Επόμενη θέση →</button>
       </> : <>

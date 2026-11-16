@@ -17,10 +17,9 @@ import {
 const DEFAULT_BG_COLOR = '#252627';
 const DEFAULT_TITLE = 'Επίλεξε την περιοχή σου';
 const DEFAULT_SUBTITLE = 'Όρισε την περιοχή σου στο προφίλ σου για να βλέπεις τα τοπικά θέματα και να συμμετέχεις.';
-const GUEST_TITLE = 'Η περιοχή σου. Τα θέματα που σε αφορούν. Η δική σου φωνή.';
-const GUEST_SUBTITLE = 'Ανακάλυψε προτάσεις και ψηφοφορίες για την περιοχή σου. Δημιούργησε λογαριασμό για να ακολουθείς όσα σε ενδιαφέρουν και να καταθέτεις τις δικές σου προτάσεις.';
 
 export function FeaturedLivePoll({ poll, loading, user }) {
+  const journey = useTranslations('signupJourney');
   const [currentPoll, setCurrentPoll] = useState(poll);
   const [selectedOptionId, setSelectedOptionId] = useState(poll?.userVote?.optionId || null);
   const [submittingOptionId, setSubmittingOptionId] = useState(null);
@@ -156,9 +155,8 @@ export function FeaturedLivePoll({ poll, loading, user }) {
         </p>
       )}
       {!canVote && isPollActive && (
-        <p className="mt-3 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-xs font-medium text-white/75">
-          Συνδέσου για να ψηφίσεις σε αυτή τη ψηφοφορία.
-        </p>
+        !user ? <Link href={`/register?next=${encodeURIComponent(`/polls/${currentPoll.id}`)}`} className="mt-4 inline-flex min-h-11 items-center justify-center rounded-lg bg-white px-4 py-2 text-sm font-bold text-slate-900">{journey('register_to_vote')}</Link>
+          : <p className="mt-3 text-sm text-white/85">{journey('poll_requirements')}</p>
       )}
       <div className="mt-4 flex items-center justify-between gap-3">
         <Link href={`/polls/${currentPoll.id}`} className="text-xs font-semibold text-white underline">Αποτελέσματα και λεπτομέρειες</Link>
@@ -177,6 +175,8 @@ export function FeaturedLivePoll({ poll, loading, user }) {
 
 export default function HomeHero() {
   const t = useTranslations('democracy');
+  const journey = useTranslations('signupJourney');
+  const actions = useTranslations('homeActions');
   const { user, loading: authLoading } = useAuth();
   const area = user?.homeLocation;
   const areaKey = area?.slug || area?.id || user?.homeLocationId;
@@ -234,20 +234,28 @@ export default function HomeHero() {
                 </p>
               )}
 
-              <h1 className={`max-w-4xl text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl ${areaKey ? 'md:text-4xl' : 'md:text-6xl'}`}>{areaKey ? (area?.name ? `Τι συμβαίνει στην περιοχή σου: ${area.name}` : 'Τι συμβαίνει στην περιοχή σου') : user ? DEFAULT_TITLE : GUEST_TITLE}</h1>
-              {!areaKey && <p className="mt-5 max-w-2xl text-base leading-7 text-white/85 sm:text-lg sm:leading-8">{user ? DEFAULT_SUBTITLE : GUEST_SUBTITLE}</p>}
-              <div className="mt-5 max-w-2xl text-sm leading-6 text-white/85">
+              <h1 className={`max-w-4xl text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl ${areaKey ? 'md:text-4xl' : 'md:text-5xl'}`}>{areaKey ? (area?.name ? `Τι συμβαίνει στην περιοχή σου: ${area.name}` : 'Τι συμβαίνει στην περιοχή σου') : user ? DEFAULT_TITLE : journey('hero_title')}</h1>
+              {!areaKey && <p className="mt-5 max-w-2xl text-base leading-7 text-white/85 sm:text-lg sm:leading-8">{user ? DEFAULT_SUBTITLE : journey('hero_body')}</p>}
+              {user && <div className="mt-5 max-w-2xl text-sm leading-6 text-white/85">
                 <p className="font-semibold text-sand">{t('diversityTitle')}</p>
                 <p className="mt-1">{t('diversityInvitation')}</p>
-              </div>
+              </div>}
               <div className="my-7 flex flex-wrap gap-3">
-                {!user && <Link href="/register" className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-white px-5 py-3 font-bold text-charcoal shadow-lg transition hover:-translate-y-0.5 hover:bg-ivory hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">Δημιούργησε λογαριασμό <ArrowRightIcon className="h-4 w-4" /></Link>}
+                {!user && <Link href="/register" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 font-bold text-charcoal shadow-lg transition hover:-translate-y-0.5 hover:bg-ivory hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">{journey('register_free')} <ArrowRightIcon className="h-4 w-4" /></Link>}
                 <Link href={user ? areaHref : '/locations'} className={`inline-flex min-h-12 items-center gap-2 rounded-xl px-5 py-3 font-semibold transition hover:-translate-y-0.5 ${user ? 'bg-white text-charcoal shadow-lg hover:bg-ivory' : 'border border-white/45 bg-white/10 text-white backdrop-blur-sm hover:border-white/80 hover:bg-white/15'}`}>
-                  <MapPinIcon className="h-5 w-5" />{areaKey ? 'Δες τα θέματα της περιοχής σου' : user ? 'Επίλεξε την περιοχή σου' : 'Εξερεύνησε την περιοχή σου'}
+                  <MapPinIcon className="h-5 w-5" />{areaKey ? 'Δες τα θέματα της περιοχής σου' : user ? 'Επίλεξε την περιοχή σου' : journey('preview_topics')}
                 </Link>
                 {user && <Link href="/polls" className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-white/45 bg-white/10 px-5 py-3 font-semibold text-white backdrop-blur-sm transition hover:border-white/80 hover:bg-white/15">Ψήφισε σε ένα θέμα <ArrowRightIcon className="h-4 w-4" /></Link>}
               </div>
-              <p className="mb-5 max-w-3xl text-xs leading-5 text-white/65">Οι ψηφοφορίες εκφράζουν τους συμμετέχοντες. Δεν αποτελούν επίσημες αποφάσεις ή αντιπροσωπευτικές δημοσκοπήσεις. Η σύνδεση με Google δεν επαληθεύει μοναδικό φυσικό πρόσωπο.</p>
+              {!user && <ul className="mb-6 grid max-w-3xl gap-3 text-sm leading-6 text-white/90 sm:grid-cols-3">
+                {['benefitArea', 'benefitHistory', 'benefitProposals'].map(key => <li key={key} className="border-l-2 border-sand/60 pl-3">{actions(key)}</li>)}
+              </ul>}
+              <p className="mb-5 max-w-3xl text-sm leading-6 text-white/80">{journey('advisory_note')}</p>
+              {!user && <details className="mb-5 max-w-2xl text-sm leading-6 text-white/85">
+                <summary className="cursor-pointer py-2 font-semibold">{journey('who_can_join')}</summary>
+                <p className="mt-2">{t('diversityInvitation')}</p>
+                <p className="mt-2">{journey('identity_note')}</p>
+              </details>}
               <nav aria-label="Συνέχισε τη συμμετοχή σου" className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-white/85">
                 {areaKey && <Link href="/profile#location-politics">Αλλαγή περιοχής</Link>}
                 {user && <Link href="/following">Θέματα που ακολουθείς</Link>}

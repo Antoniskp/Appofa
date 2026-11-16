@@ -54,6 +54,7 @@ router.delete('/users/:id', apiLimiter, authMiddleware, csrfProtection, checkRol
 router.get('/check-username', optionalAuthMiddleware, apiLimiter, authController.checkUsernameAvailability);
 
 // Public search endpoint (guests see public profiles only; authenticated users see registered+public)
+router.get('/users/contact-people', apiLimiter, authController.getContactPeople);
 router.get('/users/search', optionalAuthMiddleware, apiLimiter, authController.searchUsers);
 
 // Public profile endpoints with visibility enforcement

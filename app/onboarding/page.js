@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
@@ -21,6 +21,7 @@ import { authAPI, messageAPI, candidateRegistrationAPI, onboardingEventAPI } fro
 import Button from '@/components/ui/Button';
 import LocationStep from '@/components/onboarding/LocationStep';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import StartParticipation from '@/components/onboarding/StartParticipation';
 
 const GOALS = ['moderator', 'creator', 'independent', 'citizen'];
 
@@ -733,10 +734,18 @@ function OnboardingContent() {
   );
 }
 
+function OnboardingRoute() {
+  const params = useSearchParams();
+  return params.get('mode') === 'advanced' ? <OnboardingContent /> : <StartParticipation />;
+}
+
 export default function OnboardingPage() {
+  const t = useTranslations('common');
   return (
     <ProtectedRoute>
-      <OnboardingContent />
+      <Suspense fallback={<p className="p-8 text-center" role="status">{t('loading')}</p>}>
+        <OnboardingRoute />
+      </Suspense>
     </ProtectedRoute>
   );
 }

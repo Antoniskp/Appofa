@@ -96,10 +96,10 @@ describe('HomeHero CTA link behavior', () => {
 
   test('uses a stable headline and primary actions even when slides contain promotional claims', async () => {
     const { container, root } = await renderHero(buildSlide('https://example.com'));
-    expect(container.querySelector('h1').textContent).toBe('Η περιοχή σου. Τα θέματα που σε αφορούν. Η δική σου φωνή.');
+    expect(container.querySelector('h1').textContent).toBe('Δες τι συμβαίνει στην περιοχή σου. Ψήφισε και πρότεινε λύσεις.');
     expect(container.querySelector('a[href="/locations"]')).toBeTruthy();
     expect(container.querySelector('[role="tablist"]')).toBeNull();
-    expect(container.textContent).toContain('Δεν αποτελούν επίσημες αποφάσεις');
+    expect(container.textContent).toContain('Δεν είναι επίσημες αποφάσεις');
     await act(async () => root.unmount());
   });
 
@@ -145,7 +145,7 @@ describe('HomeHero CTA link behavior', () => {
     useAuth.mockReturnValue({ user: null, loading: false });
     const { container, root } = await renderHero(buildSlide('/polls'));
 
-    expect(container.textContent).toContain('Δημιούργησε λογαριασμό');
+    expect(container.textContent).toContain('Δημιούργησε δωρεάν λογαριασμό');
     expect(container.querySelector('a[href="/register"]')).toBeTruthy();
     expect(container.querySelector('a[href="/locations"]')).toBeTruthy();
     expect(container.querySelector('a[href="/polls?voteRestriction=anyone"]')).toBeFalsy();

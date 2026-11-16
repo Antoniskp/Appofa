@@ -1,68 +1,20 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import {
-  EyeIcon,
-  EyeSlashIcon,
-} from '@heroicons/react/24/outline';
 import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
-import { useToast } from '@/components/ToastProvider';
 import FormInput from '@/components/ui/FormInput';
 import OAuthButtons from '@/components/ui/OAuthButtons';
 import AuthDivider from '@/components/ui/AuthDivider';
+import AlertMessage from '@/components/ui/AlertMessage';
 import { authAPI, geoAPI } from '@/lib/api';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import Button from '@/components/ui/Button';
-import { buildAuthPath, getAuthDestinationFromSearchParams, getPendingAuthDestination, resolveAuthDestination, saveReturnTo } from '@/lib/auth-redirect';
+import { buildAuthPath, getPendingAuthDestination, resolveAuthDestination, saveReturnTo } from '@/lib/auth-redirect';
 
 const PASSWORD_MIN_LENGTH = 8;
-const USERNAME_CHECK_DELAY_MS = 350;
-
-function PasswordInput({
-  name,
-  label,
-  value,
-  onChange,
-  onBlur,
-  error,
-  autoComplete,
-  placeholder,
-  helpText,
-}) {
-  const t = useTranslations('auth');
-  const [visible, setVisible] = useState(false);
-
-  return (
-    <div className="relative">
-      <FormInput
-        name={name}
-        type={visible ? 'text' : 'password'}
-        label={label}
-        value={value}
-        onChange={onChange}
-        onBlur={onBlur}
-        error={error}
-        required
-        autoComplete={autoComplete}
-        placeholder={placeholder}
-        helpText={helpText}
-        inputClassName="pr-12"
-      />
-      <button
-        type="button"
-        onClick={() => setVisible((current) => !current)}
-        className="absolute right-3 top-9 rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        aria-label={visible ? t('hide_password') : t('show_password')}
-        title={visible ? t('hide_password') : t('show_password')}
-      >
-        {visible ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
-      </button>
-    </div>
-  );
-}
 
 function RegisterForm() {
   const t = useTranslations('auth');
@@ -70,33 +22,30 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { register, user, loading: authLoading } = useAuth();
-  const { success, error } = useToast();
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    profileVisibility: 'registered',
-    gdprConsent: false,
-    gdprMarketing: false,
-  });
-  const [loading, setLoading] = useState(false);
-  const [passwordTouched, setPasswordTouched] = useState(false);
-  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
-  const [usernameAvailability, setUsernameAvailability] = useState({ status: 'idle', message: '' });
   const { config: oauthConfig } = useOAuthConfig();
-  const usernameCheckingMessage = t('username_checking');
-  const usernameAvailableMessage = t('username_available');
-  const usernameTakenMessage = t('username_taken');
+  const [formData, setFormData] = useState({ email: '', password: '', gdprConsent: false });
+  const [loading, setLoading] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState('');
+  const formRef = useRef(null);
+  const registrationOwnsRedirect = useRef(false);
+  const focusField = useRef(null);
   const nextDestination = getPendingAuthDestination(searchParams);
   const loginHref = buildAuthPath('/login', nextDestination);
-  const registrationOwnsRedirect = useRef(false);
+
+  useEffect(() => {
+    if (!loading && focusField.current) {
+      formRef.current?.elements[focusField.current]?.focus();
+      focusField.current = null;
+    }
+  }, [errors, loading]);
 
   useEffect(() => {
     geoAPI.detect().then((res) => {
-      const countryCode = String(res?.data?.countryCode || '').trim().toUpperCase();
-      if (res?.success && /^[A-Z]{2}$/.test(countryCode)) {
-        document.cookie = `appofa_detected_country=${countryCode}; path=/; max-age=3600; SameSite=Lax`;
+      const code = String(res?.data?.countryCode || '').trim().toUpperCase();
+      if (res?.success && /^[A-Z]{2}$/.test(code)) {
+        document.cookie = `appofa_detected_country=${code}; path=/; max-age=3600; SameSite=Lax`;
       }
     }).catch(() => {});
   }, []);
@@ -107,314 +56,97 @@ function RegisterForm() {
     }
   }, [user, authLoading, router, searchParams]);
 
-  useEffect(() => {
-    let isCurrent = true;
-    const username = formData.username.trim();
-    if (username.length < 3) {
-      setUsernameAvailability((current) => (
-        current.status === 'idle' && current.message === ''
-          ? current
-          : { status: 'idle', message: '' }
-      ));
-      return;
-    }
-
-    setUsernameAvailability((current) => (
-      current.status === 'checking' && current.message === usernameCheckingMessage
-        ? current
-        : { status: 'checking', message: usernameCheckingMessage }
-    ));
-    const timeout = window.setTimeout(() => {
-      authAPI.checkUsernameAvailability(username)
-        .then((res) => {
-          if (!isCurrent) return;
-          setUsernameAvailability(
-            res?.available
-              ? { status: 'available', message: usernameAvailableMessage }
-              : { status: 'taken', message: usernameTakenMessage }
-          );
-        })
-        .catch(() => {
-          if (isCurrent) setUsernameAvailability({ status: 'idle', message: '' });
-        });
-    }, USERNAME_CHECK_DELAY_MS);
-
-    return () => {
-      isCurrent = false;
-      window.clearTimeout(timeout);
-    };
-  }, [formData.username, locale, usernameCheckingMessage, usernameAvailableMessage, usernameTakenMessage]);
-
-  const passwordScore = useMemo(() => {
-    let score = 0;
-    if (formData.password.length >= PASSWORD_MIN_LENGTH) score += 1;
-    if (/[A-Z]/.test(formData.password) && /[a-z]/.test(formData.password)) score += 1;
-    if (/\d/.test(formData.password)) score += 1;
-    if (/[^A-Za-z0-9]/.test(formData.password)) score += 1;
-    return score;
-  }, [formData.password]);
-
-  const passwordMinLengthError = formData.password.length < PASSWORD_MIN_LENGTH
-    ? t('password_min_length_register', { min: PASSWORD_MIN_LENGTH })
-    : '';
-  const passwordMismatchError = formData.password !== formData.confirmPassword
-    ? t('passwords_no_match')
-    : '';
-  const usernameIsTaken = usernameAvailability.status === 'taken';
-
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const updateCheckboxField = (name, checked) => {
-    setFormData((prev) => ({ ...prev, [name]: checked }));
-  };
-
-  const prepareRegistrationData = (data = {}) => {
-    const { gdprMarketing, ...registerData } = data;
-    delete registerData.confirmPassword;
-    delete registerData.gdprConsent;
-    const isDiaspora = Boolean(registerData.isDiaspora);
-    return {
-      ...registerData,
-      newsletterOptIn: Boolean(gdprMarketing),
-      locale,
-      isDiaspora,
-      residenceCountryCode: isDiaspora ? (registerData.residenceCountryCode || null) : null,
-      nationality: registerData.nationality || null,
-      homeLocationId: registerData.homeLocationId ?? null,
-    };
-  };
-
-  const validateAccount = () => {
-    setPasswordTouched(true);
-    setConfirmPasswordTouched(true);
-
-    if (passwordMinLengthError) {
-      error(passwordMinLengthError);
-      return false;
-    }
-    if (passwordMismatchError) {
-      error(passwordMismatchError);
-      return false;
-    }
-    if (usernameIsTaken) {
-      error(t('username_taken'));
-      return false;
-    }
-    if (!formData.gdprConsent) {
-      error(t('gdpr_consent_error'));
-      return false;
-    }
-
-    return true;
+    setFormData((previous) => ({ ...previous, [name]: value }));
+    setErrors((previous) => ({ ...previous, [name]: '' }));
+    setSubmitError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateAccount()) return;
-
-    // register() updates AuthProvider before this handler resumes. Keep the
-    // already-signed-in guard from overriding the new account's destination.
+    if (loading) return;
+    const nextErrors = {};
+    if (!formData.email.trim() || !formRef.current.elements.email.validity.valid) nextErrors.email = t('email_invalid');
+    if (formData.password.length < PASSWORD_MIN_LENGTH) nextErrors.password = t('password_min_length_register', { min: PASSWORD_MIN_LENGTH });
+    if (!formData.gdprConsent) nextErrors.gdprConsent = t('gdpr_consent_error');
+    setErrors(nextErrors);
+    setSubmitError('');
+    const firstError = Object.keys(nextErrors)[0];
+    if (firstError) {
+      focusField.current = firstError === 'gdprConsent' ? 'gdpr_consent' : firstError;
+      return;
+    }
+    // register() populates auth state before this promise resumes.
     registrationOwnsRedirect.current = true;
     setLoading(true);
     try {
-      await register(prepareRegistrationData(formData));
-      success(t('register_success_verify_email'));
-
-      // If the user had an explicit destination (action they were trying to complete), honour it.
-      // Otherwise always route new users to onboarding so they can choose their participation goal.
-      const explicitNext = getAuthDestinationFromSearchParams(searchParams);
-      if (explicitNext) {
-        router.push(explicitNext);
-      } else {
-        router.push('/onboarding');
-      }
+      await register({ email: formData.email.trim(), password: formData.password, locale, profileVisibility: 'registered' });
+      const destination = nextDestination && nextDestination !== '/' ? nextDestination : '/onboarding';
+      if (nextDestination) resolveAuthDestination(searchParams);
+      router.push(destination);
     } catch (err) {
       registrationOwnsRedirect.current = false;
-      error(err.message || t('register_fail'));
+      if (err.status === 400 && /already exists|already in use/i.test(err.message || '')) {
+        setErrors({ email: t('email_already_registered') });
+        focusField.current = 'email';
+      } else {
+        setSubmitError(t('register_retry'));
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGithubSignup = async () => {
+  const handleOAuth = async (provider) => {
+    if (loading) return;
+    setLoading(true);
+    setSubmitError('');
     try {
-      setLoading(true);
-      saveReturnTo(nextDestination);
-      const response = await authAPI.initiateGithubOAuth('signup');
-      if (response.success && response.data.authUrl) {
-        window.location.href = response.data.authUrl;
-      }
-    } catch (err) {
-      error(err.message || t('github_fail'));
+      saveReturnTo(nextDestination || '/onboarding');
+      const response = await (provider === 'google' ? authAPI.initiateGoogleOAuth('signup') : authAPI.initiateGithubOAuth('signup'));
+      if (!response.success || !response.data?.authUrl) throw new Error('OAuth unavailable');
+      window.location.href = response.data.authUrl;
+    } catch {
+      setSubmitError(t(provider === 'google' ? 'google_fail' : 'github_fail'));
       setLoading(false);
     }
   };
-
-  const handleGoogleSignup = async () => {
-    try {
-      setLoading(true);
-      saveReturnTo(nextDestination);
-      const response = await authAPI.initiateGoogleOAuth('signup');
-      if (response.success && response.data.authUrl) {
-        window.location.href = response.data.authUrl;
-      }
-    } catch (err) {
-      error(err.message || t('google_fail'));
-      setLoading(false);
-    }
-  };
-
-  const usernameHintTone = usernameAvailability.status === 'available'
-    ? 'text-green-600'
-    : usernameAvailability.status === 'taken'
-      ? 'text-red-600'
-      : 'text-gray-500';
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="bg-gray-50 px-4 py-8 sm:py-12">
       <div className="mx-auto max-w-md space-y-6">
-        <div>
-          <h2 className="text-center text-3xl font-extrabold text-gray-900">
-            {t('register_title')}
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-500">
-            {t('register_subtitle_fast')}
-          </p>
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900">{t('register_title')}</h1>
+          <p className="mt-3 text-base leading-6 text-gray-600">{t('register_subtitle_simple')}</p>
         </div>
-
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-          <form className="space-y-7 px-6 py-6 sm:px-8" onSubmit={handleSubmit}>
-            {(oauthConfig.google || oauthConfig.github) && <div className="space-y-4">
-              <OAuthButtons
-                config={oauthConfig}
-                onGithubLogin={handleGithubSignup}
-                onGoogleLogin={handleGoogleSignup}
-                disabled={loading}
-              />
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+          <form ref={formRef} className="space-y-5" onSubmit={handleSubmit} noValidate aria-busy={loading}>
+            {oauthConfig.google && <div className="space-y-4">
+              <OAuthButtons config={{ google: true }} onGoogleLogin={() => handleOAuth('google')} disabled={loading} />
               <AuthDivider text={t('or_register_with_email')} />
             </div>}
-
-            <div className="space-y-4">
-              <div>
-                <FormInput
-                  name="username"
-                  type="text"
-                  label={t('username')}
-                  value={formData.username}
-                  onChange={handleChange}
-                  error={usernameIsTaken ? t('username_taken') : ''}
-                  required
-                  autoComplete="username"
-                  placeholder={t('username')}
-                />
-                {usernameAvailability.message && !usernameIsTaken && (
-                  <p className={`mt-1 text-sm ${usernameHintTone}`} role="status">
-                    {usernameAvailability.message}
-                  </p>
-                )}
-              </div>
-
-              <FormInput
-                name="email"
-                type="email"
-                label={t('email')}
-                value={formData.email}
-                onChange={handleChange}
-                required
-                autoComplete="email"
-                placeholder={t('email')}
-              />
-
-              <PasswordInput
-                name="password"
-                label={t('password')}
-                value={formData.password}
-                onChange={handleChange}
-                onBlur={() => setPasswordTouched(true)}
-                error={passwordTouched ? passwordMinLengthError : ''}
-                autoComplete="new-password"
-                placeholder={t('password')}
-                helpText={t('password_strength_hint', { min: PASSWORD_MIN_LENGTH })}
-              />
-
-              {formData.password && (
-                <div className="space-y-1" aria-live="polite">
-                  <div className="grid grid-cols-4 gap-1">
-                    {[1, 2, 3, 4].map((segment) => (
-                      <span
-                        key={segment}
-                        className={`h-1 rounded-full ${passwordScore >= segment ? 'bg-blue-600' : 'bg-gray-200'}`}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-xs text-gray-500">{t(`password_strength_${Math.max(passwordScore, 1)}`)}</p>
-                </div>
-              )}
-
-              <PasswordInput
-                name="confirmPassword"
-                label={t('confirm_password')}
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                onBlur={() => setConfirmPasswordTouched(true)}
-                error={confirmPasswordTouched ? passwordMismatchError : ''}
-                autoComplete="new-password"
-                placeholder={t('confirm_password')}
-              />
+            <FormInput name="email" type="email" label={t('email')} value={formData.email} onChange={handleChange} required autoComplete="email" inputMode="email" autoCapitalize="none" disabled={loading} error={errors.email} placeholder="name@example.com" />
+            <div>
+              <FormInput name="password" type={passwordVisible ? 'text' : 'password'} label={t('password')} value={formData.password} onChange={handleChange} required autoComplete="new-password" disabled={loading} error={errors.password} helpText={t('password_min_length_register', { min: PASSWORD_MIN_LENGTH })} />
+              <button type="button" onClick={() => setPasswordVisible(!passwordVisible)} aria-pressed={passwordVisible} className="mt-1 min-h-11 text-sm font-semibold text-blue-700 underline">{t(passwordVisible ? 'hide_password' : 'show_password')}</button>
             </div>
-
-            <div className="space-y-4">
-              <div className="flex items-start">
-                <input
-                  id="gdpr_consent"
-                  name="gdpr_consent"
-                  type="checkbox"
-                  checked={formData.gdprConsent}
-                  onChange={(e) => updateCheckboxField('gdprConsent', e.target.checked)}
-                  required
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <label htmlFor="gdpr_consent" className="ml-2 block text-sm text-gray-900">
-                  {t('gdpr_consent_required_prefix')}{' '}
-                  <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 underline hover:text-blue-800">
-                    {t('terms_link')}
-                  </Link>
-                  {' '}{t('and')}{' '}
-                  <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 underline hover:text-blue-800">
-                    {t('privacy_link')}
-                  </Link>
-                </label>
-              </div>
-
-              <div className="flex items-start">
-                <input
-                  id="gdpr_marketing"
-                  name="gdpr_marketing"
-                  type="checkbox"
-                  checked={formData.gdprMarketing}
-                  onChange={(e) => updateCheckboxField('gdprMarketing', e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <label htmlFor="gdpr_marketing" className="ml-2 block text-sm text-gray-900">
-                  {t('gdpr_consent_marketing')}
-                </label>
-              </div>
+            <p className="text-sm leading-6 text-gray-600">{t('generated_username_hint')}</p>
+            <div>
+              <label className="flex items-start gap-3 text-sm leading-6 text-gray-900">
+                <input id="gdpr_consent" name="gdpr_consent" type="checkbox" checked={formData.gdprConsent} disabled={loading} onChange={(e) => { setFormData((previous) => ({ ...previous, gdprConsent: e.target.checked })); setErrors((previous) => ({ ...previous, gdprConsent: '' })); }} required aria-invalid={Boolean(errors.gdprConsent)} aria-describedby={errors.gdprConsent ? 'consent-error' : undefined} className="mt-1 h-5 w-5 shrink-0 rounded border-gray-300 text-blue-600" />
+                <span>{t('gdpr_consent_required_prefix')}{' '}<Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-medium text-blue-700 underline">{t('terms_link')}</Link>{' '}{t('and')}{' '}<Link href="/privacy" target="_blank" rel="noopener noreferrer" className="font-medium text-blue-700 underline">{t('privacy_link')}</Link></span>
+              </label>
+              {errors.gdprConsent && <p id="consent-error" role="alert" className="mt-2 text-sm text-red-700">{errors.gdprConsent}</p>}
             </div>
-
-            <Button type="submit" loading={loading} disabled={usernameIsTaken} size="md" className="w-full">
-              {t('submit_register')}
-            </Button>
-
-            <p className="text-center text-sm text-gray-600">
-              {t('already_have_account')}{' '}
-              <Link href={loginHref} className="font-medium text-blue-600 hover:text-blue-500">
-                {t('submit_login')}
-              </Link>
-            </p>
+            {submitError && <AlertMessage message={submitError} />}
+            <Button type="submit" disabled={loading} className="min-h-12 w-full">{t(loading ? 'register_creating' : 'submit_register')}</Button>
+            {oauthConfig.github && <details className="text-sm">
+              <summary className="cursor-pointer py-2 font-medium text-gray-600">{t('other_signup_options')}</summary>
+              <OAuthButtons config={{ github: true }} onGithubLogin={() => handleOAuth('github')} disabled={loading} />
+            </details>}
           </form>
+          <p className="mt-6 text-center text-sm text-gray-600">{t('already_have_account')}{' '}<Link href={loginHref} className="font-semibold text-blue-700 underline">{t('submit_login')}</Link></p>
         </div>
       </div>
     </div>
@@ -423,14 +155,5 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   const t = useTranslations('common');
-
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">{t('loading')}</p>
-      </div>
-    }>
-      <RegisterForm />
-    </Suspense>
-  );
+  return <Suspense fallback={<p className="p-8 text-center" role="status">{t('loading')}</p>}><RegisterForm /></Suspense>;
 }

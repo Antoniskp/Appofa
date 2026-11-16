@@ -64,6 +64,9 @@ export default function OnboardingCard({ user }) {
 
   if (!user || !state || dismissed) return null;
   if (state.onboardingDismissed || state.onboardingCompletedAt) return null;
+  const hasSpecializedGoal = Boolean(state.onboardingGoal && state.onboardingGoal !== 'citizen');
+  // Ordinary members can participate without finishing an optional public profile.
+  if (!hasSpecializedGoal && state.homeLocationId) return null;
 
   // Derive a rough completion score from profile fields
   const completedFields = [
@@ -85,7 +88,7 @@ export default function OnboardingCard({ user }) {
   const isApprovedModerator = user.role === 'moderator' || user.role === 'admin';
   const ctaHref = !state.homeLocationId ? '/onboarding?step=location' : isApprovedModerator && state.onboardingGoal === 'moderator'
     ? '/moderator'
-    : '/onboarding';
+    : '/onboarding?mode=advanced';
 
   return (
     <div
@@ -94,7 +97,7 @@ export default function OnboardingCard({ user }) {
       aria-label={t('card_title')}
     >
       {/* Progress ring — aria-hidden because the percentage is conveyed by the visible text label below */}
-      <div
+      {hasSpecializedGoal && <div
         className="flex-shrink-0 relative h-10 w-10"
         role="progressbar"
         aria-valuenow={pct}
@@ -116,7 +119,7 @@ export default function OnboardingCard({ user }) {
         <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-blue-700" aria-hidden="true">
           {pct}%
         </span>
-      </div>
+      </div>}
 
       {/* Text */}
       <div className="flex-1 min-w-0">

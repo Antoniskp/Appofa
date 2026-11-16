@@ -40,6 +40,7 @@ describe('HomeActionLanes registration prompts', () => {
     expect(container.textContent).toContain('Δημιούργησε προφίλ και συνέχισε από εκεί που σταμάτησες.');
     expect(container.textContent).toContain('Ακολούθησε την περιοχή');
     expect(container.querySelector('a[href="/register"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/register"]').closest('details')).toBeNull();
     expect(container.querySelector('a[href="/newsletter"]')).toBeTruthy();
     expect(container.textContent).toContain('Εκπροσωπείς κόμμα ή οργάνωση;');
 

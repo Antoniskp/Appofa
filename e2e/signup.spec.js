@@ -1,0 +1,82 @@
+/* global document, window */
+const { test, expect } = require('@playwright/test');
+const en = require('../messages/en.json');
+
+test.beforeEach(async ({ context }) => {
+  await context.addCookies([{ name: 'NEXT_LOCALE', value: 'en', domain: '127.0.0.1', path: '/' }]);
+  await context.addInitScript(() => {
+    localStorage.setItem('appofa_country_entry_decision_v1', 'stay');
+    localStorage.setItem('gdpr_consent', JSON.stringify({ necessary: true, analytics: false, functional: false }));
+  });
+});
+
+async function createAccount(page, suffix) {
+  await page.locator('[name="email"]').fill(`signup-${suffix}-${Date.now()}@example.test`);
+  await page.locator('[name="password"]').fill('Password123!');
+  await page.locator('[name="gdpr_consent"]').check();
+  await page.getByRole('button', { name: en.auth.submit_register, exact: true }).click();
+}
+
+test('signup validates fields, confirms account creation and lets people skip setup', async ({ page }, testInfo) => {
+  const browserErrors = [];
+  page.on('pageerror', error => browserErrors.push(error.message));
+  await page.goto('/register');
+  await expect(page.locator('[name="username"], [name="confirmPassword"], [name="gdpr_marketing"]')).toHaveCount(0);
+  await expect(page.getByRole('navigation')).toHaveCount(0);
+  await page.getByRole('button', { name: en.auth.submit_register, exact: true }).click();
+  await expect(page.locator('[name="email"]')).toBeFocused();
+  await expect(page.getByText(en.auth.email_invalid, { exact: true })).toBeVisible();
+  await page.locator('[name="email"]').fill(`signup-${Date.now()}@example.test`);
+  await page.locator('[name="password"]').fill('short');
+  await page.getByRole('button', { name: en.auth.submit_register, exact: true }).click();
+  await expect(page.locator('[name="password"]')).toBeFocused();
+  await page.getByRole('button', { name: en.auth.show_password, exact: true }).click();
+  await expect(page.locator('[name="password"]')).toHaveAttribute('type', 'text');
+  await page.screenshot({ path: testInfo.outputPath('signup-form.png'), fullPage: true });
+  await createAccount(page, 'skip');
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page.getByRole('heading', { name: en.signupJourney.account_ready })).toBeVisible();
+  await expect(page.getByRole('heading', { name: en.signupJourney.verification_title })).toBeVisible();
+  await expect(page.getByText(en.onboarding.choose_one_primary, { exact: true })).toBeHidden();
+  await expect(page.getByRole('heading', { name: en.onboarding.your_checklist })).toHaveCount(0);
+  await expect(page.getByRole('checkbox', { name: en.locationOnboarding.subscribe })).toBeHidden();
+  await expect(page.getByRole('button', { name: en.locationOnboarding.saveLocation })).toBeDisabled();
+  await page.screenshot({ path: testInfo.outputPath('signup-ready.png'), fullPage: true });
+  await page.getByRole('button', { name: en.locationOnboarding.skip, exact: true }).click();
+  await expect(page).toHaveURL(/\/polls$/);
+  const onboarding = await (await page.request.get('/api/auth/onboarding')).json();
+  expect(onboarding.data.onboarding.onboardingCompletedAt).toBeTruthy();
+  expect(browserErrors).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test('signup can correct an email, resend confirmation and open local topics', async ({ page }, testInfo) => {
+  await page.goto('/register');
+  await createAccount(page, 'correct');
+  await expect(page).toHaveURL(/\/onboarding$/);
+  const correctedEmail = `corrected-${Date.now()}@example.test`;
+  await page.getByRole('button', { name: en.signupJourney.correct_email, exact: true }).click();
+  await page.getByRole('textbox', { name: en.signupJourney.correct_email_label }).fill(correctedEmail);
+  await page.getByRole('button', { name: en.signupJourney.save_email, exact: true }).click();
+  await expect(page.getByRole('status')).toContainText(en.signupJourney.verification_sent);
+  const profile = await (await page.request.get('/api/auth/profile')).json();
+  expect(profile.data.user.email).toBe(correctedEmail);
+  expect(profile.data.user.emailVerified).toBe(false);
+  await expect(page.getByText(en.signupJourney.verification_destination.replace('{email}', correctedEmail))).toBeVisible();
+  await page.getByRole('button', { name: en.locationOnboarding.search, exact: true }).click();
+  await page.getByRole('button', { name: /Test Municipality/ }).click();
+  await page.getByRole('button', { name: en.locationOnboarding.saveLocation, exact: true }).click();
+  await expect(page).toHaveURL(/\/locations\/3$/);
+  await expect(page.getByRole('heading', { name: en.signupJourney.verification_title })).toBeVisible();
+  const savedProfile = await (await page.request.get('/api/auth/profile')).json();
+  expect(savedProfile.data.user.homeLocationId).toBe(3);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath('signup-local-topics.png'), fullPage: true });
+});
+
+test('signup returns people to the action that prompted registration', async ({ page }) => {
+  await page.goto('/register?next=%2Fpolls%2F1');
+  await createAccount(page, 'return');
+  await expect(page).toHaveURL(/\/polls\/1$/);
+  await expect(page.getByRole('heading', { name: en.signupJourney.verification_title })).toBeVisible();
+});

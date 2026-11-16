@@ -68,12 +68,12 @@ export default function HomePageClient({ initialPayload = null }) {
 
   return (
     <div className="bg-ivory">
-      <CountryEntryPopup isAuthenticated={Boolean(user)} />
       <HomeHero />
       <ParticipationRow user={user} analysis={data.latestAnalysis?.[0]}
         featuredPoll={shouldShowFeaturedPoll ? featuredPoll : null}
         featuredPollLoading={shouldShowFeaturedPoll && featuredPollLoading}
       />
+      <CountryEntryPopup isAuthenticated={Boolean(user)} />
       {/* Local discovery follows the opening participation section */}
       {(prefecturesLoading || error('prefectures') || prefectures.length > 0) && (
         <HomepageSection

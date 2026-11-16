@@ -552,7 +552,14 @@
     "verify_email_resend_fallback_error": "Failed to resend verification email.",
     "gdpr_consent_required": "I agree to the Terms of Use and Privacy Policy",
     "gdpr_consent_marketing": "Email me occasional civic updates, local highlights, and important Appofasi announcements (optional). I can unsubscribe anytime.",
-    "gdpr_consent_error": "You must accept the terms to register."
+    "gdpr_consent_error": "You must accept the terms to register.",
+    "register_subtitle_simple": "Follow local topics and share your own proposals. Creating an account is free.",
+    "email_invalid": "Enter a valid email address, such as name@example.com.",
+    "generated_username_hint": "We will give you a username. You can change it later in your profile.",
+    "other_signup_options": "Another way to sign up",
+    "register_creating": "Creating your account…",
+    "register_retry": "Your account could not be created. Check your connection and try again.",
+    "email_already_registered": "An account already uses this email. Sign in or reset your password."
   },
   "articles": {
     "analyses_title": "Analyses",
@@ -1741,6 +1748,18 @@
     "rules_encourage_7": "Reporting problematic content when you spot it",
     "rules_encourage_8": "Collaboration to resolve disagreements",
     "contact_intro": "Fill out the form and our team will reply as soon as possible.",
+    "contact_people_title": "The people behind Appofasi",
+    "contact_people_intro": "Meet the people who manage the platform and the community members who supported its beginnings. Open a profile to learn more.",
+    "contact_people_loading": "Loading profiles…",
+    "contact_people_error": "Profiles are temporarily unavailable. You can still contact us using the form below.",
+    "contact_people_retry": "Try again",
+    "contact_admins_title": "Current administrators",
+    "contact_admin_label": "Administrator",
+    "contact_admins_empty": "No administrator profiles are public at the moment. Please use the contact form below to reach the team.",
+    "contact_early_members_title": "Early community members",
+    "contact_early_members_intro": "Thank you to the people who helped Appofasi get started. These acknowledgements are separate from current platform responsibilities.",
+    "contact_early_contributor_label": "Early contributor · special thanks",
+    "contact_early_member_label": "Early member",
     "contact_discord_title": "Or contact us via Discord",
     "contact_discord_description": "Alternatively, join our Discord community for faster communication.",
     "contact_discord_cta": "Join Discord",
@@ -2375,11 +2394,11 @@
       "read_question": "View topic",
       "participate": "Participate",
       "source_checked": "Source checked",
-    "participation_status": "Participation: {status}",
-    "unsure": "Not sure",
-    "no_votes": "No votes yet",
-    "vote_saved": "Your vote has been saved.",
-    "local_voting": "Voting is limited to users in this area."
+      "participation_status": "Participation: {status}",
+      "unsure": "Not sure",
+      "no_votes": "No votes yet",
+      "vote_saved": "Your vote has been saved.",
+      "local_voting": "Voting is limited to users in this area."
     },
     "results": {
       "leading": "Leading",
@@ -2693,7 +2712,7 @@
     "step_candidate_register_action": "Register as a candidate",
     "step_first_content": "First contribution",
     "step_first_content_action": "Create your first content",
-    "card_title": "Continue your setup",
+    "card_title": "Find topics near you",
     "card_dismiss": "Dismiss",
     "card_cta": "Continue setup",
     "card_complete": "Setup complete",
@@ -2745,7 +2764,7 @@
     "independent_preview_link": "View your public profile",
     "go_to_moderator_workspace": "Go to Moderator Workspace",
     "go_to_creator_workspace": "Go to Creator Workspace",
-    "location_prompt": "Choose your area to discover local issues and proposals to vote on. You can also opt into relevant email updates."
+    "location_prompt": "Choose your area for more relevant topics."
   },
   "moderator": {
     "title": "Moderator Workspace",
@@ -2995,7 +3014,8 @@
     "participationTitle": "A small contribution can start something meaningful.",
     "participationDescription": "Vote on an open issue, suggest a solution, raise a problem or help your local community.",
     "more": "More ways to participate",
-    "explore": "More sections"
+    "explore": "More sections",
+    "benefitProposals": "Publish your own proposals"
   },
   "homeRecovery": {
     "title": "Unable to load this section",
@@ -3267,7 +3287,7 @@
     "loading": "Loading…",
     "clear": "Clear location",
     "eligibility": "Location helps you discover relevant votes. Each vote has its own eligibility rules; choosing a location does not verify residency.",
-    "saveLocation": "Save location and continue",
+    "saveLocation": "Show topics in my area",
     "skip": "Skip for now",
     "saving": "Saving…",
     "saveError": "Could not save. Please try again.",
@@ -3280,7 +3300,8 @@
     "savePreferences": "Save email preferences",
     "preferencesSaved": "Email preferences saved.",
     "loadError": "Could not load email preferences.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "optional": "optional"
   },
   "mapExplorer": {
     "eyebrow": "Your neighbourhood, on the map",
@@ -3431,5 +3452,44 @@
       "electoral_district": "Electoral district",
       "international": "International"
     }
+  },
+  "signupJourney": {
+    "hero_title": "See what is happening in your area. Vote and suggest solutions.",
+    "hero_body": "On Appofasi, people discuss local problems and suggest changes. Read the topics or create a free account to take part.",
+    "register_free": "Create a free account",
+    "preview_topics": "Browse topics first",
+    "advisory_note": "Votes show the views of participants. They are not official decisions or representative opinion polls.",
+    "who_can_join": "Who can take part?",
+    "identity_note": "Signing in with Google does not verify a unique person.",
+    "policy_title": "Do you agree with this proposal?",
+    "policy_help": "Read a real policy position. Answer to discover which party or Appofasi team it comes from.",
+    "loading_policy": "Loading a position…",
+    "no_policy": "No position is available right now. Explore the open polls.",
+    "policy_participation": "{count, plural, =0 {No answers yet.} one {# person has answered.} other {# people have answered.}}",
+    "register_to_answer": "Create an account to answer",
+    "already_member": "Have an account? Sign in",
+    "register_to_vote": "Create an account to vote",
+    "poll_requirements": "Open the details to see the participation rules for this poll.",
+    "account_ready": "Your account is ready!",
+    "start_help": "Choose your area to see relevant topics. You can skip this step and explore the polls.",
+    "other_ways": "Want to help more?",
+    "other_ways_help": "You can become a moderator or take part as a candidate later. You can start participating without choosing a role.",
+    "advanced_setup": "Explore optional roles and settings",
+    "verification_title": "Confirm your email",
+    "verification_destination": "Check the inbox and spam folder for {email} and open the confirmation link.",
+    "verification_help": "You can already browse topics. Email confirmation is needed for profile verification. Each poll has its own participation rules.",
+    "resend": "Send the email again",
+    "sending": "Sending…",
+    "sent": "Email sent",
+    "correct_email": "Wrong email address?",
+    "correct_email_label": "Correct email address",
+    "save_email": "Save and send a new link",
+    "cancel": "Cancel",
+    "verification_sent": "We sent a new confirmation link. Check your spam folder too.",
+    "verification_error": "We could not send the email. Check the address and try again.",
+    "email_in_use": "This address is already in use. Try another address.",
+    "back_home": "Back to home",
+    "terms": "Terms",
+    "privacy": "Privacy"
   }
 }

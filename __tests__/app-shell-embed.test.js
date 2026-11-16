@@ -33,9 +33,24 @@ jest.mock('@/components/layout/CookieBanner', () => {
   };
 });
 
+jest.mock('@/components/onboarding/EmailVerificationNotice', () => () => null);
+
 const AppShell = require('../components/layout/AppShell').default;
 
 describe('AppShell embed routing', () => {
+  test('shows only essential navigation during registration', async () => {
+    mockPathname = '/register';
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    await act(async () => root.render(React.createElement(AppShell, null, 'Signup form')));
+    expect(container.querySelector('[data-testid="top-nav"]')).toBeNull();
+    expect(container.querySelector('[data-testid="footer"]')).toBeNull();
+    expect(container.querySelector('a[href="/terms"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/privacy"]')).toBeTruthy();
+    expect(container.querySelector('[data-testid="cookie-banner"]')).toBeTruthy();
+    await act(async () => root.unmount());
+  });
   afterEach(() => {
     document.body.innerHTML = '';
     mockPathname = '/';

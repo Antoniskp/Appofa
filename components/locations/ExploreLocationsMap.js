@@ -12,7 +12,7 @@ const Canvas = dynamic(() => import('./HomeMapCanvas'), { ssr: false });
 const ElectoralMap = dynamic(() => import('./HomeElectoralMap'), { ssr: false });
 const EMPTY = [];
 const LAYERS = ['issues', 'polls', 'cameras'];
-const MODES = [...LAYERS, 'parliamentarians'];
+const MODES = ['parliamentarians', 'cameras', 'polls', 'issues'];
 const ICONS = { issues: MapPinIcon, polls: HandRaisedIcon, cameras: VideoCameraIcon, parliamentarians: BuildingLibraryIcon };
 
 export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationId, className, loading: initialLoading = false }) {

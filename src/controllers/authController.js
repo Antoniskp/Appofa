@@ -96,6 +96,7 @@ const authController = {
             username: user.username,
             email: user.email,
             role: user.role,
+            emailVerified: user.emailVerified,
             firstNameNative: user.firstNameNative,
             lastNameNative: user.lastNameNative,
             avatar: user.avatar,
@@ -166,7 +167,7 @@ const authController = {
 
   resendVerification: async (req, res) => {
     try {
-      const result = await authService.resendVerificationEmail(req.user.id);
+      const result = await authService.resendVerificationEmail(req.user.id, req.body?.email);
       return res.status(200).json({ success: true, message: result.message });
     } catch (error) {
       if (error.status) {
@@ -460,6 +461,16 @@ const authController = {
     } catch (error) {
       console.error('Logout error:', error);
       res.status(500).json({ success: false, message: 'Error logging out.' });
+    }
+  },
+
+  getContactPeople: async (req, res) => {
+    try {
+      const people = await userService.getContactPeople();
+      res.status(200).json({ success: true, data: people });
+    } catch (error) {
+      console.error('Get contact people error:', error);
+      res.status(500).json({ success: false, message: 'Error fetching contact profiles.' });
     }
   },
 

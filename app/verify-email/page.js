@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -11,12 +11,14 @@ export default function VerifyEmailPage() {
   const t = useTranslations('auth');
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
+  const journey = useTranslations('signupJourney');
   const token = searchParams.get('token');
   const [verifying, setVerifying] = useState(true);
   const [result, setResult] = useState({ success: false, message: '', code: null });
   const [resending, setResending] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
+  const verificationRequest = useRef(null);
 
   useEffect(() => {
     if (!token) {
@@ -27,7 +29,13 @@ export default function VerifyEmailPage() {
     let mounted = true;
     const verify = async () => {
       try {
-        const response = await authAPI.verifyEmail(token);
+        // Reuse a single-use token request when Strict Mode replays the effect.
+        if (verificationRequest.current?.token !== token) {
+          verificationRequest.current = { token, promise: authAPI.verifyEmail(token) };
+        }
+        const response = await verificationRequest.current.promise;
+        if (!mounted) return;
+        if (refreshUser) await refreshUser().catch(() => {});
         if (!mounted) return;
         setResult({
           success: true,
@@ -50,7 +58,7 @@ export default function VerifyEmailPage() {
     return () => {
       mounted = false;
     };
-  }, [token, router, t]);
+  }, [token, router, t, refreshUser]);
 
   const handleResend = async () => {
     setResending(true);
@@ -79,10 +87,10 @@ export default function VerifyEmailPage() {
               <div className="text-4xl">✅</div>
               <h1 className="text-xl font-semibold text-green-700">{t('verify_email_success_title')}</h1>
               <Link
-                href="/onboarding"
+                href={user?.homeLocation?.slug ? `/locations/${user.homeLocation.slug}` : '/polls'}
                 className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
               >
-                {t('verify_email_success_cta')}
+                {journey('preview_topics')}
               </Link>
             </div>
           ) : (

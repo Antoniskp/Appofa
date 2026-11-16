@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import StaticPageLayout from '@/components/StaticPageLayout';
 import ContactForm from '@/components/ContactForm';
+import ContactPeople from '@/components/ContactPeople';
 
 export default function ContactPage() {
   const tStatic = useTranslations('static_pages');
@@ -12,6 +13,8 @@ export default function ContactPage() {
       <p className="text-gray-700 mb-6">
         {tStatic('contact_intro')}
       </p>
+
+      <ContactPeople />
 
       <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
         <ContactForm type="contact" />

@@ -29,6 +29,16 @@ jest.mock('@/lib/api/positions', () => ({ positionAPI: { list: (...args) => mock
 const Home = require('../components/home/HomePageClient').default;
 const payload = { suggestions: [{ id: 1, title: 'Public sample proposal' }], polls: [], latestNews: [{ id: 2, title: 'Local news', type: 'news' }], latestArticles: [{ id: 3, title: 'Community article', type: 'articles' }], videos: [{ id: 4, title: 'Community video' }], prefectures: [{ id: 12, name: 'Attica' }], manifestData: [{ slug: 'public-commitment', title: 'Public commitment', randomSupporters: [] }] };
 describe('Restored map homepage', () => {
+  test('lets visitors read a real position before asking them to register', async () => {
+    mockPositions.mockResolvedValue({ data: { positions: [{ id: 9, title: 'Safer crossings', body: 'Add a crossing near the school.', support: 2, oppose: 1, unsure: 0 }] } });
+    await render();
+    const card = container.querySelector('#policy-vote');
+    expect(card.textContent).toContain('Safer crossings');
+    expect(card.textContent).toContain('άτομα έχουν απαντήσει');
+    expect(card.querySelector('a[href^="/register?next="]').href).toContain(encodeURIComponent('/#policy-vote'));
+    expect(card.querySelector('button')).toBeNull();
+    expect(mockVote).not.toHaveBeenCalled();
+  });
   let container, root;
   beforeEach(() => {
     mockPositions.mockReset().mockResolvedValue({ data: { positions: [] } });
@@ -47,7 +57,7 @@ describe('Restored map homepage', () => {
     expect(container.textContent).not.toContain('Τι έγινε μετά τη συμμετοχή;');
     const sections = container.querySelectorAll('section');
     expect(sections[0].querySelector('#policy-vote')).toBeTruthy();
-    expect(mockPositions).not.toHaveBeenCalled();
+    expect(mockPositions).toHaveBeenCalledWith(expect.objectContaining({ voteView: 'all', pool: 'home' }));
     expect(sections[1].querySelector('[data-testid="territory-map"]')).toBeTruthy();
     expect(sections[2].textContent).toContain('Local news');
     expect(sections[3].textContent).toContain('Δημοφιλείς δημοσκοπήσεις');

@@ -311,7 +311,7 @@ describe('Frontend smoke tests', () => {
     const HomePage = require('../components/home/HomePageClient').default;
     const { container, root } = await renderPage(HomePage);
 
-    expect(container.textContent).toContain('Η περιοχή σου. Τα θέματα που σε αφορούν. Η δική σου φωνή.');
+    expect(container.textContent).toContain('Δες τι συμβαίνει στην περιοχή σου. Ψήφισε και πρότεινε λύσεις.');
     expect(container.textContent).toContain('Διάλεξε πώς θέλεις να συμμετέχεις');
     expect(container.querySelector('a[href="/locations"]')).toBeTruthy();
     expect(container.querySelector('a[href="/suggestions/new"]')).toBeTruthy();
@@ -470,9 +470,9 @@ describe('Frontend smoke tests', () => {
     const { container, root } = await renderPage(RegisterPage);
 
     expect(container.textContent).toContain('Δημιουργία λογαριασμού');
-    expect(container.textContent).toContain('Όνομα, περιοχή και ρυθμίσεις προφίλ συμπληρώνονται μετά την εγγραφή.');
+    expect(container.textContent).toContain('Η εγγραφή είναι δωρεάν.');
     expect(container.textContent).not.toContain('Ή εγγραφή με email');
-    expect(container.textContent).toContain('Επιβεβαίωση κωδικού');
+    expect(container.querySelector('[name="confirmPassword"]')).toBeNull();
 
     await act(async () => {
       root.unmount();
@@ -485,10 +485,10 @@ describe('Frontend smoke tests', () => {
     useAuth.mockReturnValue(buildAuthState());
     const RegisterPage = require('../app/register/page').default;
     const { container, root } = await renderPage(RegisterPage);
-    for (const name of ['username', 'email', 'password', 'confirmPassword']) {
+    for (const name of ['email', 'password']) {
       expect(container.querySelector('input[name="' + name + '"]')).toBeTruthy();
     }
-    for (const name of ['firstNameNative', 'lastNameNative', 'nationality', 'homeLocationId', 'profileVisibility']) {
+    for (const name of ['username', 'confirmPassword', 'gdpr_marketing', 'firstNameNative', 'lastNameNative', 'nationality', 'homeLocationId', 'profileVisibility']) {
       expect(container.querySelector('[name="' + name + '"]')).toBeNull();
     }
     expect(container.textContent).not.toContain('Προσθήκη στοιχείων');
@@ -502,19 +502,14 @@ describe('Frontend smoke tests', () => {
     const RegisterPage = require('../app/register/page').default;
     const { container, root } = await renderPage(RegisterPage);
 
-    const usernameInput = container.querySelector('input[name="username"]');
     const emailInput = container.querySelector('input[name="email"]');
     const passwordInput = container.querySelector('input[name="password"]');
-    const confirmPasswordInput = container.querySelector('input[name="confirmPassword"]');
     const gdprConsent = container.querySelector('input[name="gdpr_consent"]');
 
     await act(async () => {
-      setInputValue(usernameInput, 'shortpass');
       setInputValue(emailInput, 'shortpass@test.com');
       setInputValue(passwordInput, '12345');
       passwordInput.dispatchEvent(new Event('blur', { bubbles: true }));
-      setInputValue(confirmPasswordInput, '12345');
-      confirmPasswordInput.dispatchEvent(new Event('blur', { bubbles: true }));
       setCheckboxValue(gdprConsent, true);
       await flushPromises();
     });
@@ -527,7 +522,8 @@ describe('Frontend smoke tests', () => {
       await flushPromises();
     });
 
-    expect(container.textContent).toContain('Αδύναμος κωδικός');
+    expect(container.querySelector('[role="alert"]').textContent).toContain('τουλάχιστον');
+    expect(document.activeElement).toBe(passwordInput);
     expect(registerMock).not.toHaveBeenCalled();
 
     await act(async () => {
@@ -547,10 +543,8 @@ describe('Frontend smoke tests', () => {
     const RegisterPage = require('../app/register/page').default;
     const { container, root } = await renderPage(RegisterPage);
     await act(async () => {
-      setInputValue(container.querySelector('input[name="username"]'), 'newmember');
       setInputValue(container.querySelector('input[name="email"]'), 'member@example.com');
       setInputValue(container.querySelector('input[name="password"]'), 'secret123');
-      setInputValue(container.querySelector('input[name="confirmPassword"]'), 'secret123');
       setCheckboxValue(container.querySelector('input[name="gdpr_consent"]'), true);
       await flushPromises();
     });
@@ -560,9 +554,8 @@ describe('Frontend smoke tests', () => {
     });
     expect(registerMock).toHaveBeenCalledTimes(1);
     expect(registerMock).toHaveBeenCalledWith({
-      username: 'newmember', email: 'member@example.com', password: 'secret123',
-      profileVisibility: 'registered', isDiaspora: false, residenceCountryCode: null,
-      nationality: null, homeLocationId: null, locale: 'el', newsletterOptIn: false,
+      email: 'member@example.com', password: 'secret123',
+      profileVisibility: 'registered', locale: 'el',
     });
     expect(mockRouter.push).toHaveBeenCalledWith(destination);
     expect(document.cookie).toContain('appofa_detected_country=' + countryCode);
