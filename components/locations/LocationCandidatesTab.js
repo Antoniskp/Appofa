@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { CheckBadgeIcon, MapPinIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import ConsultationCommitment from '@/components/political/ConsultationCommitment';
 
 export const POSITION_TYPE_LABELS = {
   mayor: 'Mayor',
@@ -87,6 +88,7 @@ export function CandidateRegistrationCard({ registration }) {
               </a>
             )}
           </div>
+          <ConsultationCommitment registration={registration} compact />
         </div>
       </div>
     </article>

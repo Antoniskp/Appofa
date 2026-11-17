@@ -9,16 +9,34 @@ test.beforeEach(async ({ context }) => {
   });
 });
 
-test('homepage local map widget opens the shared political layer with its selected district', async ({ page }) => {
+test('homepage local map widget opens the shared political layer with its selected district', async ({ page }, testInfo) => {
   await page.route('**/api/persons?**', route => route.fulfill({ json: { success: true, data: {
     profiles: [{ id: 1001, slug: 'test-athens-mp', firstNameNative: 'Anna', lastNameNative: 'Example', constituency: { slug: 'gr-electoral-athens-a' } }], pagination: { totalPages: 1 },
+  } } }));
+  await page.route('**/api/electoral-districts/candidates?**', route => route.fulfill({ json: { success: true, data: {
+    registrations: [{ id: 501, districtId: 'district-athens-a', electionCycle: '2027', partyName: 'Community party', slogan: 'Listen to residents', consultationCommitment: 'I will consult residents monthly and publish my responses.', candidate: { firstNameNative: 'Maria', lastNameNative: 'Example', username: 'maria-example' } }], pagination: { totalPages: 1 },
   } } }));
   await page.goto('/');
   const section = page.getByRole('region', { name: 'Political map', exact: true });
   await section.scrollIntoViewIfNeeded();
   await expect(section.getByRole('group', { name: 'Map content' })).toHaveCount(0);
-  await section.getByRole('list', { name: 'All electoral districts' }).getByRole('button', { name: 'Α΄ Αθηνών 1 MP', exact: true }).click();
-  await section.getByRole('link', { name: 'Open the full map' }).click();
+  await expect(section.getByText('Find your district', { exact: true })).toBeVisible();
+  await section.getByRole('combobox', { name: 'Choose an electoral district', exact: true }).selectOption('district-athens-a');
+  await expect(section.getByRole('link', { name: 'Meet MP Anna Example', exact: true })).toBeVisible();
+  await expect(section.getByRole('link', { name: 'Meet candidate Maria Example', exact: true })).toBeVisible();
+  await section.locator('summary').filter({ hasText: 'Consultation plan shared' }).click();
+  await expect(section.getByText('Candidate statement', { exact: true })).toBeVisible();
+  await expect(section.getByText('I will consult residents monthly and publish my responses.', { exact: true })).toBeVisible();
+  if (testInfo.project.name === 'mobile') {
+    const toggle = section.getByRole('button', { name: 'Show district map', exact: true });
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(section.getByRole('region', { name: 'Find your electoral district on the map' })).toHaveCount(0);
+    await toggle.click();
+    await expect(section.getByRole('region', { name: 'Find your electoral district on the map' })).toBeVisible();
+    await section.getByRole('button', { name: 'Hide district map', exact: true }).click();
+  }
+  await section.screenshot({ path: testInfo.outputPath('political-widget-people-first.png') });
+  await section.getByRole('link', { name: 'Explore your district', exact: false }).click();
   await expect(page).toHaveURL(/\/map\?layer=political&district=district-athens-a/);
   await expect(page.getByRole('heading', { name: 'Explore the map', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Anna Example Independent', exact: true })).toBeVisible();

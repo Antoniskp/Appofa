@@ -9,6 +9,9 @@ import { candidateRegistrationAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { POSITION_TYPE_LABELS } from '@/components/locations/LocationCandidatesTab';
+import ConsultationCommitment from '@/components/political/ConsultationCommitment';
+import CandidateConsultationEditor from '@/components/political/CandidateConsultationEditor';
+import { useAuth } from '@/lib/auth-context';
 
 function getCandidateName(candidate) {
   if (!candidate) return 'Candidate';
@@ -29,8 +32,9 @@ function getProfileHref(candidate) {
 export default function CandidateRegistrationDetailPage({ params }) {
   const { id } = use(params);
   const router = useRouter();
+  const { user } = useAuth();
 
-  const { data: registration, loading, error } = useAsyncData(
+  const { data: registration, loading, error, refetch } = useAsyncData(
     async () => {
       const res = await candidateRegistrationAPI.getById(id);
       return res.data?.registration || null;
@@ -132,6 +136,8 @@ export default function CandidateRegistrationDetailPage({ params }) {
               ) : (
                 <p className="mt-3 text-gray-500">No platform has been added yet.</p>
               )}
+              <ConsultationCommitment registration={registration} />
+              {user?.id === candidate?.id && <CandidateConsultationEditor key={registration.id} registration={registration} onSaved={refetch} />}
             </main>
 
             <aside className="space-y-4">

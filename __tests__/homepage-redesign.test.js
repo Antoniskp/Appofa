@@ -7,10 +7,9 @@ let mockUser = null;
 const mockGet = jest.fn();
 jest.mock('next/link', () => ({ __esModule: true, default: ({ href, children, prefetch, ...props }) => require('react').createElement('a', { href, ...props }, children) }));
 jest.mock('next/dynamic', () => loader => {
-  const isMap = loader.toString().includes('ExploreLocationsMap');
+  const isMap = loader.toString().includes('PoliticalMapWidget');
   return props => isMap
-    ? require('react').createElement('div', { 'data-testid': 'territory-map', 'data-layer': props.initialLayer,
-      'data-layer-controls': String(props.showLayerControls), 'data-map-link': String(props.showMapLink) })
+    ? require('react').createElement('div', { 'data-testid': 'territory-map', 'data-home-location': props.homeLocationId })
     : require('react').createElement('div', { 'data-testid': 'video' }, props.article.title);
 });
 jest.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: mockUser, loading: false }) }));
@@ -61,9 +60,6 @@ describe('Political map homepage', () => {
     const sections = container.querySelectorAll('section');
     const widget = container.querySelector('[data-testid="territory-map"]');
     expect(sections[0].contains(widget)).toBe(true);
-    expect(widget.getAttribute('data-layer')).toBe('parliamentarians');
-    expect(widget.getAttribute('data-layer-controls')).toBe('false');
-    expect(widget.getAttribute('data-map-link')).toBe('true');
     expect(sections[0].querySelector('a[href="/map?layer=political"]')).toBeTruthy();
     expect(container.querySelector('[data-testid="original-hero"]').compareDocumentPosition(widget) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(mockPositions).toHaveBeenCalledWith(expect.objectContaining({ voteView: 'all', pool: 'home' }));
@@ -78,6 +74,7 @@ describe('Political map homepage', () => {
     mockUser = { id: 1, homeLocation: { id: 42, slug: 'athens' } };
     await render();
     expect(mockGet).toHaveBeenCalledWith(42, ['latestNews', 'latestArticles', 'suggestions', 'polls']);
+    expect(container.querySelector('[data-testid="territory-map"]').getAttribute('data-home-location')).toBe('42');
     expect(container.querySelectorAll('section')[2].getAttribute('aria-label')).toBe('Στην περιοχή σου');
     expect(container.querySelectorAll('section')[2].querySelector('a').getAttribute('href')).toBe('/locations/athens');
     mockPositions.mockReset().mockResolvedValue({ data: { positions: [] } });

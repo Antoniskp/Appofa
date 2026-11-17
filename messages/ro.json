@@ -2662,7 +2662,9 @@
       "error_select_location": "Te rugăm să selectezi o locație.",
       "error_profile_location": "Te rugăm să alegi una dintre locațiile din profilul tău.",
       "success": "Înregistrarea candidatului a fost trimisă pentru revizuire.",
-      "error_fallback": "Nu s-a putut înregistra profilul de candidat."
+      "error_fallback": "Nu s-a putut înregistra profilul de candidat.",
+      "consultation_label": "Cum vei implica locuitorii? (opțional)",
+      "consultation_help": "Descrie cât de des vei consulta locuitorii, ce decizii pot influența și cum vei explica răspunsul tău. Textul va apărea public ca declarație a ta după aprobarea candidaturii."
     }
   },
   "onboarding": {
@@ -3475,7 +3477,7 @@
     "news": "Știri",
     "openMap": "Deschide harta completă",
     "widgetHint": "Explorează camere, transmisiuni live, știri, probleme și voturi.",
-    "widgetDescription": "Află cine îți reprezintă circumscripția. Cunoaște persoanele care doresc să o reprezinte în viitor."
+    "widgetDescription": "Cunoaște persoanele care te reprezintă astăzi și pe cele care îți cer votul."
   },
   "signupJourney": {
     "hero_title": "Vezi ce se întâmplă în zona ta. Votează și propune soluții.",
@@ -3515,5 +3517,51 @@
     "back_home": "Înapoi la început",
     "terms": "Termeni",
     "privacy": "Confidențialitate"
+  },
+  "politicalWidget": {
+    "findDistrict": "Găsește-ți circumscripția",
+    "searchPlaceholder": "Caută o localitate sau o circumscripție",
+    "districtSelect": "Alege o circumscripție electorală",
+    "chooseDistrict": "Alege circumscripția ta",
+    "yourDistrict": "Circumscripția ta",
+    "changeDistrict": "Schimbă circumscripția",
+    "representatives": "Deputați actuali",
+    "candidates": "Candidați",
+    "promptTitle": "Cine te reprezintă?",
+    "promptBody": "Alege circumscripția pentru a cunoaște deputații actuali și candidații care vor să o reprezinte. Caută zona ta, alege din listă sau selectează pe hartă.",
+    "loading": "Se încarcă profilurile…",
+    "peopleError": "Aceste profiluri nu au putut fi încărcate.",
+    "mapError": "Harta nu a putut fi încărcată. Poți alege în continuare o circumscripție și să-i cunoști reprezentanții.",
+    "resolving": "Se caută circumscripția zonei tale…",
+    "multipleDistricts": "Această zonă aparține mai multor circumscripții. Alege-o pe a ta mai jos.",
+    "chooseManually": "Zona nu are încă o circumscripție asociată. Alege circumscripția ta din listă.",
+    "areaError": "Căutarea zonei nu este disponibilă. Poți alege circumscripția din listă.",
+    "emptyRepresentatives": "Nu există încă profiluri ale deputaților actuali pentru această circumscripție.",
+    "emptyCandidates": "Nu există încă candidați aprobați pentru această circumscripție.",
+    "cycle": "Ciclu electoral: {cycle}",
+    "unspecifiedCycle": "Nespecificat",
+    "cycleNote": "Fiecare campanie afișează ciclul electoral. Sunt candidaturi aprobate pe Appofasi, nu un buletin de vot oficial.",
+    "seeAll": "Vezi toate cele {count} profiluri",
+    "openCampaign": "Cunoaște candidatul {name}",
+    "openProfile": "Cunoaște deputatul {name}",
+    "noParty": "Partid nespecificat",
+    "independent": "Independent",
+    "planShared": "Plan de consultare publicat",
+    "candidateStatement": "Declarația candidatului",
+    "statementNote": "Aceasta este o promisiune declarată, nu o dovadă de participare. Consultă profilul public pentru activitatea pe Appofasi.",
+    "noPlan": "Nu a fost publicat un plan de consultare",
+    "publicActivity": "Vezi activitatea publică",
+    "showMap": "Arată harta circumscripțiilor",
+    "hideMap": "Ascunde harta circumscripțiilor",
+    "mapLabel": "Găsește circumscripția ta pe hartă",
+    "fullMapHint": "Mai multe profiluri, filtre electorale și straturi ale comunității pe harta completă.",
+    "exploreDistrict": "Explorează circumscripția ta",
+    "openMap": "Explorează harta politică",
+    "editPlan": "Planul tău de consultare",
+    "reviewNote": "Modificările sunt trimise din nou spre aprobare. Campania nu va apărea în listele publice până la reaprobare.",
+    "savePlan": "Trimite planul spre aprobare",
+    "savingPlan": "Se salvează…",
+    "planSaved": "Plan trimis spre aprobare.",
+    "planError": "Planul nu a putut fi salvat. Încearcă din nou."
   }
 }

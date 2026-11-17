@@ -6,7 +6,8 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { ArrowPathIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import BaseMap from '@/components/map/BaseMap';
-import { personAPI } from '@/lib/api/persons';
+import ConsultationCommitment from '@/components/political/ConsultationCommitment';
+import { loadParliamentarians, loadPoliticalCandidates } from '@/lib/political-map-data';
 import { getProfileDistrictId } from '@/lib/parliamentary-districts';
 import { mapGeometryBounds, normalizeMapSearch } from '@/lib/map-utils';
 import districtsMetadata from '@/config/map-data/electoral-districts.metadata.json';
@@ -16,18 +17,6 @@ const DISTRICTS = [...districtsMetadata.electoralDistricts].sort((a, b) => a.nam
 const escape = value => String(value || '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const personName = person => [person.firstNameNative, person.lastNameNative].filter(Boolean).join(' ')
   || [person.firstNameEn, person.lastNameEn].filter(Boolean).join(' ') || person.nickname || person.username || person.slug;
-
-async function loadProfiles() {
-  const profiles = [];
-  let totalPages = 1;
-  for (let page = 1; page <= totalPages; page += 1) {
-    const response = await personAPI.getAll({ position: 'parliamentary', page, limit: 100 });
-    if (!response?.success || !Array.isArray(response.data?.profiles)) throw new Error('Parliamentarians unavailable');
-    profiles.push(...response.data.profiles);
-    totalPages = Number(response.data.pagination?.totalPages) || 1;
-  }
-  return [...new Map(profiles.map(profile => [profile.id, profile])).values()];
-}
 
 export default function HomeElectoralMap({ tileMode = 'light', onTileModeChange, onDistrictChange, initialDistrictId = '' }) {
   const t = useTranslations('homeMap');
@@ -62,20 +51,8 @@ export default function HomeElectoralMap({ tileMode = 'light', onTileModeChange,
     let cancelled = false;
     const controller = new AbortController();
     setCandidates(null); setCandidateError(false);
-    const load = async () => {
-      const registrations = [];
-      let totalPages = 1;
-      for (let page = 1; page <= totalPages; page += 1) {
-        const response = await fetch(`/api/electoral-districts/candidates?page=${page}&limit=100`, { signal: controller.signal });
-        if (!response.ok) throw new Error('Candidates unavailable');
-        const body = await response.json();
-        if (!body.success || !Array.isArray(body.data?.registrations)) throw new Error('Candidates unavailable');
-        registrations.push(...body.data.registrations);
-        totalPages = Number(body.data.pagination?.totalPages) || 1;
-      }
-      if (!cancelled) setCandidates([...new Map(registrations.map(item => [item.id, item])).values()]);
-    };
-    load().catch(() => { if (!cancelled) setCandidateError(true); });
+    loadPoliticalCandidates(controller.signal).then(items => { if (!cancelled) setCandidates(items); })
+      .catch(() => { if (!cancelled) setCandidateError(true); });
     return () => { cancelled = true; controller.abort(); };
   }, [peopleMode, candidateRetry]);
   const cycles = useMemo(() => [...new Set((candidates || []).map(item => item.electionCycle || 'current'))].sort().reverse(), [candidates]);
@@ -97,7 +74,7 @@ export default function HomeElectoralMap({ tileMode = 'light', onTileModeChange,
         if (!response.ok) throw new Error('Boundaries unavailable');
         return response.json();
       }),
-      loadProfiles(),
+      loadParliamentarians(),
     ]).then(([geojson, profiles]) => {
       if (!Array.isArray(geojson.features) || !geojson.features.length) throw new Error('Boundaries unavailable');
       if (!cancelled) setData({ geojson, profiles: profiles.map(profile => ({ ...profile, districtId: getProfileDistrictId(profile) })) });
@@ -212,7 +189,7 @@ export default function HomeElectoralMap({ tileMode = 'light', onTileModeChange,
                       {person.campaign.slogan && <span className="mt-2 block text-xs text-charcoal">{person.campaign.slogan}</span>}
                       {person.campaign.platform && <span className="mt-1 line-clamp-3 block text-xs text-gray-500">{person.campaign.platform}</span>}</>}
                   </span>
-                </Link></li>;
+                </Link>{candidateMode && <ConsultationCommitment registration={person.campaign} compact />}</li>;
               })}</ul> : <p className="p-3 text-sm text-gray-500">{t(candidateMode ? 'electoral.emptyCandidates' : 'electoral.empty')}</p>}
             </> : matchingDistricts.length ? <ul className="space-y-2" aria-label={t('electoral.allDistricts')}>
               {matchingDistricts.map(district => <li key={district.id}><button type="button" onClick={() => chooseDistrict(district.id)} onMouseEnter={() => highlight(district.id)} onMouseLeave={() => unhighlight(district.id)} onFocus={() => highlight(district.id)} onBlur={() => unhighlight(district.id)} className={`flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border p-3 text-left text-sm ${hoveredId === district.id ? 'border-copper bg-ivory' : 'border-brand-border hover:bg-ivory/60'}`}>

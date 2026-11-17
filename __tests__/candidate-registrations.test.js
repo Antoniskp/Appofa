@@ -125,6 +125,7 @@ describe('Candidate registrations API', () => {
         partyName: 'Old Party',
         isIndependent: true,
         slogan: 'Local work first',
+        consultationCommitment: ' I will consult residents monthly and publish my responses. ',
         websiteUrl: 'https://example.com/campaign',
       });
 
@@ -132,6 +133,7 @@ describe('Candidate registrations API', () => {
     expect(createRes.body.success).toBe(true);
     expect(createRes.body.data.registration.status).toBe('submitted');
     expect(createRes.body.data.registration.partyName).toBeNull();
+    expect(createRes.body.data.registration.consultationCommitment).toBe('I will consult residents monthly and publish my responses.');
 
     const promoted = await User.findByPk(viewerUser.id);
     expect(promoted.role).toBe('candidate');
@@ -168,6 +170,19 @@ describe('Candidate registrations API', () => {
     expect(publicList.status).toBe(200);
     expect(publicList.body.data.registrations).toHaveLength(1);
     expect(publicList.body.data.registrations[0].id).toBe(registration.id);
+  });
+
+  it('sends a changed consultation plan back to review before it can appear publicly', async () => {
+    const registration = await CandidateRegistration.findOne({ where: { userId: viewerUser.id } });
+    const response = await request(app).put(`/api/candidate-registrations/${registration.id}`)
+      .set(withCsrf(viewerUser.id, viewerToken, 'csrf-consultation-edit'))
+      .send({ consultationCommitment: '  Consult residents before each council meeting.  ' });
+    expect(response.status).toBe(200);
+    expect(response.body.data.registration.consultationCommitment).toBe('Consult residents before each council meeting.');
+    expect(response.body.data.registration.status).toBe('submitted');
+    expect(response.body.data.registration.reviewedAt).toBeNull();
+    const publicList = await request(app).get('/api/candidate-registrations').query({ locationId: testLocation.id });
+    expect(publicList.body.data.registrations).toHaveLength(0);
   });
 
   it('reuses an archived registration without carrying stale review data', async () => {

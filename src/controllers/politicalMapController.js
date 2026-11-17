@@ -12,7 +12,7 @@ exports.candidates = async (req, res) => {
     const [result, districts] = await Promise.all([
       CandidateRegistration.findAndCountAll({
         where: { status: 'approved', positionType: 'parliamentary' },
-        attributes: ['id', 'locationId', 'electionCycle', 'partyName', 'isIndependent', 'slogan', 'platform'],
+        attributes: ['id', 'locationId', 'electionCycle', 'partyName', 'isIndependent', 'slogan', 'platform', 'consultationCommitment'],
         include: [
           { model: User, as: 'candidate', required: true,
             where: { profileVisibility: 'public', claimStatus: null },

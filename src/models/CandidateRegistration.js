@@ -48,6 +48,11 @@ const CandidateRegistration = sequelize.define('CandidateRegistration', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  consultationCommitment: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    validate: { len: [0, 1500] },
+  },
   websiteUrl: {
     type: DataTypes.STRING(500),
     allowNull: true,

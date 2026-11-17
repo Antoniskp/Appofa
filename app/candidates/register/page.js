@@ -51,6 +51,7 @@ export default function CandidateRegistrationPage() {
     isIndependent: false,
     slogan: '',
     platform: '',
+    consultationCommitment: '',
     websiteUrl: '',
     contactEmail: '',
   });
@@ -293,6 +294,14 @@ export default function CandidateRegistrationPage() {
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               maxLength={5000}
             />
+          </div>
+
+          <div>
+            <label htmlFor="consultation-commitment" className="mb-1 block text-sm font-medium text-gray-700">{t('register_page.consultation_label')}</label>
+            <p id="consultation-help" className="mb-2 text-xs leading-relaxed text-gray-500">{t('register_page.consultation_help')}</p>
+            <textarea id="consultation-commitment" aria-describedby="consultation-help" value={form.consultationCommitment}
+              onChange={event => updateField('consultationCommitment', event.target.value)} rows={3} maxLength={1500}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">

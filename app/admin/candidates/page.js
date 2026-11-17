@@ -12,6 +12,7 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { candidateRegistrationAPI, adminAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import { POSITION_TYPE_LABELS } from '@/components/locations/LocationCandidatesTab';
+import ConsultationCommitment from '@/components/political/ConsultationCommitment';
 
 const STATUS_OPTIONS = ['submitted', 'approved', 'rejected', 'archived', 'all'];
 
@@ -319,6 +320,7 @@ function AdminCandidatesContent() {
                     <dd className="mt-1 whitespace-pre-wrap leading-6 text-gray-700">{selected.platform}</dd>
                   </div>
                 )}
+                <div className="md:col-span-2"><ConsultationCommitment registration={selected} /></div>
                 <div className="md:col-span-2">
                   <dt className="font-medium text-gray-500">Review notes / rejection reason</dt>
                   <dd className="mt-1">

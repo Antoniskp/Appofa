@@ -157,6 +157,7 @@ async function createRegistration(userId, data) {
     isIndependent: Boolean(data.isIndependent),
     slogan: cleanString(data.slogan, 180),
     platform: cleanString(data.platform, 5000),
+    consultationCommitment: cleanString(data.consultationCommitment, 1500),
     websiteUrl: validateUrl(data.websiteUrl),
     contactEmail: cleanString(data.contactEmail, 255),
     status: 'submitted',
@@ -371,6 +372,7 @@ async function updateRegistration(userId, userRole, id, data) {
   }
   if (data.slogan !== undefined) updates.slogan = cleanString(data.slogan, 180);
   if (data.platform !== undefined) updates.platform = cleanString(data.platform, 5000);
+  if (data.consultationCommitment !== undefined) updates.consultationCommitment = cleanString(data.consultationCommitment, 1500);
   if (data.websiteUrl !== undefined) updates.websiteUrl = validateUrl(data.websiteUrl);
   if (data.contactEmail !== undefined) updates.contactEmail = cleanString(data.contactEmail, 255);
   if (isModerator && data.status !== undefined) {

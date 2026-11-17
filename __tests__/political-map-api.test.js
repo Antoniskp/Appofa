@@ -13,7 +13,7 @@ beforeAll(async () => {
   district = await Location.create({ name: 'Athens A', slug: 'gr-electoral-athens-a', type: 'electoral_district', parent_id: broad.id });
   await Location.create({ name: 'Athens North', slug: 'gr-electoral-athens-b1-north-athens', type: 'electoral_district', parent_id: broad.id });
   await CandidateRegistration.bulkCreate([
-    { userId: candidate.id, locationId: district.id, electionCycle: '2027', status: 'approved', contactEmail: 'private@example.test', reviewNotes: 'staff only' },
+    { userId: candidate.id, locationId: district.id, electionCycle: '2027', status: 'approved', contactEmail: 'private@example.test', reviewNotes: 'staff only', consultationCommitment: 'Consult residents monthly.' },
     { userId: candidate.id, locationId: broad.id, electionCycle: '2027', status: 'approved' },
     { userId: candidate.id, locationId: district.id, electionCycle: '2028', status: 'submitted' },
     { userId: hidden.id, locationId: district.id, electionCycle: '2027', status: 'approved' },
@@ -27,6 +27,7 @@ test('public map shows approved discoverable campaigns without exposing private 
   expect(response.body.data.registrations).toHaveLength(2);
   const exact = response.body.data.registrations.find(item => item.locationId === district.id);
   expect(exact.districtId).toBe('district-athens-a');
+  expect(exact.consultationCommitment).toBe('Consult residents monthly.');
   expect(exact).not.toHaveProperty('contactEmail');
   expect(exact).not.toHaveProperty('reviewNotes');
   expect(response.body.data.registrations.find(item => item.locationId === broad.id).districtId).toBeNull();

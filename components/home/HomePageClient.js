@@ -18,7 +18,7 @@ import CountryEntryPopup from '@/components/geo/CountryEntryPopup';
 import LocalActivity from '@/components/home/LocalActivity';
 
 const VideoThumbnailCard = dynamic(() => import('@/components/articles/VideoThumbnailCard'));
-const ExploreLocationsMap = dynamic(() => import('@/components/locations/ExploreLocationsMap'), { ssr: false });
+const PoliticalMapWidget = dynamic(() => import('@/components/political/PoliticalMapWidget'), { ssr: false });
 
 export default function HomePageClient({ initialPayload = null }) {
   const tHome = useTranslations('home');
@@ -83,11 +83,7 @@ export default function HomePageClient({ initialPayload = null }) {
           renderItem={() => null}
           mapSlot={
             <div className="-mt-2 md:-mt-3">
-              <ExploreLocationsMap
-                initialLayer="parliamentarians"
-                showLayerControls={false}
-                showMapLink
-              />
+              <PoliticalMapWidget homeLocationId={homeLocationId} homeLocation={user?.homeLocation} />
             </div>
           }
         />

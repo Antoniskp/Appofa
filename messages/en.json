@@ -2662,7 +2662,9 @@
       "error_select_location": "Please select a location.",
       "error_profile_location": "Please choose one of your profile locations.",
       "success": "Candidate registration submitted for review.",
-      "error_fallback": "Could not register candidate profile."
+      "error_fallback": "Could not register candidate profile.",
+      "consultation_label": "How will you involve residents? (optional)",
+      "consultation_help": "Describe how often you will consult residents, which decisions they can influence, and how you will explain your response. This will appear publicly as your statement once the registration is approved."
     }
   },
   "onboarding": {
@@ -3475,7 +3477,7 @@
     "news": "News",
     "openMap": "Open the full map",
     "widgetHint": "Explore more: cameras, live streams, news, problems and votes.",
-    "widgetDescription": "Know who represents your district. Meet the people who want to represent it next."
+    "widgetDescription": "Meet the people who represent you today and those asking for your vote."
   },
   "signupJourney": {
     "hero_title": "See what is happening in your area. Vote and suggest solutions.",
@@ -3515,5 +3517,51 @@
     "back_home": "Back to home",
     "terms": "Terms",
     "privacy": "Privacy"
+  },
+  "politicalWidget": {
+    "findDistrict": "Find your district",
+    "searchPlaceholder": "Search a municipality or electoral district",
+    "districtSelect": "Choose an electoral district",
+    "chooseDistrict": "Choose your district",
+    "yourDistrict": "Your district",
+    "changeDistrict": "Change district",
+    "representatives": "Current MPs",
+    "candidates": "Candidates",
+    "promptTitle": "Who represents you?",
+    "promptBody": "Choose your district to meet your current MPs and the candidates standing to represent it. Search your area, choose from the list, or select the map.",
+    "loading": "Loading profiles…",
+    "peopleError": "These profiles could not be loaded.",
+    "mapError": "The map could not be loaded. You can still choose a district and explore its people.",
+    "resolving": "Finding the electoral district for your area…",
+    "multipleDistricts": "This area spans several districts. Choose yours below.",
+    "chooseManually": "No district mapping is available for this area yet. Choose your electoral district from the list.",
+    "areaError": "Area lookup is unavailable. You can still choose your district from the list.",
+    "emptyRepresentatives": "No current MP profiles are available for this district yet.",
+    "emptyCandidates": "No approved candidates are listed for this district yet.",
+    "cycle": "Election cycle: {cycle}",
+    "unspecifiedCycle": "Not specified",
+    "cycleNote": "Each campaign shows its election cycle. Listings are approved Appofasi registrations, not an official ballot.",
+    "seeAll": "See all {count}",
+    "openCampaign": "Meet candidate {name}",
+    "openProfile": "Meet MP {name}",
+    "noParty": "Party not listed",
+    "independent": "Independent",
+    "planShared": "Consultation plan shared",
+    "candidateStatement": "Candidate statement",
+    "statementNote": "This is a stated commitment, not evidence of participation. Explore the public profile to see activity on Appofasi.",
+    "noPlan": "No consultation plan shared yet",
+    "publicActivity": "View public activity",
+    "showMap": "Show district map",
+    "hideMap": "Hide district map",
+    "mapLabel": "Find your electoral district on the map",
+    "fullMapHint": "More profiles, election filters and community layers on the full map.",
+    "exploreDistrict": "Explore your district",
+    "openMap": "Explore the political map",
+    "editPlan": "Your consultation plan",
+    "reviewNote": "Changes go back to review. Your campaign is hidden from public listings until it is approved again.",
+    "savePlan": "Submit plan for review",
+    "savingPlan": "Saving…",
+    "planSaved": "Plan submitted for review.",
+    "planError": "The plan could not be saved. Please try again."
   }
 }
