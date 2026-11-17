@@ -185,6 +185,11 @@ export default function TopNav() {
           mobileIcon: <MapPinIcon className="h-5 w-5" />
         },
         {
+          id: 'map', label: tNav('map'), href: '/map',
+          icon: <MapPinIcon className="h-4 w-4" />,
+          mobileIcon: <MapPinIcon className="h-5 w-5" />,
+        },
+        {
           id: 'calendar', label: tCalendar('title'), href: '/calendar',
           icon: <CalendarDaysIcon className="h-4 w-4" />,
           mobileIcon: <CalendarDaysIcon className="h-5 w-5" />

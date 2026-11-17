@@ -80,10 +80,19 @@ test('failed activity shows a retry instead of a false zero count', async () => 
 test('MP mode avoids sending an unsupported activity layer and can return to issues', async () => {
   await render();
   locationAPI.getMapActivity.mockClear();
-  await act(async () => button(t.parliamentarians).click());
+  await act(async () => button(t.political).click());
   expect(locationAPI.getMapActivity).not.toHaveBeenCalled();
   expect(container.querySelector('input[type="search"]')).toBeNull();
   await act(async () => button(t.issues).click());
   expect(locationAPI.getMapActivity).toHaveBeenLastCalledWith(expect.objectContaining({ layer: 'issues' }));
   expect(container.querySelector('input[type="search"]')).toBeTruthy();
+});
+
+test('political widget reuses the map with a layer link and no unrelated activity requests', async () => {
+  await render({ initialLayer: 'parliamentarians', showLayerControls: false, showMapLink: true });
+  expect(locationAPI.getMapActivity).not.toHaveBeenCalled();
+  expect(container.querySelector('[role="group"]')).toBeNull();
+  expect(container.querySelector('a[href="/map?layer=political"]')).toBeTruthy();
+  await act(async () => mockCanvas.onDistrictChange('district-athens-a'));
+  expect(container.querySelector('a[href="/map?layer=political&district=district-athens-a"]')).toBeTruthy();
 });

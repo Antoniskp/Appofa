@@ -9,14 +9,53 @@ test.beforeEach(async ({ context }) => {
   });
 });
 
+test('homepage local map widget opens the shared political layer with its selected district', async ({ page }) => {
+  await page.route('**/api/persons?**', route => route.fulfill({ json: { success: true, data: {
+    profiles: [{ id: 1001, slug: 'test-athens-mp', firstNameNative: 'Anna', lastNameNative: 'Example', constituency: { slug: 'gr-electoral-athens-a' } }], pagination: { totalPages: 1 },
+  } } }));
+  await page.goto('/');
+  const section = page.getByRole('region', { name: 'Political map', exact: true });
+  await section.scrollIntoViewIfNeeded();
+  await expect(section.getByRole('group', { name: 'Map content' })).toHaveCount(0);
+  await section.getByRole('list', { name: 'All electoral districts' }).getByRole('button', { name: 'Α΄ Αθηνών 1 MP', exact: true }).click();
+  await section.getByRole('link', { name: 'Open the full map' }).click();
+  await expect(page).toHaveURL(/\/map\?layer=political&district=district-athens-a/);
+  await expect(page.getByRole('heading', { name: 'Explore the map', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Anna Example Independent', exact: true })).toBeVisible();
+});
+
+test('homepage local map shared page filters candidate cycles and switches all layers', async ({ page }, testInfo) => {
+  await page.route('**/api/electoral-districts/candidates?**', route => route.fulfill({ json: { success: true, data: {
+    registrations: [
+      { id: 501, districtId: 'district-athens-a', electionCycle: '2027', partyName: 'Community party', slogan: 'Listen to residents', platform: 'Consult residents on local projects.', candidate: { firstNameNative: 'Maria', lastNameNative: 'Example' } },
+      { id: 502, districtId: 'district-athens-a', electionCycle: '2023', candidate: { firstNameNative: 'Past campaign' } },
+    ], pagination: { totalPages: 1 },
+  } } }));
+  await page.goto('/map?layer=political&district=district-athens-a');
+  await page.getByRole('button', { name: 'Candidates', exact: true }).click();
+  await expect(page.locator('a[href^="/candidate-registrations/"]')).toHaveCount(2);
+  await page.getByRole('combobox', { name: 'Election cycle', exact: true }).selectOption('2027');
+  await expect(page.locator('a[href^="/candidate-registrations/"]')).toHaveCount(1);
+  await expect(page.getByRole('link', { name: /Maria Example/ })).toContainText('Consult residents on local projects.');
+  await page.getByRole('region', { name: 'Explore the map', exact: true }).screenshot({ path: testInfo.outputPath('political-map-candidates.png') });
+  const layers = page.getByRole('group', { name: 'Map content', exact: true });
+  for (const [label, value] of [['Cameras', 'cameras'], ['Live streams', 'live'], ['News', 'news'], ['Issues', 'issues'], ['Votes', 'polls']]) {
+    await layers.getByRole('button', { name: label, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`layer=${value}$`));
+    await expect(layers.getByRole('button', { name: label, exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('region', { name: 'Explore the map', exact: true }).getByRole('alert')).toHaveCount(0);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 test('homepage local map keeps background tiles visible after expanding and closing', async ({ page }, testInfo) => {
   // Keep the rendering check independent of the tile provider's network status.
   await page.route('https://tile.openstreetmap.org/**', route => route.fulfill({
     contentType: 'image/svg+xml',
     body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><path fill="#cbd5e1" d="M0 0h256v256H0z"/></svg>',
   }));
-  await page.goto('/');
-  const section = page.getByRole('region', { name: 'What’s happening in your area', exact: true });
+  await page.goto('/map?layer=issues');
+  const section = page.getByRole('region', { name: 'Explore the map', exact: true });
   await section.scrollIntoViewIfNeeded();
   const map = section.getByRole('region', { name: /^Local activity map:/ });
   const expectVisibleTiles = async () => {
@@ -45,8 +84,8 @@ test('homepage local map keeps background tiles visible after expanding and clos
 test('homepage local map searches areas and shows public issue, vote and camera layers', async ({ page }, testInfo) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto('/');
-  const section = page.getByRole('region', { name: 'What’s happening in your area', exact: true });
+  await page.goto('/map?layer=issues');
+  const section = page.getByRole('region', { name: 'Explore the map', exact: true });
   await section.scrollIntoViewIfNeeded();
   const areas = section.getByRole('list', { name: 'Explore areas', exact: true });
   await expect(areas.getByRole('button', { name: /Attica/ })).toBeVisible();
@@ -99,11 +138,11 @@ test('homepage local map loads electoral boundaries in Greek without translation
     if (message.type() === 'error' && /MISSING_MESSAGE|IntlError/.test(message.text())) errors.push(message.text());
   });
   await context.addCookies([{ name: 'NEXT_LOCALE', value: 'el', domain: '127.0.0.1', path: '/' }]);
-  await page.goto('/');
-  const section = page.getByRole('region', { name: messages.home.explore_locations_title, exact: true });
+  await page.goto('/map?layer=issues');
+  const section = page.getByRole('region', { name: labels.pageTitle, exact: true });
   await section.scrollIntoViewIfNeeded();
   const boundaries = page.waitForResponse(response => new URL(response.url()).pathname === '/api/electoral-districts');
-  await section.getByRole('button', { name: labels.parliamentarians, exact: true }).click();
+  await section.getByRole('button', { name: labels.political, exact: true }).click();
   const response = await boundaries;
   expect(response.status()).toBe(200);
   expect((await response.json()).features).toHaveLength(59);
@@ -117,8 +156,8 @@ test('homepage local map distinguishes unavailable data from no activity and ret
   let failing = true;
   await page.route('**/api/locations/map-activity**', route => failing
     ? route.fulfill({ status: 503, json: { success: false } }) : route.continue());
-  await page.goto('/');
-  const section = page.getByRole('region', { name: 'What’s happening in your area', exact: true });
+  await page.goto('/map?layer=issues');
+  const section = page.getByRole('region', { name: 'Explore the map', exact: true });
   await section.scrollIntoViewIfNeeded();
   await expect(section.getByRole('alert')).toContainText('Map activity could not be loaded.');
   failing = false;
@@ -138,12 +177,12 @@ test('homepage local map shows electoral districts and their MPs', async ({ page
       constituency: { slug: 'gr-electoral-athens-a' }, politicalAffiliations: [{ organization: { name: 'Test Party' } }] }],
     pagination: { totalPages: 1 },
   } } }));
-  await page.goto('/');
-  const section = page.getByRole('region', { name: 'What’s happening in your area', exact: true });
+  await page.goto('/map?layer=issues');
+  const section = page.getByRole('region', { name: 'Explore the map', exact: true });
   await section.scrollIntoViewIfNeeded();
   const layers = section.getByRole('group', { name: 'Map content' });
-  await layers.getByRole('button', { name: 'MPs', exact: true }).click();
-  await expect(layers.getByRole('button', { name: 'MPs', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await layers.getByRole('button', { name: 'Political map', exact: true }).click();
+  await expect(layers.getByRole('button', { name: 'Political map', exact: true })).toHaveAttribute('aria-pressed', 'true');
   const districts = section.getByRole('list', { name: 'All electoral districts', exact: true });
   await expect(districts.getByRole('button')).toHaveCount(60);
   await expect(section.locator('path.leaflet-interactive')).toHaveCount(59);
@@ -154,7 +193,7 @@ test('homepage local map shows electoral districts and their MPs', async ({ page
   // A real Leaflet feature event must select its electoral district.
   await section.locator('path.leaflet-interactive').first().dispatchEvent('click');
   await expect(section.getByRole('heading', { name: 'Αχαΐας', exact: true })).toBeVisible();
-  const search = section.getByRole('searchbox', { name: 'Search a district, MP or party', exact: true });
+  const search = section.getByRole('searchbox', { name: 'Search a district, person or party', exact: true });
   await search.fill('αννα');
   await expect(districts.getByRole('button')).toHaveCount(1);
   await districts.getByRole('button').click();

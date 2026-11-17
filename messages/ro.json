@@ -176,7 +176,8 @@
     "bottom_participate_civic": "Teme parlamentare",
     "bottom_participate_ideas": "Vezi idei și probleme",
     "bottom_participate_suggest": "Trimite o idee",
-    "bottom_participate_close": "Închide"
+    "bottom_participate_close": "Închide",
+    "map": "Hartă"
   },
   "independents": {
     "hero": {
@@ -3379,22 +3380,34 @@
   "homeMap": {
     "parliamentarians": "Deputați",
     "electoral": {
-      "title": "Circumscripții electorale și deputați",
-      "results": "Deputați pe circumscripții electorale",
-      "search": "Caută o circumscripție, un deputat sau un partid",
+      "title": "Harta politică",
+      "results": "Persoane după circumscripție",
+      "search": "Caută o circumscripție, persoană sau partid",
       "district": "Circumscripție electorală",
       "allDistricts": "Toate circumscripțiile electorale",
-      "mapLabel": "Circumscripțiile electorale și deputații lor",
-      "hint": "Selectează o circumscripție pentru a vedea deputații săi",
+      "mapLabel": "Harta politică a circumscripțiilor electorale",
+      "hint": "Selectează o circumscripție pentru a cunoaște deputații și candidații",
       "mpCount": "{count, plural, one {# deputat} few {# deputați} other {# de deputați}}",
-      "loading": "Se încarcă deputații…",
+      "loading": "Se încarcă persoanele…",
       "error": "Datele hărții electorale nu au putut fi încărcate.",
       "empty": "Nu s-au găsit deputați pentru această circumscripție cu aceste filtre.",
       "independent": "Independent",
       "state": "Lista națională",
       "stateHint": "Deputații de pe lista națională reprezintă întreaga țară și nu au o circumscripție geografică.",
       "boundaries": "Limite electorale și surse",
-      "directory": "Toți deputații"
+      "directory": "Toți deputații",
+      "people": "Reprezentanți și candidați",
+      "representatives": "Deputați actuali",
+      "candidates": "Candidați",
+      "cycle": "Ciclu electoral",
+      "allCycles": "Toate ciclurile electorale",
+      "unspecifiedCycle": "Ciclu electoral nespecificat",
+      "candidateCount": "{count, plural, one {# candidat} few {# candidați} other {# de candidați}}",
+      "candidateHint": "Candidaturi parlamentare aprobate pe Appofasi, nu un buletin de vot oficial. Verifică ciclul electoral al fiecărei campanii. Deschide campania pentru a citi propunerile și a cunoaște candidatul.",
+      "emptyCandidates": "Nu există încă candidați aprobați pentru această circumscripție și acest ciclu electoral.",
+      "noParty": "Partid nespecificat",
+      "unassigned": "Circumscripție nespecificată",
+      "unassignedHint": "Aceste campanii au o zonă largă sau neconfirmată. Sunt afișate aici până la confirmarea unei circumscripții specifice."
     },
     "country": "Grecia",
     "search": "Caută un municipiu sau o zonă",
@@ -3437,13 +3450,15 @@
     "showOnMap": "Arată pe hartă",
     "loadMore": "Mai multe",
     "areas": "Explorează zone",
-    "scopeHint": "Activitate publică actuală: probleme deschise pe hartă, voturi active și camere publicate. Totalurile acoperă zona; marcajele acoperă vederea curentă.",
+    "scopeHint": "Activitate publică în zona selectată. Mărește harta pentru puncte individuale. Știrile folosesc poziții aproximative ale zonelor; transmisiunile provin de la comunitate.",
     "legend": "Legenda hărții",
-    "pinLegend": "Pictograme de probleme · voturi mov · camere verzi · camere indisponibile gri",
+    "pinLegend": "Pictograme probleme · voturi mov · camere turcoaz · știri albastre · transmisiuni roșii",
     "open": {
       "issues": "Deschide problema",
       "polls": "Deschide votul",
-      "cameras": "Deschide camera"
+      "cameras": "Deschide camera",
+      "news": "Citește știrea",
+      "live": "Urmărește transmisia"
     },
     "types": {
       "country": "Țară",
@@ -3451,7 +3466,16 @@
       "municipality": "Municipiu",
       "electoral_district": "Circumscripție",
       "international": "Internațional"
-    }
+    },
+    "political": "Harta politică",
+    "pageEyebrow": "O hartă. Comunitatea ta.",
+    "pageTitle": "Explorează harta",
+    "pageDescription": "Cunoaște reprezentanții și candidații, apoi explorează camerele, transmisiunile live, știrile locale, problemele și voturile comunității. Alege un strat pentru a începe.",
+    "live": "Transmisiuni live",
+    "news": "Știri",
+    "openMap": "Deschide harta completă",
+    "widgetHint": "Explorează camere, transmisiuni live, știri, probleme și voturi.",
+    "widgetDescription": "Află cine îți reprezintă circumscripția. Cunoaște persoanele care doresc să o reprezinte în viitor."
   },
   "signupJourney": {
     "hero_title": "Vezi ce se întâmplă în zona ta. Votează și propune soluții.",

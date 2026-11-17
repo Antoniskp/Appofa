@@ -6,6 +6,7 @@ export const revalidate = 3600;
 const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 const STATIC_ROUTES = [
+  { url: '/map', priority: 0.8, changeFrequency: 'daily' },
   { url: '/', priority: 1.0, changeFrequency: 'daily' },
   { url: '/news', priority: 0.9, changeFrequency: 'hourly' },
   { url: '/articles', priority: 0.8, changeFrequency: 'daily' },

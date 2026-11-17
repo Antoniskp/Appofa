@@ -1,6 +1,6 @@
 const express = require('express');
 const request = require('supertest');
-const { sequelize, User, Location, LocationSection, Suggestion, Poll } = require('../src/models');
+const { sequelize, User, Location, LocationSection, Suggestion, Poll, Article, LocationLink, VideoPin } = require('../src/models');
 const app = express();
 app.get('/map', require('../src/controllers/homeMapController').list);
 let country, region, town, author;
@@ -33,7 +33,7 @@ afterAll(async () => { await sequelize.close(); });
 test('national summaries roll up descendants and exclude nonpublic and inactive content', async () => {
   const response = await request(app).get('/map');
   expect(response.status).toBe(200);
-  expect(response.body.totals).toEqual({ issues: 1, polls: 1, cameras: 2 });
+  expect(response.body.totals).toEqual({ issues: 1, polls: 1, cameras: 2, news: 0, live: 0 });
   expect(response.body.areas[0]).toMatchObject({ id: region.id, lat: 38, lng: 23.7, totals: response.body.totals });
   expect(response.body.items).toEqual([]);
 });
@@ -62,6 +62,38 @@ test('search handles Greek accents and stays within Greece', async () => {
   const response = await request(app).get('/map').query({ search: 'αθηνα' });
   expect(response.body.locations.map(item => item.id)).toEqual([town.id]);
   expect((await request(app).get('/map').query({ search: 'Outside' })).body.locations).toEqual([]);
+});
+
+test('news pins require published approved stories and deduplicate area totals', async () => {
+  const articles = await Article.bulkCreate([
+    { title: 'Approved local story', status: 'published', newsApprovedAt: new Date() },
+    { title: 'Unapproved local story', status: 'published' },
+    { title: 'Draft local story', status: 'draft', newsApprovedAt: new Date() },
+  ].map(article => ({ ...article, type: 'news', authorId: author.id })));
+  await LocationLink.bulkCreate(articles.map(article => ({ entity_type: 'article', entity_id: article.id, location_id: town.id })));
+  await LocationLink.create({ entity_type: 'article', entity_id: articles[0].id, location_id: region.id });
+  const response = await request(app).get('/map').query({ layer: 'news', detail: true, ...bounds });
+  expect(response.status).toBe(200);
+  expect(response.body.totals.news).toBe(1);
+  expect(response.body.items).toEqual([expect.objectContaining({ title: 'Approved local story', approximate: true, href: `/news/${articles[0].id}` })]);
+});
+
+test('live pins exclude pending and expired streams and support unlinked national pins', async () => {
+  await VideoPin.bulkCreate([
+    { title: 'Public live stream', status: 'approved' },
+    { title: 'Pending live stream', status: 'pending' },
+    { title: 'Expired live stream', status: 'approved', expiresAt: new Date('2020-01-01') },
+    { title: 'Unlinked live stream', status: 'approved', locationId: null },
+  ].map(pin => ({ contentType: 'live', lat: 38, lng: 23.7, locationId: town.id, submittedByUserId: author.id,
+    sourceProvider: 'youtube', sourceUrl: 'https://www.youtube.com/watch?v=test', ...pin })));
+  const response = await request(app).get('/map').query({ layer: 'live', detail: true, ...bounds });
+  expect(response.status).toBe(200);
+  expect(response.body.totals.live).toBe(2);
+  expect(response.body.items.map(item => item.title)).toEqual(expect.arrayContaining(['Public live stream', 'Unlinked live stream']));
+  expect(response.body.items).toHaveLength(2);
+  expect(response.body.items[0].href).toBe('https://www.youtube.com/watch?v=test');
+  const scoped = await request(app).get('/map').query({ layer: 'live', locationId: town.id, detail: true, ...bounds });
+  expect(scoped.body.items.map(item => item.title)).toEqual(['Public live stream']);
 });
 test('paginates visible issues with stable ordering', async () => {
   await Suggestion.bulkCreate(Array.from({ length: 101 }, (_, index) => ({ title: `Public issue ${index}`, body: 'A map issue description.',

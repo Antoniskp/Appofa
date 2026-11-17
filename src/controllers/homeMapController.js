@@ -7,6 +7,12 @@ const point = item => item?.lat != null && item?.lng != null && item.lat !== '' 
   && Math.abs(Number(item.lat)) <= 90 && Math.abs(Number(item.lng)) <= 180;
 const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 const empty = () => ({ issues: 0, polls: 0, cameras: 0, news: 0, live: 0 });
+const watchUrl = pin => {
+  try {
+    const url = new URL(pin.canonicalUrl || pin.sourceUrl);
+    return ['https:', 'http:'].includes(url.protocol) ? url.href : null;
+  } catch { return null; }
+};
 
 // This feed is always public, including when the visitor is an administrator.
 exports.list = async (req, res) => {
@@ -67,7 +73,7 @@ exports.list = async (req, res) => {
         [Op.and]: [
           { [Op.or]: [{ expiresAt: null }, { expiresAt: { [Op.gt]: new Date() } }] },
           { [Op.or]: [{ locationId: { [Op.in]: ids } }, ...(rootId === country.id ? [{ locationId: null, lat: { [Op.between]: [34.5, 42] }, lng: { [Op.between]: [19, 30] } }] : [])] },
-        ] }, attributes: ['id', 'title', 'lat', 'lng', 'locationId', 'expiresAt'], order: [['createdAt', 'DESC'], ['id', 'DESC']], raw: true }),
+        ] }, attributes: ['id', 'title', 'lat', 'lng', 'locationId', 'expiresAt', 'sourceUrl', 'canonicalUrl'], order: [['createdAt', 'DESC'], ['id', 'DESC']], raw: true }),
     ]);
     const newsLinks = newsArticles.length ? await LocationLink.findAll({
       where: { entity_type: 'article', entity_id: { [Op.in]: newsArticles.map(article => article.id) }, location_id: { [Op.in]: ids } },
@@ -135,8 +141,9 @@ exports.list = async (req, res) => {
       } else if (layer === 'news' || layer === 'live') {
         const visiblePoint = item => point(item) && Number(item.lat) >= south && Number(item.lat) <= north
           && (west <= east ? Number(item.lng) >= west && Number(item.lng) <= east : Number(item.lng) >= west || Number(item.lng) <= east);
-        const candidates = layer === 'live' ? livePins.map(pin => ({ ...pin, id: `live-${pin.id}`, kind: 'live',
-          location: byId.get(pin.locationId) || country, href: `/live?pin=${pin.id}` }))
+        const candidates = layer === 'live' ? livePins.filter(pin => watchUrl(pin)).map(pin => ({
+          id: `live-${pin.id}`, title: pin.title, lat: pin.lat, lng: pin.lng, expiresAt: pin.expiresAt, kind: 'live',
+          location: byId.get(pin.locationId) || country, href: watchUrl(pin) }))
           : newsArticles.flatMap(article => newsLinks.filter(link => link.entity_id === article.id).map(link => {
             const location = byId.get(link.location_id);
             return { id: `news-${article.id}-${link.location_id}`, title: article.title, kind: 'news',

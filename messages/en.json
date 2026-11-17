@@ -176,7 +176,8 @@
     "bottom_participate_civic": "Parliament topics",
     "bottom_participate_ideas": "View ideas & problems",
     "bottom_participate_suggest": "Submit an idea",
-    "bottom_participate_close": "Close"
+    "bottom_participate_close": "Close",
+    "map": "Map"
   },
   "independents": {
     "hero": {
@@ -3379,22 +3380,34 @@
   "homeMap": {
     "parliamentarians": "MPs",
     "electoral": {
-      "title": "Electoral districts & MPs",
-      "results": "MPs by electoral district",
-      "search": "Search a district, MP or party",
+      "title": "Political map",
+      "results": "People by electoral district",
+      "search": "Search a district, person or party",
       "district": "Electoral district",
       "allDistricts": "All electoral districts",
-      "mapLabel": "Electoral districts and their MPs",
-      "hint": "Select an electoral district to see its MPs",
+      "mapLabel": "Political map of electoral districts",
+      "hint": "Select a district to get to know its MPs and candidates",
       "mpCount": "{count, plural, one {# MP} other {# MPs}}",
-      "loading": "Loading MPs…",
+      "loading": "Loading people…",
       "error": "Electoral map data could not be loaded.",
       "empty": "No MPs found for this district with these filters.",
       "independent": "Independent",
       "state": "Nationwide list",
       "stateHint": "Nationwide MPs represent the whole country and have no geographic district.",
       "boundaries": "Electoral boundaries & sources",
-      "directory": "All MPs"
+      "directory": "All MPs",
+      "people": "Representatives and candidates",
+      "representatives": "Current MPs",
+      "candidates": "Candidates",
+      "cycle": "Election cycle",
+      "allCycles": "All election cycles",
+      "unspecifiedCycle": "Election cycle not specified",
+      "candidateCount": "{count, plural, one {# candidate} other {# candidates}}",
+      "candidateHint": "Approved parliamentary registrations on Appofasi, not an official ballot. Check the election cycle on each campaign. Open a campaign to read its proposals and get to know the candidate.",
+      "emptyCandidates": "No approved candidates match this district and election cycle yet.",
+      "noParty": "Party not specified",
+      "unassigned": "District not specified",
+      "unassignedHint": "These campaigns have a broad or unresolved location. They are listed here until a specific electoral district is confirmed."
     },
     "country": "Greece",
     "search": "Search a municipality or area",
@@ -3437,13 +3450,15 @@
     "showOnMap": "Show on map",
     "loadMore": "Load more",
     "areas": "Explore areas",
-    "scopeHint": "Current public activity: open map issues, active votes and published cameras. Totals cover the selected area; pins cover this view.",
+    "scopeHint": "Public activity in the selected area. Zoom in for individual pins. News uses approximate area locations; live streams are community submitted.",
     "legend": "Map legend",
-    "pinLegend": "Issue icons · purple votes · teal cameras · gray unavailable cameras",
+    "pinLegend": "Issue icons · purple votes · teal cameras · blue news · red live streams",
     "open": {
       "issues": "Open issue",
       "polls": "Open vote",
-      "cameras": "Open camera"
+      "cameras": "Open camera",
+      "news": "Read news",
+      "live": "Watch stream"
     },
     "types": {
       "country": "Country",
@@ -3451,7 +3466,16 @@
       "municipality": "Municipality",
       "electoral_district": "Electoral district",
       "international": "International"
-    }
+    },
+    "political": "Political map",
+    "pageEyebrow": "One map. Your community.",
+    "pageTitle": "Explore the map",
+    "pageDescription": "Meet your representatives and candidates, then explore cameras, live streams, local news, problems and community votes. Choose a layer to get started.",
+    "live": "Live streams",
+    "news": "News",
+    "openMap": "Open the full map",
+    "widgetHint": "Explore more: cameras, live streams, news, problems and votes.",
+    "widgetDescription": "Know who represents your district. Meet the people who want to represent it next."
   },
   "signupJourney": {
     "hero_title": "See what is happening in your area. Vote and suggest solutions.",

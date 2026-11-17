@@ -16,9 +16,10 @@ export default function HomeMapCanvas({ areas, items, location, layer, detail, l
     tooltip: escape(item.title), href: item.href,
     variant: item.id === selectedId ? 'selected' : item.id === hoveredId ? 'hovered' : 'explorer',
     issueType: item.kind === 'issues' ? item.issueType || 'other' : undefined,
-    markerType: item.kind === 'cameras' ? 'camera' : item.kind === 'polls' ? 'poll' : undefined,
+    markerType: item.kind === 'cameras' || item.kind === 'live' ? 'camera' : item.kind === 'polls' ? 'poll' : undefined,
     iconColor: item.kind === 'cameras' ? item.isWorking ? '#0f766e' : '#64748b'
-      : item.kind === 'polls' ? '#7c3aed' : MAP_ISSUE_TYPE_COLORS[item.issueType] || '#80462f',
+      : item.kind === 'live' ? '#e11d48' : item.kind === 'news' ? '#2563eb'
+        : item.kind === 'polls' ? '#7c3aed' : MAP_ISSUE_TYPE_COLORS[item.issueType] || '#80462f',
   })) : areas.filter(area => hasMapPoint(area)).map(area => ({
     id: `area-${area.id}`, lat: Number(area.lat), lng: Number(area.lng),
     label: area.name_local || area.name, tooltip: escape(area.name_local || area.name),

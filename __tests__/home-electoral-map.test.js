@@ -92,6 +92,43 @@ test('uses curated assignments before stale profile constituencies', () => {
   expect(getProfileDistrictId({ slug: 'unknown' })).toBeNull();
 });
 
+test('candidate view keeps district selection, filters election cycles and opens campaign proposals', async () => {
+  const registrations = [
+    { id: 11, districtId: 'district-athens-a', electionCycle: '2027', partyName: 'New party', slogan: 'Listen to residents', platform: 'Consult the community on local proposals.', candidate: { firstNameNative: 'Ελένη', lastNameNative: 'Νέα' } },
+    { id: 12, districtId: 'district-athens-a', electionCycle: '2023', candidate: { firstNameNative: 'Old campaign' } },
+    { id: 13, districtId: null, electionCycle: '2027', candidate: { firstNameNative: 'Unassigned candidate' } },
+  ];
+  global.fetch.mockImplementation(async url => ({ ok: true, json: async () => String(url).includes('/candidates')
+    ? { success: true, data: { registrations, pagination: { totalPages: 1 } } }
+    : { type: 'FeatureCollection', features: [feature] } }));
+  await render();
+  await act(async () => button('Α΄ Αθηνών').click());
+  await act(async () => button(text.electoral.candidates).click());
+  expect(container.querySelectorAll('a[href^="/candidate-registrations/"]')).toHaveLength(2);
+  expect(container.textContent).toContain('Consult the community');
+  await act(async () => {
+    const select = container.querySelector(`select[aria-label="${text.electoral.cycle}"]`);
+    select.value = '2027'; select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  expect(container.querySelectorAll('a[href^="/candidate-registrations/"]')).toHaveLength(1);
+  expect(container.querySelector('a[href="/candidate-registrations/11"]')).toBeTruthy();
+  await act(async () => {
+    const select = container.querySelector('#home-electoral-district');
+    select.value = 'unassigned'; select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  expect(container.textContent).toContain(text.electoral.unassignedHint);
+  expect(container.querySelector('a[href="/candidate-registrations/13"]')).toBeTruthy();
+  expect(mockMap.focusTarget).toBeNull();
+});
+
+test('failed candidate pages show a retry without implying no candidates', async () => {
+  await render();
+  global.fetch.mockRejectedValueOnce(new Error('offline'));
+  await act(async () => button(text.electoral.candidates).click());
+  expect(container.querySelector('[role="alert"]')).toBeTruthy();
+  expect(container.textContent).not.toContain(text.electoral.emptyCandidates);
+});
+
 test.each(['el', 'en', 'ro'])('every electoral map label exists in %s', locale => {
   const messages = require(`../messages/${locale}.json`).homeMap;
   const source = fs.readFileSync(path.join(__dirname, '../components/locations/HomeElectoralMap.js'), 'utf8');

@@ -4,23 +4,26 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
-import { MagnifyingGlassIcon, MapPinIcon, VideoCameraIcon, HandRaisedIcon, XMarkIcon, ArrowPathIcon, BuildingLibraryIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, MapPinIcon, VideoCameraIcon, HandRaisedIcon, XMarkIcon, ArrowPathIcon, BuildingLibraryIcon, NewspaperIcon, SignalIcon } from '@heroicons/react/24/outline';
 import { locationAPI } from '@/lib/api/locations';
 import { hasMapPoint, mapGeometryBounds, normalizeMapBoundary } from '@/lib/map-utils';
+import { MAP_LAYERS, mapLayerHref } from '@/lib/map-layers';
 
 const Canvas = dynamic(() => import('./HomeMapCanvas'), { ssr: false });
 const ElectoralMap = dynamic(() => import('./HomeElectoralMap'), { ssr: false });
 const EMPTY = [];
-const LAYERS = ['issues', 'polls', 'cameras'];
-const MODES = ['parliamentarians', 'cameras', 'polls', 'issues'];
-const ICONS = { issues: MapPinIcon, polls: HandRaisedIcon, cameras: VideoCameraIcon, parliamentarians: BuildingLibraryIcon };
+const LAYERS = ['issues', 'polls', 'cameras', 'news', 'live'];
+const ICONS = { issues: MapPinIcon, polls: HandRaisedIcon, cameras: VideoCameraIcon, parliamentarians: BuildingLibraryIcon, news: NewspaperIcon, live: SignalIcon };
 
-export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationId, className, loading: initialLoading = false }) {
+export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationId, className, loading: initialLoading = false,
+  initialLayer = 'issues', activeLayer, onLayerChange, showLayerControls = true, initialDistrictId = '', showMapLink = false }) {
   const t = useTranslations('homeMap');
   const element = useRef(null), results = useRef(null), lastFocused = useRef(undefined);
   const [enabled, setEnabled] = useState(false);
   const [rootId, setRootId] = useState(null);
-  const [layer, setLayer] = useState('issues');
+  const [localLayer, setLayer] = useState(initialLayer);
+  const layer = activeLayer || localLayer;
+  const [districtId, setDistrictId] = useState(initialDistrictId);
   const [tileMode, setTileMode] = useState('light');
   const [query, setQuery] = useState('');
   const [search, setSearch] = useState({ query: '', locations: EMPTY, loading: false, error: false });
@@ -123,7 +126,7 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
   </ul>;
 
   return <div ref={element} className={`home-map overflow-hidden rounded-2xl border border-brand-border bg-white shadow-sm ${className || ''}`}>
-    <div className="relative z-[600] border-b border-brand-border p-3 sm:p-4">
+    {(showLayerControls || layer !== 'parliamentarians') && <div className="relative z-[600] border-b border-brand-border p-3 sm:p-4">
       {layer !== 'parliamentarians' && <><div className="flex flex-wrap gap-2">
         <div className="relative flex min-w-0 basis-full items-center gap-2 rounded-xl border border-brand-border bg-ivory/50 px-3 sm:flex-1 sm:basis-auto">
           <MagnifyingGlassIcon className="h-5 w-5 shrink-0 text-copper" aria-hidden="true" />
@@ -136,11 +139,11 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
       {showSearch && <div id="home-map-search-results" className="mt-2 max-h-64 overflow-y-auto rounded-xl border border-brand-border bg-white p-2" aria-live="polite">
         {search.loading || search.query !== query.trim() ? <p className="p-3 text-sm text-gray-500">{t('searching')}</p> : search.error ? <p role="alert" className="p-3 text-sm text-red-700">{t('searchError')} <button type="button" onClick={() => setRetry(value => value + 1)} className="underline">{t('retry')}</button></p> : search.locations.length ? <ul>{search.locations.map(area => <li key={area.id}><button type="button" onClick={() => chooseArea(area.id)} className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-ivory"><span className="font-semibold">{area.name_local || area.name}</span><span className="text-xs text-gray-500">{t(`types.${area.type}`)}</span></button></li>)}</ul> : <p className="p-3 text-sm text-gray-500">{t('noAreas')}</p>}
       </div>}</>}
-      <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label={t('layers')}>
-        {MODES.map(kind => { const Icon = ICONS[kind]; return <button key={kind} type="button" aria-pressed={layer === kind} onClick={() => { setLayer(kind); setPage(1); setSelectedId(null); setHoveredId(null); }} className={`inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs font-semibold ${layer === kind ? 'bg-charcoal text-white' : 'bg-ivory text-gray-600 hover:text-copper'}`}><Icon className="h-4 w-4" aria-hidden="true" />{t(kind)}</button>; })}
-      </div>
-    </div>
-    {layer === 'parliamentarians' ? enabled && <ElectoralMap tileMode={tileMode} onTileModeChange={setTileMode} /> : <><div className="md:grid md:h-[560px] md:grid-cols-[minmax(0,1fr)_340px]">
+      {showLayerControls && <div className={`flex flex-wrap gap-2 ${layer !== 'parliamentarians' ? 'mt-3' : ''}`} role="group" aria-label={t('layers')}>
+        {MAP_LAYERS.map(kind => { const Icon = ICONS[kind]; return <button key={kind} type="button" aria-pressed={layer === kind} onClick={() => { setLayer(kind); onLayerChange?.(kind); setPage(1); setSelectedId(null); setHoveredId(null); }} className={`inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-xs font-semibold ${layer === kind ? 'bg-charcoal text-white' : 'bg-ivory text-gray-600 hover:text-copper'}`}><Icon className="h-4 w-4" aria-hidden="true" />{t(kind === 'parliamentarians' ? 'political' : kind)}</button>; })}
+      </div>}
+    </div>}
+    {layer === 'parliamentarians' ? enabled ? <ElectoralMap tileMode={tileMode} onTileModeChange={setTileMode} initialDistrictId={districtId} onDistrictChange={setDistrictId} /> : <div role="status" className="flex h-[400px] items-center justify-center text-sm text-gray-500">{t('mapLoading')}</div> : <><div className="md:grid md:h-[560px] md:grid-cols-[minmax(0,1fr)_340px]">
       <div className="relative h-[320px] min-w-0 bg-ivory md:h-full" aria-busy={loading || initialLoading}>
         {enabled ? <Canvas areas={mapAreas} items={items} location={current?.location} layer={layer} detail={detail} loading={loading || !current} selectedId={selected?.id} hoveredId={hoveredId} onMarkerClick={selectMarker} onHover={setHoveredId} onViewportChange={setViewport} focusTarget={focusTarget} viewResetKey={viewResetKey} tileMode={tileMode} label={t('mapLabel', { name: areaName })} controlLabels={{ reset: t('reset'), expand: t('expand'), close: t('close') }} />
           : <div className="flex h-full items-center justify-center text-sm text-gray-500">{t('mapLoading')}</div>}
@@ -156,7 +159,7 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
             <p className="text-[10px] font-bold uppercase tracking-widest text-copper">{t('areaPreview')}</p>
             <h3 className="mt-1 text-lg font-semibold text-charcoal">{areaName}</h3>
             <div className="my-3 grid grid-cols-3 gap-2" aria-busy={loading}>
-              {LAYERS.map(kind => <div key={kind} className="rounded-lg border border-brand-border bg-white px-2 py-2"><span className="block text-lg font-semibold text-charcoal">{current ? current.totals[kind] : '…'}</span><span className="text-[10px] text-gray-500">{t(kind)}</span></div>)}
+              {LAYERS.map(kind => <div key={kind} className="rounded-lg border border-brand-border bg-white px-2 py-2"><span className="block text-lg font-semibold text-charcoal">{current ? current.totals[kind] ?? 0 : '…'}</span><span className="text-[10px] text-gray-500">{t(kind)}</span></div>)}
             </div>
             <Link href={areaHref} className="inline-flex min-h-10 items-center rounded-lg bg-copper px-3 text-xs font-semibold text-white hover:bg-brand-hover">{t('exploreArea')} →</Link>
           </div>
@@ -176,7 +179,7 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
                   {item.kind === 'cameras' && <p className={`mt-2 text-[10px] font-semibold ${item.isWorking ? 'text-teal-700' : 'text-gray-500'}`}>{t(item.isWorking ? 'working' : 'offline')}</p>}
                 </button>
                 <div className="flex items-center justify-between gap-2 border-t border-brand-border px-3 py-2">
-                  <a href={item.href} {...(item.kind === 'cameras' ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className="py-1 text-xs font-semibold text-copper hover:underline" aria-label={t('openNamed', { title: item.title })}>{t(`open.${item.kind}`)} {item.kind === 'cameras' ? '↗' : '→'}</a>
+                  <a href={item.href} {...(['cameras', 'live'].includes(item.kind) ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className="py-1 text-xs font-semibold text-copper hover:underline" aria-label={t('openNamed', { title: item.title })}>{t(`open.${item.kind}`)} {['cameras', 'live'].includes(item.kind) ? '↗' : '→'}</a>
                   <button type="button" onClick={() => { setSelectedId(item.id); setFocusTarget({ lat: Number(item.lat), lng: Number(item.lng), zoom: 15 }); }} className="min-h-9 text-xs text-gray-600 hover:text-copper">{t('showOnMap')}</button>
                 </div>
               </article>; })}
@@ -193,5 +196,9 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
         {loading || error || !current ? <span>{t(error ? 'error' : 'loading')}</span> : detail ? <span>{t('pinLegend')}</span> : <>{[['#e5e7eb', '0'], ['#e9cbb9', '1–5'], ['#bc8868', '6–20'], ['#80462f', '21+']].map(([color, label]) => <span key={label} className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm border border-black/10" style={{ backgroundColor: color }} />{label}</span>)}<span>{t(layer)}</span></>}
       </div>
     </div></>}
+    {showMapLink && <div className="flex flex-wrap items-center justify-between gap-3 border-t border-brand-border bg-ivory/40 px-4 py-4">
+      <span className="text-xs text-gray-500">{t('widgetHint')}</span>
+      <Link href={mapLayerHref(layer, districtId)} className="inline-flex min-h-11 items-center rounded-xl bg-charcoal px-4 text-sm font-semibold text-white hover:bg-copper">{t('openMap')} →</Link>
+    </div>}
   </div>;
 }

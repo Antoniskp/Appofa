@@ -22,12 +22,13 @@ const ExploreLocationsMap = dynamic(() => import('@/components/locations/Explore
 
 export default function HomePageClient({ initialPayload = null }) {
   const tHome = useTranslations('home');
+  const tMap = useTranslations('homeMap');
   const { user } = useAuth();
   const homeLocationId = user?.homeLocation?.id || user?.homeLocationId;
 
   const { data, loading, error, retry } = useHomepageData(user, initialPayload);
   const { latestArticles = [], latestNews = [], videos = [], polls = [], suggestions = [],
-    prefectures = [], manifestData = [], homepageSettings = null, featuredPoll = null } = data;
+    manifestData = [], homepageSettings = null, featuredPoll = null } = data;
   const articleTags = data.tags?.article || [];
   const suggestionTags = data.tags?.suggestion || [];
   const pollTags = data.tags?.poll || [];
@@ -36,7 +37,6 @@ export default function HomePageClient({ initialPayload = null }) {
   const pollsLoading = loading('polls');
   const suggestionsLoading = loading('suggestions');
   const videosLoading = loading('videos');
-  const prefecturesLoading = loading('prefectures');
   const manifestLoading = loading('manifestData');
   const featuredPollLoading = loading('featuredPoll');
   const articlesError = error('latestArticles');
@@ -69,20 +69,12 @@ export default function HomePageClient({ initialPayload = null }) {
   return (
     <div className="bg-ivory">
       <HomeHero />
-      <ParticipationRow user={user} analysis={data.latestAnalysis?.[0]}
-        featuredPoll={shouldShowFeaturedPoll ? featuredPoll : null}
-        featuredPollLoading={shouldShowFeaturedPoll && featuredPollLoading}
-      />
       <CountryEntryPopup isAuthenticated={Boolean(user)} />
-      {/* Local discovery follows the opening participation section */}
-      {(prefecturesLoading || error('prefectures') || prefectures.length > 0) && (
         <HomepageSection
-          title={tHome('explore_locations_title')}
-          subtitle={tHome('explore_locations_subtitle')}
-          linkHref="/locations"
-          loading={prefecturesLoading}
-          error={error('prefectures')}
-          onRetry={() => retry(['prefectures'])}
+          title={tMap('political')}
+          subtitle={tMap('widgetDescription')}
+          linkHref="/map?layer=political"
+          loading={false}
           items={[]}
           emptyTitle=""
           emptyDescription=""
@@ -92,14 +84,17 @@ export default function HomePageClient({ initialPayload = null }) {
           mapSlot={
             <div className="-mt-2 md:-mt-3">
               <ExploreLocationsMap
-                prefectures={prefectures}
-                homeLocationId={homeLocationId}
-                loading={prefecturesLoading}
+                initialLayer="parliamentarians"
+                showLayerControls={false}
+                showMapLink
               />
             </div>
           }
         />
-      )}
+      <ParticipationRow user={user} analysis={data.latestAnalysis?.[0]}
+        featuredPoll={shouldShowFeaturedPoll ? featuredPoll : null}
+        featuredPollLoading={shouldShowFeaturedPoll && featuredPollLoading}
+      />
 
       {homeLocationId && <LocalActivity
         key={`${user.id}:${user.role}:${homeLocationId}`}
