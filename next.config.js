@@ -6,6 +6,10 @@ const withNextIntl = createNextIntlPlugin('./i18n.js');
 const nextConfig = {
   // Keep review builds separate from an already running local preview.
   distDir: process.env.NEXT_DIST_DIR || '.next',
+  experimental: {
+    // Proxy buffers multipart requests before the API handler receives them.
+    proxyClientMaxBodySize: '21mb',
+  },
   // API proxying is handled by app/api/[...path]/route.js
   // which provides proper error handling and JSON responses
   

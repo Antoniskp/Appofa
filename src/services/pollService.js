@@ -13,6 +13,7 @@ const {
 } = require('../utils/validators');
 const { getDescendantLocationIds, getAncestorLocationIds } = require('../utils/locationUtils');
 const { syncTags, attachTags } = require('../utils/tagUtils');
+const pollAttachments = require('./pollAttachmentService');
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -483,6 +484,7 @@ const createPoll = async (userId, pollData) => {
       );
     }
 
+    await pollAttachments.syncAttachments(poll.id, pollData.attachments, userId, transaction);
     await transaction.commit();
 
     // Sync tags via unified tag system (outside transaction)
@@ -511,16 +513,17 @@ const createPoll = async (userId, pollData) => {
     });
 
     const createdPollWithTags = await attachTags('poll', createdPoll.toJSON());
+    createdPollWithTags.attachments = await pollAttachments.listAttachments(poll.id);
     // user object not available here; caller passes it in for sanitization
     // Return raw poll — controller will sanitize with the req.user object
     return { success: true, data: createdPollWithTags };
   } catch (error) {
-    await transaction.rollback();
+    if (!transaction.finished) await transaction.rollback();
     console.error('Error creating poll:', error);
     return {
       success: false,
-      status: 500,
-      message: 'Failed to create poll.',
+      status: error.status || 500,
+      message: error.status ? error.message : 'Failed to create poll.',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     };
   }
@@ -889,12 +892,55 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
   }
 };
 
-/**
- * Get a specific poll by ID.
- * @param {number|string} pollId
- * @param {object|null} user - plain user object { id, role } or null
- * @returns {Promise<{success: boolean, status?: number, message?: string, data?: object, error?: string}>}
- */
+// Shared by poll details and protected attachment downloads.
+const getPollAccessError = async (poll, user) => {
+  // Check visibility permissions
+  // 'private' = any authenticated user can view (Μόνο Συνδεδεμένοι)
+  if (poll.visibility === 'private' && !isOrgScopedPrivatePoll(poll) && !user) {
+    return { success: false, status: 403, message: 'Access denied. This poll is private.' };
+  }
+
+  if (poll.visibility === 'locals_only') {
+    if (!user) {
+      return {
+        success: false,
+        status: 403,
+        message: 'Access denied. Authentication required for local polls.'
+      };
+    }
+    if (user.role !== 'admin') {
+      const localsOnlyIds = await getLocalsOnlyLocationIds(user);
+      if (
+        localsOnlyIds !== 'all'
+        && (!poll.locationId || !localsOnlyIds.includes(poll.locationId))
+      ) {
+        return {
+          success: false,
+          status: 403,
+          message: 'Access denied. This poll is restricted to local members.'
+        };
+      }
+    }
+  }
+
+  // Org-scoped membership visibility check
+  if (isOrgScopedPrivatePoll(poll)) {
+    // 'private' for org polls means members_only — already handled by org controller for org-fetched polls,
+    // but direct /api/polls/:id access also needs guarding
+    if (!user) {
+      return { success: false, status: 401, message: 'Authentication required to view this poll.' };
+    }
+    if (user.role !== 'admin') {
+      const isMember = await hasActiveOrgMembership(poll.organizationId, user.id);
+      if (!isMember) {
+        return { success: false, status: 403, message: 'Access denied. This poll is restricted to organization members.' };
+      }
+    }
+  }
+  return null;
+};
+
+/** Get a specific poll, checking visibility before returning its attachments. */
 const getPollById = async (pollId, user, clientIp, userAgent) => {
   try {
     const poll = await Poll.findByPk(pollId, {
@@ -938,52 +984,12 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
       return { success: false, status: 404, message: 'Poll not found.' };
     }
 
-    // Check visibility permissions
-    // 'private' = any authenticated user can view (Μόνο Συνδεδεμένοι)
-    if (poll.visibility === 'private' && !isOrgScopedPrivatePoll(poll) && !user) {
-      return { success: false, status: 403, message: 'Access denied. This poll is private.' };
-    }
-
-    if (poll.visibility === 'locals_only') {
-      if (!user) {
-        return {
-          success: false,
-          status: 403,
-          message: 'Access denied. Authentication required for local polls.'
-        };
-      }
-      if (user.role !== 'admin') {
-        const localsOnlyIds = await getLocalsOnlyLocationIds(user);
-        if (
-          localsOnlyIds !== 'all'
-          && (!poll.locationId || !localsOnlyIds.includes(poll.locationId))
-        ) {
-          return {
-            success: false,
-            status: 403,
-            message: 'Access denied. This poll is restricted to local members.'
-          };
-        }
-      }
-    }
-
-    // Org-scoped membership visibility check
-    if (isOrgScopedPrivatePoll(poll)) {
-      // 'private' for org polls means members_only — already handled by org controller for org-fetched polls,
-      // but direct /api/polls/:id access also needs guarding
-      if (!user) {
-        return { success: false, status: 401, message: 'Authentication required to view this poll.' };
-      }
-      if (user.role !== 'admin') {
-        const isMember = await hasActiveOrgMembership(poll.organizationId, user.id);
-        if (!isMember) {
-          return { success: false, status: 403, message: 'Access denied. This poll is restricted to organization members.' };
-        }
-      }
-    }
+    const accessError = await getPollAccessError(poll, user);
+    if (accessError) return accessError;
 
     // Add vote statistics
     const pollData = poll.toJSON();
+    pollData.attachments = await pollAttachments.listAttachments(pollId);
     pollData.options = pollData.options.map(option => {
       const publicVoters = (option.votes || [])
         .filter(v => v.identityVisibility === 'public' && v.user)
@@ -1488,6 +1494,7 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
       }
     }
 
+    await pollAttachments.syncAttachments(pollId, updateData.attachments, userId, transaction);
     await transaction.commit();
 
     // Sync tags if provided (outside transaction)
@@ -1519,6 +1526,7 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
     });
 
     const updatedPollData = await attachTags('poll', updatedPoll.toJSON());
+    updatedPollData.attachments = await pollAttachments.listAttachments(pollId);
     // Return the raw poll; the controller sanitizes with req.user
     return { success: true, data: updatedPollData };
   } catch (error) {
@@ -1533,8 +1541,8 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
     console.error('Error updating poll:', error);
     return {
       success: false,
-      status: 500,
-      message: 'Failed to update poll.',
+      status: error.status || 500,
+      message: error.status ? error.message : 'Failed to update poll.',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     };
   }
@@ -1585,6 +1593,8 @@ const deletePoll = async (pollId, userId, userRole) => {
       },
       transaction
     });
+
+    await pollAttachments.deletePollAttachments(pollId, transaction);
 
     // Delete the poll; DB-level CASCADE handles PollVotes and PollOptions
     await poll.destroy({ transaction });
@@ -2404,6 +2414,7 @@ module.exports = {
   ANSWER_TYPES,
 
   // Helpers
+  getPollAccessError,
   computeVoterRef,
   shouldHideCreator,
   sanitizePoll,

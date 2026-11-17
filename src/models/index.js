@@ -15,6 +15,7 @@ const LocationRole = require('./LocationRole');
 const UserLocationRole = require('./UserLocationRole');
 const LocationElectionVote = require('./LocationElectionVote');
 const Poll = require('./Poll');
+const PollAttachment = require('./PollAttachment');
 const PollOption = require('./PollOption');
 const PollVote = require('./PollVote');
 const CivicQuestion = require('./CivicQuestion');
@@ -622,6 +623,7 @@ module.exports = {
   UserLocationRole,
   LocationElectionVote,
   Poll,
+  PollAttachment,
   PollOption,
   PollVote,
   CivicQuestion,

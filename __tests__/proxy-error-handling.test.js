@@ -8,6 +8,20 @@ describe('API Proxy Error Handling', () => {
   const originalFetch = global.fetch;
   const originalConsoleError = console.error;
 
+  test('forwards multipart photo/PDF bytes without decoding them as text', async () => {
+    const bytes = new Uint8Array([0, 255, 128, 13, 10, 37, 80, 68, 70]);
+    global.fetch = jest.fn(async () => new Response('{}', { status: 201 }));
+    const { POST } = require('../app/api/[...path]/route.js');
+    const response = await POST({
+      method: 'POST', nextUrl: { pathname: '/api/polls/attachments', search: '' },
+      headers: new Headers({ 'Content-Type': 'multipart/form-data; boundary=test' }),
+      arrayBuffer: async () => bytes.buffer,
+    });
+    expect(response.status).toBe(201);
+    expect(new Uint8Array(global.fetch.mock.calls[0][1].body)).toEqual(bytes);
+    expect(global.fetch.mock.calls[0][1].headers.get('Content-Type')).toBe('multipart/form-data; boundary=test');
+  });
+
   beforeEach(() => {
     // Suppress console errors during tests
     console.error = jest.fn();
@@ -216,7 +230,7 @@ describe('API Proxy Error Handling', () => {
         pathname: '/api/admin/geo-stats/track',
         search: ''
       },
-      text: () => Promise.resolve(JSON.stringify({ path: '/' })),
+      arrayBuffer: () => Promise.resolve(new TextEncoder().encode(JSON.stringify({ path: '/' })).buffer),
       headers: new Headers({
         'content-type': 'application/json',
         'cf-connecting-ip': '203.0.113.10',

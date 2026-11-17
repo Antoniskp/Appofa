@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const pollController = require('../controllers/pollController');
+const pollAttachmentController = require('../controllers/pollAttachmentController');
+const pollAttachmentUpload = require('../middleware/pollAttachmentUpload');
 const commentController = require('../controllers/commentController');
 const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const csrfProtection = require('../middleware/csrfProtection');
-const { apiLimiter, createLimiter, anonVoteLimiter, authVoteLimiter } = require('../middleware/rateLimiter');
+const { apiLimiter, createLimiter, uploadLimiter, anonVoteLimiter, authVoteLimiter } = require('../middleware/rateLimiter');
 const { getCookie } = require('../utils/cookies');
 const { CSRF_COOKIE, CSRF_HEADER, ensureCsrfToken } = require('../utils/csrf');
 
@@ -53,6 +55,9 @@ const optionalCsrfProtection = (req, res, next) => {
 };
 
 // Public routes with optional authentication
+router.post('/attachments', uploadLimiter, authMiddleware, csrfProtection, pollAttachmentUpload, pollAttachmentController.upload);
+router.delete('/attachments/:attachmentId', apiLimiter, authMiddleware, csrfProtection, pollAttachmentController.remove);
+router.get('/attachments/:attachmentId/file', optionalAuthMiddleware, apiLimiter, pollAttachmentController.file);
 router.get('/voting-intention', optionalAuthMiddleware, apiLimiter, async (req, res, next) => {
   try {
     const result = await require('../services/votingIntentionService').getCurrent(req.user, req.ip, req.headers['user-agent']);

@@ -1,7 +1,7 @@
 'use strict';
 
 const { Op, fn, col, where, Sequelize } = require('sequelize');
-const { MediaAsset, User, Article, PollOption, Suggestion } = require('../models');
+const { MediaAsset, PollAttachment, User, Article, PollOption, Suggestion } = require('../models');
 const { processMediaImage } = require('./imageProcessingService');
 const { saveMediaVariant, deleteMediaByStorageKey, inspectMediaStorageKey } = require('./imageStorageService');
 
@@ -95,7 +95,8 @@ async function getUserStorageUsage(userId) {
       status: 'active',
     },
   });
-  return Number(total) || 0;
+  const attachmentBytes = await PollAttachment.sum('size', { where: { uploadedByUserId: userId } });
+  return (Number(total) || 0) + (Number(attachmentBytes) || 0);
 }
 
 async function getUserQuotaSnapshot(userId) {

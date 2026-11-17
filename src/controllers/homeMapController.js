@@ -1,12 +1,12 @@
 const { Op, fn, col } = require('sequelize');
-const { Location, Suggestion, Poll, LocationSection } = require('../models');
+const { Location, Suggestion, Poll, LocationSection, Article, LocationLink, VideoPin } = require('../models');
 
 const fields = ['id', 'name', 'name_local', 'slug', 'type', 'parent_id', 'lat', 'lng'];
 const point = item => item?.lat != null && item?.lng != null && item.lat !== '' && item.lng !== ''
   && Number.isFinite(Number(item.lat)) && Number.isFinite(Number(item.lng))
   && Math.abs(Number(item.lat)) <= 90 && Math.abs(Number(item.lng)) <= 180;
 const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-const empty = () => ({ issues: 0, polls: 0, cameras: 0 });
+const empty = () => ({ issues: 0, polls: 0, cameras: 0, news: 0, live: 0 });
 
 // This feed is always public, including when the visitor is an administrator.
 exports.list = async (req, res) => {
@@ -15,7 +15,7 @@ exports.list = async (req, res) => {
   const hasBounds = values.some(value => value !== undefined);
   if ((locationId !== undefined && (typeof locationId !== 'string' || !/^\d+$/.test(locationId) || !Number.isSafeInteger(Number(locationId)) || Number(locationId) < 1))
     || (search !== undefined && (typeof search !== 'string' || search.length > 100))
-    || !['issues', 'polls', 'cameras'].includes(layer) || !['true', 'false'].includes(detail)
+    || !['issues', 'polls', 'cameras', 'news', 'live'].includes(layer) || !['true', 'false'].includes(detail)
     || typeof page !== 'string' || !/^[1-9]\d*$/.test(page) || !Number.isSafeInteger(Number(page))
     || (detail === 'true' && !hasBounds)
     || (hasBounds && (values.some(value => typeof value !== 'string' || !value.trim() || !Number.isFinite(Number(value)))
@@ -57,11 +57,22 @@ exports.list = async (req, res) => {
     const pollWhere = { visibility: 'public', locationId: { [Op.in]: ids }, status: 'active',
       [Op.or]: [{ deadline: null }, { deadline: { [Op.gt]: new Date() } }] };
     const groupCount = (model, where) => model.findAll({ where, attributes: ['locationId', [fn('COUNT', col('id')), 'count']], group: ['locationId'], raw: true });
-    const [issueCounts, pollCounts, sections, areaRows] = await Promise.all([
+    const [issueCounts, pollCounts, sections, areaRows, newsArticles, livePins] = await Promise.all([
       groupCount(Suggestion, issueWhere), groupCount(Poll, pollWhere),
       LocationSection.findAll({ where: { locationId: { [Op.in]: ids }, type: 'webcams', isPublished: true }, attributes: ['id', 'locationId', 'content'], order: [['id', 'ASC']] }),
       Location.findAll({ where: { parent_id: rootId, type: { [Op.ne]: 'electoral_district' } }, attributes: [...fields, 'boundary_geojson', 'bounding_box'], raw: true }),
+      Article.findAll({ where: { type: 'news', status: 'published', newsApprovedAt: { [Op.ne]: null } },
+        attributes: ['id', 'title', 'newsApprovedAt'], order: [['newsApprovedAt', 'DESC'], ['id', 'DESC']], raw: true }),
+      VideoPin.findAll({ where: { contentType: 'live', status: 'approved',
+        [Op.and]: [
+          { [Op.or]: [{ expiresAt: null }, { expiresAt: { [Op.gt]: new Date() } }] },
+          { [Op.or]: [{ locationId: { [Op.in]: ids } }, ...(rootId === country.id ? [{ locationId: null, lat: { [Op.between]: [34.5, 42] }, lng: { [Op.between]: [19, 30] } }] : [])] },
+        ] }, attributes: ['id', 'title', 'lat', 'lng', 'locationId', 'expiresAt'], order: [['createdAt', 'DESC'], ['id', 'DESC']], raw: true }),
     ]);
+    const newsLinks = newsArticles.length ? await LocationLink.findAll({
+      where: { entity_type: 'article', entity_id: { [Op.in]: newsArticles.map(article => article.id) }, location_id: { [Op.in]: ids } },
+      attributes: ['entity_id', 'location_id'], raw: true,
+    }) : [];
     const byId = new Map(all.map(location => [location.id, location]));
     const cameras = sections.flatMap(section => (Array.isArray(section.content?.webcams) ? section.content.webcams : []).map((camera, index) => {
       const exact = point(camera);
@@ -76,10 +87,11 @@ exports.list = async (req, res) => {
     issueCounts.forEach(row => { counts.get(row.locationId).issues = Number(row.count); });
     pollCounts.forEach(row => { counts.get(row.locationId).polls = Number(row.count); });
     cameras.forEach(camera => { counts.get(camera.locationId).cameras += 1; });
+    livePins.forEach(pin => { counts.get(pin.locationId || country.id).live += 1; });
     const summarize = scope => scope.reduce((total, id) => {
       for (const key of Object.keys(total)) total[key] += counts.get(id)?.[key] || 0;
       return total;
-    }, empty());
+    }, { ...empty(), news: new Set(newsLinks.filter(link => scope.includes(link.location_id)).map(link => link.entity_id)).size });
     const totals = summarize(ids);
     const areas = areaRows.map(area => {
       const scope = descendants(area.id);
@@ -120,6 +132,19 @@ exports.list = async (req, res) => {
         total = result.count;
         items = result.rows.map(item => ({ id: `poll-${item.id}`, title: item.title, lat: item.location.lat, lng: item.location.lng,
           kind: 'polls', approximate: true, deadline: item.deadline, location: item.location, href: `/polls/${item.id}` }));
+      } else if (layer === 'news' || layer === 'live') {
+        const visiblePoint = item => point(item) && Number(item.lat) >= south && Number(item.lat) <= north
+          && (west <= east ? Number(item.lng) >= west && Number(item.lng) <= east : Number(item.lng) >= west || Number(item.lng) <= east);
+        const candidates = layer === 'live' ? livePins.map(pin => ({ ...pin, id: `live-${pin.id}`, kind: 'live',
+          location: byId.get(pin.locationId) || country, href: `/live?pin=${pin.id}` }))
+          : newsArticles.flatMap(article => newsLinks.filter(link => link.entity_id === article.id).map(link => {
+            const location = byId.get(link.location_id);
+            return { id: `news-${article.id}-${link.location_id}`, title: article.title, kind: 'news',
+              lat: location?.lat, lng: location?.lng, location, approximate: true, href: `/news/${article.id}` };
+          }));
+        const visible = candidates.filter(visiblePoint);
+        total = visible.length;
+        items = visible.slice(offset, offset + limit);
       } else {
         const visible = cameras.filter(camera => point(camera) && Number(camera.lat) >= south && Number(camera.lat) <= north
           && (west <= east ? Number(camera.lng) >= west && Number(camera.lng) <= east : Number(camera.lng) >= west || Number(camera.lng) <= east));

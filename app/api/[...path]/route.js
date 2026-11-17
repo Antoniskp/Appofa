@@ -63,7 +63,8 @@ const proxyRequest = async (request) => {
   const targetUrl = `${API_BASE_URL}/api${request.nextUrl.pathname.replace(/^\/api/, '')}${request.nextUrl.search}`;
   
   try {
-    const body = request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text();
+    // Preserve binary multipart bodies (photos and PDFs) byte for byte.
+    const body = request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.arrayBuffer();
 
     // Create an AbortController for timeout
     const controller = new AbortController();

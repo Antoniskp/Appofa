@@ -16,6 +16,7 @@ const {
   sequelize,
 } = require('../models');
 const organizationService = require('../services/organizationService');
+const pollAttachments = require('../services/pollAttachmentService');
 const { notifyOrgInvite, notifyOrgJoinApproved, notifyOrgMemberRemoved } = require('../services/notificationService');
 const { normalizeRequiredText, normalizeEnum, normalizeOptionalText } = require('../utils/validators');
 const { isActiveMember, isOrgAdmin } = require('../utils/organizationUtils');
@@ -1440,9 +1441,10 @@ const organizationController = {
           }, { transaction });
         }
 
+        await pollAttachments.syncAttachments(poll.id, req.body.attachments, req.user.id, transaction);
         await transaction.commit();
       } catch (createError) {
-        await transaction.rollback();
+        if (!transaction.finished) await transaction.rollback();
         throw createError;
       }
 
@@ -1475,7 +1477,7 @@ const organizationController = {
       });
     } catch (error) {
       console.error('organizationController.createOrgPoll error:', error);
-      return res.status(500).json({ success: false, message: 'Failed to create organization poll.' });
+      return res.status(error.status || 500).json({ success: false, message: error.status ? error.message : 'Failed to create organization poll.' });
     }
   },
 

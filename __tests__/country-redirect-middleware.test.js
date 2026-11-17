@@ -40,6 +40,19 @@ const makeRequest = ({
 };
 
 describe('country redirect middleware', () => {
+  test.each([
+    '/api/polls/attachments/abc/file',
+    'https://appofasi.gr/api/polls/attachments/abc/file',
+    '/%61pi/polls/attachments/abc/file?thumbnail=true',
+    'https://appofasi.gr/API/POLLS/ATTACHMENTS/abc/file',
+  ])('prevents public image optimizer caching of protected files: %s', async source => {
+    const response = await middleware({
+      nextUrl: { pathname: '/_next/image', searchParams: new URLSearchParams({ url: source }) },
+      url: 'https://appofasi.gr/_next/image',
+    });
+    expect(response.status).toBe(400);
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+  });
   const originalApiUrl = process.env.API_URL;
   const originalPublicApiUrl = process.env.NEXT_PUBLIC_API_URL;
   const createNextResponse = () => ({

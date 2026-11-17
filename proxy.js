@@ -109,6 +109,18 @@ export const resetAccessRulesCacheForTests = () => {
 
 export async function proxy(request) {
   const { pathname } = request.nextUrl;
+  // The optimizer maintains a public cache. Poll attachment access must be
+  // checked on every request, even after a formerly public poll is restricted.
+  if (pathname === '/_next/image') {
+    const source = request.nextUrl.searchParams.get('url');
+    try {
+      const sourcePath = decodeURIComponent(new URL(source, request.url).pathname).toLowerCase();
+      if (sourcePath.startsWith('/api/polls/attachments/')) {
+        return new Response('Poll attachments must be requested directly.', { status: 400, headers: { 'Cache-Control': 'no-store' } });
+      }
+    } catch { /* The image optimizer validates other malformed URLs. */ }
+    return NextResponse.next();
+  }
   const headerCountry = normalizeCountryCode(request.headers.get('CF-IPCountry'));
   const cookieCountry = normalizeCountryCode(request.cookies.get('appofa_detected_country')?.value);
   // Highest-priority: explicit country saved by the user (1-year cookie set when the user
@@ -172,5 +184,5 @@ export async function proxy(request) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/_next/image', '/((?!_next/static|_next/image|favicon.ico).*)'],
 };

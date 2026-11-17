@@ -22,6 +22,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import AlertMessage from '@/components/ui/AlertMessage';
 import PersonSearch from '@/components/dream-team/PersonSearch';
 import PollCard from '@/components/polls/PollCard';
+import PollAttachmentEditor from '@/components/polls/PollAttachmentEditor';
 import SuggestionCard from '@/components/SuggestionCard';
 import SearchInput from '@/components/ui/SearchInput';
 import { positionAPI } from '@/lib/api/positions';
@@ -102,7 +103,7 @@ export default function OrganizationProfilePage({ params }) {
   const [inviteSelectedUser, setInviteSelectedUser] = useState(null);
   const [inviteSearchError, setInviteSearchError] = useState('');
   const [roleDrafts, setRoleDrafts] = useState({});
-  const [pollForm, setPollForm] = useState({ title: '', description: '', optionsText: '', deadline: '', visibility: 'members_only' });
+  const [pollForm, setPollForm] = useState({ title: '', description: '', optionsText: '', deadline: '', visibility: 'members_only', attachments: [] });
   const [suggestionForm, setSuggestionForm] = useState({ type: 'idea', title: '', body: '', visibility: 'members_only' });
   const [officialPostForm, setOfficialPostForm] = useState({
     contentType: 'suggestion',
@@ -115,6 +116,7 @@ export default function OrganizationProfilePage({ params }) {
   const [contentActionError, setContentActionError] = useState('');
   const [contentActionSuccess, setContentActionSuccess] = useState('');
   const [showPollForm, setShowPollForm] = useState(false);
+  const [pollAttachmentUploading, setPollAttachmentUploading] = useState(false);
   const [showSuggestionForm, setShowSuggestionForm] = useState(false);
   // Local search filter for org polls and suggestions tabs
   const [pollSearch, setPollSearch] = useState('');
@@ -469,8 +471,10 @@ export default function OrganizationProfilePage({ params }) {
       if (typeof onSuccessRefetch === 'function') {
         await onSuccessRefetch();
       }
+      return true;
     } catch (actionError) {
       setContentActionError(actionError?.message || failureMessage);
+      return false;
     } finally {
       setContentActionLoading(false);
     }
@@ -478,19 +482,20 @@ export default function OrganizationProfilePage({ params }) {
 
   const handleCreatePoll = async (event) => {
     event.preventDefault();
-    if (!organization?.id) return;
+    if (!organization?.id || pollAttachmentUploading || contentActionLoading) return;
     const options = pollForm.optionsText
       .split(/\r?\n/)
       .map((option) => option.trim())
       .filter(Boolean)
       .map((text) => ({ text }));
-    await runContentAction(
+    const success = await runContentAction(
       () => organizationAPI.createPoll(organization.id, { ...pollForm, options }),
       t('org_poll_create_success'),
       t('org_poll_create_failed'),
       refetchPolls
     );
-    setPollForm({ title: '', description: '', optionsText: '', deadline: '', visibility: 'members_only' });
+    if (!success) return;
+    setPollForm({ title: '', description: '', optionsText: '', deadline: '', visibility: 'members_only', attachments: [] });
     setShowPollForm(false);
   };
 
@@ -1287,6 +1292,12 @@ export default function OrganizationProfilePage({ params }) {
                           rows={3}
                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                         />
+                        <PollAttachmentEditor
+                          value={pollForm.attachments}
+                          onChange={attachments => setPollForm(prev => ({ ...prev, attachments }))}
+                          onBusyChange={setPollAttachmentUploading}
+                          disabled={contentActionLoading}
+                        />
                         <textarea
                           value={pollForm.optionsText}
                           onChange={(e) => setPollForm((prev) => ({ ...prev, optionsText: e.target.value }))}
@@ -1320,7 +1331,7 @@ export default function OrganizationProfilePage({ params }) {
                         <div className="flex gap-2">
                           <button
                             type="submit"
-                            disabled={contentActionLoading}
+                            disabled={contentActionLoading || pollAttachmentUploading}
                             className="rounded-lg bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
                           >
                             {t('create_poll')}

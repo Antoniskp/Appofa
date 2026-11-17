@@ -11,6 +11,7 @@ import TagInput from '@/components/ui/TagInput';
 import Tooltip from '@/components/ui/Tooltip';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import MediaAssetPicker from '@/components/media/MediaAssetPicker';
+import PollAttachmentEditor from '@/components/polls/PollAttachmentEditor';
 import { locationAPI, tagAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import articleCategories from '@/config/articleCategories.json';
@@ -51,6 +52,7 @@ export default function PollForm({
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    attachments: [],
     category: '',
     tags: [],
     type: 'simple',
@@ -70,6 +72,7 @@ export default function PollForm({
   });
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [attachmentUploading, setAttachmentUploading] = useState(false);
   const hasAutoFilledLocation = useRef(mode === 'create' && initialLocationId != null);
 
   const [options, setOptions] = useState([
@@ -88,6 +91,7 @@ export default function PollForm({
       setFormData({
         title: poll.title || '',
         description: poll.description || '',
+        attachments: poll.attachments || [],
         category: poll.category || '',
         tags: Array.isArray(poll.tags) ? poll.tags : [],
         type: poll.type || 'simple',
@@ -280,6 +284,7 @@ export default function PollForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (attachmentUploading || isSubmitting) return;
     
     // Binary polls have auto-created options — skip options validation
     const validOptions = formData.type === 'binary'
@@ -342,6 +347,14 @@ export default function PollForm({
           maxLength={2000}
           showCharCount
           placeholder="Προσθέστε μια περιγραφή (προαιρετικό)"
+        />
+
+        <PollAttachmentEditor
+          value={formData.attachments}
+          onChange={(attachments) => setFormData(prev => ({ ...prev, attachments }))}
+          onBusyChange={setAttachmentUploading}
+          savedIds={(poll?.attachments || []).map(item => item.id)}
+          disabled={isSubmitting}
         />
 
         <FormSelect
@@ -784,7 +797,7 @@ export default function PollForm({
       <div className="flex gap-4 items-center">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || attachmentUploading}
           className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 font-medium"
         >
           {isSubmitting

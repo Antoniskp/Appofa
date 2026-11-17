@@ -23,6 +23,7 @@ import IssueFollowButton from '@/components/IssueFollowButton';
 import PollVoting from '@/components/polls/PollVoting';
 import PollResults from '@/components/polls/PollResults';
 import RelatedPolls from '@/components/polls/RelatedPolls';
+import PollAttachments from '@/components/polls/PollAttachments';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
 import Badge from '@/components/ui/Badge';
@@ -262,6 +263,8 @@ export default function PollDetailPage() {
               </div>
             )}
             
+            <PollAttachments attachments={poll.attachments} />
+
             {/* Meta Information with Share/Bookmark/Print */}
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 border-t border-gray-200 pt-4">
               <div className="flex items-center gap-2">
