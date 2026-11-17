@@ -1,4 +1,3 @@
-const { Op } = require('sequelize');
 const { CandidateRegistration, Location, User } = require('../models');
 const districtSlugs = require('../../config/map-data/electoral-district-location-slugs.json');
 

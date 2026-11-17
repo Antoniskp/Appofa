@@ -8,7 +8,10 @@ const mockGet = jest.fn();
 jest.mock('next/link', () => ({ __esModule: true, default: ({ href, children, prefetch, ...props }) => require('react').createElement('a', { href, ...props }, children) }));
 jest.mock('next/dynamic', () => loader => {
   const isMap = loader.toString().includes('ExploreLocationsMap');
-  return props => require('react').createElement('div', { 'data-testid': isMap ? 'territory-map' : 'video' }, isMap ? props.prefectures.map(p => p.name).join(', ') : props.article.title);
+  return props => isMap
+    ? require('react').createElement('div', { 'data-testid': 'territory-map', 'data-layer': props.initialLayer,
+      'data-layer-controls': String(props.showLayerControls), 'data-map-link': String(props.showMapLink) })
+    : require('react').createElement('div', { 'data-testid': 'video' }, props.article.title);
 });
 jest.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: mockUser, loading: false }) }));
 jest.mock('@/lib/api', () => ({
@@ -28,7 +31,7 @@ const mockVote = jest.fn();
 jest.mock('@/lib/api/positions', () => ({ positionAPI: { list: (...args) => mockPositions(...args), vote: (...args) => mockVote(...args) } }));
 const Home = require('../components/home/HomePageClient').default;
 const payload = { suggestions: [{ id: 1, title: 'Public sample proposal' }], polls: [], latestNews: [{ id: 2, title: 'Local news', type: 'news' }], latestArticles: [{ id: 3, title: 'Community article', type: 'articles' }], videos: [{ id: 4, title: 'Community video' }], prefectures: [{ id: 12, name: 'Attica' }], manifestData: [{ slug: 'public-commitment', title: 'Public commitment', randomSupporters: [] }] };
-describe('Restored map homepage', () => {
+describe('Political map homepage', () => {
   test('lets visitors read a real position before asking them to register', async () => {
     mockPositions.mockResolvedValue({ data: { positions: [{ id: 9, title: 'Safer crossings', body: 'Add a crossing near the school.', support: 2, oppose: 1, unsure: 0 }] } });
     await render();
@@ -50,19 +53,25 @@ describe('Restored map homepage', () => {
   });
   afterEach(async () => { await act(async () => root.unmount()); container.remove(); });
   const render = async () => { await act(async () => root.render(React.createElement(Home))); };
-  test('puts local map discovery after participation and before news and polls', async () => {
+  test('puts the political widget after the hero and before participation, news and polls', async () => {
     await render();
     for (const id of ['original-hero', 'territory-map', 'action-lanes']) expect(container.querySelector('[data-testid="' + id + '"]')).toBeTruthy();
     expect(container.querySelector('[data-testid="government"]')).toBeNull();
     expect(container.textContent).not.toContain('Τι έγινε μετά τη συμμετοχή;');
     const sections = container.querySelectorAll('section');
-    expect(sections[0].querySelector('#policy-vote')).toBeTruthy();
+    const widget = container.querySelector('[data-testid="territory-map"]');
+    expect(sections[0].contains(widget)).toBe(true);
+    expect(widget.getAttribute('data-layer')).toBe('parliamentarians');
+    expect(widget.getAttribute('data-layer-controls')).toBe('false');
+    expect(widget.getAttribute('data-map-link')).toBe('true');
+    expect(sections[0].querySelector('a[href="/map?layer=political"]')).toBeTruthy();
+    expect(container.querySelector('[data-testid="original-hero"]').compareDocumentPosition(widget) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(mockPositions).toHaveBeenCalledWith(expect.objectContaining({ voteView: 'all', pool: 'home' }));
-    expect(sections[1].querySelector('[data-testid="territory-map"]')).toBeTruthy();
+    expect(sections[1].querySelector('#policy-vote')).toBeTruthy();
     expect(sections[2].textContent).toContain('Local news');
     expect(sections[3].textContent).toContain('Δημοφιλείς δημοσκοπήσεις');
     expect(sections[3].compareDocumentPosition(container.querySelector('[data-testid="action-lanes"]')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    for (const text of ['Attica', 'Local news', 'Community article', 'Community video', 'Public commitment']) expect(container.textContent).toContain(text);
+    for (const text of ['Local news', 'Community article', 'Community video', 'Public commitment']) expect(container.textContent).toContain(text);
     expect(container.querySelector('#home-area')).toBeNull();
   });
   test('puts area activity first and removes it on logout', async () => {
@@ -94,10 +103,10 @@ describe('Restored map homepage', () => {
   test('preserves featured-poll audience settings', async () => {
     mockGet.mockResolvedValue({ success: true, data: { ...payload, featuredPoll: { title: 'Members poll' }, homepageSettings: { featuredPoll: { enabled: true, audience: 'registered' } } } });
     await render();
-    expect(container.querySelector('section').textContent).not.toContain('Members poll');
+    expect(container.querySelector('#policy-vote').closest('section').textContent).not.toContain('Members poll');
     mockUser = { id: 1, username: 'member' };
     await render();
-    expect(container.querySelector('section').textContent).toContain('Members poll');
+    expect(container.querySelector('#policy-vote').closest('section').textContent).toContain('Members poll');
   });
   test('shows a loading failure instead of silently rendering an empty response', async () => {
     mockGet.mockResolvedValue({ success: false, message: 'Homepage unavailable' });
@@ -122,9 +131,13 @@ describe('Restored map homepage', () => {
   test('keeps other errors after recovering from a network failure', async () => {
     mockGet.mockRejectedValueOnce(new Error('offline'));
     await render();
+    expect(container.querySelector('[data-testid="territory-map"]')).toBeTruthy();
+    const failedSections = Array.from(container.querySelectorAll('[role="alert"]')).map(alert => alert.closest('section'));
+    const pollsSection = failedSections.find(section => section.getAttribute('aria-label') === require('../messages/el.json').home.top_polls_title);
     mockGet.mockResolvedValueOnce({ success: true, data: { polls: [] }, errors: {} });
-    await act(async () => container.querySelectorAll('[role="alert"] button')[1].click());
-    expect(container.querySelectorAll('[role="alert"]')).toHaveLength(4);
+    await act(async () => pollsSection.querySelector('[role="alert"] button').click());
+    expect(pollsSection.querySelector('[role="alert"]')).toBeNull();
+    for (const section of failedSections.filter(section => section !== pollsSection)) expect(section.querySelector('[role="alert"]')).toBeTruthy();
   });
 
   test('discards a previous account response and clears private content on logout', async () => {

@@ -77,6 +77,7 @@ test('signup can correct an email, resend confirmation and open local topics', a
 test('signup returns people to the action that prompted registration', async ({ page }) => {
   await page.goto('/register?next=%2Fpolls%2F1');
   await createAccount(page, 'return');
-  await expect(page).toHaveURL(/\/polls\/1$/);
+  await expect(page).toHaveURL(/\/polls\/1-improve-our-local-park$/);
+  await expect(page.getByRole('heading', { name: 'Improve our local park', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: en.signupJourney.verification_title })).toBeVisible();
 });
