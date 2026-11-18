@@ -1,4 +1,5 @@
 /** @jest-environment <rootDir>/jest-jsdom-env.js */
+/* global document */
 const React = require('react');
 const { act } = React;
 const { createRoot } = require('react-dom/client');
@@ -9,8 +10,18 @@ const mockSavePreference = jest.fn();
 const mockTranslate = (key) => key;
 jest.mock('next-intl', () => ({ useTranslations: () => mockTranslate, useLocale: () => 'en' }));
 jest.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: {}, updateProfile: mockUpdateProfile }) }));
-jest.mock('@/lib/api', () => ({ newsletterAPI: { getMyPreference: (...args) => mockGetPreference(...args), updateMyPreference: (...args) => mockSavePreference(...args) } }));
-jest.mock('@/components/ui/LocationSelector', () => ({ __esModule: true, default: ({ onChange }) => React.createElement('button', { onClick: () => onChange(42) }, 'Pick city') }));
+jest.mock('@/lib/api', () => ({
+  locationAPI: {
+    getAll: jest.fn(async ({ type }) => ({
+      success: true,
+      locations: {
+        country: [{ id: 1, name: 'Greece' }],
+        prefecture: [{ id: 2, name: 'Attica' }],
+        municipality: [{ id: 42, name: 'Athens' }],
+      }[type] || [],
+    })),
+  },
+  newsletterAPI: { getMyPreference: (...args) => mockGetPreference(...args), updateMyPreference: (...args) => mockSavePreference(...args) } }));
 const LocationStep = require('../components/onboarding/LocationStep').default;
 let root;
 let container;
@@ -29,10 +40,21 @@ async function click(text) {
   const button = [...container.querySelectorAll('button')].find((item) => item.textContent === text);
   await act(async () => button.click());
 }
+async function selectLocation() {
+  expect(container.querySelectorAll('select')).toHaveLength(1);
+  for (const [index, value] of ['1', '2', '42'].entries()) {
+    const select = container.querySelectorAll('select')[index];
+    await act(async () => {
+      select.value = value;
+      select.dispatchEvent(new document.defaultView.Event('change', { bubbles: true }));
+    });
+  }
+}
+
 test('saving a selected location advances without opting into email', async () => {
   await act(async () => root.render(React.createElement(LocationStep, { onContinue: next })));
   expect(container.querySelector('input[type="checkbox"]').checked).toBe(false);
-  await click('Pick city');
+  await selectLocation();
   await click('saveLocation');
   expect(mockUpdateProfile).toHaveBeenCalledWith({ homeLocationId: 42, isDiaspora: false });
   expect(next).toHaveBeenCalledTimes(1);
@@ -41,7 +63,7 @@ test('saving a selected location advances without opting into email', async () =
 test('failed location save stays on step and displays an error', async () => {
   mockUpdateProfile.mockRejectedValue(new Error('Please retry'));
   await act(async () => root.render(React.createElement(LocationStep, { onContinue: next })));
-  await click('Pick city');
+  await selectLocation();
   await click('saveLocation');
   expect(container.querySelector('[role="alert"]').textContent).toContain('Please retry');
   expect(next).not.toHaveBeenCalled();

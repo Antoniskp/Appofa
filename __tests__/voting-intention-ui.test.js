@@ -1,4 +1,5 @@
 /** @jest-environment <rootDir>/jest-jsdom-env.js */
+/* global document */
 const React = require('react');
 const { act } = React;
 const { createRoot } = require('react-dom/client');
@@ -69,17 +70,19 @@ describe('Voting intention entry points', () => {
     const poll = { id: 12, purpose: 'voting_intention' };
     await render(Notice, { poll });
     expect(container.querySelector('a').getAttribute('href')).toBe('/login?next=%2Fpolls%2F12');
-    expect(container.textContent).toContain('όχι μοναδικό φυσικό πρόσωπο');
+    expect(container.textContent).toContain('επιβεβαιωμένο email');
     await render(Notice, { poll, user: { id: 1 } });
     expect(container.querySelector('a').getAttribute('href')).toBe('/profile');
-    await render(Notice, { poll: { ...poll, googleVotingEligible: true }, user: { id: 1 } });
+    await render(Notice, { poll, user: { id: 1, emailVerified: false } });
+    expect(container.querySelector('a').getAttribute('href')).toBe('#email-verification');
+    await render(Notice, { poll: { ...poll, votingIntentionEligible: true }, user: { id: 1 } });
     expect(container.querySelector('a')).toBeNull();
   });
 
   test('onboarding offers voluntary participation only for an available, unvoted round', async () => {
     pollAPI.getVotingIntention.mockResolvedValue({ success: true, data: { id: 12 } });
     await render(Onboarding);
-    expect(container.textContent).toContain('Προαιρετική συμμετοχή');
+    expect(container.textContent).toContain('Η συμμετοχή είναι προαιρετική');
     expect(container.querySelector('a').getAttribute('href')).toBe('/polls/12');
     await act(async () => root.render(null));
     pollAPI.getVotingIntention.mockResolvedValue({ success: true, data: { id: 12, userVote: { optionId: 1 } } });

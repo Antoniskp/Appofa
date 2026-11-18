@@ -67,7 +67,7 @@ export default function VotingIntentionSetup({ onCreated }) {
           <input type="datetime-local" value={deadline} onChange={event => setDeadline(event.target.value)} className="mt-1 block rounded border p-2" />
         </label>
       </fieldset>
-      <p className="text-xs text-gray-600">Προστίθενται: Άλλο κόμμα, Δεν έχω αποφασίσει, Λευκό / Άκυρο, Αποχή. Μία ψήφος ανά λογαριασμό Google, χωρίς δημόσια ονόματα ψηφοφόρων. Τα κόμματα δεν αλλάζουν μετά την πρώτη ψήφο.</p>
+      <p className="text-xs text-gray-600">Προστίθενται: Άλλο κόμμα, Δεν έχω αποφασίσει, Λευκό / Άκυρο, Αποχή. Μία ψήφος ανά λογαριασμό, χωρίς δημόσια ονόματα ψηφοφόρων. Τα κόμματα δεν αλλάζουν μετά την πρώτη ψήφο.</p>
       <p className="text-xs text-gray-600">Η δημιουργία αντικαθιστά την προβεβλημένη ψηφοφορία της αρχικής. Οι προηγούμενες ψηφοφορίες παραμένουν διαθέσιμες.</p>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       {createdId ? <Link href={`/polls/${createdId}`} className="text-blue-700 underline">Η ψηφοφορία δημιουργήθηκε — Προβολή</Link> : (

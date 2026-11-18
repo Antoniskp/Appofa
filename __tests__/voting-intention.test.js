@@ -39,7 +39,7 @@ describe('Voting intention on the existing poll system', () => {
 
   const vote = (user, option = options[0]) => polls.votePoll(poll.id, option.id, user?.id, user?.role, '127.0.0.1', 'test', 'public');
 
-  test('rejects guests and accounts without Google, including admins', async () => {
+  test('rejects guests and unverified accounts without Google, including admins', async () => {
     expect((await vote(null)).success).toBe(false);
     expect((await vote(other)).status).toBe(403);
     expect((await vote(admin)).status).toBe(403);
@@ -55,7 +55,7 @@ describe('Voting intention on the existing poll system', () => {
     expect(stored.identityVisibility).toBe('anonymous');
     expect(stored.voterKey).toHaveLength(64);
     const detail = await polls.getPollById(poll.id, voter);
-    expect(detail.data.googleVotingEligible).toBe(true);
+    expect(detail.data.votingIntentionEligible).toBe(true);
     expect(detail.data.options[1].publicVoters).toEqual([]);
     expect(JSON.stringify(detail)).not.toContain(stored.voterKey);
   });
@@ -68,7 +68,10 @@ describe('Voting intention on the existing poll system', () => {
   });
 
   test('relinking a Google account to another local account cannot duplicate or expose its vote', async () => {
-    await voter.update({ googleId: null });
+    const { voterKey } = await PollVote.findOne({ where: { userId: voter.id } });
+    await voter.update({ googleId: null, emailVerified: true });
+    expect((await vote(voter)).success).toBe(true);
+    expect((await PollVote.findOne({ where: { userId: voter.id } })).voterKey).toBe(voterKey);
     await other.update({ googleId: 'google-account-one' });
     expect((await vote(other)).status).toBe(409);
     const detail = await polls.getPollById(poll.id, other);
@@ -81,6 +84,17 @@ describe('Voting intention on the existing poll system', () => {
   test('database rejects duplicate Google keys even if application checks are bypassed', async () => {
     const existing = await PollVote.findOne();
     await expect(PollVote.create({ pollId: poll.id, optionId: options[0].id, userId: other.id, isAuthenticated: true, voterKey: existing.voterKey })).rejects.toMatchObject({ name: 'SequelizeUniqueConstraintError' });
+  });
+
+  test.each(['emailVerified', 'isVerified'])('an account with %s and no Google link can cast and change one private vote', async (field) => {
+    const account = await User.create({ username: field, email: `${field}@poll.test`, [field]: true });
+    expect((await polls.getPollById(poll.id, account)).data.votingIntentionEligible).toBe(true);
+    expect((await vote(account)).success).toBe(true);
+    expect((await vote(account, options[1])).success).toBe(true);
+    const votes = await PollVote.findAll({ where: { pollId: poll.id, userId: account.id } });
+    expect(votes).toHaveLength(1);
+    expect(votes[0].optionId).toBe(options[1].id);
+    expect(votes[0].identityVisibility).toBe('anonymous');
   });
 
   test('closed or disabled rounds disappear from onboarding', async () => {

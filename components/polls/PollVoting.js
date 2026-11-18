@@ -51,7 +51,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   const isPollActive = poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date());
   const isRateLimited = !!rateLimit && (rateLimit.resetTime ? rateLimit.resetTime > Date.now() : false);
   const isVotingIntention = poll.purpose === 'voting_intention';
-  const canVote = isPollActive && !isRateLimited && (user || poll.voteRestriction === 'anyone') && (!isVotingIntention || poll.googleVotingEligible);
+  const canVote = isPollActive && !isRateLimited && (user || poll.voteRestriction === 'anyone') && (!isVotingIntention || poll.votingIntentionEligible);
   
   const resetAddOptionForm = () => {
     setNewOptionText('');

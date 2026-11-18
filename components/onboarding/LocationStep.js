@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
-import LocationSelector from '@/components/ui/LocationSelector';
+import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
 import EmailPreferences from './EmailPreferences';
 
 export default function LocationStep({ onContinue }) {
@@ -30,8 +30,7 @@ export default function LocationStep({ onContinue }) {
     <section className="space-y-4 rounded-xl border border-blue-200 bg-white p-5">
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={abroad} disabled={saving} onChange={(e) => setAbroad(e.target.checked)} />{t('abroad')}</label>
       {abroad && <p className="text-sm text-gray-600">{t('abroadHelp')}</p>}
-      <p className="text-sm font-medium">{t('locationLabel')}</p>
-      <LocationSelector value={locationId} onChange={setLocationId} placeholder={t('search')} labels={{ search: t('search'), empty: t('empty'), loading: t('loading'), clear: t('clear') }} />
+      <CascadingLocationSelector value={locationId} onChange={setLocationId} disabled={saving} allowClear={false} />
       <p className="text-xs text-gray-500">{t('eligibility')}</p>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       <div className="flex flex-wrap gap-3">

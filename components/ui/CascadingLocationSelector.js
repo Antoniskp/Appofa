@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { locationAPI } from '@/lib/api';
 
@@ -17,11 +17,13 @@ const formatLocationName = (location) => {
 export default function CascadingLocationSelector({ 
   value, 
   onChange, 
-  placeholder = 'Select a location',
+  placeholder,
   className = '',
-  allowClear = true
+  allowClear = true,
+  disabled = false
 }) {
   const t = useTranslations('common');
+  const id = useId();
   const [countries, setCountries] = useState([]);
   const [prefectures, setPrefectures] = useState([]);
   const [municipalities, setMunicipalities] = useState([]);
@@ -244,20 +246,21 @@ export default function CascadingLocationSelector({
   return (
     <div className={`space-y-3 ${className}`}>
       {error && (
-        <div className="text-sm text-red-600">{error}</div>
+        <div role="alert" className="text-sm text-red-600">{error}</div>
       )}
       
       {/* Country Dropdown */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t('location_selector.label_country')} *
+        <label htmlFor={`${id}-country`} className="block text-sm font-medium text-gray-700 mb-1">
+          {t('location_selector.label_country')}
         </label>
         <div className="flex gap-2">
           <select
+            id={`${id}-country`}
             value={selectedCountry?.id || ''}
             onChange={handleCountryChange}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            disabled={loading}
+            disabled={disabled || loading}
           >
             <option value="">{placeholder || t('location_selector.select_country')}</option>
             {countries.map((country) => (
@@ -270,6 +273,7 @@ export default function CascadingLocationSelector({
             <button
               type="button"
               onClick={handleClear}
+              disabled={disabled || loading}
               className="px-3 py-2 text-gray-400 hover:text-gray-600 border border-gray-300 rounded-md"
               aria-label="Clear selection"
             >
@@ -282,14 +286,15 @@ export default function CascadingLocationSelector({
       {/* Prefecture Dropdown - Only show if country is selected and not international */}
       {selectedCountry && !isInternational && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor={`${id}-prefecture`} className="block text-sm font-medium text-gray-700 mb-1">
             {t('location_selector.label_prefecture')}
           </label>
           <select
+            id={`${id}-prefecture`}
             value={selectedPrefecture?.id || ''}
             onChange={handlePrefectureChange}
             className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            disabled={loading || prefectures.length === 0}
+            disabled={disabled || loading || prefectures.length === 0}
           >
             <option value="">{t('location_selector.select_prefecture')}</option>
             {prefectures.map((prefecture) => (
@@ -307,14 +312,15 @@ export default function CascadingLocationSelector({
       {/* Municipality Dropdown - Only show if prefecture is selected */}
       {selectedPrefecture && !isInternational && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor={`${id}-city`} className="block text-sm font-medium text-gray-700 mb-1">
             {t('location_selector.label_city')}
           </label>
           <select
+            id={`${id}-city`}
             value={selectedMunicipality?.id || ''}
             onChange={handleMunicipalityChange}
             className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            disabled={loading || municipalities.length === 0}
+            disabled={disabled || loading || municipalities.length === 0}
           >
             <option value="">{t('location_selector.select_city')}</option>
             {municipalities.map((municipality) => (
@@ -341,7 +347,7 @@ export default function CascadingLocationSelector({
             <>
               {formatLocationName(selectedMunicipality)}
               {' → '}
-              {selectedPrefecture.name}
+              {selectedPrefecture?.name}
               {' → '}
               {selectedCountry.name}
             </>

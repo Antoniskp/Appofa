@@ -4,7 +4,9 @@ const { Op } = require('sequelize');
 const { Poll, PollOption, Organization, HomepageSettings, sequelize } = require('../models');
 
 const PURPOSE = 'voting_intention';
-const DESCRIPTION = 'Μία ψήφος ανά λογαριασμό Google. Μπορείτε να αλλάξετε την επιλογή σας. Η επιλογή σας δεν εμφανίζεται δημόσια με το όνομά σας. Η σύνδεση Google δεν πιστοποιεί μοναδικό φυσικό πρόσωπο. Πρόκειται για ανοικτή διαδικτυακή ψηφοφορία συμμετοχής, όχι αντιπροσωπευτική δημοσκόπηση του εκλογικού σώματος.';
+const DESCRIPTION = 'Μία ψήφος ανά λογαριασμό. Μπορείτε να αλλάξετε την επιλογή σας. Η επιλογή σας δεν εμφανίζεται δημόσια με το όνομά σας. Μπορείτε να συμμετάσχετε με επιβεβαιωμένο email, επαληθευμένο προφίλ ή συνδεδεμένο λογαριασμό Google. Πρόκειται για ανοικτή διαδικτυακή ψηφοφορία συμμετοχής, όχι αντιπροσωπευτική δημοσκόπηση του εκλογικού σώματος.';
+const LEGACY_DESCRIPTION = 'Μία ψήφος ανά λογαριασμό Google. Μπορείτε να αλλάξετε την επιλογή σας. Η επιλογή σας δεν εμφανίζεται δημόσια με το όνομά σας. Η σύνδεση Google δεν πιστοποιεί μοναδικό φυσικό πρόσωπο. Πρόκειται για ανοικτή διαδικτυακή ψηφοφορία συμμετοχής, όχι αντιπροσωπευτική δημοσκόπηση του εκλογικού σώματος.';
+const currentDescription = description => description === LEGACY_DESCRIPTION ? DESCRIPTION : description;
 
 async function create(user, input = {}) {
   if (user.role !== 'admin') return { success: false, status: 403, message: 'Admin access required.' };
@@ -47,4 +49,4 @@ async function getCurrent(user, ip, userAgent) {
   return require('./pollService').getPollById(poll.id, user, ip, userAgent);
 }
 
-module.exports = { create, getCurrent, PURPOSE, DESCRIPTION };
+module.exports = { create, getCurrent, PURPOSE, DESCRIPTION, currentDescription };

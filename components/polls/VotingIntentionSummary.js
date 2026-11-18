@@ -57,9 +57,9 @@ export default function VotingIntentionSummary({ poll }) {
         </>
       )}
       <Link href={`/polls/${poll.id}`} className="mt-4 flex min-h-11 items-center justify-center rounded-lg bg-white px-4 py-3 text-sm font-bold text-gray-900 transition hover:bg-sand">
-        {active ? (poll.userVote ? 'Αλλαγή ψήφου' : 'Ψήφισε με Google') : 'Δες τα αποτελέσματα'}
+        {active ? (poll.userVote ? 'Αλλαγή ψήφου' : 'Ψήφισε') : 'Δες τα αποτελέσματα'}
       </Link>
-      <p className="mt-3 text-xs leading-5 text-white/65">Μία ψήφος ανά λογαριασμό Google. Ανοικτή διαδικτυακή ψηφοφορία, όχι αντιπροσωπευτική δημοσκόπηση.</p>
+      <p className="mt-3 text-xs leading-5 text-white/65">Μία ψήφος ανά λογαριασμό. Ανοικτή διαδικτυακή ψηφοφορία, όχι αντιπροσωπευτική δημοσκόπηση.</p>
     </div>
   );
 }

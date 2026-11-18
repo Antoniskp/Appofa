@@ -44,7 +44,7 @@ export default function EmailVerificationNotice() {
   };
 
   return (
-    <section aria-label={t('verification_title')} className="border-b border-blue-200 bg-blue-50">
+    <section id="email-verification" aria-label={t('verification_title')} className="border-b border-blue-200 bg-blue-50">
       <div className="mx-auto max-w-3xl space-y-3 px-4 py-4 text-sm text-blue-950">
         <h2 className="font-bold">{t('verification_title')}</h2>
         <p className="break-words">{t('verification_destination', { email: user.email })}</p>

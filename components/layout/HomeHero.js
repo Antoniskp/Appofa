@@ -51,7 +51,7 @@ export function FeaturedLivePoll({ poll, loading, user }) {
 
   const options = Array.isArray(currentPoll.options) ? currentPoll.options : [];
   const isPollActive = currentPoll.status === 'active' && (!currentPoll.deadline || new Date(currentPoll.deadline) > new Date());
-  const canVote = isPollActive && (user || currentPoll.voteRestriction === 'anyone') && (currentPoll.purpose !== 'voting_intention' || currentPoll.googleVotingEligible);
+  const canVote = isPollActive && (user || currentPoll.voteRestriction === 'anyone');
   const totalVotes = options.reduce((sum, option) => sum + (option.voteCount || 0), 0);
 
   const handleVote = async (optionId) => {

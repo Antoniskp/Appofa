@@ -14,6 +14,7 @@ const {
 const { getDescendantLocationIds, getAncestorLocationIds } = require('../utils/locationUtils');
 const { syncTags, attachTags } = require('../utils/tagUtils');
 const pollAttachments = require('./pollAttachmentService');
+const { currentDescription: votingIntentionDescription } = require('./votingIntentionService');
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -29,7 +30,9 @@ const ANSWER_TYPES = ['person', 'article', 'custom'];
 const VOTE_IDENTITY_VISIBILITIES = ['anonymous', 'public'];
 const isVotingIntention = poll => poll.purpose === 'voting_intention';
 // Private, stable, per-poll account key; never include in API responses or exports.
-const googleVoterKey = (pollId, googleId) => crypto.createHash('sha256').update(`appofa:poll:${pollId}:google:${googleId}`).digest('hex');
+const votingIntentionVoterKey = (pollId, source, id) => crypto.createHash('sha256').update(`appofa:poll:${pollId}:${source}:${id}`).digest('hex');
+const votingIntentionVoterAttributes = ['googleId', 'emailVerified', 'isVerified'];
+const canVoteInVotingIntention = account => Boolean(account?.googleId || account?.emailVerified || account?.isVerified);
 
 const TITLE_MIN_LENGTH = 5;
 const TITLE_MAX_LENGTH = 200;
@@ -746,7 +749,7 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
       if (!['unanswered', 'answered'].includes(filters.personal)) {
         return { success: false, status: 400, message: 'Invalid personal poll filter.' };
       }
-      const account = await User.findByPk(user.id, { attributes: ['homeLocationId', 'googleId'] });
+      const account = await User.findByPk(user.id, { attributes: ['homeLocationId', ...votingIntentionVoterAttributes] });
       const areaIds = account?.homeLocationId ? await getAncestorLocationIds(account.homeLocationId, true) : [];
       const links = await LocationLink.findAll({
         where: { location_id: { [Op.in]: areaIds }, entity_type: 'poll' },
@@ -766,7 +769,7 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
       if (filters.personal === 'unanswered') {
         where.status = 'active';
         where[Op.and].push({ [Op.or]: [{ deadline: null }, { deadline: { [Op.gt]: new Date() } }] });
-        if (!account?.googleId) where[Op.and].push({ [Op.or]: [{ purpose: null }, { purpose: { [Op.ne]: 'voting_intention' } }] });
+        if (!canVoteInVotingIntention(account)) where[Op.and].push({ [Op.or]: [{ purpose: null }, { purpose: { [Op.ne]: 'voting_intention' } }] });
       } else if (!status) {
         delete where.status;
       }
@@ -818,6 +821,7 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
     // Add vote counts to each option
     const pollsWithCounts = polls.map(poll => {
       const pollData = poll.toJSON();
+      if (isVotingIntention(poll)) pollData.description = votingIntentionDescription(pollData.description);
       pollData.options = pollData.options.map(option => ({
         ...option,
         voteCount: option.votes ? option.votes.length : 0,
@@ -1012,8 +1016,9 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
     const responsePoll = shouldHideCreator(pollData, user) ? { ...pollData, creator: null } : pollData;
 
     if (isVotingIntention(poll)) {
-      const voter = user ? await User.findByPk(user.id, { attributes: ['googleId'] }) : null;
-      responsePoll.googleVotingEligible = Boolean(voter?.googleId);
+      const voter = user ? await User.findByPk(user.id, { attributes: votingIntentionVoterAttributes }) : null;
+      responsePoll.votingIntentionEligible = canVoteInVotingIntention(voter);
+      responsePoll.description = votingIntentionDescription(responsePoll.description);
     }
 
     // Check if user has voted
@@ -1731,6 +1736,8 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent,
     const voteIdentityVisibility = isAuthenticated && !isVotingIntention(poll) ? identityVisibilityResult.value : 'anonymous';
 
     let voterKey = null;
+    let accountVoterKey = null;
+    let googleId = null;
     if (isVotingIntention(poll)) {
       const lockedPoll = await Poll.findByPk(pollId, { transaction, lock: transaction.LOCK.UPDATE });
       const currentOption = await PollOption.findOne({ where: { id: optionIdResult.value, pollId }, transaction });
@@ -1739,12 +1746,14 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent,
         return { success: false, status: 409, message: 'Η ψηφοφορία άλλαξε ή έληξε. Ανανεώστε τη σελίδα.' };
       }
       // Serialize submissions with OAuth linking/unlinking and other votes by this account.
-      const voter = userId ? await User.findByPk(userId, { attributes: ['id', 'googleId'], transaction, lock: transaction.LOCK.UPDATE }) : null;
-      if (!voter?.googleId) {
+      const voter = userId ? await User.findByPk(userId, { attributes: ['id', ...votingIntentionVoterAttributes], transaction, lock: transaction.LOCK.UPDATE }) : null;
+      if (!canVoteInVotingIntention(voter)) {
         await transaction.rollback();
-        return { success: false, status: 403, message: 'Συνδέστε λογαριασμό Google για να συμμετάσχετε.' };
+        return { success: false, status: 403, message: 'Επιβεβαιώστε το email σας ή συνδέστε λογαριασμό Google για να συμμετάσχετε.' };
       }
-      voterKey = googleVoterKey(poll.id, voter.googleId);
+      accountVoterKey = votingIntentionVoterKey(poll.id, 'user', voter.id);
+      googleId = voter.googleId;
+      voterKey = googleId ? votingIntentionVoterKey(poll.id, 'google', googleId) : accountVoterKey;
       const identityVote = await PollVote.findOne({ where: { pollId, voterKey }, transaction });
       if (identityVote && identityVote.userId !== userId) {
         await transaction.rollback();
@@ -1760,12 +1769,16 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent,
       });
 
       if (existingVote) {
-        if (voterKey && existingVote.voterKey !== voterKey) {
+        if (googleId && existingVote.voterKey !== voterKey && existingVote.voterKey !== accountVoterKey) {
           await transaction.rollback();
           return { success: false, status: 409, message: 'Χρησιμοποιήστε τον αρχικό λογαριασμό Google για να αλλάξετε την ψήφο σας.' };
         }
         // Update existing vote
-        await existingVote.update({ optionId: optionIdResult.value, identityVisibility: voteIdentityVisibility }, { transaction });
+        await existingVote.update({
+          optionId: optionIdResult.value,
+          identityVisibility: voteIdentityVisibility,
+          ...(googleId ? { voterKey } : {})
+        }, { transaction });
         vote = existingVote;
       } else {
         // Create new vote

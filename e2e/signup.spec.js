@@ -63,8 +63,11 @@ test('signup can correct an email, resend confirmation and open local topics', a
   expect(profile.data.user.email).toBe(correctedEmail);
   expect(profile.data.user.emailVerified).toBe(false);
   await expect(page.getByText(en.signupJourney.verification_destination.replace('{email}', correctedEmail))).toBeVisible();
-  await page.getByRole('button', { name: en.locationOnboarding.search, exact: true }).click();
-  await page.getByRole('button', { name: /Test Municipality/ }).click();
+  const labels = en.common.location_selector;
+  await expect(page.getByRole('combobox', { name: labels.label_city, exact: true })).toHaveCount(0);
+  await page.getByRole('combobox', { name: labels.label_country, exact: true }).selectOption('1');
+  await page.getByRole('combobox', { name: labels.label_prefecture, exact: true }).selectOption('2');
+  await page.getByRole('combobox', { name: labels.label_city, exact: true }).selectOption('3');
   await page.getByRole('button', { name: en.locationOnboarding.saveLocation, exact: true }).click();
   await expect(page).toHaveURL(/\/locations\/3$/);
   await expect(page.getByRole('heading', { name: en.signupJourney.verification_title })).toBeVisible();
