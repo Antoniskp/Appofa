@@ -23,6 +23,7 @@ const STATIC_ROUTES = [
   { url: '/become-moderator', priority: 0.4, changeFrequency: 'monthly' },
   { url: '/categories', priority: 0.6, changeFrequency: 'weekly' },
   { url: '/citizen-help', priority: 0.6, changeFrequency: 'monthly' },
+  { url: '/citizen-help/benefits', priority: 0.7, changeFrequency: 'weekly' },
   { url: '/citizen-help/government-positions', priority: 0.6, changeFrequency: 'monthly' },
   { url: '/citizen-help/independent-candidate', priority: 0.5, changeFrequency: 'monthly' },
   { url: '/citizen-help/prefecture-seats', priority: 0.5, changeFrequency: 'monthly' },

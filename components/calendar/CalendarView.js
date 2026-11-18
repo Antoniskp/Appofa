@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import LocationSelector from '@/components/ui/LocationSelector';
 import { localDateTime } from '@/lib/calendar/dates';
 
-const CATEGORIES = ['community', 'meeting', 'culture', 'action', 'other'];
+const CATEGORIES = ['community', 'meeting', 'culture', 'action', 'other', 'benefits'];
 const dateKey = (value, entry) => entry.allDay
   ? String(value).slice(0, 10) : localDateTime(value, entry.timezone).slice(0, 10);
 
@@ -110,6 +110,7 @@ function CalendarContent({ locationId: fixedLocationId }) {
         {!compact && finalDay !== day && ` · ${formatDay(day)} – ${formatDay(finalDay)}`}
       </span>
       {!compact && <span className="mt-1 block text-gray-600">{entry.location?.name_local || entry.location?.name}</span>}
+      {!compact && entry.source === 'benefit' && <span className="mt-1 block text-gray-600">{t('benefitEntry')}</span>}
       <span className="mt-2 flex flex-wrap gap-2">
         {!compact && entry.category && t.has(`categories.${entry.category}`) && <span className="rounded-full bg-ivory px-2 py-1 text-xs text-blue-800">{t(`categories.${entry.category}`)}</span>}
         {ongoing && <span className="rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">{t('ongoing')}</span>}

@@ -90,14 +90,16 @@
     "meeting": "Meeting",
     "culture": "Culture",
     "action": "Action",
-    "other": "Other"
+    "other": "Other",
+    "benefits": "Benefits"
   },
   "notifications": {
     "published": "Your event was approved",
     "rejected": "Your event needs changes",
     "cancelled": "Your event was cancelled"
   },
-  "intro": "Meetings, activities and events in your community.",
+  "intro": "Meetings, activities, events and benefit deadlines.",
+  "benefitEntry": "Official benefit date · View eligibility and applications",
   "filters": "Filters",
   "myArea": "My area",
   "today": "Today",

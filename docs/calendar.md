@@ -68,8 +68,8 @@ Tests: `npx jest __tests__/calendar.test.js __tests__/calendar-dates.test.js
 __tests__/calendar-ical.test.js --runInBand` and
 `npx playwright test e2e/calendar.spec.js` (disposable database, desktop/mobile).
 
-Recurring events, attendance, reminder delivery, external calendar subscriptions,
-and additional sources are future work. Calendar messages live in
+Recurring events, attendance, reminder delivery and external calendar subscriptions
+are future work. Calendar messages live in
 `messages/calendar/{en,el,ro}.json` and are merged into the app's next-intl messages.
 The timezone picker searches the runtime's supported IANA zones and preserves
 the event's existing zone. Upcoming/past lists use pages of 100 entries.
@@ -81,3 +81,26 @@ location calendars keep their controls local so they do not overwrite location
 page query parameters. The My area shortcut uses the signed-in member's saved
 home location, and includes sublocations explicitly. Advanced filters are
 collapsible; the agenda groups entries by their start date in the event timezone.
+
+## Benefit dates
+
+The `/citizen-help/benefits` guide and `calendarSources/benefits.js` share
+`lib/benefits/catalog.js`. Benefit entries use source `benefit` and category
+`benefits`; they link to the matching guide card and appear only in the public,
+unscoped calendar. They never appear in location calendars, My submissions, or
+moderation queues. No migration or seeding is needed.
+
+Each editorial occurrence must carry an explicit date, stable ID and official
+source URL. Add opening dates, application deadlines, or confirmed payment dates
+only after checking the announcement for that particular year/cycle. Label a
+payment-by date as such; do not turn it into a promised credit date. Do not
+generate future annual occurrences or derive official deadlines from the review
+date. Review the catalogue's eligibility, amounts, timing and `checkedOn` when
+updating it; this is curated content, not a live government feed.
+
+Personal deadlines (birth, dismissal, certification expiry) stay in the guide.
+Every card can export an explicitly user-selected reminder as `.ics`, clearly
+labelled as personal. Confirmed occurrences can be exported with their official
+date. Benefit exports have a separate UID namespace and never modify location
+event records. Importing an `.ics` file is required; no notification delivery or
+calendar-account synchronization is implied.

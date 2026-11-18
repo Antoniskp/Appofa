@@ -130,3 +130,34 @@ test('rejection requires private feedback and sends one author notification afte
   await update(id, author, { action: 'cancel', revision: 3 });
   expect(await Notification.count()).toBe(2);
 });
+
+test('public benefit category and source expose official dates without creating location events', async () => {
+  const period = 'start=2026-11-01T00:00:00Z&end=2026-12-10T00:00:00Z';
+  const category = await request(app).get(`/api/calendar?${period}&category=benefits`);
+  expect(category.status).toBe(200);
+  expect(category.body.data).toHaveLength(5);
+  expect(category.body.data.every(entry => entry.source === 'benefit' && entry.href.startsWith('/citizen-help/benefits#'))).toBe(true);
+  const source = await request(app).get(`/api/calendar?${period}&source=benefit`);
+  expect(source.body.data).toEqual(category.body.data);
+  expect(await LocationEvent.count()).toBe(0);
+  const scoped = await request(app).get(`/api/calendar?${period}&locationId=${town.id}&category=benefits`);
+  expect(scoped.body.data).toEqual([]);
+  const mine = await request(app).get(`/api/calendar?${period}&view=mine`).set(headers(author));
+  expect(mine.body.data).toEqual([]);
+});
+
+test('merged source pagination preserves official deadlines alongside community entries', async () => {
+  await LocationEvent.bulkCreate(Array.from({ length: 102 }, (_, i) => ({
+    ...payload, start: '2026-11-25T12:00:00Z', end: '2026-11-25T13:00:00Z',
+    locationId: town.id, authorId: author.id, title: `November event ${i}`, status: 'published',
+  })));
+  const period = 'start=2026-11-01T00:00:00Z&end=2026-12-10T00:00:00Z';
+  const first = await request(app).get(`/api/calendar?${period}`);
+  const second = await request(app).get(`/api/calendar?${period}&page=2`);
+  const entries = [...first.body.data, ...second.body.data];
+  expect(first.body.pagination.total).toBe(107);
+  expect(entries).toHaveLength(107);
+  expect(new Set(entries.map(entry => entry.id)).size).toBe(107);
+  expect(entries.filter(entry => entry.source === 'benefit')).toHaveLength(5);
+  expect(entries.map(entry => entry.start)).toEqual(entries.map(entry => entry.start).sort());
+});

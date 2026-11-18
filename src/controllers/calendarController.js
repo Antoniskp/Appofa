@@ -46,7 +46,7 @@ exports.list = handle(async (req, res) => {
   if (req.query.period && !['upcoming', 'past'].includes(req.query.period)) fail(400, 'Invalid period.');
   const view = req.query.view || 'public';
   if (!['public', 'mine', 'review'].includes(view)) fail(400, 'Invalid view.');
-  if (req.query.category && !['community', 'meeting', 'culture', 'action', 'other'].includes(req.query.category)) fail(400, 'Invalid category.');
+  if (req.query.category && !['community', 'meeting', 'culture', 'action', 'other', 'benefits'].includes(req.query.category)) fail(400, 'Invalid category.');
   const page = Math.max(1, Math.min(100, parseInt(req.query.page, 10) || 1));
   const result = await listEntries({ start, end, view, page, complete, period: req.query.period, source: req.query.source, category: req.query.category,
     locationId: req.query.locationId ? idOf(req.query.locationId) : null, descendants: req.query.descendants === 'true' }, req.user);

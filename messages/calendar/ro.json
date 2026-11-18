@@ -90,14 +90,16 @@
     "meeting": "Întâlnire",
     "culture": "Cultură",
     "action": "Acțiune",
-    "other": "Altele"
+    "other": "Altele",
+    "benefits": "Indemnizații"
   },
   "notifications": {
     "published": "Evenimentul tău a fost aprobat",
     "rejected": "Evenimentul tău necesită modificări",
     "cancelled": "Evenimentul tău a fost anulat"
   },
-  "intro": "Întâlniri, acțiuni și evenimente în comunitatea ta.",
+  "intro": "Întâlniri, acțiuni, evenimente și termene pentru indemnizații.",
+  "benefitEntry": "Dată oficială a unei prestații · Vezi eligibilitatea și cererea",
   "filters": "Filtre",
   "myArea": "Zona mea",
   "today": "Astăzi",

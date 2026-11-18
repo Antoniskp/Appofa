@@ -1,6 +1,9 @@
 // Entries are projections of source records, never a second copy of them.
 // Each provider owns its visibility rules and returns the common entry shape.
-const sources = { 'location-event': require('./calendarSources/locationEvents') };
+const sources = {
+  'location-event': require('./calendarSources/locationEvents'),
+  benefit: require('./calendarSources/benefits'),
+};
 const PAGE_SIZE = 100;
 
 async function listEntries(query, user) {

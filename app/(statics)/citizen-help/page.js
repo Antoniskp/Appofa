@@ -25,6 +25,13 @@ export const metadata = {
 
 const categories = [
   {
+    title: '🤝 Επιδόματα & κοινωνική στήριξη',
+    pages: [
+      { href: '/citizen-help/benefits', label: 'Επιδόματα', description: 'Δικαιούχοι, ποσά, αιτήσεις και προθεσμίες ανά παροχή', Icon: CurrencyEuroIcon },
+      { href: '/calendar?category=benefits', label: 'Ημερολόγιο επιδομάτων', description: 'Επιβεβαιωμένες προθεσμίες αιτήσεων και ημερομηνίες παροχών', Icon: CalculatorIcon },
+    ],
+  },
+  {
     title: '🛒 Δικαιώματα & Προστασία',
     pages: [
       { href: '/consumer-rights', label: 'Δικαιώματα Καταναλωτή', description: 'Γνωρίστε τα δικαιώματά σας στις αγορές', Icon: ScaleIcon },
