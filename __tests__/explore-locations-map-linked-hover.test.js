@@ -7,6 +7,7 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 let mockCanvas;
 jest.mock('next/link', () => ({ __esModule: true, default: ({ children, href, ...props }) => React.createElement('a', { href, ...props }, children) }));
 jest.mock('next/dynamic', () => () => function CanvasStub(props) { mockCanvas = props; return null; });
+jest.mock('@/components/locations/HomeElectoralMap', () => function ElectoralStub(props) { mockCanvas = props; return null; });
 jest.mock('@/lib/api/locations', () => ({ locationAPI: { getMapActivity: jest.fn() } }));
 const { locationAPI } = require('@/lib/api/locations');
 const Explorer = require('../components/locations/ExploreLocationsMap').default;

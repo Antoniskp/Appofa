@@ -9,6 +9,7 @@ const text = require('../messages/el.json').homeMap;
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 let mockMap;
 jest.mock('@/components/map/BaseMap', () => ({ __esModule: true, default: props => { mockMap = props; return null; } }));
+jest.mock('next/dynamic', () => () => require('@/components/map/BaseMap').default);
 jest.mock('next/link', () => ({ __esModule: true, default: ({ children, href, ...props }) => React.createElement('a', { href, ...props }, children) }));
 jest.mock('@/lib/api/persons', () => ({ personAPI: { getAll: jest.fn() } }));
 const { personAPI } = require('@/lib/api/persons');

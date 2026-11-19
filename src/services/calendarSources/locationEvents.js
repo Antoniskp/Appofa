@@ -52,6 +52,10 @@ async function list({ start, end, locationId, descendants, view, category, limit
     });
     return { data: rows.slice(offset, limit == null ? undefined : offset + limit).map(toEntry), total: rows.length, canManage: allowed };
   }
+  if (limit == null) {
+    const rows = await LocationEvent.findAll({ ...options, offset });
+    return { data: rows.map(toEntry), total: rows.length, canManage: allowed };
+  }
   const { rows, count } = await LocationEvent.findAndCountAll({ ...options, limit, offset });
   return { data: rows.map(toEntry), total: count, canManage: allowed };
 }

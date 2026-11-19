@@ -46,7 +46,7 @@ export default function HomeMapCanvas({ areas, items, location, layer, detail, l
     return layers;
   }, [areas, location, layer, loading, hoveredId, onMarkerClick, onHover]);
   return <BaseMap center={[38.5, 23.8]} zoom={6} bounds={COUNTRY_BOUNDS} markers={markers}
-    polygonLayers={polygons} clusterMarkers={detail && markers.length > 8} className="h-full w-full"
+    polygonLayers={polygons} clusterMarkers={detail && markers.length > 8} className="isolate h-full w-full"
     onMarkerClick={onMarkerClick} onMarkerHover={onHover} onViewportChange={onViewportChange}
     focusTarget={focusTarget} viewResetKey={viewResetKey} tileMode={tileMode}
     ariaLabel={label} showResetControl showFullscreenControl controlLabels={controlLabels} />;

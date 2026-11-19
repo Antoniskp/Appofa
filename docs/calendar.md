@@ -17,7 +17,18 @@ Return `{ data, total, canManage }`. Each entry has a source-qualified `id`,
 Location, category and status are optional source metadata. Keep source-specific
 editing and moderation in that source's routes and detail page.
 The aggregator merges source results in start order and paginates them.
-Polls and elections should project their existing dates rather than create events.
+
+## Elections and poll deadlines
+
+`calendarSources/elections.js` lists confirmed Greek election dates for the
+unscoped public calendar. Each record needs a stable ID, localized titles, an
+exact date and an official source URL. Add future dates once an official source
+confirms the day.
+
+`calendarSources/pollDeadlines.js` projects the saved deadlines of public polls
+and links to their detail pages. Poll deadlines are shown in UTC. Location
+filters match the poll’s assigned location or its location links. Private,
+local-only, and archived polls are excluded.
 
 ## Date semantics
 
@@ -30,9 +41,13 @@ multi-day events appear on every relevant calendar day. The client requests a
 one-day buffer at month edges for timezones and filters by the displayed dates.
 Month requests use `complete=true`, restricted to a maximum 34-day window,
 and return all matching entries. There is no 100-entry truncation in month views.
-The mobile grid displays day counts and opens a full agenda for the selected day.
-The default list shows upcoming/ongoing events in the next 12 months, with
-separate past (newest first) and selected-month views. Lists retain pagination.
+The mobile grid shows day counts and category markers, with a key underneath.
+Desktop entries in the grid show category labels. Both open a full agenda for
+the selected day. On an empty day, the next-event shortcut looks up to a year
+ahead with the current filters and skips cancelled events.
+The calendar opens in Month view. List view starts with upcoming/ongoing events
+in the next 12 months, with past (newest first) and selected-month options.
+Lists retain pagination.
 All-day events are checked against the cutoff date in their own timezone before
 counting and paginating upcoming/past results. Those bounded queries currently
 filter lightweight candidate records in memory; consider a database projection

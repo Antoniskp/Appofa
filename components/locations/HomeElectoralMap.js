@@ -1,24 +1,27 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { ArrowPathIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import BaseMap from '@/components/map/BaseMap';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import ConsultationCommitment from '@/components/political/ConsultationCommitment';
 import { loadParliamentarians, loadPoliticalCandidates } from '@/lib/political-map-data';
 import { getProfileDistrictId } from '@/lib/parliamentary-districts';
 import { mapGeometryBounds, normalizeMapSearch } from '@/lib/map-utils';
 import districtsMetadata from '@/config/map-data/electoral-districts.metadata.json';
+import { MapExplorerLayout, MapExplorerLoading, MapExplorerToolbar } from './MapExplorerLayout';
 
+const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false, loading: MapExplorerLoading });
 const COUNTRY_BOUNDS = { north: 42, south: 34.7, east: 29.8, west: 19.2 };
 const DISTRICTS = [...districtsMetadata.electoralDistricts].sort((a, b) => a.name.localeCompare(b.name, 'el'));
 const escape = value => String(value || '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const personName = person => [person.firstNameNative, person.lastNameNative].filter(Boolean).join(' ')
   || [person.firstNameEn, person.lastNameEn].filter(Boolean).join(' ') || person.nickname || person.username || person.slug;
 
-export default function HomeElectoralMap({ tileMode = 'light', onTileModeChange, onDistrictChange, initialDistrictId = '' }) {
+export default function HomeElectoralMap({ enabled = true, tileMode = 'light', onTileModeChange, onDistrictChange,
+  initialDistrictId = '', sheetOpen = true, setSheetOpen }) {
   const t = useTranslations('homeMap');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +38,6 @@ export default function HomeElectoralMap({ tileMode = 'light', onTileModeChange,
   const [hoveredId, setHoveredId] = useState(null);
   const [focusTarget, setFocusTarget] = useState(null);
   const [viewResetKey, setViewResetKey] = useState(0);
-  const [sheetOpen, setSheetOpen] = useState(true);
   const results = useRef(null);
   const initialFocus = useRef(false);
   const areaControls = useRef(null);
@@ -47,14 +49,14 @@ export default function HomeElectoralMap({ tileMode = 'light', onTileModeChange,
   const selectedDistrict = districts.find(district => district.id === districtId);
 
   useEffect(() => {
-    if (peopleMode !== 'candidates') return;
+    if (!enabled || peopleMode !== 'candidates') return;
     let cancelled = false;
     const controller = new AbortController();
     setCandidates(null); setCandidateError(false);
     loadPoliticalCandidates(controller.signal).then(items => { if (!cancelled) setCandidates(items); })
       .catch(() => { if (!cancelled) setCandidateError(true); });
     return () => { cancelled = true; controller.abort(); };
-  }, [peopleMode, candidateRetry]);
+  }, [enabled, peopleMode, candidateRetry]);
   const cycles = useMemo(() => [...new Set((candidates || []).map(item => item.electionCycle || 'current'))].sort().reverse(), [candidates]);
   const candidateMode = peopleMode === 'candidates';
   const peopleLoading = loading || (candidateMode && candidates === null && !candidateError);
@@ -66,6 +68,7 @@ export default function HomeElectoralMap({ tileMode = 'light', onTileModeChange,
       campaign: item, href: `/candidate-registrations/${item.id}` })) : data?.profiles || [], [candidateMode, candidates, cycle, data]);
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
     const controller = new AbortController();
     setLoading(true); setError(false); setData(null);
@@ -81,7 +84,7 @@ export default function HomeElectoralMap({ tileMode = 'light', onTileModeChange,
     }).catch(() => { if (!cancelled) setError(true); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; controller.abort(); };
-  }, [retry]);
+  }, [enabled, retry]);
 
   useEffect(() => {
     if (!data || initialFocus.current) return;
@@ -110,13 +113,13 @@ export default function HomeElectoralMap({ tileMode = 'light', onTileModeChange,
   const visibleProfiles = matchingProfiles.filter(person => person.districtId === districtId);
 
   const chooseDistrict = useCallback(id => {
-    setDistrictId(id); setHoveredId(null); setSheetOpen(true);
+    setDistrictId(id); setHoveredId(null); setSheetOpen?.(true);
     onDistrictChange?.(id);
     const feature = data?.geojson.features.find(item => item.properties?.id === id);
     const bounds = feature && mapGeometryBounds(feature);
     setFocusTarget(bounds ? { bounds } : null);
     if (results.current) results.current.scrollTop = 0;
-  }, [data, onDistrictChange]);
+  }, [data, onDistrictChange, setSheetOpen]);
   const polygons = useMemo(() => data ? [{
     id: 'home-electoral-districts', geojson: data.geojson,
     style: { color: '#b5a598', weight: 1, fillColor: '#e9cbb9', fillOpacity: 0.4 },
@@ -134,48 +137,45 @@ export default function HomeElectoralMap({ tileMode = 'light', onTileModeChange,
   };
 
   return <>
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-border bg-ivory/40 p-3 sm:px-4">
-      <div role="group" aria-label={t('electoral.people')} className="flex flex-wrap gap-2">
-        {['representatives', 'candidates'].map(mode => <button key={mode} type="button" aria-pressed={peopleMode === mode}
-          onClick={() => { setPeopleMode(mode); if (districtId === 'unassigned') chooseDistrict(''); }}
-          className={`min-h-11 rounded-lg px-3 text-xs font-semibold ${peopleMode === mode ? 'bg-charcoal text-white' : 'border border-brand-border bg-white text-gray-600'}`}>{t(`electoral.${mode}`)}</button>)}
-      </div>
-      {candidateMode && <select aria-label={t('electoral.cycle')} value={cycle} onChange={event => setCycle(event.target.value)} className="min-h-11 max-w-full rounded-lg border border-brand-border bg-white px-3 text-xs">
-        <option value="">{t('electoral.allCycles')}</option>
-        {cycles.map(value => <option key={value} value={value}>{value === 'current' ? t('electoral.unspecifiedCycle') : value}</option>)}
-      </select>}
-    </div>
-    {candidateMode && <p className="border-b border-brand-border bg-ivory/30 px-4 py-3 text-xs leading-relaxed text-gray-600">{t('electoral.candidateHint')}</p>}
-    <div className="flex flex-wrap gap-2 border-b border-brand-border p-3 sm:p-4">
-      <div className="flex min-w-0 basis-full items-center gap-2 rounded-xl border border-brand-border bg-ivory/50 px-3 sm:flex-1 sm:basis-auto">
-        <MagnifyingGlassIcon className="h-5 w-5 shrink-0 text-copper" aria-hidden="true" />
-        <input type="search" value={query} maxLength={100} onChange={event => { setQuery(event.target.value); chooseDistrict(''); }} aria-label={t('electoral.search')} placeholder={t('electoral.search')} className="min-h-11 min-w-0 flex-1 bg-transparent text-sm outline-none" />
-      </div>
-      <label className="sr-only" htmlFor="home-electoral-district">{t('electoral.district')}</label>
-      <select id="home-electoral-district" value={districtId} onChange={event => chooseDistrict(event.target.value)} className="min-h-11 min-w-0 max-w-full rounded-xl border border-brand-border bg-white px-3 text-sm sm:max-w-64">
-        <option value="">{t('electoral.allDistricts')}</option>
-        {districts.map(district => <option key={district.id} value={district.id}>{district.name}</option>)}
-      </select>
-      <button type="button" onClick={reset} className="min-h-11 rounded-xl border border-brand-border px-3 text-xs font-semibold text-charcoal">{t('wholeCountry')}</button>
-    </div>
-    <div className="md:grid md:h-[560px] md:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="relative h-[320px] min-w-0 bg-ivory md:h-full" aria-busy={loading}>
-        <BaseMap center={[38.5, 23.8]} zoom={6} zoomAnimation={false} bounds={COUNTRY_BOUNDS} polygonLayers={polygons} className="h-full w-full" focusTarget={focusTarget} viewResetKey={viewResetKey} tileMode={tileMode} ariaLabel={t('electoral.mapLabel')} showResetControl showFullscreenControl controlLabels={{ reset: t('reset'), expand: t('expand'), close: t('close') }} />
-        <div className="pointer-events-none absolute left-14 right-28 top-3 z-[450] flex justify-center"><span className="rounded-xl border border-brand-border bg-white/95 px-3 py-2 text-center text-[11px] font-medium text-charcoal shadow-sm">{t('electoral.hint')}</span></div>
-        <div className="absolute bottom-7 left-3 z-[450] flex gap-1 rounded-lg border border-brand-border bg-white/95 p-1 shadow-sm" role="group" aria-label={t('background')}>
-          {['light', 'satellite'].map(mode => <button key={mode} type="button" aria-pressed={tileMode === mode} onClick={() => onTileModeChange(mode)} className={`min-h-9 rounded-md px-3 text-xs font-semibold ${tileMode === mode ? 'bg-charcoal text-white' : 'text-gray-600'}`}>{t(mode)}</button>)}
+    <MapExplorerToolbar label={t('electoral.search')} placeholder={t('electoral.searchPlaceholder')} clearLabel={t('electoral.clearSearch')} query={query} onQueryChange={value => {
+      setQuery(value); chooseDistrict('');
+    }} onReset={reset} />
+    <MapExplorerLayout
+      map={enabled ? <BaseMap center={[38.5, 23.8]} zoom={6} zoomAnimation={false} bounds={COUNTRY_BOUNDS} polygonLayers={polygons} className="isolate h-full w-full" focusTarget={focusTarget} viewResetKey={viewResetKey} tileMode={tileMode} ariaLabel={t('electoral.mapLabel')} showResetControl showFullscreenControl controlLabels={{ reset: t('reset'), expand: t('expand'), close: t('close') }} /> : <MapExplorerLoading />}
+      hint={t('electoral.hint')} tileMode={tileMode} onTileModeChange={onTileModeChange}
+      resultsLabel={t('electoral.results')} resultsRef={results} loading={peopleLoading} sheetOpen={sheetOpen} setSheetOpen={setSheetOpen}
+      footer={<>
+        <Link href="/citizen-help/regions-electoral-map" className="hover:underline">{t('electoral.boundaries')}</Link>
+        <Link href="/parliamentarians" className="font-semibold text-copper hover:underline">{t('electoral.directory')} →</Link>
+      </>}>
+      <div className="space-y-3 border-b border-brand-border bg-ivory/40 p-4">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-copper">{t('electoral.title')}</p>
+          <h3 className="mt-1 text-lg font-semibold text-charcoal">{selectedDistrict?.name || t('country')}</h3>
+          {districtId && !peopleLoading && !peopleError && <p className="mt-1 text-xs text-gray-600" aria-live="polite">{t(countLabel, { count: visibleProfiles.length })}</p>}
         </div>
+        <div role="group" aria-label={t('electoral.people')} className="flex flex-wrap gap-2">
+          {['representatives', 'candidates'].map(mode => <button key={mode} type="button" aria-pressed={peopleMode === mode}
+            onClick={() => { setPeopleMode(mode); if (districtId === 'unassigned') chooseDistrict(''); }}
+            className={`min-h-11 flex-1 rounded-lg border px-2 text-xs font-semibold ${peopleMode === mode ? 'border-charcoal bg-charcoal text-white' : 'border-brand-border bg-white text-gray-600'}`}>{t(`electoral.${mode}`)}</button>)}
+        </div>
+        <label className="sr-only" htmlFor="home-electoral-district">{t('electoral.district')}</label>
+        <select id="home-electoral-district" value={districtId} onChange={event => chooseDistrict(event.target.value)} className="min-h-11 w-full rounded-lg border border-brand-border bg-white px-3 text-sm">
+          <option value="">{t('electoral.allDistricts')}</option>
+          {districts.map(district => <option key={district.id} value={district.id}>{district.name}</option>)}
+        </select>
+        {candidateMode && <>
+          <select aria-label={t('electoral.cycle')} value={cycle} onChange={event => setCycle(event.target.value)} className="min-h-11 w-full rounded-lg border border-brand-border bg-white px-3 text-sm">
+            <option value="">{t('electoral.allCycles')}</option>
+            {cycles.map(value => <option key={value} value={value}>{value === 'current' ? t('electoral.unspecifiedCycle') : value}</option>)}
+          </select>
+          <details className="text-xs text-gray-600">
+            <summary className="cursor-pointer rounded py-2 font-semibold text-copper">{t('electoral.aboutCandidates')}</summary>
+            <p className="mt-1 leading-relaxed">{t('electoral.candidateHint')}</p>
+          </details>
+        </>}
       </div>
-      <aside className="flex min-h-0 flex-col border-t border-brand-border md:border-l md:border-t-0" aria-label={t('electoral.results')}>
-        <button type="button" onClick={() => setSheetOpen(value => !value)} aria-expanded={sheetOpen} aria-controls="home-electoral-results" className="flex min-h-11 items-center justify-center gap-2 text-xs font-semibold text-gray-600 md:hidden"><span className="h-1 w-8 rounded-full bg-gray-300" />{t(sheetOpen ? 'hideResults' : 'showResults')}</button>
-        <div id="home-electoral-results" className={`${sheetOpen ? 'flex' : 'hidden'} min-h-0 flex-1 flex-col md:flex`}>
-          <div className="border-b border-brand-border bg-ivory/40 p-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-copper">{t('electoral.title')}</p>
-            <h3 className="mt-1 text-lg font-semibold text-charcoal">{selectedDistrict?.name || t('country')}</h3>
-            <p className="mt-2 text-xs text-gray-500" aria-live="polite">{peopleLoading ? t('electoral.loading') : peopleError ? t('electoral.error') : districtId ? t(countLabel, { count: visibleProfiles.length }) : t('electoral.hint')}</p>
-            {districtId && <button type="button" onClick={() => chooseDistrict('')} className="mt-2 min-h-10 text-xs font-semibold text-copper">← {t('electoral.allDistricts')}</button>}
-          </div>
-          <div ref={results} className="max-h-72 min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 md:max-h-none" aria-busy={loading}>
+          <div className="p-3">
             {peopleLoading ? <p role="status" className="flex items-center gap-2 p-2 text-xs text-gray-500"><ArrowPathIcon className="h-4 w-4 animate-spin" />{t('electoral.loading')}</p> : peopleError ? <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{t('electoral.error')} <button type="button" onClick={() => { setRetry(value => value + 1); setCandidateRetry(value => value + 1); }} className="underline">{t('retry')}</button></p> : districtId ? <>
               {districtId === 'district-state' && <p className="mb-3 text-xs text-gray-500">{t('electoral.stateHint')}</p>}
               {districtId === 'unassigned' && <p className="mb-3 text-xs text-gray-500">{t('electoral.unassignedHint')}</p>}
@@ -197,12 +197,6 @@ export default function HomeElectoralMap({ tileMode = 'light', onTileModeChange,
               </button></li>)}
             </ul> : <p className="p-3 text-sm text-gray-500">{t('noAreas')}</p>}
           </div>
-        </div>
-      </aside>
-    </div>
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-brand-border bg-ivory/30 px-4 py-3 text-[10px] text-gray-500">
-      <Link href="/citizen-help/regions-electoral-map" className="hover:underline">{t('electoral.boundaries')}</Link>
-      <Link href="/parliamentarians" className="font-semibold text-copper hover:underline">{t('electoral.directory')} →</Link>
-    </div>
+    </MapExplorerLayout>
   </>;
 }

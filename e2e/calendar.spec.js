@@ -35,19 +35,24 @@ test('create a location event, display in both calendar views, export and cancel
   await page.getByRole('button', { name: t.export }).click();
   expect((await downloadPromise).suggestedFilename()).toMatch(/event-\d+\.ics/);
   await page.goto('/locations/test-municipality?tab=events');
+  const locationCalendar = page.locator('#tabpanel-events');
+  await expect(locationCalendar.getByRole('button', { name: t.month, exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await locationCalendar.getByRole('button', { name: t.list, exact: true }).click();
   await expect(page.getByLabel(t.period, { exact: true })).toHaveValue('upcoming');
   await page.getByLabel(t.period, { exact: true }).selectOption('month');
   await page.getByLabel(t.month, { exact: true }).fill('2026-10');
   await expect(page.getByRole('link').filter({ hasText: title })).toBeVisible();
   await page.getByRole('button', { name: t.month, exact: true }).click();
   await page.getByRole('button', { name: /^October 20, 2026:/ }).click();
-  await expect(page.getByRole('link').filter({ hasText: title }).last()).toBeVisible();
+  await expect(locationCalendar.getByRole('link', { name: new RegExp(title) }).last()).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.locator('#tabpanel-events').screenshot({ path: testInfo.outputPath('location-calendar.png') });
   await page.goto('/calendar');
-  await page.getByLabel(t.period, { exact: true }).selectOption('month');
+  await expect(page.getByRole('button', { name: t.month, exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.getByLabel(t.month, { exact: true }).fill('2026-10');
-  await expect(page.getByRole('link').filter({ hasText: title })).toBeVisible();
+  await page.getByRole('button', { name: t.jumpToNextEvent, exact: true }).click();
+  await expect(page).toHaveURL(/day=2026-10-20/);
+  await expect(page.getByRole('link', { name: new RegExp(title) }).last()).toBeVisible();
   await page.goto(detailUrl);
   await page.getByRole('button', { name: t.cancel, exact: true }).click();
   await expect(page.getByText(t.statuses.cancelled, { exact: true })).toBeVisible();
@@ -59,9 +64,10 @@ test('calendar follows the selected language', async ({ page, context }) => {
     await context.addCookies([{ name: 'NEXT_LOCALE', value: locale, domain: '127.0.0.1', path: '/' }]);
     await page.goto('/calendar');
     await expect(page.getByRole('heading', { name: messages.title, exact: true })).toBeVisible();
-    await expect(page.getByRole('combobox', { name: messages.period, exact: true })).toHaveValue('upcoming');
-    await page.getByRole('button', { name: messages.month, exact: true }).click();
+    await expect(page.getByRole('button', { name: messages.month, exact: true })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByRole('button', { name: messages.nextMonth, exact: true })).toBeVisible();
+    await page.getByRole('button', { name: messages.list, exact: true }).click();
+    await expect(page.getByRole('combobox', { name: messages.period, exact: true })).toHaveValue('upcoming');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
 });
@@ -107,10 +113,16 @@ test('moderator rejection supplies private feedback and notifies the author', as
   } finally { await adminContext.close(); }
 });
 
-test('calendar filters survive refresh and browser history', async ({ page }) => {
+test('calendar filters fit on mobile and survive refresh and browser history', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/calendar?category=culture&month=2026-10&mode=month');
+  const dismiss = page.getByRole('button', { name: 'Reject Non-Essential', exact: true });
+  if (await dismiss.isVisible()) await dismiss.click();
   await expect(page.getByRole('button', { name: t.month, exact: true })).toHaveAttribute('aria-pressed', 'true');
   const filtersButton = page.getByRole('button', { name: /^Filters/ });
+  const cultureFilter = page.getByRole('button', { name: t.removeFilter.replace('{filter}', t.categories.culture), exact: true });
+  await expect(filtersButton).toHaveAccessibleName('Filters 1');
+  await expect(cultureFilter).toBeVisible();
   await filtersButton.click();
   await expect(filtersButton).toHaveAttribute('aria-expanded', 'true');
   const categoryFilter = page.getByRole('combobox', { name: t.category, exact: true });
@@ -123,8 +135,47 @@ test('calendar filters survive refresh and browser history', async ({ page }) =>
   await expect(categoryFilter).toHaveValue('meeting');
   await page.goBack();
   await expect(categoryFilter).toHaveValue('culture');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.locator('#main-content').getByRole('main').screenshot({
+    path: testInfo.outputPath('calendar-filters-mobile.png'),
+    animations: 'disabled',
+  });
+  await filtersButton.click();
+  await cultureFilter.click();
+  await expect(page).not.toHaveURL(/category=/);
+  await page.goBack();
+  await expect(cultureFilter).toBeVisible();
   await page.getByRole('button', { name: t.clearFilters, exact: true }).click();
   await expect(page).not.toHaveURL(/category=/);
   await expect(page.getByRole('button', { name: t.month, exact: true })).toHaveAttribute('aria-pressed', 'true');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test('older calendar period links still open the list', async ({ page }) => {
+  await page.goto('/calendar?period=past');
+  await expect(page.getByRole('button', { name: t.list, exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('combobox', { name: t.period, exact: true })).toHaveValue('past');
+  await page.getByRole('button', { name: t.month, exact: true }).click();
+  await expect(page.getByRole('button', { name: t.month, exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: t.nextMonth, exact: true })).toBeVisible();
+});
+
+test('mobile calendar jumps across months to an election and links to the official source', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/calendar?month=2024-05&day=2024-05-31&category=elections');
+  const dismiss = page.getByRole('button', { name: 'Reject Non-Essential', exact: true });
+  if (await dismiss.isVisible()) await dismiss.click();
+  await page.getByRole('button', { name: t.jumpToNextEvent, exact: true }).click();
+  await expect(page).toHaveURL(/day=2024-06-09/);
+  await expect(page).toHaveURL(/category=elections/);
+  await expect(page.getByRole('heading', { name: 'Events on June 9, 2024' })).toBeFocused();
+  await expect(page.getByRole('button', { name: /June 9, 2024:.*Elections/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('list', { name: t.category, exact: true })).toHaveText(t.categories.elections);
+  const entry = page.getByRole('link', { name: /European Parliament election in Greece/ });
+  await expect(entry).toHaveAttribute('href', 'https://results.elections.europa.eu/en/greece/');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const gridEntry = entry.first();
+  await expect(gridEntry.getByText(t.categories.elections, { exact: true })).toBeVisible();
 });

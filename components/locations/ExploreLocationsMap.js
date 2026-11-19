@@ -4,13 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
-import { MagnifyingGlassIcon, MapPinIcon, VideoCameraIcon, HandRaisedIcon, XMarkIcon, ArrowPathIcon, BuildingLibraryIcon, NewspaperIcon, SignalIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, VideoCameraIcon, HandRaisedIcon, ArrowPathIcon, BuildingLibraryIcon, NewspaperIcon, SignalIcon } from '@heroicons/react/24/outline';
 import { locationAPI } from '@/lib/api/locations';
 import { hasMapPoint, mapGeometryBounds, normalizeMapBoundary } from '@/lib/map-utils';
 import { MAP_LAYERS, mapLayerHref } from '@/lib/map-layers';
+import HomeElectoralMap from './HomeElectoralMap';
+import { MapExplorerLayout, MapExplorerLoading, MapExplorerToolbar } from './MapExplorerLayout';
 
-const Canvas = dynamic(() => import('./HomeMapCanvas'), { ssr: false });
-const ElectoralMap = dynamic(() => import('./HomeElectoralMap'), { ssr: false });
+const Canvas = dynamic(() => import('./HomeMapCanvas'), { ssr: false, loading: MapExplorerLoading });
 const EMPTY = [];
 const LAYERS = ['issues', 'polls', 'cameras', 'news', 'live'];
 const ICONS = { issues: MapPinIcon, polls: HandRaisedIcon, cameras: VideoCameraIcon, parliamentarians: BuildingLibraryIcon, news: NewspaperIcon, live: SignalIcon };
@@ -26,6 +27,7 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
   const [districtId, setDistrictId] = useState(initialDistrictId);
   const [tileMode, setTileMode] = useState('light');
   const [query, setQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState({ query: '', locations: EMPTY, loading: false, error: false });
   const [viewport, setViewport] = useState(null);
   const [bounds, setBounds] = useState(null);
@@ -81,8 +83,9 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
     }).catch(() => { if (!cancelled) setError(true); }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [enabled, layer, page, requestKey]);
+  const isPolitical = layer === 'parliamentarians';
   useEffect(() => {
-    if (layer === 'parliamentarians') return;
+    if (isPolitical || !searchOpen) return;
     const term = query.trim();
     if (term.length < 2) { setSearch({ query: term, locations: EMPTY, loading: false, error: false }); return; }
     let cancelled = false;
@@ -94,10 +97,11 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
       }).catch(() => { if (!cancelled) setSearch({ query: term, locations: EMPTY, loading: false, error: true }); });
     }, 250);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [query, retry, layer]);
+  }, [query, retry, isPolitical, searchOpen]);
 
   const chooseArea = useCallback(id => {
-    setRootId(Number(id)); setPage(1); setSelectedId(null); setQuery(''); setSheetOpen(true);
+    setRootId(Number(id)); setPage(1); setSelectedId(null); setQuery(''); setSearchOpen(false); setSheetOpen(true);
+    if (results.current) results.current.scrollTop = 0;
   }, []);
   const selectMarker = useCallback(id => {
     if (id.startsWith('area-')) chooseArea(id.slice(5));
@@ -109,15 +113,26 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
     if (card) panel.scrollTop += card.getBoundingClientRect().top - panel.getBoundingClientRect().top - 12;
   }, [selectedId]);
   const reset = () => {
-    setRootId(null); setPage(1); setSelectedId(null); setFocusTarget(null); setQuery('');
+    setRootId(null); setPage(1); setSelectedId(null); setFocusTarget(null); setQuery(''); setSearchOpen(false);
     lastFocused.current = null; setViewResetKey(value => value + 1);
+    if (results.current) results.current.scrollTop = 0;
   };
   const mapAreas = useMemo(() => areas.map(area => ({ ...area,
     boundary_geojson: area.boundary_geojson || prefectures.find(pref => pref.id === area.id)?.boundary_geojson,
   })), [areas, prefectures]);
   const areaName = current?.location?.name_local || current?.location?.name || t('country');
   const areaHref = current?.location ? `/locations/${current.location.slug || current.location.id}` : '/locations';
-  const showSearch = query.trim().length >= 2;
+  const showSearch = searchOpen && query.trim().length >= 2;
+  const changeLayer = kind => {
+    if (kind === layer) return;
+    setLayer(kind);
+    onLayerChange?.(kind, districtId);
+    setPage(1);
+    setSelectedId(null);
+    setHoveredId(null);
+    setSearchOpen(false);
+    if (results.current) results.current.scrollTop = 0;
+  };
   const areaList = <ul className="space-y-2" aria-label={t('areas')}>
     {areas.map(area => <li key={area.id}><button type="button" onClick={() => chooseArea(area.id)} onMouseEnter={() => setHoveredId(`area-${area.id}`)} onMouseLeave={() => setHoveredId(null)} onFocus={() => setHoveredId(`area-${area.id}`)} onBlur={() => setHoveredId(null)} className={`flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border p-3 text-left text-sm ${hoveredId === `area-${area.id}` ? 'border-copper bg-ivory' : 'border-brand-border hover:bg-ivory/60'}`}>
       <span className="min-w-0 break-words font-semibold text-charcoal">{area.name_local || area.name}</span>
@@ -126,44 +141,44 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
   </ul>;
 
   return <div ref={element} className={`home-map overflow-hidden rounded-2xl border border-brand-border bg-white shadow-sm ${className || ''}`}>
-    {(showLayerControls || layer !== 'parliamentarians') && <div className="relative z-[600] border-b border-brand-border p-3 sm:p-4">
-      {layer !== 'parliamentarians' && <><div className="flex flex-wrap gap-2">
-        <div className="relative flex min-w-0 basis-full items-center gap-2 rounded-xl border border-brand-border bg-ivory/50 px-3 sm:flex-1 sm:basis-auto">
-          <MagnifyingGlassIcon className="h-5 w-5 shrink-0 text-copper" aria-hidden="true" />
-          <input type="search" value={query} maxLength={100} onChange={event => setQuery(event.target.value)} aria-label={t('search')} aria-controls={showSearch ? 'home-map-search-results' : undefined} placeholder={t('search')} className="min-h-11 min-w-0 flex-1 bg-transparent text-sm outline-none" />
-          {query && <button type="button" onClick={() => setQuery('')} aria-label={t('clearSearch')} className="min-h-10 min-w-10"><XMarkIcon className="mx-auto h-4 w-4" /></button>}
-        </div>
-        {homeLocationId && <button type="button" onClick={() => chooseArea(homeLocationId)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-copper/30 px-3 text-xs font-semibold text-copper"><MapPinIcon className="h-4 w-4" />{t('myArea')}</button>}
-        <button type="button" onClick={reset} className="min-h-11 rounded-xl border border-brand-border px-3 text-xs font-semibold text-charcoal">{t('wholeCountry')}</button>
-      </div>
-      {showSearch && <div id="home-map-search-results" className="mt-2 max-h-64 overflow-y-auto rounded-xl border border-brand-border bg-white p-2" aria-live="polite">
-        {search.loading || search.query !== query.trim() ? <p className="p-3 text-sm text-gray-500">{t('searching')}</p> : search.error ? <p role="alert" className="p-3 text-sm text-red-700">{t('searchError')} <button type="button" onClick={() => setRetry(value => value + 1)} className="underline">{t('retry')}</button></p> : search.locations.length ? <ul>{search.locations.map(area => <li key={area.id}><button type="button" onClick={() => chooseArea(area.id)} className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-ivory"><span className="font-semibold">{area.name_local || area.name}</span><span className="text-xs text-gray-500">{t(`types.${area.type}`)}</span></button></li>)}</ul> : <p className="p-3 text-sm text-gray-500">{t('noAreas')}</p>}
-      </div>}</>}
-      {showLayerControls && <div className={`flex flex-wrap gap-2 ${layer !== 'parliamentarians' ? 'mt-3' : ''}`} role="group" aria-label={t('layers')}>
-        {MAP_LAYERS.map(kind => { const Icon = ICONS[kind]; return <button key={kind} type="button" aria-pressed={layer === kind} onClick={() => { setLayer(kind); onLayerChange?.(kind); setPage(1); setSelectedId(null); setHoveredId(null); }} className={`inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-xs font-semibold ${layer === kind ? 'bg-charcoal text-white' : 'bg-ivory text-gray-600 hover:text-copper'}`}><Icon className="h-4 w-4" aria-hidden="true" />{t(kind === 'parliamentarians' ? 'political' : kind)}</button>; })}
-      </div>}
+    {showLayerControls && <div className="grid auto-rows-fr grid-cols-3 gap-2 border-b border-brand-border p-3 sm:px-4 lg:grid-cols-6" role="group" aria-label={t('layers')}>
+      {MAP_LAYERS.map(kind => {
+        const Icon = ICONS[kind];
+        return <button key={kind} type="button" aria-pressed={layer === kind} onClick={() => changeLayer(kind)}
+          className={`flex min-h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 text-center text-xs font-semibold sm:flex-row sm:gap-2 ${layer === kind ? 'bg-charcoal text-white' : 'bg-ivory text-gray-600 hover:text-copper'}`}>
+          <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />{t(kind === 'parliamentarians' ? 'political' : kind)}
+        </button>;
+      })}
     </div>}
-    {layer === 'parliamentarians' ? enabled ? <ElectoralMap tileMode={tileMode} onTileModeChange={setTileMode} initialDistrictId={districtId} onDistrictChange={setDistrictId} /> : <div role="status" className="flex h-[400px] items-center justify-center text-sm text-gray-500">{t('mapLoading')}</div> : <><div className="md:grid md:h-[560px] md:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="relative h-[320px] min-w-0 bg-ivory md:h-full" aria-busy={loading || initialLoading}>
-        {enabled ? <Canvas areas={mapAreas} items={items} location={current?.location} layer={layer} detail={detail} loading={loading || !current} selectedId={selected?.id} hoveredId={hoveredId} onMarkerClick={selectMarker} onHover={setHoveredId} onViewportChange={setViewport} focusTarget={focusTarget} viewResetKey={viewResetKey} tileMode={tileMode} label={t('mapLabel', { name: areaName })} controlLabels={{ reset: t('reset'), expand: t('expand'), close: t('close') }} />
-          : <div className="flex h-full items-center justify-center text-sm text-gray-500">{t('mapLoading')}</div>}
-        <div className="pointer-events-none absolute left-14 right-28 top-3 z-[450] flex justify-center"><span className="rounded-xl border border-brand-border bg-white/95 px-3 py-2 text-center text-[11px] font-medium text-charcoal shadow-sm">{detail ? t('pinHint') : t('zoomHint')}</span></div>
-        <div className="absolute bottom-7 left-3 z-[450] flex gap-1 rounded-lg border border-brand-border bg-white/95 p-1 shadow-sm" role="group" aria-label={t('background')}>
-          {['light', 'satellite'].map(mode => <button key={mode} type="button" aria-pressed={tileMode === mode} onClick={() => setTileMode(mode)} className={`min-h-9 rounded-md px-3 text-xs font-semibold ${tileMode === mode ? 'bg-charcoal text-white' : 'text-gray-600'}`}>{t(mode)}</button>)}
-        </div>
-      </div>
-      <aside className="flex min-h-0 flex-col border-t border-brand-border md:border-l md:border-t-0" aria-label={t('results')}>
-        <button type="button" onClick={() => setSheetOpen(value => !value)} aria-expanded={sheetOpen} aria-controls="home-map-results" className="flex min-h-11 items-center justify-center gap-2 text-xs font-semibold text-gray-600 md:hidden"><span className="h-1 w-8 rounded-full bg-gray-300" />{t(sheetOpen ? 'hideResults' : 'showResults')}</button>
-        <div id="home-map-results" className={`${sheetOpen ? 'flex' : 'hidden'} min-h-0 flex-1 flex-col md:flex`}>
+    {isPolitical ? <HomeElectoralMap enabled={enabled} tileMode={tileMode} onTileModeChange={setTileMode} initialDistrictId={districtId}
+      onDistrictChange={setDistrictId} sheetOpen={sheetOpen} setSheetOpen={setSheetOpen} /> : <>
+      <MapExplorerToolbar label={t('search')} clearLabel={t('clearSearch')} query={query} onQueryChange={value => { setQuery(value); setSearchOpen(true); }}
+        onSearchFocus={() => setSearchOpen(true)} onDismiss={() => setSearchOpen(false)} onReset={reset}
+        searchResultsId={showSearch ? 'home-map-search-results' : undefined}>
+      {showSearch && <div id="home-map-search-results" className="absolute inset-x-0 top-full mt-2 max-h-64 overflow-y-auto overscroll-contain rounded-xl border border-brand-border bg-white p-2 shadow-lg" aria-live="polite">
+        {search.loading || search.query !== query.trim() ? <p className="p-3 text-sm text-gray-500">{t('searching')}</p> : search.error ? <p role="alert" className="p-3 text-sm text-red-700">{t('searchError')} <button type="button" onClick={() => setRetry(value => value + 1)} className="underline">{t('retry')}</button></p> : search.locations.length ? <ul>{search.locations.map(area => <li key={area.id}><button type="button" onClick={() => chooseArea(area.id)} className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-ivory"><span className="font-semibold">{area.name_local || area.name}</span><span className="text-xs text-gray-500">{t(`types.${area.type}`)}</span></button></li>)}</ul> : <p className="p-3 text-sm text-gray-500">{t('noAreas')}</p>}
+      </div>}
+      </MapExplorerToolbar>
+      <MapExplorerLayout
+        map={enabled ? <Canvas areas={mapAreas} items={items} location={current?.location} layer={layer} detail={detail} loading={loading || !current} selectedId={selected?.id} hoveredId={hoveredId} onMarkerClick={selectMarker} onHover={setHoveredId} onViewportChange={setViewport} focusTarget={focusTarget} viewResetKey={viewResetKey} tileMode={tileMode} label={t('mapLabel', { name: areaName })} controlLabels={{ reset: t('reset'), expand: t('expand'), close: t('close') }} /> : <MapExplorerLoading />}
+        hint={t(detail ? 'pinHint' : 'zoomHint')} tileMode={tileMode} onTileModeChange={setTileMode}
+        resultsLabel={t('results')} resultsRef={results} loading={loading || initialLoading} sheetOpen={sheetOpen} setSheetOpen={setSheetOpen}
+        footer={<div className="flex flex-wrap items-center gap-x-3 gap-y-1" role="group" aria-label={t('legend')}>
+          {detail ? <span>{t('pinLegend')}</span> : <><span className="font-semibold">{t(layer)}</span>{[['#e5e7eb', '0'], ['#e9cbb9', '1–5'], ['#bc8868', '6–20'], ['#80462f', '21+']].map(([color, label]) => <span key={label} className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm border border-black/10" style={{ backgroundColor: color }} />{label}</span>)}</>}
+        </div>}>
           <div className="border-b border-brand-border bg-ivory/40 p-4">
             <p className="text-[10px] font-bold uppercase tracking-widest text-copper">{t('areaPreview')}</p>
             <h3 className="mt-1 text-lg font-semibold text-charcoal">{areaName}</h3>
             <div className="my-3 grid grid-cols-3 gap-2" aria-busy={loading}>
-              {LAYERS.map(kind => <div key={kind} className="rounded-lg border border-brand-border bg-white px-2 py-2"><span className="block text-lg font-semibold text-charcoal">{current ? current.totals[kind] ?? 0 : '…'}</span><span className="text-[10px] text-gray-500">{t(kind)}</span></div>)}
+              {LAYERS.map(kind => <div key={kind} className={`rounded-lg border px-2 py-2 ${layer === kind ? 'border-copper bg-ivory' : 'border-brand-border bg-white'}`}><span className="block text-lg font-semibold tabular-nums text-charcoal">{current ? current.totals[kind] ?? 0 : '…'}</span><span className="text-[10px] text-gray-600">{t(kind)}</span></div>)}
             </div>
-            <Link href={areaHref} className="inline-flex min-h-10 items-center rounded-lg bg-copper px-3 text-xs font-semibold text-white hover:bg-brand-hover">{t('exploreArea')} →</Link>
+            <div className="flex flex-wrap gap-2">
+              <Link href={areaHref} className="inline-flex min-h-11 items-center rounded-lg bg-copper px-3 text-xs font-semibold text-white hover:bg-brand-hover">{t('exploreArea')} →</Link>
+              {homeLocationId && <button type="button" onClick={() => chooseArea(homeLocationId)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-copper/30 px-3 text-xs font-semibold text-copper"><MapPinIcon className="h-4 w-4" aria-hidden="true" />{t('myArea')}</button>}
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-gray-600">{t('scopeHint')}</p>
           </div>
-          <div ref={results} className="max-h-72 min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 md:max-h-none" aria-busy={loading}>
+          <div className="p-3">
             {loading && <p role="status" className="flex items-center gap-2 p-2 text-xs text-gray-500"><ArrowPathIcon className="h-4 w-4 animate-spin" />{t('loading')}</p>}
             {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{t('error')} <button type="button" onClick={() => setRetry(value => value + 1)} className="underline">{t('retry')}</button></p>}
             {!loading && !error && !current?.location && <p className="p-3 text-sm text-gray-500">{t('unavailable')}</p>}
@@ -187,15 +202,8 @@ export default function ExploreLocationsMap({ prefectures = EMPTY, homeLocationI
               {areas.length > 0 && <details className="mt-3"><summary className="min-h-10 cursor-pointer text-xs font-semibold text-copper">{t('areas')}</summary>{areaList}</details>}
             </> : areaList}
           </div>
-        </div>
-      </aside>
-    </div>
-    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-brand-border bg-ivory/30 px-4 py-3 text-[10px] text-gray-500">
-      <p>{t('scopeHint')}</p>
-      <div className="flex flex-wrap items-center gap-3" aria-label={t('legend')}>
-        {loading || error || !current ? <span>{t(error ? 'error' : 'loading')}</span> : detail ? <span>{t('pinLegend')}</span> : <>{[['#e5e7eb', '0'], ['#e9cbb9', '1–5'], ['#bc8868', '6–20'], ['#80462f', '21+']].map(([color, label]) => <span key={label} className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm border border-black/10" style={{ backgroundColor: color }} />{label}</span>)}<span>{t(layer)}</span></>}
-      </div>
-    </div></>}
+      </MapExplorerLayout>
+    </>}
     {showMapLink && <div className="flex flex-wrap items-center justify-between gap-3 border-t border-brand-border bg-ivory/40 px-4 py-4">
       <span className="text-xs text-gray-500">{t('widgetHint')}</span>
       <Link href={mapLayerHref(layer, districtId)} className="inline-flex min-h-11 items-center rounded-xl bg-charcoal px-4 text-sm font-semibold text-white hover:bg-copper">{t('openMap')} →</Link>

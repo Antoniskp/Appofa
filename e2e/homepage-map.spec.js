@@ -42,7 +42,7 @@ test('homepage local map widget opens the shared political layer with its select
   await expect(page.getByRole('link', { name: 'Anna Example Independent', exact: true })).toBeVisible();
 });
 
-test('homepage local map shared page filters candidate cycles and switches all layers', async ({ page }, testInfo) => {
+test('homepage local map keeps the layout fixed across layers and candidate filters', async ({ page }, testInfo) => {
   await page.route('**/api/electoral-districts/candidates?**', route => route.fulfill({ json: { success: true, data: {
     registrations: [
       { id: 501, districtId: 'district-athens-a', electionCycle: '2027', partyName: 'Community party', slogan: 'Listen to residents', platform: 'Consult residents on local projects.', candidate: { firstNameNative: 'Maria', lastNameNative: 'Example' } },
@@ -50,19 +50,46 @@ test('homepage local map shared page filters candidate cycles and switches all l
     ], pagination: { totalPages: 1 },
   } } }));
   await page.goto('/map?layer=political&district=district-athens-a');
-  await page.getByRole('button', { name: 'Candidates', exact: true }).click();
+  const section = page.getByRole('region', { name: 'Explore the map', exact: true });
+  const layout = () => section.locator('.leaflet-container').evaluate(map => {
+    const frame = map.closest('.home-map');
+    const origin = frame.getBoundingClientRect();
+    return [frame, frame.querySelector('[type="search"]'), map, frame.querySelector('aside'), frame.lastElementChild].map(element => {
+      const { x, y, width, height } = element.getBoundingClientRect();
+      return [x - origin.x, y - origin.y, width, height].map(Math.round);
+    });
+  });
+  const initialLayout = await layout();
+  const electoral = section.getByRole('complementary', { name: 'People by electoral district' });
+  await electoral.getByRole('button', { name: 'Candidates', exact: true }).click();
   await expect(page.locator('a[href^="/candidate-registrations/"]')).toHaveCount(2);
-  await page.getByRole('combobox', { name: 'Election cycle', exact: true }).selectOption('2027');
+  await electoral.getByRole('combobox', { name: 'Election cycle', exact: true }).selectOption('2027');
   await expect(page.locator('a[href^="/candidate-registrations/"]')).toHaveCount(1);
   await expect(page.getByRole('link', { name: /Maria Example/ })).toContainText('Consult residents on local projects.');
-  await page.getByRole('region', { name: 'Explore the map', exact: true }).screenshot({ path: testInfo.outputPath('political-map-candidates.png') });
-  const layers = page.getByRole('group', { name: 'Map content', exact: true });
+  const aboutCandidates = electoral.locator('summary').filter({ hasText: 'About these candidates' });
+  await aboutCandidates.click();
+  await expect(electoral.getByText(/Approved parliamentary registrations/)).toBeVisible();
+  expect(await layout()).toEqual(initialLayout);
+  await aboutCandidates.click();
+  await section.screenshot({ path: testInfo.outputPath('political-map-candidates.png') });
+  const layers = section.getByRole('group', { name: 'Map content', exact: true });
   for (const [label, value] of [['Cameras', 'cameras'], ['Live streams', 'live'], ['News', 'news'], ['Issues', 'issues'], ['Votes', 'polls']]) {
     await layers.getByRole('button', { name: label, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`layer=${value}$`));
     await expect(layers.getByRole('button', { name: label, exact: true })).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByRole('region', { name: 'Explore the map', exact: true }).getByRole('alert')).toHaveCount(0);
+    await expect(section.getByRole('region', { name: /^Local activity map:/ })).toBeVisible();
+    expect(await layout()).toEqual(initialLayout);
   }
+  if (testInfo.project.name === 'mobile') {
+    await section.getByRole('button', { name: 'Collapse results' }).click();
+  }
+  await layers.getByRole('button', { name: 'Political map', exact: true }).click();
+  await expect(page).toHaveURL(/layer=political&district=district-athens-a$/);
+  if (testInfo.project.name === 'mobile') {
+    await expect(section.getByRole('button', { name: 'Show results' })).toHaveAttribute('aria-expanded', 'false');
+    await section.getByRole('button', { name: 'Show results' }).click();
+  }
+  expect(await layout()).toEqual(initialLayout);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
@@ -113,8 +140,16 @@ test('homepage local map searches areas and shows public issue, vote and camera 
   // Reporting journeys may already have added public issues to this shared area.
   await expect.poll(() => section.locator('.map-issue-marker').count()).toBeGreaterThanOrEqual(2);
   const search = section.getByRole('searchbox', { name: 'Search a municipality or area' });
+  const mapOffset = () => section.locator('.leaflet-container').evaluate(map =>
+    map.getBoundingClientRect().top - map.closest('.home-map').getBoundingClientRect().top);
+  const initialMapOffset = await mapOffset();
   await search.fill('Test Municipality');
   const result = section.locator('#home-map-search-results').getByRole('button', { name: /Test Municipality/ });
+  await expect(result).toBeVisible();
+  expect(await mapOffset()).toBe(initialMapOffset);
+  await search.press('Escape');
+  await expect(result).toHaveCount(0);
+  await search.fill('Test Municip');
   await expect(result).toBeVisible();
   await result.focus();
   await result.press('Enter');

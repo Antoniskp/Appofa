@@ -1,14 +1,15 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
 import ExploreLocationsMap from '@/components/locations/ExploreLocationsMap';
-import { mapLayerHref } from '@/lib/map-layers';
+import { mapLayerHref, resolveMapLayer } from '@/lib/map-layers';
 
 export default function MapPageClient({ layer, districtId }) {
   const t = useTranslations('homeMap');
-  const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeLayer = searchParams ? resolveMapLayer(searchParams.get('layer')) : layer;
   const { user } = useAuth();
   return <div className="app-container py-6 sm:py-10">
     <header className="mb-6 max-w-3xl">
@@ -17,8 +18,8 @@ export default function MapPageClient({ layer, districtId }) {
       <p className="mt-3 text-sm leading-relaxed text-gray-600 sm:text-base">{t('pageDescription')}</p>
     </header>
     <section aria-label={t('pageTitle')}>
-      <ExploreLocationsMap activeLayer={layer} initialDistrictId={districtId} homeLocationId={user?.homeLocationId}
-        onLayerChange={value => router.replace(mapLayerHref(value), { scroll: false })} />
+      <ExploreLocationsMap activeLayer={activeLayer} initialDistrictId={districtId} homeLocationId={user?.homeLocationId}
+        onLayerChange={(value, selectedDistrictId) => window.history.replaceState(null, '', mapLayerHref(value, selectedDistrictId))} />
     </section>
   </div>;
 }

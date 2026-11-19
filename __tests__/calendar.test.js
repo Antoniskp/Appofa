@@ -1,7 +1,7 @@
 const express = require('express');
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
-const { sequelize, User, Location, UserLocationRole, LocationEvent, Notification } = require('../src/models');
+const { sequelize, User, Location, UserLocationRole, LocationEvent, Notification, Poll, LocationLink } = require('../src/models');
 jest.mock('../src/services/pushService', () => ({ getUnreadCount: jest.fn().mockResolvedValue(1), sendPushToUser: jest.fn().mockResolvedValue({}) }));
 const { storeCsrfToken } = require('../src/utils/csrf');
 const app = express();
@@ -29,6 +29,8 @@ beforeAll(async () => {
 beforeEach(async () => {
   await Notification.destroy({ where: {} });
   await LocationEvent.destroy({ where: {} });
+  await Poll.destroy({ where: {} });
+  await LocationLink.destroy({ where: { entity_type: 'poll' } });
 });
 afterAll(() => sequelize.close());
 
@@ -160,4 +162,58 @@ test('merged source pagination preserves official deadlines alongside community 
   expect(new Set(entries.map(entry => entry.id)).size).toBe(107);
   expect(entries.filter(entry => entry.source === 'benefit')).toHaveLength(5);
   expect(entries.map(entry => entry.start)).toEqual(entries.map(entry => entry.start).sort());
+});
+
+test('poll deadlines follow the source poll and respect visibility and location filters', async () => {
+  const poll = values => Poll.create({ creatorId: author.id, title: 'Town poll', deadline: '2090-10-10T12:30:00Z', ...values });
+  const local = await poll({ locationId: town.id });
+  const linked = await poll({ title: 'Linked poll' });
+  await LocationLink.create({ location_id: town.id, entity_type: 'poll', entity_id: linked.id });
+  const elsewhere = await poll({ title: 'Unscoped poll' });
+  await poll({ visibility: 'private', locationId: town.id });
+  await poll({ visibility: 'locals_only', locationId: town.id });
+  await poll({ status: 'archived' });
+  await poll({ status: 'closed' });
+  await poll({ deadline: null });
+  const historical = await poll({ deadline: '2024-10-06T15:00:00Z', status: 'closed' });
+  const url = '/api/calendar?start=2090-10-01T00:00:00Z&end=2090-11-01T00:00:00Z&category=polls';
+  const response = await request(app).get(url).set(headers(moderator));
+  expect(response.status).toBe(200);
+  expect(response.body.data.map(entry => entry.sourceId)).toEqual([local.id, linked.id, elsewhere.id]);
+  expect(response.body.data[0]).toMatchObject({
+    source: 'poll-deadline', category: 'polls', href: `/polls/${local.id}`, timezone: 'UTC',
+    start: '2090-10-10T12:30:00.000Z', end: '2090-10-10T12:30:00.001Z',
+  });
+  const scoped = await request(app).get(`${url}&complete=true&locationId=${parent.id}&descendants=true`);
+  expect(scoped.body.data.map(entry => entry.sourceId)).toEqual([local.id, linked.id]);
+  expect((await request(app).get(`${url}&locationId=${parent.id}`)).body.data).toEqual([]);
+  expect((await request(app).get(`${url}&view=mine`).set(headers(author))).body.data).toEqual([]);
+  expect((await request(app).get('/api/calendar?start=2024-10-01T00:00:00Z&end=2024-11-01T00:00:00Z&period=past&source=poll-deadline')).body.data[0].sourceId).toBe(historical.id);
+  await local.update({ deadline: '2090-10-12T18:00:00Z' });
+  const updated = await request(app).get(`${url}&source=poll-deadline`);
+  expect(updated.body.data.at(-1)).toMatchObject({ sourceId: local.id, start: '2090-10-12T18:00:00.000Z' });
+});
+
+test('confirmed election dates are all-day entries with official source links', async () => {
+  const url = '/api/calendar?start=2024-06-01T00:00:00Z&end=2024-07-01T00:00:00Z&category=elections';
+  const response = await request(app).get(url);
+  expect(response.body.data).toEqual([expect.objectContaining({
+    source: 'election', category: 'elections', allDay: true, timezone: 'Europe/Athens',
+    start: '2024-06-09T00:00:00.000Z', end: '2024-06-10T00:00:00.000Z',
+    href: 'https://results.elections.europa.eu/en/greece/',
+  })]);
+  expect((await request(app).get(`${url}&locationId=${town.id}`)).body.data).toEqual([]);
+});
+
+test('next event searches by displayed date across months, skipping cancellations', async () => {
+  await LocationEvent.bulkCreate([
+    { title: 'Cancelled meeting', status: 'cancelled', start: '2026-11-02T12:00:00Z', end: '2026-11-02T13:00:00Z' },
+    { title: 'December in Athens', status: 'published', start: '2026-11-30T22:00:00Z', end: '2026-11-30T23:00:00Z' },
+    { title: 'November in Los Angeles', status: 'published', timezone: 'America/Los_Angeles', start: '2026-12-01T00:30:00Z', end: '2026-12-01T01:00:00Z' },
+  ].map(values => ({ ...payload, locationId: town.id, authorId: author.id, ...values })));
+  const url = `/api/calendar/next?from=2026-11-01&category=meeting&locationId=${parent.id}`;
+  expect((await request(app).get(`${url}&descendants=true`)).body).toEqual({ success: true, day: '2026-11-30' });
+  expect((await request(app).get(url)).body).toEqual({ success: true, day: null });
+  expect((await request(app).get('/api/calendar/next?from=2026-02-30')).status).toBe(400);
+  expect((await request(app).get('/api/calendar/next?from=2026-11-01&view=mine')).status).toBe(401);
 });

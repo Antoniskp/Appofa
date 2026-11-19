@@ -5,6 +5,7 @@ const optionalAuth = require('../middleware/optionalAuth');
 const csrf = require('../middleware/csrfProtection');
 const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
 router.get('/', apiLimiter, optionalAuth, controller.list);
+router.get('/next', apiLimiter, optionalAuth, controller.nextDay);
 router.post('/events', createLimiter, auth, csrf, controller.create);
 router.get('/events/:id', apiLimiter, optionalAuth, controller.detail);
 router.patch('/events/:id', apiLimiter, auth, csrf, controller.update);

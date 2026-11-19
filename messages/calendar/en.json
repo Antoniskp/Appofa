@@ -34,6 +34,9 @@
   "loading": "Loading…",
   "empty": "No events in this period.",
   "emptyDay": "No events on this date.",
+  "jumpToNextEvent": "Jump to next event",
+  "noNextEvent": "No matching events in the following year.",
+  "nextEventError": "Couldn’t find the next event. Try again.",
   "dayCount": "{count, plural, one {# event} other {# events}}",
   "previous": "Previous",
   "next": "Next",
@@ -91,16 +94,19 @@
     "culture": "Culture",
     "action": "Action",
     "other": "Other",
-    "benefits": "Benefits"
+    "benefits": "Benefits",
+    "elections": "Elections",
+    "polls": "Poll deadlines"
   },
   "notifications": {
     "published": "Your event was approved",
     "rejected": "Your event needs changes",
     "cancelled": "Your event was cancelled"
   },
-  "intro": "Meetings, activities, events and benefit deadlines.",
+  "intro": "Community events, elections, poll deadlines and benefit dates.",
   "benefitEntry": "Official benefit date · View eligibility and applications",
   "filters": "Filters",
+  "removeFilter": "Remove filter: {filter}",
   "myArea": "My area",
   "today": "Today",
   "ongoing": "Ongoing",

@@ -1,7 +1,8 @@
 const { sequelize, LocationEvent, Location } = require('../models');
 const { canManage } = require('../services/locationEventPermissions');
-const { listEntries } = require('../services/calendarService');
+const { listEntries, findNextEventDay } = require('../services/calendarService');
 const notificationService = require('../services/notificationService');
+const { CALENDAR_CATEGORIES, EVENT_CATEGORIES } = require('../../lib/calendar/categories');
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 const idOf = value => {
   if (!/^\d+$/.test(String(value)) || !Number.isSafeInteger(Number(value)) || Number(value) < 1) fail(400, 'Invalid ID.');
@@ -30,7 +31,7 @@ function validate(body) {
   if (sourceUrl) {
     try { const url = new URL(sourceUrl); if (url.protocol !== 'https:' || url.username || url.password) throw new Error(); } catch { fail(400, 'Use an HTTPS link.'); }
   }
-  if (!['community', 'meeting', 'culture', 'action', 'other'].includes(body.category)) fail(400, 'Invalid category.');
+  if (!EVENT_CATEGORIES.includes(body.category)) fail(400, 'Invalid category.');
   return { title: text(body.title, 200, true), description: text(body.description, 10000, true), start, end, timezone, allDay: body.allDay,
     venue: text(body.venue, 500), organizer: text(body.organizer, 200), sourceUrl, category: body.category };
 }
@@ -38,19 +39,28 @@ const handle = fn => async (req, res) => {
   res.set('Cache-Control', 'private, no-store');
   try { await fn(req, res); } catch (e) { if (!e.status) console.error('Calendar error:', e.message); res.status(e.status || 500).json({ success: false, message: e.status ? e.message : 'Unable to process event.' }); }
 };
+function filtersOf(query) {
+  const view = query.view || 'public';
+  if (!['public', 'mine', 'review'].includes(view)) fail(400, 'Invalid view.');
+  if (query.category && !CALENDAR_CATEGORIES.includes(query.category)) fail(400, 'Invalid category.');
+  return { view, category: query.category,
+    locationId: query.locationId ? idOf(query.locationId) : null, descendants: query.descendants === 'true' };
+}
 exports.list = handle(async (req, res) => {
   const start = date(req.query.start), end = date(req.query.end);
   if (end <= start || end - start > 370 * 86400000) fail(400, 'Choose a date range of up to one year.');
   const complete = req.query.complete === 'true';
   if (complete && end - start > 34 * 86400000) fail(400, 'Complete calendar queries are limited to 34 days.');
   if (req.query.period && !['upcoming', 'past'].includes(req.query.period)) fail(400, 'Invalid period.');
-  const view = req.query.view || 'public';
-  if (!['public', 'mine', 'review'].includes(view)) fail(400, 'Invalid view.');
-  if (req.query.category && !['community', 'meeting', 'culture', 'action', 'other', 'benefits'].includes(req.query.category)) fail(400, 'Invalid category.');
   const page = Math.max(1, Math.min(100, parseInt(req.query.page, 10) || 1));
-  const result = await listEntries({ start, end, view, page, complete, period: req.query.period, source: req.query.source, category: req.query.category,
-    locationId: req.query.locationId ? idOf(req.query.locationId) : null, descendants: req.query.descendants === 'true' }, req.user);
+  const result = await listEntries({ ...filtersOf(req.query), start, end, page, complete, period: req.query.period, source: req.query.source }, req.user);
   res.json({ success: true, ...result });
+});
+exports.nextDay = handle(async (req, res) => {
+  const { from } = req.query;
+  if (typeof from !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(from)) fail(400, 'Use a calendar date.');
+  const day = await findNextEventDay(date(`${from}T00:00:00Z`), filtersOf(req.query), req.user);
+  res.json({ success: true, day });
 });
 exports.create = handle(async (req, res) => {
   const locationId = idOf(req.body.locationId);
