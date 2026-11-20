@@ -897,6 +897,12 @@
     "map_close": "Close map"
   },
   "footer": {
+    "legal_library": "Legal Library",
+    "legal_library_checking": "Checking availability",
+    "legal_library_online": "Online",
+    "legal_library_offline": "Offline",
+    "legal_library_verify": "Verify your email",
+    "legal_library_sign_in": "Sign in for access",
     "rights": "All rights reserved.",
     "instructions": "Instructions",
     "rules": "Rules",

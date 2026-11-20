@@ -44,6 +44,7 @@ geoRoutes.use(geoAccessPublicRoutes);
 geoRoutes.use(geoDetectRoutes);
 
 const routes = [
+  { prefix: '/api/laws', router: require('./legalLibraryRoutes') },
   { prefix: '/api/positions', router: require('./positionRoutes') },
   { prefix: '/api/issue-follows', router: require('./issueFollowRoutes') },
   { prefix: '/api/calendar', router: require('./calendarRoutes') },

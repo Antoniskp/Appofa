@@ -159,6 +159,14 @@ WORKER_TOKEN=<shared-worker-secret>
 - `WORKER_TOKEN` is sent only server-side as `x-worker-token` for snapshot calls
 - Never expose `WORKER_TOKEN` in frontend (`NEXT_PUBLIC_*`) variables
 
+### Legal Library
+
+The footer links to `/laws` when LawDB is online and the signed-in account has a verified email. Appofa checks the live session on each request for the reader, its assets, and its data.
+
+Set `LAW_LIBRARY_BASE_URL` in the Express backend environment to a loopback origin such as `http://127.0.0.1:4000`. Point it to a dedicated Appofasistis LawDB collection prepared for sharing. Use a separate graph and files without personal annotations or drafts, since the LawDB search index includes annotations. Start Appofasistis on the matching free `INTERNAL_API_PORT`, or use a private tunnel bound to loopback if Appofasistis runs on another machine. Keep the LawDB listener and Neo4j private. The footer shows offline when the origin is unset or LawDB cannot query its graph.
+
+Appofa exposes the existing reader in read-only mode, including search, citations, Gazette browsing, and saved PDFs. Imports, writes, backups, and worker diagnostics stay on the private Appofasistis instance.
+
 ### Worker token management (admin API)
 
 appofasi now supports database-backed worker API tokens (hashed at rest) managed by admins:

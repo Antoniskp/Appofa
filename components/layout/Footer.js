@@ -5,6 +5,7 @@ import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 import { useTranslations } from 'next-intl';
 import NewsletterSignupForm from '@/components/newsletter/NewsletterSignupForm';
 import { useAuth } from '@/lib/auth-context';
+import LegalLibraryLink from './LegalLibraryLink';
 
 export default function Footer() {
   const t = useTranslations('footer');
@@ -19,6 +20,7 @@ export default function Footer() {
         { href: '/articles', label: t('articles'), type: 'internal' },
         { href: '/polls', label: t('polls'), type: 'internal' },
         { href: '/locations', label: t('locations'), type: 'internal' },
+        { href: '/laws', type: 'legal-library' },
       ],
     },
     {
@@ -69,7 +71,9 @@ export default function Footer() {
               <ul className="space-y-2">
                 {column.links.map((link, index) => (
                   <li key={link.href || `${column.title}-${index}`}>
-                    {link.type === 'external' ? (
+                    {link.type === 'legal-library' ? (
+                      <LegalLibraryLink user={user} loading={loading} />
+                    ) : link.type === 'external' ? (
                       <a
                         href={link.href}
                         target="_blank"

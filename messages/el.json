@@ -897,6 +897,12 @@
     "map_close": "Κλείσιμο χάρτη"
   },
   "footer": {
+    "legal_library": "Νομική Βιβλιοθήκη",
+    "legal_library_checking": "Έλεγχος διαθεσιμότητας",
+    "legal_library_online": "Διαθέσιμη",
+    "legal_library_offline": "Εκτός σύνδεσης",
+    "legal_library_verify": "Επιβεβαιώστε το email σας",
+    "legal_library_sign_in": "Συνδεθείτε για πρόσβαση",
     "rights": "Όλα τα δικαιώματα διατηρούνται.",
     "instructions": "Οδηγίες",
     "rules": "Κανόνες",

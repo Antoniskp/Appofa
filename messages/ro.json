@@ -897,6 +897,12 @@
     "map_close": "Închide harta"
   },
   "footer": {
+    "legal_library": "Biblioteca juridică",
+    "legal_library_checking": "Se verifică disponibilitatea",
+    "legal_library_online": "Online",
+    "legal_library_offline": "Offline",
+    "legal_library_verify": "Verifică adresa de e-mail",
+    "legal_library_sign_in": "Autentifică-te pentru acces",
     "rights": "Toate drepturile rezervate.",
     "instructions": "Instrucțiuni",
     "rules": "Reguli",

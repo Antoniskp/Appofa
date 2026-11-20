@@ -32,8 +32,10 @@ const Footer = require('../components/layout/Footer').default;
 describe('Footer newsletter visibility', () => {
   let container;
   let root;
+  const originalFetch = global.fetch;
 
   beforeEach(() => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ online: false }) });
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -44,6 +46,7 @@ describe('Footer newsletter visibility', () => {
       root.unmount();
     });
     authState = { user: null, loading: false };
+    global.fetch = originalFetch;
     document.body.innerHTML = '';
   });
 
@@ -65,5 +68,21 @@ describe('Footer newsletter visibility', () => {
     });
 
     expect(container.querySelector('[data-testid="newsletter-signup"]')).toBeNull();
+  });
+
+  test.each([
+    [null, true, '/login?next=%2Flaws'],
+    [{ emailVerified: false }, true, '#email-verification'],
+    [{ emailVerified: true }, true, '/laws'],
+    [{ emailVerified: true }, false, null],
+  ])('shows the correct Legal Library action for user %j when online is %s', async (user, online, destination) => {
+    authState = { user, loading: false };
+    global.fetch.mockResolvedValue({ ok: true, json: async () => ({ online }) });
+    await act(async () => root.render(React.createElement(Footer)));
+
+    const links = Array.from(container.querySelectorAll('a'), link => link.getAttribute('href'));
+    expect(links.includes('/laws')).toBe(destination === '/laws');
+    if (destination) expect(links).toContain(destination);
+    expect(container.querySelector(online ? '.bg-green-400' : '.bg-red-400')).toBeTruthy();
   });
 });

@@ -12,6 +12,10 @@ const nextConfig = {
   },
   // API proxying is handled by app/api/[...path]/route.js
   // which provides proper error handling and JSON responses
+  async rewrites() {
+    const apiBase = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    return [{ source: '/laws/:asset*', destination: `${apiBase.replace(/\/+$/, '')}/api/laws/view/:asset*` }];
+  },
   
   images: {
     remotePatterns: [
