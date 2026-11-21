@@ -5,13 +5,13 @@ const { act } = React;
 const { createRoot } = require('react-dom/client');
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const mockUpdateProfile = jest.fn();
-const mockGetPreference = jest.fn();
-const mockSavePreference = jest.fn();
+let mockUser;
 const mockTranslate = (key) => key;
 jest.mock('next-intl', () => ({ useTranslations: () => mockTranslate, useLocale: () => 'en' }));
-jest.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: {}, updateProfile: mockUpdateProfile }) }));
+jest.mock('@/lib/auth-context', () => ({ useAuth: () => ({ user: mockUser, updateProfile: mockUpdateProfile }) }));
 jest.mock('@/lib/api', () => ({
   locationAPI: {
+    getById: jest.fn(async () => ({ success: true, location: { id: 1, name: 'Greece', type: 'country' } })),
     getAll: jest.fn(async ({ type }) => ({
       success: true,
       locations: {
@@ -21,15 +21,14 @@ jest.mock('@/lib/api', () => ({
       }[type] || [],
     })),
   },
-  newsletterAPI: { getMyPreference: (...args) => mockGetPreference(...args), updateMyPreference: (...args) => mockSavePreference(...args) } }));
+}));
 const LocationStep = require('../components/onboarding/LocationStep').default;
 let root;
 let container;
 let next;
 beforeEach(() => {
+  mockUser = {};
   mockUpdateProfile.mockReset().mockResolvedValue({ success: true });
-  mockGetPreference.mockReset().mockResolvedValue({ success: true, data: { subscribed: false, preferences: { general: true, local: false, activity: false } } });
-  mockSavePreference.mockReset();
   next = jest.fn().mockResolvedValue();
   container = document.createElement('div');
   document.body.appendChild(container);
@@ -51,14 +50,13 @@ async function selectLocation() {
   }
 }
 
-test('saving a selected location advances without opting into email', async () => {
+test('saving a selected location advances setup', async () => {
   await act(async () => root.render(React.createElement(LocationStep, { onContinue: next })));
   expect(container.querySelector('input[type="checkbox"]').checked).toBe(false);
   await selectLocation();
   await click('saveLocation');
   expect(mockUpdateProfile).toHaveBeenCalledWith({ homeLocationId: 42, isDiaspora: false });
-  expect(next).toHaveBeenCalledTimes(1);
-  expect(mockSavePreference).not.toHaveBeenCalled();
+  expect(next).toHaveBeenCalledWith(42);
 });
 test('failed location save stays on step and displays an error', async () => {
   mockUpdateProfile.mockRejectedValue(new Error('Please retry'));
@@ -71,12 +69,19 @@ test('failed location save stays on step and displays an error', async () => {
 test.each([
   ['skip', false],
   ['skipSelected', true],
-])('%s advances without saving a location or subscription', async (label, hasSelection) => {
+])('%s advances without saving a location', async (label, hasSelection) => {
   await act(async () => root.render(React.createElement(LocationStep, { onContinue: next })));
   if (hasSelection) await selectLocation();
   await click(label);
   expect(next).toHaveBeenCalledTimes(1);
   expect(next).toHaveBeenCalledWith(undefined);
   expect(mockUpdateProfile).not.toHaveBeenCalled();
-  expect(mockSavePreference).not.toHaveBeenCalled();
+});
+
+test('can keep an existing location without saving it again', async () => {
+  mockUser = { homeLocationId: 1, isDiaspora: false };
+  await act(async () => root.render(React.createElement(LocationStep, { onContinue: next })));
+  await click('continueSaved');
+  expect(next).toHaveBeenCalledWith(undefined);
+  expect(mockUpdateProfile).not.toHaveBeenCalled();
 });

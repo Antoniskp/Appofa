@@ -18,7 +18,7 @@ async function createAccount(page, suffix, messages = en) {
   await page.getByRole('button', { name: messages.auth.submit_register, exact: true }).click();
 }
 
-test('signup validates fields, confirms account creation and lets people skip setup', async ({ page }, testInfo) => {
+test('signup validates fields, confirms account creation and skips to the homepage', async ({ page }, testInfo) => {
   const browserErrors = [];
   page.on('pageerror', error => browserErrors.push(error.message));
   await page.goto('/register');
@@ -42,12 +42,13 @@ test('signup validates fields, confirms account creation and lets people skip se
   await expect(page.getByText(en.signupJourney.verification_later_help, { exact: true })).toBeVisible();
   await expect(page.getByText(en.onboarding.choose_one_primary, { exact: true })).toBeHidden();
   await expect(page.getByRole('heading', { name: en.onboarding.your_checklist })).toHaveCount(0);
-  await expect(page.getByRole('checkbox', { name: en.locationOnboarding.subscribe })).toBeHidden();
+  await expect(page.locator('a[href="/onboarding?mode=advanced"]')).toHaveCount(0);
+  await expect(page.getByRole('checkbox', { name: en.locationOnboarding.subscribe })).toHaveCount(0);
   await expect(page.getByRole('button', { name: en.locationOnboarding.saveLocation, exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: en.locationOnboarding.skip, exact: true })).toBeEnabled();
   await page.screenshot({ path: testInfo.outputPath('signup-ready.png'), fullPage: true });
   await page.getByRole('button', { name: en.locationOnboarding.skip, exact: true }).click();
-  await expect(page).toHaveURL(/\/polls$/);
+  await expect(page).toHaveURL(new URL('/', page.url()).href);
   const onboarding = await (await page.request.get('/api/auth/onboarding')).json();
   expect(onboarding.data.onboarding.onboardingCompletedAt).toBeTruthy();
   expect(browserErrors).toEqual([]);
@@ -82,6 +83,12 @@ test('signup can correct an email and save a location in Greek', async ({ page, 
   expect(savedProfile.data.user.homeLocationId).toBe(3);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('signup-local-topics.png'), fullPage: true });
+
+  await page.goto('/onboarding?mode=advanced');
+  await expect(page.getByRole('heading', { name: el.locationOnboarding.title, exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: el.onboarding.choose_one_primary, exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: el.locationOnboarding.continueSaved, exact: true }).click();
+  await expect(page).toHaveURL(/\/locations\/3$/);
 });
 
 test('signup returns people to the action that prompted registration', async ({ page }) => {
@@ -90,6 +97,36 @@ test('signup returns people to the action that prompted registration', async ({ 
   await expect(page).toHaveURL(/\/polls\/1-improve-our-local-park$/);
   await expect(page.getByRole('heading', { name: 'Improve our local park', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: en.signupJourney.verification_title })).toBeVisible();
+});
+
+test('signup opens a saved checklist without asking users to choose a role', async ({ page }) => {
+  await page.goto('/register');
+  await createAccount(page, 'saved-checklist');
+  await expect(page).toHaveURL(/\/onboarding$/);
+
+  await page.route('**/api/auth/onboarding', route => {
+    if (route.request().method() !== 'GET') return route.continue();
+    return route.fulfill({ json: { success: true, data: { onboarding: {
+      onboardingGoal: 'independent',
+      emailVerified: true,
+      firstNameNative: 'Test',
+      lastNameNative: 'User',
+      avatar: '/test-avatar.png',
+      homeLocationId: 3,
+      nationality: 'GR',
+      bio: 'Test profile',
+    } } } });
+  });
+  await page.route('**/api/candidate-registrations/mine?*', route =>
+    route.fulfill({ json: { success: true, data: { registrations: [{ id: 1 }] } } }));
+
+  await page.goto('/onboarding?mode=advanced');
+  await expect(page.getByRole('heading', { name: en.onboarding.your_checklist })).toBeVisible();
+  await expect(page.getByRole('heading', { name: en.onboarding.choose_one_primary })).toHaveCount(0);
+  await expect(page.getByText(en.onboarding.step_person_search, { exact: true })).toBeVisible();
+  await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100');
+  await page.getByRole('link', { name: en.onboarding.explore_platform, exact: true }).click();
+  await expect(page).toHaveURL(/\/locations\/3$/);
 });
 
 test('signup lets an unverified user change their username', async ({ page }) => {

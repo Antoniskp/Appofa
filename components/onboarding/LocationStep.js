@@ -5,7 +5,6 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
 import Button from '@/components/ui/Button';
 import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
-import EmailPreferences from './EmailPreferences';
 
 export default function LocationStep({ onContinue }) {
   const t = useTranslations('locationOnboarding');
@@ -32,9 +31,12 @@ export default function LocationStep({ onContinue }) {
     }
   };
 
-  const skipLabel = locationId ? 'skipSelected' : 'skip';
+  const usingSavedLocation = locationId === user?.homeLocationId && abroad === Boolean(user?.isDiaspora);
+  const canSave = Boolean(locationId) && !usingSavedLocation;
+  let continueLabel = locationId ? 'skipSelected' : 'skip';
+  if (usingSavedLocation && locationId) continueLabel = 'continueSaved';
 
-  return <div className="space-y-6">
+  return (
     <section aria-labelledby="onboarding-location-heading" className="space-y-4 rounded-xl border border-blue-200 bg-white p-5">
       <div>
         <h2 id="onboarding-location-heading" className="text-xl font-bold text-gray-900">{t('title')}</h2>
@@ -45,19 +47,15 @@ export default function LocationStep({ onContinue }) {
       {abroad && <p className="text-sm text-gray-600">{t('abroadHelp')}</p>}
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap" aria-busy={saving}>
-        {locationId && (
+        {canSave && (
           <Button size="sm" onClick={() => advance(locationId)} disabled={saving} className="min-h-11">
             {t(pendingAction === 'save' ? 'saving' : 'saveLocation')}
           </Button>
         )}
-        <Button size="sm" variant={locationId ? 'secondary' : 'primary'} onClick={() => advance()} disabled={saving} className="min-h-11">
-          {t(pendingAction === 'skip' ? 'continuing' : skipLabel)}
+        <Button size="sm" variant={canSave ? 'secondary' : 'primary'} onClick={() => advance()} disabled={saving} className="min-h-11">
+          {t(pendingAction === 'skip' ? 'continuing' : continueLabel)}
         </Button>
       </div>
     </section>
-    <details className="rounded-xl border border-gray-200 bg-white p-4">
-      <summary className="cursor-pointer py-1 text-sm font-semibold text-gray-700">{t('emailTitle')} ({t('optional')})</summary>
-      <div className="mt-4"><EmailPreferences /></div>
-    </details>
-  </div>;
+  );
 }

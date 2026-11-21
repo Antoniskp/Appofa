@@ -6,10 +6,6 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
   ChevronRightIcon,
-  ShieldCheckIcon,
-  PencilSquareIcon,
-  UserIcon,
-  GlobeAltIcon,
   XMarkIcon,
   NewspaperIcon,
   VideoCameraIcon,
@@ -18,20 +14,11 @@ import {
 } from '@heroicons/react/24/outline';
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
 import { authAPI, messageAPI, candidateRegistrationAPI, onboardingEventAPI } from '@/lib/api';
-import Button from '@/components/ui/Button';
+import { getAccountLandingPath } from '@/lib/auth-redirect';
 import EmailVerificationNotice from '@/components/onboarding/EmailVerificationNotice';
 import LocationStep from '@/components/onboarding/LocationStep';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import StartParticipation from '@/components/onboarding/StartParticipation';
-
-const GOALS = ['moderator', 'creator', 'independent', 'citizen'];
-
-const GOAL_ICONS = {
-  moderator: ShieldCheckIcon,
-  creator: PencilSquareIcon,
-  independent: UserIcon,
-  citizen: GlobeAltIcon,
-};
 
 // Creator contribution templates — route to existing creation flows
 const CREATOR_TEMPLATES = [
@@ -187,9 +174,8 @@ function buildChecklist(goal, onboardingData, t, extendedData) {
       {
         key: 'person_search',
         label: t('step_person_search'),
-        doneLabel: t('step_person_search_done'),
         action: t('step_person_search_action'),
-        done: false,
+        optional: true,
         href: '/users',
       },
       {
@@ -217,44 +203,6 @@ function buildChecklist(goal, onboardingData, t, extendedData) {
   return [...commonSteps, ...(goalExtras[goal] || [])];
 }
 
-function GoalCard({ goalKey, selected, secondary, onPrimary, t }) {
-  const Icon = GOAL_ICONS[goalKey];
-  const isPrimary = selected === goalKey;
-  const isSecondary = secondary.includes(goalKey);
-
-  return (
-    <div
-      className={`relative rounded-xl border-2 p-5 cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-        isPrimary
-          ? 'border-blue-600 bg-blue-50 shadow-md'
-          : isSecondary
-          ? 'border-blue-300 bg-blue-50/50'
-          : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm'
-      }`}
-      role="button"
-      tabIndex={0}
-      aria-pressed={isPrimary}
-      onClick={() => onPrimary(goalKey)}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onPrimary(goalKey); }}
-    >
-      <div className="flex items-start gap-3">
-        <Icon className={`h-6 w-6 flex-shrink-0 mt-0.5 ${isPrimary ? 'text-blue-600' : 'text-gray-500'}`} />
-        <div className="flex-1 min-w-0">
-          <p className={`font-semibold text-sm ${isPrimary ? 'text-blue-900' : 'text-gray-900'}`}>
-            {t(`goal_${goalKey}_label`)}
-          </p>
-          <p className="text-xs text-gray-600 mt-0.5">
-            {t(`goal_${goalKey}_description`)}
-          </p>
-        </div>
-        {isPrimary && (
-          <CheckCircleSolid className="h-5 w-5 text-blue-600 flex-shrink-0" aria-hidden="true" />
-        )}
-      </div>
-    </div>
-  );
-}
-
 function ChecklistStep({ step, isNextAction }) {
   return (
     <div
@@ -264,13 +212,13 @@ function ChecklistStep({ step, isNextAction }) {
           : 'bg-gray-50'
       }`}
     >
-      <div className="flex-shrink-0">
+      {!step.optional && <div className="flex-shrink-0">
         {step.done ? (
           <CheckCircleSolid className="h-5 w-5 text-green-500" aria-label="Done" />
         ) : (
           <div className="h-5 w-5 rounded-full border-2 border-gray-300" aria-hidden="true" />
         )}
-      </div>
+      </div>}
       <span className={`flex-1 text-sm ${step.done ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
         {step.done ? step.doneLabel : step.label}
       </span>
@@ -361,11 +309,10 @@ function IndependentProfilePanel({ onboardingData, t }) {
 function OnboardingContent() {
   const t = useTranslations('onboarding');
   const router = useRouter();
-  const [phase, setPhase] = useState('loading'); // loading | choose | checklist
-  const [primaryGoal, setPrimaryGoal] = useState(null);
-  const [secondaryGoals, setSecondaryGoals] = useState([]);
+  const [phase, setPhase] = useState('loading');
   const [onboardingData, setOnboardingData] = useState(null);
-  const [saving, setSaving] = useState(false);
+  const primaryGoal = onboardingData?.onboardingGoal;
+  const destination = getAccountLandingPath(onboardingData?.homeLocationId);
   // Extended data per goal (loaded lazily when checklist phase activates)
   const [extendedData, setExtendedData] = useState({});
   const [extendedLoading, setExtendedLoading] = useState(false);
@@ -373,25 +320,17 @@ function OnboardingContent() {
   const loadOnboarding = useCallback(async () => {
     try {
       const res = await authAPI.getOnboarding();
-      if (res.success) {
-        const data = res.data.onboarding;
-        setOnboardingData(data);
-        if (data.onboardingGoal) {
-          setPrimaryGoal(data.onboardingGoal);
-          setSecondaryGoals(data.onboardingSecondaryGoals || []);
-          setPhase('checklist');
-        } else {
-          setPhase('choose');
-        }
-        // Let people choose a participation goal before asking them to add a
-        // location. The profile checklist can guide them there later; an
-        // explicit location deep link still opens the location step directly.
-        if (new URLSearchParams(window.location.search).get('step') === 'location') setPhase('location');
+      const data = res.success ? res.data.onboarding : null;
+      if (!data?.onboardingGoal) {
+        setPhase('basic');
+        return;
       }
-      // Record onboarding viewed (idempotent)
+      setOnboardingData(data);
+      const editLocation = new URLSearchParams(window.location.search).get('step') === 'location';
+      setPhase(editLocation ? 'location' : 'checklist');
       onboardingEventAPI.record({ eventType: 'onboarding_viewed' }).catch(() => {});
     } catch {
-      setPhase('choose');
+      setPhase('basic');
     }
   }, []);
 
@@ -445,39 +384,6 @@ function OnboardingContent() {
     }
   }, [phase, primaryGoal, loadExtendedData]);
 
-  const handleSelectPrimary = (goal) => {
-    if (primaryGoal === goal) return;
-    setPrimaryGoal(goal);
-    setSecondaryGoals((prev) => prev.filter((g) => g !== goal));
-  };
-
-  const handleToggleSecondary = (goal) => {
-    if (goal === primaryGoal) return;
-    setSecondaryGoals((prev) =>
-      prev.includes(goal) ? prev.filter((g) => g !== goal) : [...prev, goal]
-    );
-  };
-
-  const handleSaveGoal = async () => {
-    if (!primaryGoal) return;
-    setSaving(true);
-    try {
-      await authAPI.updateOnboarding({ goal: primaryGoal, secondaryGoals });
-      const res = await authAPI.getOnboarding();
-      if (res.success) setOnboardingData(res.data.onboarding);
-      setExtendedData({});
-      setPhase('checklist');
-      // Record goal selected (idempotent)
-      onboardingEventAPI.record({ eventType: 'goal_selected', goal: primaryGoal }).catch(() => {});
-    } catch (err) {
-      console.error('Failed to save onboarding goal:', err);
-      // continue to checklist even on error
-      setPhase('checklist');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleSkip = async () => {
     try {
       await authAPI.updateOnboarding({ dismissed: true });
@@ -485,11 +391,7 @@ function OnboardingContent() {
     } catch {
       // ignore
     }
-    router.push('/');
-  };
-
-  const handleBackToGoals = () => {
-    setPhase('choose');
+    router.replace(destination);
   };
 
   if (phase === 'loading') {
@@ -500,16 +402,20 @@ function OnboardingContent() {
     );
   }
 
+  if (phase === 'basic') return <StartParticipation />;
+
   const checklist = phase === 'checklist' && primaryGoal
     ? buildChecklist(primaryGoal, onboardingData, t, extendedData)
     : [];
-  const doneCount = checklist.filter((s) => s.done).length;
-  const totalCount = checklist.length;
+  const requiredSteps = checklist.filter((step) => !step.optional);
+  const doneCount = requiredSteps.filter((step) => step.done).length;
+  const totalCount = requiredSteps.length;
   const allDone = totalCount > 0 && doneCount === totalCount;
-  const nextStep = checklist.find((s) => !s.done);
+  const nextStep = requiredSteps.find((step) => !step.done);
   const progressPct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
 
-  return (
+  return <>
+    <EmailVerificationNotice />
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 sm:px-8">
@@ -528,104 +434,27 @@ function OnboardingContent() {
       </div>
 
       {/* Main */}
-      <main className="flex-1 flex items-start justify-center px-4 pb-12 pt-6 sm:pt-10">
+      <div className="flex-1 flex items-start justify-center px-4 pb-12 pt-6 sm:pt-10">
         <div className="w-full max-w-xl">
           {phase === 'location' && <LocationStep onContinue={async () => {
             const res = await authAPI.getOnboarding();
             if (!res.success) throw new Error('Could not refresh your profile. Please retry.');
             setOnboardingData(res.data.onboarding);
-            setPhase(res.data.onboarding.onboardingGoal ? 'checklist' : 'choose');
+            setPhase(res.data.onboarding.onboardingGoal ? 'checklist' : 'basic');
           }} />}
-          {phase === 'choose' && (
-            <>
-              <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">{t('title')}</h1>
-                <p className="mt-2 text-gray-600 text-sm sm:text-base">{t('subtitle')}</p>
-              </div>
-
-              <section aria-labelledby="primary-goal-heading">
-                <h2 id="primary-goal-heading" className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
-                  {t('choose_one_primary')}
-                </h2>
-                <div className="space-y-3">
-                  {GOALS.map((g) => (
-                    <GoalCard
-                      key={g}
-                      goalKey={g}
-                      selected={primaryGoal}
-                      secondary={secondaryGoals}
-                      onPrimary={handleSelectPrimary}
-                          t={t}
-                    />
-                  ))}
-                </div>
-              </section>
-
-              {primaryGoal && (
-                <section className="mt-6" aria-labelledby="secondary-goals-heading">
-                  <h2 id="secondary-goals-heading" className="text-sm font-semibold text-gray-700 mb-3">
-                    {t('optional_secondary')}
-                  </h2>
-                  <div className="flex flex-wrap gap-2">
-                    {GOALS.filter((g) => g !== primaryGoal).map((g) => {
-                      const Icon = GOAL_ICONS[g];
-                      const isSelected = secondaryGoals.includes(g);
-                      return (
-                        <button
-                          key={g}
-                          type="button"
-                          onClick={() => handleToggleSecondary(g)}
-                          aria-pressed={isSelected}
-                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            isSelected
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                          }`}
-                        >
-                          <Icon className="h-3.5 w-3.5" />
-                          {t(`goal_${g}_label`)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-              )}
-
-              <div className="mt-8 flex items-center justify-between">
-                <p className="text-xs text-gray-500">{t('resume_hint')}</p>
-                <Button
-                  onClick={handleSaveGoal}
-                  disabled={!primaryGoal || saving}
-                  loading={saving}
-                >
-                  {t('save_goal')}
-                </Button>
-              </div>
-            </>
-          )}
-
           {phase === 'checklist' && primaryGoal && (
             <>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">{t('your_checklist')}</h1>
-                  {!allDone && (
-                    <p className="text-sm text-gray-600 mt-0.5">
-                      {t('progress_label').replace('{done}', doneCount).replace('{total}', totalCount)}
-                    </p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={handleBackToGoals}
-                  className="text-xs text-blue-600 hover:underline focus:outline-none focus:underline"
-                >
-                  {t('back_to_goals')}
-                </button>
+              <div className="mb-6">
+                <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">{t('your_checklist')}</h1>
+                {!allDone && (
+                  <p className="text-sm text-gray-600 mt-0.5">
+                    {t('progress_label', { done: doneCount, total: totalCount })}
+                  </p>
+                )}
               </div>
 
               {/* Progress bar */}
-              <div className="mb-6" role="progressbar" aria-valuenow={progressPct} aria-valuemin={0} aria-valuemax={100} aria-label={t('progress_label').replace('{done}', doneCount).replace('{total}', totalCount)}>
+              <div className="mb-6" role="progressbar" aria-valuenow={progressPct} aria-valuemin={0} aria-valuemax={100} aria-label={t('progress_label', { done: doneCount, total: totalCount })}>
                 <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-blue-600 rounded-full transition-all duration-500"
@@ -668,7 +497,8 @@ function OnboardingContent() {
                       </Link>
                     )}
                     <Link
-                      href="/"
+                      href={destination}
+                      replace
                       onClick={() => {
                         authAPI.updateOnboarding({ completed: true }).catch(() => {});
                         onboardingEventAPI.record({ eventType: 'onboarding_completed', goal: primaryGoal }).catch(() => {});
@@ -699,9 +529,9 @@ function OnboardingContent() {
                 </div>
               ) : (
                 <div className="space-y-2" role="list" aria-label={t('your_checklist')}>
-                  {checklist.map((step, index) => (
+                  {checklist.map((step) => (
                     <div key={step.key} role="listitem">
-                      <ChecklistStep step={step} isNextAction={!allDone && index === checklist.findIndex((s) => !s.done)} />
+                      <ChecklistStep step={step} isNextAction={step.key === nextStep?.key} />
                       {/* Creator templates panel — shown directly under first_content step */}
                       {step.key === 'first_content' && primaryGoal === 'creator' && !step.done && (
                         <CreatorTemplates t={t} />
@@ -715,34 +545,28 @@ function OnboardingContent() {
                 </div>
               )}
 
-              <div className="mt-8 flex justify-between items-center">
-                <button
-                  type="button"
-                  onClick={handleSkip}
-                  className="text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:underline"
-                >
-                  {t('skip')}
-                </button>
-                <Link href="/" className="text-sm text-blue-600 hover:underline focus:outline-none focus:underline">
-                  {t('explore_platform')} →
-                </Link>
-              </div>
+              {!allDone && (
+                <div className="mt-8">
+                  <button
+                    type="button"
+                    onClick={handleSkip}
+                    className="text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:underline"
+                  >
+                    {t('skip')}
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
-      </main>
+      </div>
     </div>
-  );
+  </>;
 }
 
 function OnboardingRoute() {
   const params = useSearchParams();
-  if (params.get('mode') !== 'advanced') return <StartParticipation />;
-
-  return <>
-    <EmailVerificationNotice />
-    <OnboardingContent />
-  </>;
+  return params.get('mode') === 'advanced' ? <OnboardingContent /> : <StartParticipation />;
 }
 
 export default function OnboardingPage() {

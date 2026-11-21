@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { authAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { getAccountLandingPath } from '@/lib/auth-redirect';
 
 export default function VerifyEmailPage() {
   const t = useTranslations('auth');
@@ -87,10 +88,11 @@ export default function VerifyEmailPage() {
               <div className="text-4xl">✅</div>
               <h1 className="text-xl font-semibold text-green-700">{t('verify_email_success_title')}</h1>
               <Link
-                href={user?.homeLocation?.slug ? `/locations/${user.homeLocation.slug}` : '/polls'}
+                href={getAccountLandingPath(user?.homeLocation?.slug || user?.homeLocationId)}
+                replace
                 className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
               >
-                {journey('preview_topics')}
+                {journey('continue_to_app')}
               </Link>
             </div>
           ) : (
