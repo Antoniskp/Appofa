@@ -44,15 +44,22 @@ test('test goes to the admin inbox; delivery requires checking the received mess
   });
   await act(async () => root.render(React.createElement(Page)));
   expect(container.querySelector('#campaign-test-email').value).toBe('admin@test.com');
-  expect(button('Send to 12').disabled).toBe(true);
+  const delivery = container.querySelector('[aria-labelledby="campaign-delivery-heading"]');
+  expect(delivery.contains(button('Send now'))).toBe(true);
+  expect(delivery.compareDocumentPosition(container.querySelector('form'))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  expect(delivery.textContent).toContain('12 estimated recipients');
+  expect(delivery.textContent).toContain('Send a test email and confirm your review');
+  expect(button('Send now').disabled).toBe(true);
   await act(async () => button('Send test email').click());
   expect(mockApi.adminSendCampaignTest).toHaveBeenCalledWith('1', { email: 'admin@test.com' });
   expect(mockApi.adminSendCampaignNow).not.toHaveBeenCalled();
-  expect(button('Send to 12').disabled).toBe(true);
+  expect(container.querySelector('#campaign-send-help').textContent).toContain('Confirm your review');
+  expect(button('Send now').disabled).toBe(true);
   await act(async () => container.querySelector('input[type="checkbox"]').click());
-  expect(button('Send to 12').disabled).toBe(false);
-  await act(async () => button('Send to 12').click());
+  expect(button('Send now').disabled).toBe(false);
+  await act(async () => button('Send now').click());
   expect(mockApi.adminSendCampaignNow).toHaveBeenCalledWith('1');
+  expect(mockApi.adminScheduleCampaign).not.toHaveBeenCalled();
 });
 
 test('editing reviewed content disables test, schedule and delivery until saved and retested', async () => {
@@ -60,14 +67,15 @@ test('editing reviewed content disables test, schedule and delivery until saved 
   saved.campaign.lastTestContentHash = 'reviewed';
   await act(async () => root.render(React.createElement(Page)));
   await act(async () => container.querySelector('input[type="checkbox"]').click());
-  expect(button('Send to 12').disabled).toBe(false);
+  expect(button('Send now').disabled).toBe(false);
   const subject = container.querySelector('input[type="text"]');
   await act(async () => {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(subject, 'A better subject');
     subject.dispatchEvent(new Event('input', { bubbles: true }));
   });
   expect(button('Send test email').disabled).toBe(true);
-  expect(button('Send to 12').disabled).toBe(true);
+  expect(button('Send now').disabled).toBe(true);
+  expect(container.querySelector('#campaign-send-help').textContent).toBe('Save your changes before sending.');
   expect(button('Schedule reviewed').disabled).toBe(true);
   expect(container.querySelector('input[type="checkbox"]').checked).toBe(false);
 });
@@ -100,7 +108,27 @@ test('saving an individual draft retains its selected user and displays that rec
   mockApi.adminUpdateCampaign.mockResolvedValue({ success: true });
   await act(async () => root.render(React.createElement(Page)));
   expect(container.textContent).toContain('member · member@test.com');
-  expect(button('Send to selected user').disabled).toBe(true);
+  expect(container.querySelector('#campaign-send-audience').textContent).toContain('member@test.com');
+  expect(button('Send now').disabled).toBe(true);
   await act(async () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
   expect(mockApi.adminUpdateCampaign).toHaveBeenCalledWith('1', expect.objectContaining({ audienceFilters: expect.objectContaining({ recipientMode: 'individual', recipientUserId: 42 }) }));
+});
+
+test('explains why immediate delivery is disabled for an empty audience', async () => {
+  saved.estimatedRecipients = 0;
+  saved.testReview.current = true;
+  await act(async () => root.render(React.createElement(Page)));
+  await act(async () => container.querySelector('input[type="checkbox"]').click());
+  expect(button('Send now').disabled).toBe(true);
+  expect(container.querySelector('#campaign-send-help').textContent).toBe('No eligible recipients match the saved audience.');
+});
+
+test.each([
+  ['sending', 'Campaign delivery is in progress.'],
+  ['sent', 'This campaign has already been sent.'],
+])('shows the delivery status for a %s campaign', async (status, message) => {
+  saved.campaign.status = status;
+  await act(async () => root.render(React.createElement(Page)));
+  expect(button('Send now')).toBeUndefined();
+  expect(container.querySelector('[aria-labelledby="campaign-delivery-heading"] [role="status"]').textContent).toBe(message);
 });

@@ -93,6 +93,7 @@ function AdminNewsletterCampaignDetailContent() {
   const estimatedRecipients = data?.estimatedRecipients || 0;
   const audienceSummary = data?.audienceSummary || {};
   const canEdit = campaign?.status === 'draft' || campaign?.status === 'scheduled';
+  const canSend = canEdit || campaign?.status === 'failed';
   const logs = logsData?.logs || [];
 
   const formState = useMemo(() => ({
@@ -125,6 +126,13 @@ function AdminNewsletterCampaignDetailContent() {
   const hasUnsavedChanges = JSON.stringify({ ...form, scheduledAt: '' }) !== JSON.stringify({ ...formState, scheduledAt: '' });
   const currentTest = Boolean(data?.testReview?.current);
   const busy = saving || sendingTest || sendingCampaign || schedulingCampaign;
+  const readyForDelivery = !hasUnsavedChanges && currentTest && reviewed;
+  let sendHelp;
+  if (hasUnsavedChanges) sendHelp = 'Save your changes before sending.';
+  else if (!estimatedRecipients) sendHelp = 'No eligible recipients match the saved audience.';
+  else if (!currentTest) sendHelp = 'Send a test email and confirm your review to enable delivery.';
+  else if (!reviewed) sendHelp = 'Confirm your review to enable delivery.';
+
   useEffect(() => { setReviewed(false); }, [campaign?.lastTestContentHash, campaign?.lastTestSentAt, hasUnsavedChanges]);
 
   const handleSave = async (event) => {
@@ -176,7 +184,7 @@ function AdminNewsletterCampaignDetailContent() {
   };
 
   const handleSendNow = async () => {
-    if (busy || hasUnsavedChanges || !currentTest || !reviewed) return;
+    if (busy || !canSend || !estimatedRecipients || !readyForDelivery) return;
     setSendingCampaign(true);
     try {
       await newsletterAPI.adminSendCampaignNow(campaignId);
@@ -190,7 +198,7 @@ function AdminNewsletterCampaignDetailContent() {
   };
 
   const handleSchedule = async () => {
-    if (!form.scheduledAt || busy || hasUnsavedChanges || !currentTest || !reviewed) return;
+    if (!form.scheduledAt || busy || !readyForDelivery) return;
     setSchedulingCampaign(true);
     try {
       await newsletterAPI.adminScheduleCampaign(campaignId, { scheduledAt: new Date(form.scheduledAt).toISOString() });
@@ -250,7 +258,97 @@ function AdminNewsletterCampaignDetailContent() {
               <SkeletonLoader count={8} type="text" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+              <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm xl:col-span-3" aria-labelledby="campaign-delivery-heading">
+                <h2 id="campaign-delivery-heading" className="mb-4 text-lg font-semibold text-gray-900">Campaign delivery</h2>
+                <div className="grid gap-5 md:grid-cols-2 md:divide-x md:divide-gray-200">
+                  <div className="space-y-3">
+                    <label htmlFor="campaign-test-email" className="block text-sm font-medium text-gray-700">Test recipient</label>
+                    <div className="flex flex-wrap gap-2">
+                      <input
+                        id="campaign-test-email"
+                        type="email"
+                        value={testEmail}
+                        onChange={(event) => setTestEmail(event.target.value)}
+                        placeholder="test@example.com"
+                        className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSendTest}
+                        disabled={busy || !testEmail || hasUnsavedChanges}
+                        className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-100 disabled:opacity-60"
+                      >
+                        {sendingTest ? 'Sending test…' : 'Send test email'}
+                      </button>
+                    </div>
+                    {data?.testReview?.sentAt && (
+                      <p className="text-xs text-gray-600">Last test to {data.testReview.email} · {formatDate(data.testReview.sentAt)}</p>
+                    )}
+                    {canSend && (
+                      <>
+                        <label className="flex items-start gap-2 text-sm text-gray-700">
+                          <input type="checkbox" checked={reviewed} disabled={!currentTest || hasUnsavedChanges || busy} onChange={(event) => setReviewed(event.target.checked)} className="mt-1" />
+                          I checked the email in my inbox and reviewed the audience.
+                        </label>
+                        <a href="#campaign-preview" className="text-sm text-blue-600 hover:underline">View saved preview and sample recipients</a>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="space-y-3 border-t border-gray-200 pt-4 md:border-t-0 md:pl-5 md:pt-0">
+                    {canSend ? (
+                      <>
+                        <p id="campaign-send-audience" className="text-sm text-gray-700">
+                          {data?.individualRecipient
+                            ? `Selected recipient ${data.individualRecipient.email}`
+                            : `${estimatedRecipients} estimated ${estimatedRecipients === 1 ? 'recipient' : 'recipients'}`}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleSendNow}
+                          disabled={busy || !estimatedRecipients || !readyForDelivery}
+                          aria-describedby={sendHelp ? 'campaign-send-audience campaign-send-help' : 'campaign-send-audience'}
+                          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+                        >
+                          {sendingCampaign ? 'Sending…' : 'Send now'}
+                        </button>
+                        {sendHelp && <p id="campaign-send-help" role="status" className="text-sm text-amber-700">{sendHelp}</p>}
+                      </>
+                    ) : (
+                      <p role="status" className="text-sm text-gray-700">
+                        {campaign.status === 'sending' ? 'Campaign delivery is in progress.' : 'This campaign has already been sent.'}
+                      </p>
+                    )}
+
+                    {canEdit && (
+                      <div className="space-y-2 border-t border-gray-200 pt-3">
+                        <label htmlFor="campaign-scheduled-at" className="block text-sm font-medium text-gray-700">Scheduled at</label>
+                        <div className="flex flex-wrap gap-2">
+                          <input
+                            id="campaign-scheduled-at"
+                            type="datetime-local"
+                            value={form.scheduledAt}
+                            disabled={busy}
+                            onChange={(event) => setForm((prev) => ({ ...prev, scheduledAt: event.target.value }))}
+                            className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleSchedule}
+                            disabled={busy || !form.scheduledAt || !readyForDelivery}
+                            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-100 disabled:opacity-60"
+                          >
+                            {schedulingCampaign ? 'Scheduling…' : 'Schedule reviewed campaign'}
+                          </button>
+                        </div>
+                        {campaign.status === 'scheduled' && <button type="button" onClick={handleCancelSchedule} disabled={busy || hasUnsavedChanges} className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-60">Cancel scheduled delivery</button>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+
               <div className="xl:col-span-2 space-y-6">
                 <form onSubmit={handleSave} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
                   <fieldset disabled={busy} className="space-y-4">
@@ -311,17 +409,6 @@ function AdminNewsletterCampaignDetailContent() {
                       disabled={!canEdit}
                       onChange={(event) => setForm((prev) => ({ ...prev, textContent: event.target.value }))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[120px] disabled:bg-gray-100"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Scheduled at</label>
-                    <input
-                      type="datetime-local"
-                      value={form.scheduledAt}
-                      disabled={!canEdit}
-                      onChange={(event) => setForm((prev) => ({ ...prev, scheduledAt: event.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
                     />
                   </div>
 
@@ -448,7 +535,7 @@ function AdminNewsletterCampaignDetailContent() {
               </div>
 
               <div className="space-y-6">
-                <section className="rounded-xl border bg-white p-5">
+                <section id="campaign-preview" className="rounded-xl border bg-white p-5">
                   <h2 className="font-semibold">Saved email preview</h2>
                   {campaign.audienceFilters?.recipientMode === 'individual' && <div className="mt-3 rounded-lg bg-blue-50 p-3 text-sm text-blue-900">
                     <p className="font-semibold">Individual delivery</p>
@@ -461,8 +548,7 @@ function AdminNewsletterCampaignDetailContent() {
                 </section>
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
                   <h2 className="text-sm font-semibold text-gray-900 mb-3">Delivery summary</h2>
-                  {hasUnsavedChanges && <p role="status" className="mb-3 text-sm text-amber-700">Save your changes to update the preview and recipient count before sending.</p>}
-                  <p className="mb-3 text-xs text-gray-500">Counts and preview reflect the saved draft. Save changes before reviewing or sending.</p>
+                  <p className="mb-3 text-xs text-gray-500">Counts reflect the saved campaign.</p>
                   <dl className="space-y-2 text-sm">
                     {data?.completedProfiles != null && <div><dt>Reminded profiles now with a location</dt><dd>{data.completedProfiles}</dd></div>}
                     {Object.entries(data?.exclusions || {}).map(([reason, count]) => <div key={reason} className="flex justify-between"><dt>Excluded: {({ recipientUnavailable: 'selected user unavailable', notSubscribed: 'selected user is not subscribed', outsideRecipient: 'not the selected user', outsideSegment: 'outside segment', outsideLocation: 'outside selected area', topicOptOut: 'topic not selected', locationCompleteOrNoAccount: 'location complete / no account', unverifiedEmail: 'unverified email', alreadyReminded: 'already reminded', reminderInProgress: 'delivery held for review', pending: 'pending', unsubscribed: 'unsubscribed' })[reason] || reason}</dt><dd>{count}</dd></div>)}
@@ -481,60 +567,6 @@ function AdminNewsletterCampaignDetailContent() {
                   </dl>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 space-y-3">
-                  <h2 className="text-sm font-semibold text-gray-900">1. Send to your inbox</h2>
-                  <p className="text-xs text-gray-600">This sends only to the address below. It does not contact the campaign audience or count as a profile reminder.</p>
-                  <label htmlFor="campaign-test-email" className="block text-sm font-medium">Test recipient</label>
-                  <input
-                    id="campaign-test-email"
-                    type="email"
-                    value={testEmail}
-                    onChange={(event) => setTestEmail(event.target.value)}
-                    placeholder="test@example.com"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSendTest}
-                    disabled={busy || !testEmail || hasUnsavedChanges}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-100 disabled:opacity-60"
-                  >
-                    {sendingTest ? 'Sending test…' : 'Send test email'}
-                  </button>
-                  {data?.testReview?.sentAt && <p className="text-xs text-gray-600">Last test: {data.testReview.email} · {formatDate(data.testReview.sentAt)}</p>}
-                  <p role="status" className={`text-sm ${currentTest ? 'text-emerald-700' : 'text-amber-700'}`}>{currentTest ? 'The saved content and audience have been test sent.' : 'Send a fresh test before delivery. Content or audience changes require another test.'}</p>
-                  <label className="flex items-start gap-2 text-sm text-gray-700">
-                    <input type="checkbox" checked={reviewed} disabled={!currentTest || hasUnsavedChanges || busy} onChange={(event) => setReviewed(event.target.checked)} className="mt-1" />
-                    I checked the email in my inbox and reviewed the audience.
-                  </label>
-                </div>
-
-                {canEdit && (
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                    <button
-                      type="button"
-                      onClick={handleSchedule}
-                      disabled={busy || !form.scheduledAt || hasUnsavedChanges || !currentTest || !reviewed}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-100 disabled:opacity-60"
-                    >
-                      {schedulingCampaign ? 'Scheduling…' : '2. Schedule reviewed campaign'}
-                    </button>
-                    {campaign.status === 'scheduled' && <button type="button" onClick={handleCancelSchedule} disabled={busy || hasUnsavedChanges} className="mt-3 w-full rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-700 disabled:opacity-60">Cancel scheduled delivery</button>}
-                  </div>
-                )}
-
-                {(campaign.status === 'draft' || campaign.status === 'failed' || campaign.status === 'scheduled') && (
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                    <button
-                      type="button"
-                      onClick={handleSendNow}
-                      disabled={busy || hasUnsavedChanges || !estimatedRecipients || !currentTest || !reviewed}
-                      className="w-full px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
-                    >
-                      {sendingCampaign ? 'Sending…' : campaign.audienceFilters?.recipientMode === 'individual' ? '2. Send to selected user' : `2. Send to ${estimatedRecipients} subscribers now`}
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           )}
