@@ -28,6 +28,11 @@ const WorkerToken = sequelize.define('WorkerToken', {
     type: DataTypes.DATE,
     allowNull: true,
   },
+  serves_legal_library: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
   created_by: {
     type: DataTypes.INTEGER,
     allowNull: false,

@@ -9,6 +9,7 @@ const router = express.Router();
 const READER_ASSETS = new Map([
   ['/app.js', 'text/javascript'],
   ['/citationText.js', 'text/javascript'],
+  ['/topicGuides.js', 'text/javascript'],
   ['/style.css', 'text/css'],
   ['/favicon.svg', 'image/svg+xml'],
   ['/logos/parliament.gif', 'image/gif'],

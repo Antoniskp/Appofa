@@ -11,10 +11,12 @@ const app = express();
 app.use('/api/laws', router);
 
 const originalOrigin = process.env.LAW_LIBRARY_BASE_URL;
+const originalLegacyCollection = process.env.LAW_LIBRARY_LEGACY_SHARED_COLLECTION;
 const token = jwt.sign({ id: 1, sessionVersion: '0' }, process.env.JWT_SECRET);
 const signedIn = path => request(app).get('/api/laws' + path).set('Cookie', 'auth_token=' + token);
-const statusResponse = () => Response.json({
+const statusResponse = (sourceSearch = true) => Response.json({
   storageEngine: 'Neo4j',
+  sourceSearch,
   databasePath: 'private-path',
   stats: { documents: 82 },
 });
@@ -23,6 +25,7 @@ let port = 45000;
 
 beforeEach(() => {
   process.env.LAW_LIBRARY_BASE_URL = 'http://127.0.0.1:' + port++;
+  delete process.env.LAW_LIBRARY_LEGACY_SHARED_COLLECTION;
   User.findByPk.mockResolvedValue({ id: 1, emailVerified: true, sessionVersion: '0' });
   jest.spyOn(global, 'fetch').mockImplementation(async () => statusResponse());
 });
@@ -30,6 +33,8 @@ beforeEach(() => {
 afterEach(() => {
   if (originalOrigin === undefined) delete process.env.LAW_LIBRARY_BASE_URL;
   else process.env.LAW_LIBRARY_BASE_URL = originalOrigin;
+  if (originalLegacyCollection === undefined) delete process.env.LAW_LIBRARY_LEGACY_SHARED_COLLECTION;
+  else process.env.LAW_LIBRARY_LEGACY_SHARED_COLLECTION = originalLegacyCollection;
   jest.restoreAllMocks();
   User.findByPk.mockReset();
 });
@@ -62,6 +67,10 @@ test('opens the online reader and limits verified accounts to read-only content'
         headers: { 'Content-Type': 'text/javascript' },
       });
     }
+    if (url.pathname === '/laws/topicGuides.js') {
+      return new Response('const guides = {};', { headers: { 'Content-Type': 'text/javascript' } });
+    }
+    if (url.pathname === '/api/laws/documents') return Response.json({ items: [], total: 0 });
     return Response.json({
       document: { title: 'Law' }, sourceText: 'Law text', units: [], references: [], incoming: [],
       attachments: [{ id: 'file', local_file: 'private-name.pdf' }],
@@ -70,6 +79,7 @@ test('opens the online reader and limits verified accounts to read-only content'
   });
   await signedIn('/view').expect(200).expect('Cache-Control', 'private, no-store').expect('<title>Appofasistis</title>');
   await signedIn('/view/app.js').expect(200).expect("const tabs = [['overview', 'Overview']];");
+  await signedIn('/view/topicGuides.js').expect(200).expect('const guides = {};');
   const status = await signedIn('/status').expect(200);
   expect(status.body).not.toHaveProperty('databasePath');
   const document = await signedIn('/document?id=law%3A1%3A2020').expect(200);
@@ -79,9 +89,12 @@ test('opens the online reader and limits verified accounts to read-only content'
   });
   expect(global.fetch.mock.calls.at(-1)[0].searchParams.get('id')).toBe('law:1:2020');
   expect(global.fetch.mock.calls.at(-1)[1]).not.toHaveProperty('headers');
+  await signedIn('/documents?q=law&scope=personal').expect(200);
+  expect(global.fetch.mock.calls.at(-1)[0].searchParams.get('scope')).toBe('source');
+  expect(global.fetch.mock.calls.at(-1)[0].searchParams.get('q')).toBe('law');
   await request(app).post('/api/laws/import').set('Cookie', 'auth_token=' + token).expect(404);
   await signedIn('/backups/greek-laws-private.json').expect(404);
-  expect(global.fetch).toHaveBeenCalledTimes(4);
+  expect(global.fetch).toHaveBeenCalledTimes(6);
 });
 
 test('checks for an outage again when a verified user opens the reader', async () => {
@@ -89,4 +102,11 @@ test('checks for an outage again when a verified user opens the reader', async (
   global.fetch.mockRejectedValue(new Error('Worker offline'));
   await signedIn('/view').expect(503);
   await request(app).get('/api/laws/availability').expect(200, { online: false });
+});
+
+test('keeps search offline when the worker cannot exclude private annotations', async () => {
+  global.fetch.mockImplementation(async () => statusResponse(false));
+  await request(app).get('/api/laws/availability').expect(200, { online: false });
+  await signedIn('/documents?q=notes').expect(503);
+  expect(global.fetch).toHaveBeenCalledTimes(1);
 });

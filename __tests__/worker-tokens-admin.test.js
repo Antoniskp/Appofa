@@ -100,10 +100,33 @@ describe('Admin Worker Token routes', () => {
       expect(token).toHaveProperty('created_at');
       expect(token).toHaveProperty('last_used_at');
       expect(token).toHaveProperty('revoked_at');
+      expect(token).toHaveProperty('serves_legal_library');
       expect(token).toHaveProperty('created_by');
       expect(token).not.toHaveProperty('token');
       expect(token).not.toHaveProperty('token_hash');
     });
+  });
+
+  test('only an admin can grant and remove permission to serve the Legal Library', async () => {
+    const token = await WorkerToken.create({
+      name: 'Legal Library worker', token_hash: 'unused-by-this-test', created_by: adminUserId,
+    });
+    expect(token.serves_legal_library).toBe(false);
+    const path = `/api/admin/worker-tokens/${token.id}/legal-library`;
+    const csrf = 'csrf-worker-law-library';
+    storeCsrfToken(csrf, adminUserId);
+    const changePermission = (authorization, enabled) => request(app)
+      .patch(path)
+      .set('Authorization', `Bearer ${authorization}`)
+      .set('Cookie', `csrf_token=${csrf}`)
+      .set('x-csrf-token', csrf)
+      .send({ enabled });
+
+    await changePermission(viewerToken, true).expect(403);
+    await changePermission(adminToken, true).expect(200);
+    expect((await token.reload()).serves_legal_library).toBe(true);
+    await changePermission(adminToken, false).expect(200);
+    expect((await token.reload()).serves_legal_library).toBe(false);
   });
 
   test('POST /api/admin/worker-tokens/:id/revoke sets revoked_at', async () => {

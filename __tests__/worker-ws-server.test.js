@@ -5,9 +5,11 @@ const WebSocket = require('ws');
 jest.mock('../src/services/workerTokenService', () => ({
   validateWorkerToken: jest.fn(),
   isValidWorkerTokenFormat: jest.fn(),
+  getLegalLibraryTokenIds: jest.fn(),
 }));
 
-const { validateWorkerToken, isValidWorkerTokenFormat } = require('../src/services/workerTokenService');
+const { validateWorkerToken, isValidWorkerTokenFormat, getLegalLibraryTokenIds } = require('../src/services/workerTokenService');
+const { requestLibrary } = require('../src/services/legalLibraryService');
 const {
   createWorkerWsServer,
   getConnectedWorkers,
@@ -167,6 +169,44 @@ describe('worker websocket server', () => {
 
     ws.close();
     await waitForEvent(ws, 'close');
+  });
+
+  test('only an approved worker can stream LawDB responses over the existing connection', async () => {
+    isValidWorkerTokenFormat.mockReturnValue(true);
+    validateWorkerToken.mockResolvedValue({ valid: true, source: 'database', tokenId: 42 });
+    getLegalLibraryTokenIds.mockResolvedValue(new Set());
+
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/workers`, {
+      headers: { 'x-worker-token': 'appofa_wt_library_worker_token' },
+    });
+    clients.push(ws);
+    await waitForEvent(ws, 'open');
+    const registered = waitForEvent(ws, 'message');
+    ws.send(JSON.stringify({ type: 'register', workerId: 'library-worker', capabilities: ['lawLibraryRead'] }));
+    ws.send(JSON.stringify({ type: 'heartbeat', workerId: 'library-worker' }));
+    await registered;
+
+    await expect(requestLibrary('/laws', { origin: null })).rejects.toThrow('Legal library worker is unavailable');
+    getLegalLibraryTokenIds.mockResolvedValue(new Set([42]));
+    const outgoing = waitForEvent(ws, 'message');
+    const result = requestLibrary('/laws', { origin: null });
+    const [data] = await outgoing;
+    const { requestId } = JSON.parse(data.toString());
+    expect(JSON.parse(data.toString())).toMatchObject({ type: 'law_library_request', path: '/laws' });
+    ws.send(JSON.stringify({ type: 'law_library_start', requestId, status: 200, contentType: 'text/html' }));
+    for (const chunk of ['<title>', 'Νομική Βιβλιοθήκη', '</title>']) {
+      ws.send(JSON.stringify({ type: 'law_library_chunk', requestId, data: Buffer.from(chunk).toString('base64') }));
+    }
+    ws.send(JSON.stringify({ type: 'law_library_end', requestId }));
+    const response = await result;
+    expect(response.headers.get('content-type')).toBe('text/html');
+    await expect(response.text()).resolves.toBe('<title>Νομική Βιβλιοθήκη</title>');
+
+    const nextRequest = waitForEvent(ws, 'message');
+    const interrupted = expect(requestLibrary('/laws', { origin: null })).rejects.toThrow('worker disconnected');
+    await nextRequest;
+    ws.close();
+    await interrupted;
   });
 
   test('sendRequest resolves matching worker response by requestId', async () => {

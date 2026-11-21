@@ -163,7 +163,14 @@ WORKER_TOKEN=<shared-worker-secret>
 
 The footer links to `/laws` when LawDB is online and the signed-in account has a verified email. Appofa checks the live session on each request for the reader, its assets, and its data.
 
-Set `LAW_LIBRARY_BASE_URL` in the Express backend environment to a loopback origin such as `http://127.0.0.1:4000`. Point it to a dedicated Appofasistis LawDB collection prepared for sharing. Use a separate graph and files without personal annotations or drafts, since the LawDB search index includes annotations. Start Appofasistis on the matching free `INTERNAL_API_PORT`, or use a private tunnel bound to loopback if Appofasistis runs on another machine. Keep the LawDB listener and Neo4j private. The footer shows offline when the origin is unset or LawDB cannot query its graph.
+Appofasistis serves LawDB through its existing outbound worker connection. The footer checks the reader and its graph. A healthy general-purpose worker can still show the library as offline.
+
+1. Use an updated Appofasistis checkout and set `LAW_LIBRARY_SHARE=true` in its `.env`. Start Appofasistis in connected worker mode with a database-issued worker token.
+2. In Appofa's **Worker Status** admin page, turn on **Allow reader access** for that token. Grant this only to the Appofasistis worker you trust to supply the library's pages and scripts.
+
+Use a collection whose documents and source files are intended for sharing. Appofa uses source-only search, which keeps desktop notes, summaries, and tags private.
+
+Existing installations can still set `LAW_LIBRARY_BASE_URL` to a trusted loopback HTTP origin to use a direct connection. For an older Appofasistis version, `LAW_LIBRARY_LEGACY_SHARED_COLLECTION=true` permits a dedicated collection containing only shareable data.
 
 Appofa exposes the existing reader in read-only mode, including search, citations, Gazette browsing, and saved PDFs. Imports, writes, backups, and worker diagnostics stay on the private Appofasistis instance.
 

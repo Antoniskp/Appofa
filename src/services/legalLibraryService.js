@@ -1,3 +1,6 @@
+const { getLegalLibraryWorker, hasConnectedLegalLibraryWorker } = require('../websocket/workerWsServer');
+const { requestLegalLibrary } = require('../websocket/legalLibraryRelay');
+
 const REQUEST_TIMEOUT_MS = 15000;
 const STATUS_TIMEOUT_MS = 3000;
 const STATUS_TTL_MS = 30000;
@@ -17,15 +20,23 @@ function libraryOrigin() {
       return url.origin;
     }
   } catch {
-    // The footer reports the library as offline until it has a valid origin.
+    // The worker connection is the default when a local origin is unavailable.
   }
   return null;
 }
 
 async function requestLibrary(path, { origin = libraryOrigin(), search = '', timeout = REQUEST_TIMEOUT_MS } = {}) {
-  if (!origin) throw new Error('Legal library origin is unavailable');
-  const url = new URL(path, origin);
+  const url = new URL(path, origin || 'http://localhost');
   url.search = search;
+  if (path === '/api/laws/documents') {
+    if (!(await libraryStatus())) throw new Error('Legal library search is unavailable');
+    url.searchParams.set('scope', 'source');
+  }
+  if (!origin) {
+    const worker = await getLegalLibraryWorker();
+    if (!worker) throw new Error('Legal library worker is unavailable');
+    return requestLegalLibrary(worker, { path: url.pathname, search: url.search }, timeout);
+  }
   return fetch(url, { redirect: 'error', signal: AbortSignal.timeout(timeout) });
 }
 
@@ -38,6 +49,7 @@ async function probeLibrary(origin) {
     }
     const status = await response.json();
     if (status.storageEngine !== 'Neo4j' || !Number.isFinite(status.stats?.documents)) return null;
+    if (status.sourceSearch !== true && process.env.LAW_LIBRARY_LEGACY_SHARED_COLLECTION !== 'true') return null;
 
     const stats = Object.fromEntries(STAT_FIELDS.map(field => [field, Number(status.stats[field]) || 0]));
     stats.lastUpdated = typeof status.stats.lastUpdated === 'string' ? status.stats.lastUpdated : null;
@@ -49,7 +61,10 @@ async function probeLibrary(origin) {
 
 function libraryStatus({ fresh = false } = {}) {
   const origin = libraryOrigin();
-  if (!origin) return Promise.resolve(null);
+  if (!origin && !hasConnectedLegalLibraryWorker()) {
+    clearLibraryStatus();
+    return Promise.resolve(null);
+  }
 
   if (statusCache?.origin === origin && (statusCache.pending || (!fresh && Date.now() < statusCache.expiresAt))) {
     return statusCache.result;
@@ -64,4 +79,8 @@ function libraryStatus({ fresh = false } = {}) {
   return entry.result;
 }
 
-module.exports = { libraryStatus, requestLibrary };
+function clearLibraryStatus() {
+  statusCache = null;
+}
+
+module.exports = { libraryStatus, requestLibrary, clearLibraryStatus };

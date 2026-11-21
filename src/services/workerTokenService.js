@@ -21,6 +21,7 @@ const serializeTokenMetadata = (tokenRecord) => ({
   created_at: tokenRecord.created_at,
   last_used_at: tokenRecord.last_used_at,
   revoked_at: tokenRecord.revoked_at,
+  serves_legal_library: tokenRecord.serves_legal_library === true,
   created_by: tokenRecord.created_by,
 });
 
@@ -55,7 +56,7 @@ const createWorkerToken = async ({ name, createdBy }) => {
 
 const listWorkerTokens = async () => {
   const tokens = await WorkerToken.findAll({
-    attributes: ['id', 'name', 'created_at', 'last_used_at', 'revoked_at', 'created_by'],
+    attributes: ['id', 'name', 'created_at', 'last_used_at', 'revoked_at', 'serves_legal_library', 'created_by'],
     order: [['created_at', 'DESC']],
   });
   return tokens.map(serializeTokenMetadata);
@@ -69,6 +70,21 @@ const revokeWorkerToken = async (id) => {
     await token.save();
   }
   return serializeTokenMetadata(token);
+};
+
+const setLegalLibraryPermission = async (id, enabled) => {
+  const [updated] = await WorkerToken.update({ serves_legal_library: enabled }, {
+    where: { id, revoked_at: null },
+  });
+  return updated > 0;
+};
+
+const getLegalLibraryTokenIds = async (ids) => {
+  const tokens = await WorkerToken.findAll({
+    attributes: ['id'],
+    where: { id: { [Op.in]: ids }, serves_legal_library: true, revoked_at: null },
+  });
+  return new Set(tokens.map(token => token.id));
 };
 
 const validateWorkerToken = async (plaintextToken) => {
@@ -86,11 +102,11 @@ const validateWorkerToken = async (plaintextToken) => {
   for (const tokenRecord of activeTokens) {
     const isMatch = await bcrypt.compare(plaintextToken, tokenRecord.token_hash);
     if (isMatch) {
-      await WorkerToken.update(
+      const [updated] = await WorkerToken.update(
         { last_used_at: new Date() },
-        { where: { id: tokenRecord.id } }
+        { where: { id: tokenRecord.id, revoked_at: null } }
       );
-      return { valid: true, source: 'database', tokenId: tokenRecord.id };
+      if (updated) return { valid: true, source: 'database', tokenId: tokenRecord.id };
     }
   }
 
@@ -102,5 +118,7 @@ module.exports = {
   createWorkerToken,
   listWorkerTokens,
   revokeWorkerToken,
+  setLegalLibraryPermission,
+  getLegalLibraryTokenIds,
   validateWorkerToken,
 };

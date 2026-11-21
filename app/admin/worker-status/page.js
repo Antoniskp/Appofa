@@ -28,6 +28,7 @@ function WorkerStatusContent() {
   const [createdToken, setCreatedToken] = useState('');
   const [copiedToken, setCopiedToken] = useState(false);
   const [revokingTokenId, setRevokingTokenId] = useState(null);
+  const [updatingLibraryTokenId, setUpdatingLibraryTokenId] = useState(null);
   const createdTokenInputRef = useRef(null);
   const copyResetTimeoutRef = useRef(null);
 
@@ -146,6 +147,19 @@ function WorkerStatusContent() {
       setTokensError(error.message || 'Failed to revoke worker token.');
     } finally {
       setRevokingTokenId(null);
+    }
+  };
+
+  const toggleLegalLibrary = async (token) => {
+    setUpdatingLibraryTokenId(token.id);
+    setTokensError('');
+    try {
+      const response = await adminAPI.setWorkerLegalLibrary(token.id, !token.serves_legal_library);
+      setWorkerTokens(tokens => tokens.map(item => item.id === token.id ? { ...item, ...response.data } : item));
+    } catch (error) {
+      setTokensError(error.message || 'Failed to update legal library access.');
+    } finally {
+      setUpdatingLibraryTokenId(null);
     }
   };
 
@@ -303,6 +317,7 @@ function WorkerStatusContent() {
                       <th className="px-4 py-3 text-left font-medium text-gray-700">Created</th>
                       <th className="px-4 py-3 text-left font-medium text-gray-700">Last Used</th>
                       <th className="px-4 py-3 text-left font-medium text-gray-700">Status</th>
+                      <th className="px-4 py-3 text-left font-medium text-gray-700">Legal Library</th>
                       <th className="px-4 py-3 text-right font-medium text-gray-700">Actions</th>
                     </tr>
                   </thead>
@@ -312,7 +327,14 @@ function WorkerStatusContent() {
                       const isRevoking = revokingTokenId === token.id;
                       return (
                         <tr key={token.id}>
-                          <td className="px-4 py-3 text-gray-900">{token.name}</td>
+                          <td className="px-4 py-3 text-gray-900">
+                            {token.name}
+                            {token.connectedWorkers?.map(worker => (
+                              <p key={worker.workerId} className="text-xs text-gray-600">
+                                Connected from {worker.name || worker.workerId}
+                              </p>
+                            ))}
+                          </td>
                           <td className="px-4 py-3 text-gray-700">{formatDateTime(token.created_at)}</td>
                           <td className="px-4 py-3 text-gray-700">{formatDateTime(token.last_used_at)}</td>
                           <td className="px-4 py-3">
@@ -326,12 +348,25 @@ function WorkerStatusContent() {
                               {isRevoked ? 'Revoked' : 'Active'}
                             </span>
                           </td>
+                          <td className="px-4 py-3">
+                            {!isRevoked && (
+                              <label className="inline-flex items-center gap-2 text-gray-700">
+                                <input
+                                  type="checkbox"
+                                  checked={token.serves_legal_library === true}
+                                  onChange={() => toggleLegalLibrary(token)}
+                                  disabled={updatingLibraryTokenId !== null || isRevoking}
+                                />
+                                <span>Allow reader access<span className="sr-only"> for {token.name}</span></span>
+                              </label>
+                            )}
+                          </td>
                           <td className="px-4 py-3 text-right">
                             {!isRevoked ? (
                               <button
                                 type="button"
                                 onClick={() => handleRevokeToken(token)}
-                                disabled={isRevoking}
+                                disabled={isRevoking || updatingLibraryTokenId === token.id}
                                 className="border border-red-300 text-red-700 px-3 py-1.5 rounded hover:bg-red-50 disabled:opacity-60 transition"
                               >
                                 {isRevoking ? 'Revoking...' : 'Revoke'}

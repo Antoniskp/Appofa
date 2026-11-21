@@ -8,7 +8,8 @@ const { apiLimiter } = require('../middleware/rateLimiter');
 const csrfProtection = require('../middleware/csrfProtection');
 const dreamTeamController = require('../controllers/dreamTeamController');
 const workerTokenService = require('../services/workerTokenService');
-const { sendRequest, sendTaskToWorker, getConnectedWorkers, getFirstConnectedWorkerId } = require('../websocket/workerWsServer');
+const { sendRequest, sendTaskToWorker, getConnectedWorkers, getFirstConnectedWorkerId, updateWorkerLibraryAccess } = require('../websocket/workerWsServer');
+const { clearLibraryStatus } = require('../services/legalLibraryService');
 
 const runCheck = async (checkFn) => {
   const start = Date.now();
@@ -418,9 +419,32 @@ router.post('/worker-tokens', apiLimiter, authMiddleware, checkRole('admin'), cs
 router.get('/worker-tokens', apiLimiter, authMiddleware, checkRole('admin'), async (req, res) => {
   try {
     const tokens = await workerTokenService.listWorkerTokens();
-    return res.json({ success: true, data: tokens });
+    const workers = getConnectedWorkers();
+    const data = tokens.map(token => ({
+      ...token,
+      connectedWorkers: workers.filter(worker => worker.tokenId === token.id).map(({ workerId, name }) => ({ workerId, name })),
+    }));
+    return res.json({ success: true, data });
   } catch {
     return res.status(500).json({ success: false, message: 'Failed to list worker tokens.' });
+  }
+});
+
+router.patch('/worker-tokens/:id/legal-library', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, async (req, res) => {
+  const tokenId = Number(req.params.id);
+  const enabled = req.body?.enabled;
+  if (!Number.isSafeInteger(tokenId) || tokenId <= 0 || typeof enabled !== 'boolean') {
+    return res.status(400).json({ success: false, message: 'A valid token id and setting are required.' });
+  }
+
+  try {
+    const updated = await workerTokenService.setLegalLibraryPermission(tokenId, enabled);
+    if (!updated) return res.status(404).json({ success: false, message: 'Active worker token not found.' });
+    if (!enabled) updateWorkerLibraryAccess(tokenId);
+    clearLibraryStatus();
+    return res.json({ success: true, data: { id: tokenId, serves_legal_library: enabled } });
+  } catch {
+    return res.status(500).json({ success: false, message: 'Failed to update legal library access.' });
   }
 });
 
@@ -435,6 +459,8 @@ router.post('/worker-tokens/:id/revoke', apiLimiter, authMiddleware, checkRole('
     if (!revoked) {
       return res.status(404).json({ success: false, message: 'Worker token not found.' });
     }
+    updateWorkerLibraryAccess(tokenId, { revoked: true });
+    clearLibraryStatus();
     return res.json({ success: true, data: revoked });
   } catch {
     return res.status(500).json({ success: false, message: 'Failed to revoke worker token.' });

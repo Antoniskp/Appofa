@@ -3,9 +3,11 @@
 const crypto = require('crypto');
 const { URL } = require('url');
 const WebSocket = require('ws');
-const { validateWorkerToken, isValidWorkerTokenFormat } = require('../services/workerTokenService');
+const { validateWorkerToken, isValidWorkerTokenFormat, getLegalLibraryTokenIds } = require('../services/workerTokenService');
+const { LEGAL_LIBRARY_CAPABILITY, handleLegalLibraryResponse, closeLegalLibraryRequests } = require('./legalLibraryRelay');
 
 const connectedWorkers = new Map();
+const authorizedSockets = new Set();
 const pendingRequests = new Map();
 const pendingTasks = new Map();
 
@@ -25,20 +27,21 @@ const getTokenFromRequest = (req) => {
   return Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
 };
 
-const isAuthorizedToken = async (token) => {
+const authorizeToken = async (token) => {
   if (!token || typeof token !== 'string' || !isValidWorkerTokenFormat(token)) {
-    return false;
+    return null;
   }
   const dbResult = await validateWorkerToken(token);
-  if (dbResult.valid) return true;
+  if (dbResult.valid) return dbResult;
   const envToken = (process.env.WORKER_TOKEN || '').trim();
-  return Boolean(envToken && token === envToken);
+  return envToken && token === envToken ? { source: 'environment' } : null;
 };
 
 const getConnectedWorkers = () => {
   pruneDisconnectedWorkers();
   return Array.from(connectedWorkers.values()).map((worker) => ({
     workerId: worker.workerId,
+    tokenId: worker.ws.workerTokenId || null,
     name: worker.name,
     capabilities: worker.capabilities,
     maxConcurrentTasks: worker.maxConcurrentTasks,
@@ -59,6 +62,30 @@ const getFirstConnectedWorkerId = (requiredCapability = null) => {
   }
   return null;
 };
+
+function getLegalLibraryCandidates() {
+  pruneDisconnectedWorkers();
+  return [...connectedWorkers.values()].filter(({ ws, capabilities }) =>
+    Number.isInteger(ws.workerTokenId) && capabilities.includes(LEGAL_LIBRARY_CAPABILITY));
+}
+
+const hasConnectedLegalLibraryWorker = () => getLegalLibraryCandidates().length > 0;
+
+async function getLegalLibraryWorker() {
+  const candidates = getLegalLibraryCandidates();
+  if (!candidates.length) return null;
+  const authorized = await getLegalLibraryTokenIds(candidates.map(({ ws }) => ws.workerTokenId));
+  return candidates.find(({ ws, workerId }) => ws.readyState === WebSocket.OPEN &&
+    connectedWorkers.get(workerId)?.ws === ws && authorized.has(ws.workerTokenId))?.ws || null;
+}
+
+function updateWorkerLibraryAccess(tokenId, { revoked = false } = {}) {
+  for (const ws of authorizedSockets) {
+    if (ws.workerTokenId !== tokenId) continue;
+    closeLegalLibraryRequests(ws);
+    if (revoked) ws.close(4001, 'Unauthorized');
+  }
+}
 
 const sendRequest = (workerId, message, timeoutMs = 10000) => {
   return new Promise((resolve, reject) => {
@@ -104,6 +131,8 @@ const sendTaskToWorker = (workerId, taskType, payload = {}, timeoutMs = 30000) =
 };
 
 const handleWorkerMessage = (ws, parsedMessage) => {
+  if (!parsedMessage || typeof parsedMessage !== 'object') return;
+  if (handleLegalLibraryResponse(ws, parsedMessage)) return;
   const { type } = parsedMessage;
 
   if (type === 'register') {
@@ -192,8 +221,10 @@ const createWorkerWsServer = (httpServer) => {
     ws.once('close', () => clearTimeout(authTimeout));
     try {
       ws.on('close', () => {
+        authorizedSockets.delete(ws);
+        closeLegalLibraryRequests(ws);
         if (ws.workerId) {
-          connectedWorkers.delete(ws.workerId);
+          if (connectedWorkers.get(ws.workerId)?.ws === ws) connectedWorkers.delete(ws.workerId);
           console.log(`Worker disconnected: ${ws.workerId}`);
           return;
         }
@@ -215,16 +246,18 @@ const createWorkerWsServer = (httpServer) => {
       ws.on('message', bufferMessage);
 
       const token = getTokenFromRequest(req);
-      const isAuthorized = await isAuthorizedToken(token);
+      const authorization = await authorizeToken(token);
       clearTimeout(authTimeout);
       if (ws.readyState !== WebSocket.OPEN) return;
 
-      if (!isAuthorized) {
+      if (!authorization) {
         ws.off('message', bufferMessage);
         ws.close(4001, 'Unauthorized');
         return;
       }
 
+      ws.workerTokenId = authorization.tokenId;
+      authorizedSockets.add(ws);
       const workerHeaderId = req.headers['x-worker-id'];
       const headerWorkerId = Array.isArray(workerHeaderId) ? workerHeaderId[0] : workerHeaderId;
       if (headerWorkerId) {
@@ -274,6 +307,9 @@ module.exports = {
   createWorkerWsServer,
   getConnectedWorkers,
   getFirstConnectedWorkerId,
+  getLegalLibraryWorker,
+  hasConnectedLegalLibraryWorker,
+  updateWorkerLibraryAccess,
   sendRequest,
   sendTaskToWorker,
 };
