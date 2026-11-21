@@ -426,7 +426,11 @@ export function useProfileForm() {
     if (event?.preventDefault) event.preventDefault();
     setIsSaving(true);
     try {
-      await updateProfile(profileData);
+      const { twitchChannel, ...profileUpdate } = profileData;
+      if (twitchChannel.trim() !== normalizeOptionalString(savedProfileData?.twitchChannel).trim()) {
+        profileUpdate.twitchChannel = twitchChannel;
+      }
+      await updateProfile(profileUpdate);
       setSavedProfileData({ ...profileData });
       setIsDirty(false);
       success(tProfile('updated_successfully'));

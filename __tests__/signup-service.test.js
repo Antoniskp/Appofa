@@ -1,6 +1,7 @@
 jest.mock('../src/services/mailService', () => ({ sendMail: jest.fn().mockResolvedValue({ messageId: 'test' }) }));
 const { sequelize, User } = require('../src/models');
 const authService = require('../src/services/authService');
+const { updateUserProfile } = require('../src/services/userService');
 const { sendMail } = require('../src/services/mailService');
 
 const register = (email = 'private.name@example.com') => authService.registerUser({ email, password: 'Password123!', locale: 'en' });
@@ -20,6 +21,27 @@ test('creates a unique editable handle without disclosing any part of the email'
   expect(first.user.username).not.toContain('private');
   expect(first.user.emailVerified).toBe(false);
   expect(first.user.newsletterOptIn).toBeFalsy();
+});
+
+test('saves an unverified account username when the submitted Twitch field is empty', async () => {
+  const { user } = await register();
+  await updateUserProfile(user.id, { username: 'new_username', twitchChannel: '' });
+  await user.reload();
+  expect(user).toMatchObject({ username: 'new_username', twitchChannel: null });
+});
+
+test('allows an unchanged Twitch channel and restricts actual edits', async () => {
+  const { user } = await register();
+  await expect(updateUserProfile(user.id, { twitchChannel: 'my_channel' })).rejects.toMatchObject({ status: 403 });
+
+  await user.update({ isVerified: true });
+  await updateUserProfile(user.id, { twitchChannel: 'my_channel' });
+  await user.update({ isVerified: false });
+
+  await updateUserProfile(user.id, { username: 'another_username', twitchChannel: 'my_channel' });
+  await expect(updateUserProfile(user.id, { twitchChannel: '' })).rejects.toMatchObject({ status: 403 });
+  await user.reload();
+  expect(user).toMatchObject({ username: 'another_username', twitchChannel: 'my_channel' });
 });
 
 test('corrects an unverified address, invalidates the old link, and verifies only the new address', async () => {

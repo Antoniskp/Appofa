@@ -84,3 +84,44 @@ test('signup returns people to the action that prompted registration', async ({ 
   await expect(page.getByRole('heading', { name: 'Improve our local park', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: en.signupJourney.verification_title })).toBeVisible();
 });
+
+test('signup lets an unverified user change their username', async ({ page }) => {
+  await page.goto('/register');
+  await createAccount(page, 'rename');
+  await expect(page).toHaveURL(/\/onboarding$/);
+
+  await page.goto('/profile');
+  const username = page.locator('[name="username"]');
+  await expect(username).toHaveValue(/^citizen-/);
+  await expect(page.locator('[name="twitchChannel"]')).toHaveCount(0);
+  const newUsername = `user_${Date.now()}`;
+  await username.fill(newUsername);
+
+  const [response] = await Promise.all([
+    page.waitForResponse(res => res.url().endsWith('/api/auth/profile') && res.request().method() === 'PUT'),
+    page.getByRole('button', { name: en.profile.save_changes, exact: true }).click(),
+  ]);
+  expect(response.ok()).toBe(true);
+  expect(response.request().postDataJSON()).not.toHaveProperty('twitchChannel');
+
+  await page.reload();
+  await expect(username).toHaveValue(newUsername);
+});
+
+test('signup profile lets a privileged user edit Twitch', async ({ page }) => {
+  const login = await page.request.post('/api/auth/login', {
+    data: { email: 'author@example.test', password: 'TestPassword123!' },
+  });
+  expect(login.ok()).toBe(true);
+
+  await page.goto('/profile');
+  const twitchChannel = page.getByRole('textbox', { name: en.profile.twitch_channel, exact: true });
+  await expect(twitchChannel).toBeEditable();
+  const channel = `channel_${Date.now()}`;
+  await twitchChannel.fill(channel);
+  await page.getByRole('button', { name: en.profile.save_changes, exact: true }).click();
+  await expect(page.getByText(en.profile.updated_successfully, { exact: true })).toBeVisible();
+
+  await page.reload();
+  await expect(twitchChannel).toHaveValue(channel);
+});

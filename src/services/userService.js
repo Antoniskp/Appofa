@@ -480,20 +480,22 @@ async function updateUserProfile(userId, data) {
   }
 
   if (twitchChannel !== undefined) {
-    const isEligible = user.isVerified === true || ['admin', 'moderator', 'editor'].includes(user.role);
-    if (!isEligible) {
-      throw new ServiceError(403, 'Only verified users or privileged roles can set a Twitch channel.');
-    }
-    if (twitchChannel === null || twitchChannel === '') {
-      user.twitchChannel = null;
-    } else if (typeof twitchChannel !== 'string') {
-      throw new ServiceError(400, 'Twitch channel must be a string.');
-    } else {
-      const trimmed = twitchChannel.trim();
-      if (!/^[a-zA-Z0-9_]{1,50}$/.test(trimmed)) {
-        throw new ServiceError(400, 'Twitch channel name may only contain letters, numbers, and underscores (max 50 characters).');
+    const trimmedChannel = typeof twitchChannel === 'string' ? twitchChannel.trim() : twitchChannel;
+    const nextChannel = twitchChannel === '' ? null : trimmedChannel;
+    if (nextChannel !== (user.twitchChannel || null)) {
+      const isEligible = user.isVerified === true || ['admin', 'moderator', 'editor'].includes(user.role);
+      if (!isEligible) {
+        throw new ServiceError(403, 'Only verified users or privileged roles can set a Twitch channel.');
       }
-      user.twitchChannel = trimmed;
+      if (nextChannel !== null) {
+        if (typeof nextChannel !== 'string') {
+          throw new ServiceError(400, 'Twitch channel must be a string.');
+        }
+        if (!/^[a-zA-Z0-9_]{1,50}$/.test(nextChannel)) {
+          throw new ServiceError(400, 'Twitch channel name may only contain letters, numbers, and underscores (max 50 characters).');
+        }
+      }
+      user.twitchChannel = nextChannel;
     }
   }
 
