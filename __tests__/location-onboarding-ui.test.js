@@ -68,10 +68,15 @@ test('failed location save stays on step and displays an error', async () => {
   expect(container.querySelector('[role="alert"]').textContent).toContain('Please retry');
   expect(next).not.toHaveBeenCalled();
 });
-test('skip does not alter the profile or subscription', async () => {
+test.each([
+  ['skip', false],
+  ['skipSelected', true],
+])('%s advances without saving a location or subscription', async (label, hasSelection) => {
   await act(async () => root.render(React.createElement(LocationStep, { onContinue: next })));
-  await click('skip');
+  if (hasSelection) await selectLocation();
+  await click(label);
   expect(next).toHaveBeenCalledTimes(1);
+  expect(next).toHaveBeenCalledWith(undefined);
   expect(mockUpdateProfile).not.toHaveBeenCalled();
   expect(mockSavePreference).not.toHaveBeenCalled();
 });

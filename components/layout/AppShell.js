@@ -30,7 +30,7 @@ export default function AppShell({ children }) {
           <Link href="/" className="text-sm font-medium text-gray-600 underline">{t('back_home')}</Link>
         </div>
       </header>
-      {pathname !== '/verify-email' && <EmailVerificationNotice />}
+      {pathname !== '/verify-email' && pathname !== '/onboarding' && <EmailVerificationNotice />}
       <main id="main-content" tabIndex={-1} className="flex-grow bg-gray-50">{children}</main>
       <footer className="flex justify-center gap-6 bg-gray-50 px-4 py-6 text-sm text-gray-600">
         <Link href="/terms" className="underline">{t('terms')}</Link>

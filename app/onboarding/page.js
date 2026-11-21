@@ -19,6 +19,7 @@ import {
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
 import { authAPI, messageAPI, candidateRegistrationAPI, onboardingEventAPI } from '@/lib/api';
 import Button from '@/components/ui/Button';
+import EmailVerificationNotice from '@/components/onboarding/EmailVerificationNotice';
 import LocationStep from '@/components/onboarding/LocationStep';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import StartParticipation from '@/components/onboarding/StartParticipation';
@@ -736,7 +737,12 @@ function OnboardingContent() {
 
 function OnboardingRoute() {
   const params = useSearchParams();
-  return params.get('mode') === 'advanced' ? <OnboardingContent /> : <StartParticipation />;
+  if (params.get('mode') !== 'advanced') return <StartParticipation />;
+
+  return <>
+    <EmailVerificationNotice />
+    <OnboardingContent />
+  </>;
 }
 
 export default function OnboardingPage() {

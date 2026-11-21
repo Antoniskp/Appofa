@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { authAPI } from '@/lib/api';
 import FormInput from '@/components/ui/FormInput';
 
-export default function EmailVerificationNotice() {
+export default function EmailVerificationNotice({ inline = false }) {
   const t = useTranslations('signupJourney');
   const { user, refreshUser } = useAuth();
   const [editing, setEditing] = useState(false);
@@ -44,11 +44,11 @@ export default function EmailVerificationNotice() {
   };
 
   return (
-    <section id="email-verification" aria-label={t('verification_title')} className="border-b border-blue-200 bg-blue-50">
+    <section id="email-verification" aria-label={t('verification_title')} className={inline ? 'rounded-xl border border-blue-200 bg-blue-50' : 'border-b border-blue-200 bg-blue-50'}>
       <div className="mx-auto max-w-3xl space-y-3 px-4 py-4 text-sm text-blue-950">
         <h2 className="font-bold">{t('verification_title')}</h2>
         <p className="break-words">{t('verification_destination', { email: user.email })}</p>
-        <p className="leading-6">{t('verification_help')}</p>
+        <p className="leading-6">{t(inline ? 'verification_later_help' : 'verification_help')}</p>
         <div className="flex flex-wrap gap-x-5 gap-y-1">
           <button type="button" onClick={resend} disabled={busy || sent} className="min-h-11 font-semibold underline disabled:opacity-60">{t(busy ? 'sending' : sent ? 'sent' : 'resend')}</button>
           <button type="button" onClick={() => { setEmail(user.email); setEditing(!editing); setMessage(''); setError(''); setSent(false); }} disabled={busy} aria-expanded={editing} className="min-h-11 font-semibold underline">{t(editing ? 'cancel' : 'correct_email')}</button>

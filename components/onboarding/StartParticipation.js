@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { authAPI, onboardingEventAPI } from '@/lib/api';
+import EmailVerificationNotice from './EmailVerificationNotice';
 import LocationStep from './LocationStep';
 
 export default function StartParticipation() {
@@ -27,6 +28,7 @@ export default function StartParticipation() {
         <p className="mt-3 text-base leading-7 text-gray-600">{t('start_help')}</p>
       </div>
       <LocationStep onContinue={continueToTopics} />
+      <EmailVerificationNotice inline />
       <details className="rounded-xl border border-gray-200 bg-white p-4 text-sm">
         <summary className="cursor-pointer py-1 font-semibold text-gray-700">{t('other_ways')}</summary>
         <p className="mt-3 leading-6 text-gray-600">{t('other_ways_help')}</p>

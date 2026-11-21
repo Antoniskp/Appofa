@@ -1,6 +1,7 @@
 /* global document, window */
 const { test, expect } = require('@playwright/test');
 const en = require('../messages/en.json');
+const el = require('../messages/el.json');
 
 test.beforeEach(async ({ context }) => {
   await context.addCookies([{ name: 'NEXT_LOCALE', value: 'en', domain: '127.0.0.1', path: '/' }]);
@@ -10,11 +11,11 @@ test.beforeEach(async ({ context }) => {
   });
 });
 
-async function createAccount(page, suffix) {
+async function createAccount(page, suffix, messages = en) {
   await page.locator('[name="email"]').fill(`signup-${suffix}-${Date.now()}@example.test`);
   await page.locator('[name="password"]').fill('Password123!');
   await page.locator('[name="gdpr_consent"]').check();
-  await page.getByRole('button', { name: en.auth.submit_register, exact: true }).click();
+  await page.getByRole('button', { name: messages.auth.submit_register, exact: true }).click();
 }
 
 test('signup validates fields, confirms account creation and lets people skip setup', async ({ page }, testInfo) => {
@@ -36,11 +37,14 @@ test('signup validates fields, confirms account creation and lets people skip se
   await createAccount(page, 'skip');
   await expect(page).toHaveURL(/\/onboarding$/);
   await expect(page.getByRole('heading', { name: en.signupJourney.account_ready })).toBeVisible();
+  await expect(page.getByRole('heading', { name: en.locationOnboarding.title, exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: en.signupJourney.verification_title })).toBeVisible();
+  await expect(page.getByText(en.signupJourney.verification_later_help, { exact: true })).toBeVisible();
   await expect(page.getByText(en.onboarding.choose_one_primary, { exact: true })).toBeHidden();
   await expect(page.getByRole('heading', { name: en.onboarding.your_checklist })).toHaveCount(0);
   await expect(page.getByRole('checkbox', { name: en.locationOnboarding.subscribe })).toBeHidden();
-  await expect(page.getByRole('button', { name: en.locationOnboarding.saveLocation })).toBeDisabled();
+  await expect(page.getByRole('button', { name: en.locationOnboarding.saveLocation, exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: en.locationOnboarding.skip, exact: true })).toBeEnabled();
   await page.screenshot({ path: testInfo.outputPath('signup-ready.png'), fullPage: true });
   await page.getByRole('button', { name: en.locationOnboarding.skip, exact: true }).click();
   await expect(page).toHaveURL(/\/polls$/);
@@ -50,27 +54,30 @@ test('signup validates fields, confirms account creation and lets people skip se
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
-test('signup can correct an email, resend confirmation and open local topics', async ({ page }, testInfo) => {
+test('signup can correct an email and save a location in Greek', async ({ page, context }, testInfo) => {
+  await context.addCookies([{ name: 'NEXT_LOCALE', value: 'el', domain: '127.0.0.1', path: '/' }]);
   await page.goto('/register');
-  await createAccount(page, 'correct');
+  await createAccount(page, 'correct', el);
   await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page.getByRole('heading', { name: el.signupJourney.account_ready, exact: true })).toBeVisible();
   const correctedEmail = `corrected-${Date.now()}@example.test`;
-  await page.getByRole('button', { name: en.signupJourney.correct_email, exact: true }).click();
-  await page.getByRole('textbox', { name: en.signupJourney.correct_email_label }).fill(correctedEmail);
-  await page.getByRole('button', { name: en.signupJourney.save_email, exact: true }).click();
-  await expect(page.getByRole('status')).toContainText(en.signupJourney.verification_sent);
+  await page.getByRole('button', { name: el.signupJourney.correct_email, exact: true }).click();
+  await page.getByRole('textbox', { name: el.signupJourney.correct_email_label }).fill(correctedEmail);
+  await page.getByRole('button', { name: el.signupJourney.save_email, exact: true }).click();
+  await expect(page.getByRole('status')).toContainText(el.signupJourney.verification_sent);
   const profile = await (await page.request.get('/api/auth/profile')).json();
   expect(profile.data.user.email).toBe(correctedEmail);
   expect(profile.data.user.emailVerified).toBe(false);
-  await expect(page.getByText(en.signupJourney.verification_destination.replace('{email}', correctedEmail))).toBeVisible();
-  const labels = en.common.location_selector;
+  await expect(page.getByText(el.signupJourney.verification_destination.replace('{email}', correctedEmail))).toBeVisible();
+  const labels = el.common.location_selector;
   await expect(page.getByRole('combobox', { name: labels.label_city, exact: true })).toHaveCount(0);
   await page.getByRole('combobox', { name: labels.label_country, exact: true }).selectOption('1');
   await page.getByRole('combobox', { name: labels.label_prefecture, exact: true }).selectOption('2');
   await page.getByRole('combobox', { name: labels.label_city, exact: true }).selectOption('3');
-  await page.getByRole('button', { name: en.locationOnboarding.saveLocation, exact: true }).click();
+  await expect(page.getByRole('button', { name: el.locationOnboarding.skipSelected, exact: true })).toBeVisible();
+  await page.getByRole('button', { name: el.locationOnboarding.saveLocation, exact: true }).click();
   await expect(page).toHaveURL(/\/locations\/3$/);
-  await expect(page.getByRole('heading', { name: en.signupJourney.verification_title })).toBeVisible();
+  await expect(page.getByRole('heading', { name: el.signupJourney.verification_title })).toBeVisible();
   const savedProfile = await (await page.request.get('/api/auth/profile')).json();
   expect(savedProfile.data.user.homeLocationId).toBe(3);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
