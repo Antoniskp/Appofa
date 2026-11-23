@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
 import { videoPinAPI } from '@/lib/api';
 import { buildVideoPinMarkers } from '@/lib/utils/videoPinMarkers';
+import { normalizeTikTokHandle, tikTokProfileUrl } from '@/config/tiktokCreators';
 
 const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false });
 const CENTER = [38.4, 23.7];
@@ -18,16 +19,19 @@ function isInGreece(lat, lng) {
   return lat >= 34.5 && lat <= 41.9 && lng >= 19 && lng <= 30;
 }
 
-export default function LiveStreamsMap() {
+export default function LiveStreamsMap({ creatorHandle = null }) {
   const t = useTranslations('liveMap');
+  const tCreators = useTranslations('tiktokCreators');
   const { user } = useAuth();
+  const creatorSource = creatorHandle ? `${tikTokProfileUrl(creatorHandle)}/live` : '';
+  const currentPath = creatorHandle ? `/live?creator=${encodeURIComponent(creatorHandle)}` : '/live';
   const [pins, setPins] = useState([]);
   const [trust, setTrust] = useState({ approvedLivePinCount: 0, maxDurationHours: 1 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [category, setCategory] = useState('all');
   const [formOpen, setFormOpen] = useState(false);
-  const [sourceUrl, setSourceUrl] = useState('');
+  const [sourceUrl, setSourceUrl] = useState(creatorSource);
   const [title, setTitle] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('local-news');
   const [duration, setDuration] = useState(1);
@@ -39,7 +43,7 @@ export default function LiveStreamsMap() {
     setLoading(true);
     setError('');
     try {
-      const response = await videoPinAPI.getAll({ contentType: 'live', sort: 'newest' });
+      const response = await videoPinAPI.getAll({ contentType: 'live', sort: 'newest', creator: creatorHandle });
       if (!response?.success) throw new Error(response?.message || t('loadError'));
       setPins(response.data?.videoPins || []);
       if (response.data?.trust) {
@@ -51,14 +55,26 @@ export default function LiveStreamsMap() {
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [creatorHandle, t]);
 
   useEffect(() => { loadPins(); }, [loadPins]);
 
+  useEffect(() => {
+    const expiresAt = pins.reduce((earliest, pin) => pin.expiresAt ? Math.min(earliest, Date.parse(pin.expiresAt)) : earliest, Infinity);
+    if (!Number.isFinite(expiresAt)) return;
+    const timer = setTimeout(() => {
+      const now = Date.now();
+      setPins((current) => current.filter((pin) => !pin.expiresAt || Date.parse(pin.expiresAt) > now));
+    }, Math.max(0, expiresAt - Date.now()));
+    return () => clearTimeout(timer);
+  }, [pins]);
+
   const visiblePins = useMemo(
-    () => pins.filter((pin) => isInGreece(Number(pin.lat), Number(pin.lng)) && (category === 'all' || pin.category === category)),
-    [category, pins]
+    () => pins.filter((pin) => (creatorHandle || isInGreece(Number(pin.lat), Number(pin.lng))) && (category === 'all' || pin.category === category)),
+    [category, creatorHandle, pins]
   );
+  const firstCreatorPin = creatorHandle ? visiblePins[0] : null;
+  const mapCenter = firstCreatorPin ? [firstCreatorPin.lat, firstCreatorPin.lng] : CENTER;
   const markers = useMemo(() => [
     ...buildVideoPinMarkers(visiblePins),
     ...(point ? [{ lat: point.lat, lng: point.lng, label: t('selectedPoint'), variant: 'selected', iconColor: '#e11d48' }] : []),
@@ -81,7 +97,7 @@ export default function LiveStreamsMap() {
       });
       if (!response?.success) throw new Error(response?.message || t('submitError'));
       setNotice(response.data?.videoPin?.status === 'approved' ? t('submitted') : t('pendingReview'));
-      setSourceUrl('');
+      setSourceUrl(creatorSource);
       setTitle('');
       setPoint(null);
       setFormOpen(false);
@@ -94,7 +110,7 @@ export default function LiveStreamsMap() {
   };
 
   const handleMapClick = (lat, lng) => {
-    if (isInGreece(lat, lng)) setPoint({ lat: Number(lat.toFixed(5)), lng: Number(lng.toFixed(5)) });
+    if (creatorHandle || isInGreece(lat, lng)) setPoint({ lat: Number(lat.toFixed(5)), lng: Number(lng.toFixed(5)) });
   };
 
   return (
@@ -103,8 +119,12 @@ export default function LiveStreamsMap() {
         <header className="mb-5 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="mb-1 text-sm font-semibold uppercase tracking-wide text-rose-600">{t('eyebrow')}</p>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">{t('title')}</h1>
-            <p className="mt-2 max-w-2xl text-slate-600">{t('subtitle')}</p>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">{creatorHandle ? tCreators('creatorStreams', { handle: `@${creatorHandle}` }) : t('title')}</h1>
+            <p className="mt-2 max-w-2xl text-slate-600">{creatorHandle ? tCreators('creatorMapHint') : t('subtitle')}</p>
+            <div className="mt-3 flex flex-wrap gap-4 text-sm font-semibold text-blue-700">
+              <Link href="/creators" className="hover:underline">{tCreators('title')}</Link>
+              {creatorHandle && <Link href="/live" className="hover:underline">{tCreators('liveMap')}</Link>}
+            </div>
           </div>
           {user ? (
             <button type="button" onClick={() => { setFormOpen((open) => !open); setNotice(''); }}
@@ -112,7 +132,7 @@ export default function LiveStreamsMap() {
               <PlusCircleIcon className="h-5 w-5" />{t('addStream')}
             </button>
           ) : (
-            <Link href="/login" className="rounded-lg bg-rose-600 px-4 py-2.5 font-semibold text-white hover:bg-rose-700">{t('signInToAdd')}</Link>
+            <Link href={`/login?next=${encodeURIComponent(currentPath)}`} className="rounded-lg bg-rose-600 px-4 py-2.5 font-semibold text-white hover:bg-rose-700">{t('signInToAdd')}</Link>
           )}
         </header>
 
@@ -130,7 +150,7 @@ export default function LiveStreamsMap() {
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <BaseMap center={CENTER} zoom={6} markers={markers} clusterMarkers scrollWheelZoom
+            <BaseMap center={mapCenter} zoom={firstCreatorPin ? 10 : 6} markers={markers} clusterMarkers scrollWheelZoom
               className="h-[58vh] min-h-[420px] w-full" onMapClick={formOpen ? handleMapClick : undefined} />
             <div className="flex items-start gap-2 border-t border-slate-100 px-4 py-3 text-sm text-slate-600">
               <MapPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-rose-600" />
@@ -144,7 +164,7 @@ export default function LiveStreamsMap() {
                 <h2 className="text-lg font-bold text-slate-900">{t('formTitle')}</h2>
                 <p className="text-sm text-slate-600">{t('formHint')}</p>
                 <label className="block text-sm font-medium text-slate-700" htmlFor="live-source">{t('streamLink')}</label>
-                <input id="live-source" type="url" required value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)}
+                <input id="live-source" type="url" required readOnly={Boolean(creatorHandle)} value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)}
                   placeholder="https://www.youtube.com/live/…" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 <label className="block text-sm font-medium text-slate-700" htmlFor="live-title">{t('shortTitle')}</label>
                 <input id="live-title" type="text" maxLength={255} value={title} onChange={(e) => setTitle(e.target.value)}
@@ -171,17 +191,21 @@ export default function LiveStreamsMap() {
                 : error ? <div className="space-y-3 py-4 text-center"><p className="text-sm text-red-700">{error}</p><button type="button" onClick={loadPins} className="text-sm font-semibold text-blue-700">{t('retry')}</button></div>
                   : visiblePins.length === 0 ? <p className="py-8 text-center text-sm text-slate-500">{t('empty')}</p>
                     : <ul className="max-h-[54vh] space-y-3 overflow-y-auto">
-                      {visiblePins.map((pin) => (
-                        <li key={pin.id} className="rounded-xl border border-slate-100 p-3">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="rounded-full bg-rose-50 px-2 py-1 text-xs font-bold text-rose-700">{pin.sourceProvider}</span>
-                            {pin.expiresAt && <span className="text-xs text-slate-500">{t('expires', { time: new Date(pin.expiresAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) })}</span>}
-                          </div>
-                          <p className="mt-2 font-semibold text-slate-900">{pin.title}</p>
-                          <p className="mt-1 text-xs text-slate-500">{pin.location?.name_local || pin.location?.name || t('communityPin')}</p>
-                          <a href={pin.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex text-sm font-semibold text-blue-700 hover:underline">{t('openStream')} ↗</a>
-                        </li>
-                      ))}
+                      {visiblePins.map((pin) => {
+                        const handle = pin.sourceProvider === 'tiktok' && normalizeTikTokHandle(pin.creatorHandle);
+                        return (
+                          <li key={pin.id} className="rounded-xl border border-slate-100 p-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="rounded-full bg-rose-50 px-2 py-1 text-xs font-bold text-rose-700">{pin.sourceProvider}</span>
+                              {pin.expiresAt && <span className="text-xs text-slate-500">{t('expires', { time: new Date(pin.expiresAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) })}</span>}
+                            </div>
+                            <p className="mt-2 font-semibold text-slate-900">{pin.title}</p>
+                            <p className="mt-1 text-xs text-slate-500">{pin.location?.name_local || pin.location?.name || t('communityPin')}</p>
+                            {handle && !creatorHandle && <Link href={`/creators?q=${encodeURIComponent(`@${handle}`)}`} className="mt-1 block text-xs font-semibold text-slate-700 hover:underline">@{handle}</Link>}
+                            <a href={pin.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex text-sm font-semibold text-blue-700 hover:underline">{t('openStream')} ↗</a>
+                          </li>
+                        );
+                      })}
                     </ul>}
             </section>
           </aside>

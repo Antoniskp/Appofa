@@ -4,11 +4,13 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { MapPinIcon, PencilIcon } from '@heroicons/react/24/outline';
 import ExpandablePhoto from '@/components/ui/ExpandablePhoto';
+import { TIKTOK_CREATOR_LOCATION_TYPES } from '@/config/tiktokCreators';
 
 const TYPE_LABELS = { country: 'Χώρα', prefecture: 'Νομός / Περιφέρεια', municipality: 'Δήμος', electoral_district: 'Εκλογική περιφέρεια', international: 'Διεθνές' };
 
 export default function LocationHeader({ location, imageError, setImageError, canManageLocations, onEdit }) {
   const t = useTranslations('locationImprovements');
+  const tCreators = useTranslations('tiktokCreators');
   const [shareState, setShareState] = useState('');
   const name = location.name_local || location.name;
   const population = location.population_override ?? location.population;
@@ -52,6 +54,7 @@ export default function LocationHeader({ location, imageError, setImageError, ca
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-4 shrink-0">
+        {TIKTOK_CREATOR_LOCATION_TYPES.includes(location.type) && <Link href={`/creators?locationId=${location.id}`} className="inline-flex min-h-11 items-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">{tCreators('title')}</Link>}
         <Link href={`/locations/${location.slug || location.id}/improve`} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"><PencilIcon className="h-4 w-4" aria-hidden="true" />{t('improve')}</Link>
         <Link href={'/suggestions/new?locationId=' + location.id} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Κάνε πρόταση</Link>
         <button type="button" onClick={share} className="text-sm text-gray-600 hover:text-gray-950">Κοινοποίηση</button>

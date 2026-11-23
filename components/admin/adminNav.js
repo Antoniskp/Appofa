@@ -38,6 +38,7 @@ export const adminNavSections = [
       { href: '/admin/messages', label: 'Messages', icon: EnvelopeIcon, roles: STAFF_ROLES, translationKey: 'manage_messages' },
       { href: '/admin/persons/claims', label: 'Person Claims', icon: IdentificationIcon, roles: STAFF_ROLES },
       { href: '/admin/candidates', label: 'Candidate Registrations', icon: UserPlusIcon, roles: STAFF_ROLES },
+      { href: '/admin/creators', label: 'TikTok Creators', icon: UsersIcon, roles: STAFF_ROLES },
       { href: '/admin/removal-requests', label: 'Removal Requests', icon: UserMinusIcon, roles: STAFF_ROLES },
     ],
   },

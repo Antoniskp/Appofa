@@ -195,32 +195,11 @@ export default function TopNav() {
           mobileIcon: <CalendarDaysIcon className="h-5 w-5" />
         },
         {
-          id: 'cameras',
-          label: tNav('cameras'),
-          href: '/cameras',
-          icon: <VideoCameraIcon className="h-4 w-4" />,
-          mobileIcon: <VideoCameraIcon className="h-5 w-5" />
-        },
-        {
-          id: 'live-map',
-          label: tNav('live_map'),
-          href: '/live',
-          icon: <MapPinIcon className="h-4 w-4" />,
-          mobileIcon: <MapPinIcon className="h-5 w-5" />
-        },
-        {
           id: 'users',
           label: tNav('users'),
           href: '/users',
           icon: <UsersIcon className="h-4 w-4" />,
           mobileIcon: <UsersIcon className="h-5 w-5" />
-        },
-        {
-          id: 'candidates',
-          label: tNav('candidates'),
-          href: '/candidates',
-          icon: <FlagIcon className="h-4 w-4" />,
-          mobileIcon: <FlagIcon className="h-5 w-5" />
         }
       ]
     },

@@ -137,16 +137,16 @@ describe('TopNav simplified navigation', () => {
     expect(guestMobile).toContain('Σύνδεση');
   });
 
-  test('shows Cameras under the guest grouped navigation in desktop and mobile menus', () => {
-    const moreDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-community-menu"]');
-    expect(moreDropdown).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/cameras"]')).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/users"]')).toBeTruthy();
-    expect(moreDropdown.querySelector('a[href="/candidates"]')).toBeTruthy();
+  test('keeps Map and Users as the main destinations on desktop and mobile', () => {
+    const communityDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-community-menu"]');
+    const mobileMenu = container.querySelector('#mobile-menu');
 
-    const mobileCamerasLink = container.querySelector('#mobile-menu a[href="/cameras"]');
-    expect(mobileCamerasLink).toBeTruthy();
-    expect(container.querySelector('#mobile-menu a[href="/candidates"]')).toBeTruthy();
+    for (const menu of [communityDropdown, mobileMenu]) {
+      expect(menu.querySelector('a[href="/map"]')).toBeTruthy();
+      expect(menu.querySelector('a[href="/users"]')).toBeTruthy();
+    }
+
+    expect(container.querySelector('a[href="/cameras"], a[href="/live"], a[href="/candidates"]')).toBeNull();
   });
 
   test('guest grouped dropdown includes sub-page links without the legacy all-pages item', () => {
@@ -286,7 +286,7 @@ describe('TopNav simplified navigation', () => {
 
     const communityDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-community-menu"]');
     expect(communityDropdown).toBeTruthy();
-    expect(communityDropdown.querySelector('a[href="/candidates"]')).toBeTruthy();
+    expect(communityDropdown.querySelector('a[href="/users"]')).toBeTruthy();
     expect(communityDropdown.querySelector('a[href="/independents"]')).toBeFalsy();
 
     const participationDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-participation-menu"]');

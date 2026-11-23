@@ -12,6 +12,7 @@ const STATIC_ROUTES = [
   { url: '/articles', priority: 0.8, changeFrequency: 'daily' },
   { url: '/polls', priority: 0.7, changeFrequency: 'daily' },
   { url: '/live', priority: 0.8, changeFrequency: 'hourly' },
+  { url: '/creators', priority: 0.7, changeFrequency: 'daily' },
   ...['suggestions', 'civic-questions', 'analyses', 'organizations', 'topics', 'calendar', 'videos', 'platform', 'cameras', 'positions', 'candidates', 'official-posts', 'progress'].map((route) => ({ url: '/' + route, priority: 0.7, changeFrequency: 'daily' })),
   // Static info pages
   { url: '/about', priority: 0.5, changeFrequency: 'monthly' },

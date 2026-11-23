@@ -67,6 +67,7 @@ const CandidateRegistration = require('./CandidateRegistration');
 const OnboardingEvent = require('./OnboardingEvent');
 const MediaAsset = require('./MediaAsset');
 const VideoPin = require('./VideoPin');
+const TikTokCreator = require('./TikTokCreator');
 
 // Define associations
 LocationImprovement.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
@@ -573,6 +574,8 @@ User.hasMany(OnboardingEvent, { foreignKey: 'userId', as: 'onboardingEvents' });
 VideoPin.belongsTo(User, { foreignKey: 'submittedByUserId', as: 'submittedBy' });
 VideoPin.belongsTo(User, { foreignKey: 'moderatedByUserId', as: 'moderatedBy' });
 VideoPin.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
+TikTokCreator.belongsTo(Location, { foreignKey: 'locationId', as: 'location', onDelete: 'CASCADE' });
+TikTokCreator.belongsTo(User, { foreignKey: 'reviewedByUserId', as: 'reviewedBy' });
 User.hasMany(VideoPin, { foreignKey: 'submittedByUserId', as: 'submittedVideoPins' });
 User.hasMany(VideoPin, { foreignKey: 'moderatedByUserId', as: 'moderatedVideoPins' });
 Location.hasMany(VideoPin, { foreignKey: 'locationId', as: 'videoPins' });
@@ -681,4 +684,5 @@ module.exports = {
   OnboardingEvent,
   MediaAsset,
   VideoPin,
+  TikTokCreator,
 };

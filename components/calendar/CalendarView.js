@@ -1,16 +1,17 @@
 'use client';
 
-import { Suspense, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import {
-  AdjustmentsHorizontalIcon, ArrowRightIcon, Bars3Icon, CalendarDaysIcon, ChevronDownIcon, MapPinIcon, XMarkIcon,
+  ArrowRightIcon, Bars3Icon, CalendarDaysIcon, MapPinIcon,
 } from '@heroicons/react/24/outline';
 import { calendarAPI } from '@/lib/api/calendar';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import LocationSelector from '@/components/ui/LocationSelector';
+import CalendarPill from './CalendarPill';
 import CalendarSubscriptions from './CalendarSubscriptions';
 import { CALENDAR_CATEGORIES } from '@/lib/calendar/categories';
 import { calendarEntryDays, localDateTime, shiftDate } from '@/lib/calendar/dates';
@@ -91,16 +92,16 @@ function CalendarContent({ locationId: fixedLocationId, user, authLoading }) {
   const mode = requestedMode === 'list' || (!requestedMode && hasListPeriod) ? 'list' : 'month';
   const period = hasListPeriod ? requestedPeriod : 'upcoming';
   const view = ['mine', 'review'].includes(params.get('view')) ? params.get('view') : 'public';
-  const category = CALENDAR_CATEGORIES.includes(params.get('category')) ? params.get('category') : '';
-  const browsing = params.get('calendar') === 'browse' || Boolean(category || locationId || view !== 'public');
+  const requestedBrowseCategories = (params.get('categories') || params.get('category') || '').split(',');
+  const browseCategories = CALENDAR_CATEGORIES.filter(category => requestedBrowseCategories.includes(category));
+  const browseCategoryParam = browseCategories.join(',');
+  const browsing = params.get('calendar') === 'browse' || Boolean(browseCategoryParam || locationId || view !== 'public');
   const hasPersonalCalendar = Boolean(user && !fixedLocationId);
   const personal = hasPersonalCalendar && !browsing;
   const waitingForAuth = !fixedLocationId && authLoading && !browsing;
   const showBrowseFilters = !personal && !waitingForAuth;
   const page = Math.max(1, Math.min(100000, Math.floor(Number(params.get('page'))) || 1));
   const selectedDay = params.get('day') || '';
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const filtersId = useId();
   const agendaHeading = useRef(null);
   const pendingJump = useRef('');
   function update(changes) {
@@ -116,13 +117,11 @@ function CalendarContent({ locationId: fixedLocationId, user, authLoading }) {
   const setPage = value => update({ page: value });
   const setSelectedDay = value => update({ day: value });
   const selectedLocation = fixedLocationId || locationId;
-  const activeFilters = [];
-  if (category) activeFilters.push({ key: 'category', label: t(`categories.${category}`) });
-  if (user && view !== 'public') activeFilters.push({ key: 'view', label: t(view) });
-  if (selectedLocation && descendants) activeFilters.push({ key: 'descendants', label: t('descendants') });
-  const filterCount = activeFilters.length + Number(Boolean(locationId));
-  const filtered = filterCount > 0;
-  const clearFilters = () => update({ category: '', location: '', view: '', descendants: '', page: '' });
+  const filtered = Boolean(browseCategoryParam || locationId || (user && view !== 'public') || (selectedLocation && descendants));
+  const clearFilters = () => update({ category: '', categories: '', location: '', view: '', descendants: '', page: '' });
+  function setBrowseCategories(values) {
+    update({ category: values.length === 1 ? values[0] : '', categories: values.length > 1 ? values.join(',') : '', page: '' });
+  }
   const { data: subscriptions, loading: subscriptionsLoading, error: subscriptionsError, setData: setSubscriptions, refetch: reloadSubscriptions } =
     useAsyncData(async () => hasPersonalCalendar ? (await calendarAPI.subscriptions()).data : null, [hasPersonalCalendar]);
   const requestedCategories = params.get('showCategories')?.split(',') || [];
@@ -153,9 +152,9 @@ function CalendarContent({ locationId: fixedLocationId, user, authLoading }) {
     ...(locationIds ? { locationIds } : {}),
   } : {
     view: effectiveView,
-    ...(category ? { category } : {}),
+    ...(browseCategoryParam ? { categories: browseCategoryParam } : {}),
     ...(selectedLocation ? { locationId: selectedLocation, descendants } : {}),
-  }, [personal, categories, locationIds, effectiveView, category, selectedLocation, descendants]);
+  }, [personal, categories, locationIds, effectiveView, browseCategoryParam, selectedLocation, descendants]);
   const addHref = user ? '/events/new' + (selectedLocation ? '?locationId=' + selectedLocation : '') : '/login';
   const monthView = mode === 'month' || period === 'month';
   const [year, number] = month.split('-').map(Number);
@@ -256,7 +255,7 @@ function CalendarContent({ locationId: fixedLocationId, user, authLoading }) {
     </header>
     {hasPersonalCalendar && <div role="group" aria-label={t('calendarScope')} className="flex flex-wrap gap-2">
       <button type="button" aria-pressed={personal}
-        onClick={() => update({ calendar: '', category: '', location: '', descendants: '', view: '', page: '' })}
+        onClick={() => update({ calendar: '', category: '', categories: '', location: '', descendants: '', view: '', page: '' })}
         className={`min-h-11 rounded-lg border border-brand-border px-4 text-sm font-semibold text-blue-800 hover:bg-ivory aria-pressed:border-blue-700 aria-pressed:bg-blue-700 aria-pressed:text-white aria-pressed:hover:bg-blue-800 ${FOCUS_RING}`}>
         {t('myCalendar')}
       </button>
@@ -272,7 +271,8 @@ function CalendarContent({ locationId: fixedLocationId, user, authLoading }) {
             <p role="alert" className="text-red-700">{t('subscriptionLoadError')}</p>
             <button type="button" onClick={() => reloadSubscriptions()} className="min-h-11 font-semibold text-blue-700 underline">{t('retry')}</button>
           </div> : subscriptions && <CalendarSubscriptions subscriptions={subscriptions} selected={selected}
-            onToggle={toggleSource} onChange={setSubscriptions} onUnsubscribe={unsubscribeSource} />}
+            onToggle={toggleSource} onSetCategories={values => update({ showCategories: values.join(','), page: '' })}
+            onChange={setSubscriptions} onUnsubscribe={unsubscribeSource} />}
       </div>}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div role="group" aria-label={t('view')} className="inline-flex max-w-full rounded-xl bg-ivory p-1">
@@ -284,15 +284,24 @@ function CalendarContent({ locationId: fixedLocationId, user, authLoading }) {
             </button>
           ))}
         </div>
-        {showBrowseFilters && <button type="button" aria-expanded={filtersOpen} aria-controls={filtersId} onClick={() => setFiltersOpen(open => !open)}
-          className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition ${FOCUS_RING} ${filtersOpen || filtered ? 'border-copper bg-ivory text-blue-700' : 'border-brand-border text-charcoal hover:bg-ivory'}`}>
-          <AdjustmentsHorizontalIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
-          {t('filters')}
-          {filtered && <span className="rounded-full bg-blue-600 px-1.5 text-xs leading-5 text-white">{filterCount}</span>}
-          <ChevronDownIcon aria-hidden="true" className={`h-3.5 w-3.5 shrink-0 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
+        {showBrowseFilters && filtered && <button type="button" onClick={clearFilters}
+          className={`min-h-11 rounded-lg px-2 text-sm font-semibold text-blue-700 hover:bg-ivory hover:underline ${FOCUS_RING}`}>
+          {t('clearFilters')}
         </button>}
       </div>
-      {showBrowseFilters && <div className="border-t border-brand-border pt-3">
+      {showBrowseFilters && <div role="group" aria-label={t('category')} className="flex flex-wrap gap-2 border-t border-brand-border pt-3">
+        <CalendarPill pressed={!browseCategories.length} onClick={() => browseCategories.length > 0 && setBrowseCategories([])}>
+          {t('allCategories')}
+        </CalendarPill>
+        {CALENDAR_CATEGORIES.map(category => {
+          const pressed = browseCategories.includes(category);
+          return <CalendarPill key={category} pressed={pressed}
+            onClick={() => setBrowseCategories(pressed ? browseCategories.filter(value => value !== category) : [...browseCategories, category])}>
+            {t(`categories.${category}`)}
+          </CalendarPill>;
+        })}
+      </div>}
+      {showBrowseFilters && <div className="space-y-2 border-t border-brand-border pt-3">
         {!fixedLocationId ? <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-1">
             <MapPinIcon aria-hidden="true" className="h-5 w-5 shrink-0 text-copper" />
@@ -314,46 +323,11 @@ function CalendarContent({ locationId: fixedLocationId, user, authLoading }) {
           <MapPinIcon aria-hidden="true" className="h-4 w-4" />
           {t('allLocations')} <span aria-hidden="true">→</span>
         </Link>}
-      </div>}
-      {showBrowseFilters && <div id={filtersId} hidden={!filtersOpen} className="space-y-3 rounded-xl border border-brand-border bg-ivory p-3 sm:p-4">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="flex min-w-0 flex-col gap-1.5 text-sm font-semibold">
-            {t('category')}
-            <select value={category} onChange={e => update({ category: e.target.value, page: '' })}
-              className={`min-h-11 w-full rounded-lg border border-brand-border bg-white px-3 text-sm font-normal ${FOCUS_RING}`}>
-              <option value="">{t('allCategories')}</option>
-              {CALENDAR_CATEGORIES.map(value => <option key={value} value={value}>{t(`categories.${value}`)}</option>)}
-            </select>
-          </label>
-          {user && <label className="flex min-w-0 flex-col gap-1.5 text-sm font-semibold">
-            {t('status')}
-            <select value={view} onChange={e => update({ view: e.target.value, page: '' })}
-              className={`min-h-11 w-full rounded-lg border border-brand-border bg-white px-3 text-sm font-normal ${FOCUS_RING}`}>
-              <option value="public">{t('public')}</option>
-              <option value="mine">{t('mine')}</option>
-              {(result?.canManage || view === 'review') && <option value="review">{t('review')}</option>}
-            </select>
-          </label>}
-        </div>
         {selectedLocation && <label className="flex min-h-9 w-fit items-center gap-2 text-sm">
           <input type="checkbox" checked={descendants} onChange={e => update({ descendants: e.target.checked, page: '' })}
             className={`h-4 w-4 shrink-0 accent-copper ${FOCUS_RING}`} />
           {t('descendants')}
         </label>}
-      </div>}
-      {showBrowseFilters && filtered && <div className="flex flex-wrap items-center gap-2 border-t border-brand-border pt-3">
-        {activeFilters.map(({ key, label }) => (
-          <button key={key} type="button" aria-label={t('removeFilter', { filter: label })}
-            onClick={() => update({ [key]: '', page: '' })}
-            className={`inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full bg-ivory px-3 text-left text-sm font-medium text-blue-800 hover:bg-blue-100 ${FOCUS_RING}`}>
-            {label}
-            <XMarkIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
-          </button>
-        ))}
-        <button type="button" onClick={clearFilters}
-          className={`ml-auto min-h-9 rounded-lg px-2 text-sm font-semibold text-blue-700 hover:bg-ivory hover:underline ${FOCUS_RING}`}>
-          {t('clearFilters')}
-        </button>
       </div>}
     </div>
     <div className="flex flex-wrap items-center justify-between gap-3">

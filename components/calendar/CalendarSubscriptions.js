@@ -2,12 +2,13 @@
 
 import { useId, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { CheckIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import LocationSelector from '@/components/ui/LocationSelector';
 import { calendarAPI } from '@/lib/api/calendar';
 import { CALENDAR_CATEGORIES } from '@/lib/calendar/categories';
+import CalendarPill from './CalendarPill';
 
-export default function CalendarSubscriptions({ subscriptions, selected, onToggle, onChange, onUnsubscribe }) {
+export default function CalendarSubscriptions({ subscriptions, selected, onToggle, onSetCategories, onChange, onUnsubscribe }) {
   const t = useTranslations('calendar');
   const locale = useLocale();
   const [manageOpen, setManageOpen] = useState(false);
@@ -16,6 +17,7 @@ export default function CalendarSubscriptions({ subscriptions, selected, onToggl
   const [saveError, setSaveError] = useState(false);
   const manageId = useId();
   const categories = CALENDAR_CATEGORIES.filter(category => subscriptions.categories.includes(category));
+  const allCategories = categories.length > 0 && selected.showCategories.length === categories.length;
   const locations = subscriptions.locations;
   const locationName = location => locale === 'el' ? location.name_local || location.name : location.name;
 
@@ -36,11 +38,7 @@ export default function CalendarSubscriptions({ subscriptions, selected, onToggl
 
   function sourcePill(label, key, value) {
     const pressed = selected[key].includes(value);
-    return <button key={value} type="button" aria-pressed={pressed} onClick={() => onToggle(key, value, !pressed)}
-      className="inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border border-brand-border px-3 text-left text-sm font-semibold text-charcoal hover:bg-ivory focus-visible:outline-copper aria-pressed:border-blue-700 aria-pressed:bg-blue-700 aria-pressed:text-white aria-pressed:hover:bg-blue-800">
-      {pressed ? <CheckIcon aria-hidden="true" className="h-4 w-4 shrink-0" /> : <PlusIcon aria-hidden="true" className="h-4 w-4 shrink-0" />}
-      <span className="break-words">{label}</span>
-    </button>;
+    return <CalendarPill key={value} pressed={pressed} onClick={() => onToggle(key, value, !pressed)}>{label}</CalendarPill>;
   }
 
   return <div className="space-y-4">
@@ -52,6 +50,7 @@ export default function CalendarSubscriptions({ subscriptions, selected, onToggl
       </button>
     </div>
     {categories.length > 0 && <div role="group" aria-label={t('followedCategories')} className="flex flex-wrap gap-2">
+      <CalendarPill pressed={allCategories} onClick={() => onSetCategories(allCategories ? [] : categories)}>{t('allCategories')}</CalendarPill>
       {categories.map(category => sourcePill(t(`categories.${category}`), 'showCategories', category))}
     </div>}
     {locations.length > 0 && <div role="group" aria-label={t('followedLocations')} className="flex flex-wrap gap-2">

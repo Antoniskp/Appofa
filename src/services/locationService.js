@@ -343,7 +343,11 @@ const getLocations = async (queryParams) => {
       whereClause.parent_id = parent_id === 'null' || parent_id === '' ? null : parent_id;
     }
 
-    if (search) {
+    if (search && sequelize.getDialect() === 'sqlite') {
+      whereClause[Op.or] = ['name', 'name_local'].map((field) => (
+        sequelize.where(sequelize.fn('instr', sequelize.fn('lower', sequelize.col(`Location.${field}`)), search.toLowerCase()), { [Op.gt]: 0 })
+      ));
+    } else if (search) {
       whereClause[Op.or] = [
         { name: { [Op.iLike]: `%${escapedSearch}%` } },
         { name_local: { [Op.iLike]: `%${escapedSearch}%` } }

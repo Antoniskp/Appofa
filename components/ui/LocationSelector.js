@@ -13,6 +13,8 @@ export default function LocationSelector({
   allowClear = true,
   filterType = null,
   filterParentId = null,
+  allowedTypes = LOCATION_TYPES,
+  searchOnServer = false,
   labels = {},
 }) {
   const [locations, setLocations] = useState([]);
@@ -21,25 +23,33 @@ export default function LocationSelector({
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loadedSearch, setLoadedSearch] = useState(null);
 
-  const fetchLocations = useCallback(async () => {
+  const fetchLocations = useCallback(async (search, active) => {
     setLoading(true);
     setError('');
     try {
       const params = {};
       if (filterType) params.type = filterType;
       if (filterParentId) params.parent_id = filterParentId;
+      if (searchOnServer) {
+        params.search = search || undefined;
+        params.limit = 30;
+      }
       
       const response = await locationAPI.getAll(params);
-      if (response.success) {
+      if (active() && response.success) {
         setLocations(response.locations || []);
       }
     } catch (err) {
-      setError(err.message || 'Failed to load locations');
+      if (active()) setError(err.message || 'Failed to load locations');
     } finally {
-      setLoading(false);
+      if (active()) {
+        setLoadedSearch(search);
+        setLoading(false);
+      }
     }
-  }, [filterType, filterParentId]);
+  }, [filterType, filterParentId, searchOnServer]);
 
   const loadSelectedLocation = useCallback(async (locationId) => {
     try {
@@ -52,9 +62,14 @@ export default function LocationSelector({
     }
   }, []);
 
+  const activeSearch = searchOnServer ? searchTerm.trim() : '';
+  const shouldFetch = !searchOnServer || isOpen;
   useEffect(() => {
-    fetchLocations();
-  }, [fetchLocations]);
+    if (!shouldFetch) return;
+    let active = true;
+    const timer = setTimeout(() => fetchLocations(activeSearch, () => active), activeSearch ? 250 : 0);
+    return () => { active = false; clearTimeout(timer); };
+  }, [activeSearch, fetchLocations, shouldFetch]);
 
   useEffect(() => {
     if (value && !selectedLocation) {
@@ -92,12 +107,12 @@ export default function LocationSelector({
     return placeholder;
   };
 
-  const filteredLocations = searchTerm
+  const filteredLocations = (searchTerm && !searchOnServer
     ? locations.filter(loc => 
         loc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (loc.name_local && loc.name_local.toLowerCase().includes(searchTerm.toLowerCase()))
       )
-    : locations;
+    : locations).filter((location) => allowedTypes.includes(location.type));
 
   const groupedLocations = filteredLocations.reduce((acc, loc) => {
     if (!acc[loc.type]) {
@@ -148,12 +163,14 @@ export default function LocationSelector({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder={labels.search || 'Search locations...'}
+                aria-label={labels.search || 'Search locations'}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
                 onClick={(e) => e.stopPropagation()}
+                onKeyDown={searchOnServer ? (event) => { if (event.key === 'Enter') event.preventDefault(); } : undefined}
               />
             </div>
 
-            {loading ? (
+            {loading || (searchOnServer && activeSearch !== loadedSearch) ? (
               <div className="p-4 text-center text-gray-500">{labels.loading || 'Loading locations...'}</div>
             ) : error ? (
               <div className="p-4 text-center text-red-500">{error}</div>
@@ -161,7 +178,7 @@ export default function LocationSelector({
               <div className="p-4 text-center text-gray-500">{labels.empty || 'No locations found'}</div>
             ) : (
               <div>
-                {LOCATION_TYPES.map(type => {
+                {allowedTypes.map(type => {
                   const typeLocations = groupedLocations[type] || [];
                   if (typeLocations.length === 0) return null;
 

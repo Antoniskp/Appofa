@@ -2,6 +2,7 @@
 
 const { Op } = require('sequelize');
 const { VideoPin, Location, User } = require('../models');
+const { normalizeTikTokHandle, tikTokProfileUrl } = require('../../config/tiktokCreators');
 const {
   validateAndParseUrl,
   normalizeUrl: normalizePreviewUrl,
@@ -229,6 +230,17 @@ function buildPublicWhere(query = {}, user = null) {
     where.category = query.category;
   }
 
+  if (query.sourceProvider === 'tiktok') where.sourceProvider = 'tiktok';
+  if (query.creator !== undefined) {
+    const handle = normalizeTikTokHandle(query.creator);
+    if (!handle) return { error: 'Invalid TikTok creator handle.' };
+    where.sourceProvider = 'tiktok';
+    where[Op.and] = [
+      ...(where[Op.and] || []),
+      VideoPin.sequelize.where(VideoPin.sequelize.fn('lower', VideoPin.sequelize.col('VideoPin.creatorHandle')), `@${handle}`),
+    ];
+  }
+
   return { where, includeAll };
 }
 
@@ -328,9 +340,25 @@ async function createVideoPin(user, input = {}) {
     return { success: false, status: err.statusCode || 400, message: err.message };
   }
 
-  const cacheKey = normalizePreviewUrl(urlObj, provider);
-  const preview = await buildPreview(urlObj, provider, input.sourceUrl.trim());
-  const providerPayload = normalizeProviderPayload(urlObj, provider, cacheKey, preview);
+  const directLivePath = contentTypeResult.value === 'live' && provider === 'tiktok' && urlObj.pathname.match(/^\/@([a-z0-9._]+)\/live\/?$/i);
+  const liveHandle = directLivePath ? normalizeTikTokHandle(directLivePath[1]) : null;
+  let providerPayload;
+  if (directLivePath) {
+    if (!liveHandle || urlObj.port) return { success: false, status: 400, message: 'Invalid TikTok LIVE URL.' };
+    const creatorUrl = tikTokProfileUrl(liveHandle);
+    const liveUrl = `${creatorUrl}/live`;
+    providerPayload = {
+      sourceProvider: provider,
+      sourceUrl: liveUrl,
+      canonicalUrl: liveUrl,
+      creatorHandle: `@${liveHandle}`,
+      creatorUrl,
+    };
+  } else {
+    const cacheKey = normalizePreviewUrl(urlObj, provider);
+    const preview = await buildPreview(urlObj, provider, input.sourceUrl.trim());
+    providerPayload = normalizeProviderPayload(urlObj, provider, cacheKey, preview);
+  }
 
   if (providerPayload.providerVideoId) {
     const duplicate = await VideoPin.findOne({
@@ -352,6 +380,7 @@ async function createVideoPin(user, input = {}) {
 
   const title = truncate(input.title, TITLE_MAX)
     || truncate(providerPayload.sourceMeta?.title, TITLE_MAX)
+    || (liveHandle && `@${liveHandle}`)
     || TITLE_FALLBACK;
   const expiryResult = normalizeLiveExpiry(contentTypeResult.value, input.expiresAt, input.expiresInHours);
   if (expiryResult.error) return { success: false, status: 400, message: expiryResult.error };

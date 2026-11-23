@@ -2,8 +2,8 @@ const { Op } = require('sequelize');
 const { Location, LocationLink, Poll } = require('../../models');
 const { getDescendantLocationIds } = require('../../utils/locationUtils');
 
-async function list({ start, end, locationId, descendants, view, category, selection, limit, offset, period }) {
-  if (view !== 'public' || (category && category !== 'polls')) {
+async function list({ start, end, locationId, descendants, view, categories, selection, limit, offset, period }) {
+  if (view !== 'public' || (categories && !categories.includes('polls'))) {
     return { data: [], total: 0 };
   }
 

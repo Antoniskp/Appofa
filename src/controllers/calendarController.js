@@ -43,21 +43,20 @@ const handle = fn => async (req, res) => {
 function filtersOf(query) {
   const view = query.view || 'public';
   if (!['public', 'mine', 'review'].includes(view)) fail(400, 'Invalid view.');
-  if (query.category && !CALENDAR_CATEGORIES.includes(query.category)) fail(400, 'Invalid category.');
+  if (query.category != null && (query.categories != null || query.locationIds != null)) fail(400, 'Invalid calendar filter combination.');
+  const split = value => {
+    if (value == null) return [];
+    if (typeof value !== 'string' || !value) fail(400, 'Invalid calendar selection.');
+    return [...new Set(value.split(','))];
+  };
+  const categories = query.category ? [query.category] : split(query.categories);
+  if (categories.some(category => !CALENDAR_CATEGORIES.includes(category))) fail(400, 'Invalid category.');
   let selection;
-  if (query.categories != null || query.locationIds != null) {
-    if (view !== 'public' || query.category || query.locationId || query.descendants === 'true') fail(400, 'Invalid calendar filter combination.');
-    const split = value => {
-      if (value == null) return [];
-      if (typeof value !== 'string' || !value) fail(400, 'Invalid calendar selection.');
-      return [...new Set(value.split(','))];
-    };
-    const categories = split(query.categories);
-    if (categories.some(category => !CALENDAR_CATEGORIES.includes(category))) fail(400, 'Invalid category.');
-    const locationIds = split(query.locationIds).map(idOf);
-    selection = { categories, locationIds };
+  if (query.locationIds != null) {
+    if (view !== 'public' || query.locationId || query.descendants === 'true') fail(400, 'Invalid calendar filter combination.');
+    selection = { categories, locationIds: split(query.locationIds).map(idOf) };
   }
-  return { view, category: query.category,
+  return { view, categories: !selection && categories.length ? categories : undefined,
     locationId: query.locationId ? idOf(query.locationId) : null, descendants: query.descendants === 'true', selection };
 }
 async function subscriptionsFor(userId) {

@@ -19,6 +19,7 @@ const STATUS_OPTIONS = ['approved', 'submitted', 'rejected', 'archived', 'all'];
 
 export default function CandidatesPage() {
   const t = useTranslations('candidates');
+  const tCreators = useTranslations('tiktokCreators');
   const { user } = useAuth();
   const isStaff = ['admin', 'moderator'].includes(user?.role);
   const [locationKey, setLocationKey] = useState(0);
@@ -75,7 +76,10 @@ export default function CandidatesPage() {
             <h1 className="text-2xl font-bold text-gray-900">{t('page_title')}</h1>
             <p className="mt-1 text-gray-600">{t('page_description')}</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
+            <Link href={{ pathname: '/creators', query: { category: 'politics', ...(filters.locationId && { locationId: filters.locationId }) } }} className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              {tCreators('politicalCreators')}
+            </Link>
             <Link href="/profile#candidates" className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
               {t('my_registrations')}
             </Link>

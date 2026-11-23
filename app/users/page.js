@@ -344,6 +344,8 @@ function UnifiedPanel({ viewMode, filters, t, isAuthenticated, authLoading, onVi
 
 export default function UsersPage() {
   const t = useTranslations('users');
+  const tCandidates = useTranslations('candidates');
+  const tCreators = useTranslations('tiktokCreators');
   const { user, loading: authLoading } = useAuth();
   const isAuthenticated = !authLoading && !!user;
 
@@ -427,9 +429,17 @@ export default function UsersPage() {
             <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
             <p className="mt-1 text-gray-500">{t('subtitle')}</p>
           </div>
-          <Link href="/parliamentarians" className="inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100">
-            Βουλευτές &amp; εκλογικός χάρτης
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/parliamentarians" className="inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100">
+              Βουλευτές &amp; εκλογικός χάρτης
+            </Link>
+            <Link href="/candidates" className="inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100">
+              {tCandidates('page_title')}
+            </Link>
+            <Link href="/creators" className="inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100">
+              {tCreators('title')}
+            </Link>
+          </div>
         </div>
 
         {/* Stats strip */}

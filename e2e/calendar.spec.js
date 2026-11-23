@@ -50,6 +50,7 @@ test('create a location event, display in both calendar views, export and cancel
   await page.goto('/calendar');
   await expect(page.getByRole('button', { name: t.month, exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: t.browseEvents, exact: true }).click();
+  await expect(page.getByRole('combobox', { name: t.status, exact: true })).toHaveCount(0);
   await page.getByLabel(t.month, { exact: true }).fill('2026-10');
   await page.getByRole('button', { name: t.jumpToNextEvent, exact: true }).click();
   await expect(page).toHaveURL(/day=2026-10-20/);
@@ -83,12 +84,14 @@ test('personal calendar opens empty and shows events from enabled subscriptions'
   await expect(page.getByRole('button', { name: t.unfollowLocation.replace('{location}', 'Test Municipality') })).toBeVisible();
   await manage.click();
   const electionPill = page.getByRole('button', { name: t.categories.elections, exact: true });
+  const allCategories = page.getByRole('button', { name: t.allCategories, exact: true });
   const locationPill = page.getByRole('button', { name: 'Test Municipality', exact: true });
   const election = page.getByRole('link', { name: /European Parliament election in Greece/ });
   await expect(electionPill).toHaveAttribute('aria-pressed', 'false');
   await expect(locationPill).toHaveAttribute('aria-pressed', 'false');
-  await electionPill.click();
+  await allCategories.click();
   await expect(election).toBeVisible();
+  await expect(electionPill).toHaveAttribute('aria-pressed', 'true');
   await locationPill.click();
   await expect(locationPill).toHaveAttribute('aria-pressed', 'true');
   await expect(election).toHaveCount(1);
@@ -159,41 +162,44 @@ test('moderator rejection supplies private feedback and notifies the author', as
   } finally { await adminContext.close(); }
 });
 
-test('calendar filters fit on mobile and survive refresh and browser history', async ({ page }, testInfo) => {
+test('calendar category pills combine and reset on mobile and survive browser history', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/calendar?category=culture&month=2026-10&mode=month');
+  await page.goto('/calendar?category=culture&month=2024-06&mode=list&period=month');
   const dismiss = page.getByRole('button', { name: 'Reject Non-Essential', exact: true });
   if (await dismiss.isVisible()) await dismiss.click();
-  await expect(page.getByRole('button', { name: t.month, exact: true })).toHaveAttribute('aria-pressed', 'true');
-  const filtersButton = page.getByRole('button', { name: /^Filters/ });
-  const cultureFilter = page.getByRole('button', { name: t.removeFilter.replace('{filter}', t.categories.culture), exact: true });
-  await expect(filtersButton).toHaveAccessibleName('Filters 1');
-  await expect(cultureFilter).toBeVisible();
-  await filtersButton.click();
-  await expect(filtersButton).toHaveAttribute('aria-expanded', 'true');
-  const categoryFilter = page.getByRole('combobox', { name: t.category, exact: true });
-  await expect(categoryFilter).toHaveValue('culture');
-  await categoryFilter.selectOption('meeting');
-  await expect(page).toHaveURL(/category=meeting/);
+  await expect(page.getByRole('button', { name: t.list, exact: true })).toHaveAttribute('aria-pressed', 'true');
+  const culture = page.getByRole('button', { name: t.categories.culture, exact: true });
+  const elections = page.getByRole('button', { name: t.categories.elections, exact: true });
+  const all = page.getByRole('button', { name: t.allCategories, exact: true });
+  const election = page.getByRole('link', { name: /European Parliament election in Greece/ });
+  await expect(culture).toHaveAttribute('aria-pressed', 'true');
+  await expect(all).toHaveAttribute('aria-pressed', 'false');
+  await elections.click();
+  await expect(culture).toHaveAttribute('aria-pressed', 'true');
+  await expect(elections).toHaveAttribute('aria-pressed', 'true');
+  await expect(election).toBeVisible();
   await page.reload();
-  await filtersButton.click();
-  await expect(filtersButton).toHaveAttribute('aria-expanded', 'true');
-  await expect(categoryFilter).toHaveValue('meeting');
+  await expect(culture).toHaveAttribute('aria-pressed', 'true');
+  await expect(elections).toHaveAttribute('aria-pressed', 'true');
   await page.goBack();
-  await expect(categoryFilter).toHaveValue('culture');
+  await expect(culture).toHaveAttribute('aria-pressed', 'true');
+  await expect(elections).toHaveAttribute('aria-pressed', 'false');
+  await expect(election).toHaveCount(0);
+  await page.goForward();
+  await expect(elections).toHaveAttribute('aria-pressed', 'true');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.locator('#main-content').getByRole('main').screenshot({
-    path: testInfo.outputPath('calendar-filters-mobile.png'),
+    path: testInfo.outputPath('calendar-category-pills-mobile.png'),
     animations: 'disabled',
   });
-  await filtersButton.click();
-  await cultureFilter.click();
-  await expect(page).not.toHaveURL(/category=/);
-  await page.goBack();
-  await expect(cultureFilter).toBeVisible();
-  await page.getByRole('button', { name: t.clearFilters, exact: true }).click();
-  await expect(page).not.toHaveURL(/category=/);
-  await expect(page.getByRole('button', { name: t.month, exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await elections.click();
+  await expect(culture).toHaveAttribute('aria-pressed', 'true');
+  await expect(elections).toHaveAttribute('aria-pressed', 'false');
+  await expect(election).toHaveCount(0);
+  await all.click();
+  await expect(all).toHaveAttribute('aria-pressed', 'true');
+  await expect(culture).toHaveAttribute('aria-pressed', 'false');
+  await expect(election).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 

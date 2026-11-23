@@ -58,9 +58,10 @@ describe('Location UI localized names', () => {
     });
     expect(container.querySelector('h1').textContent).toBe('Αθήνα');
     expect(container.textContent).toContain('Δήμος');
-    expect(container.querySelectorAll('a')).toHaveLength(2);
+    expect(container.querySelectorAll('a[href^="/suggestions/new"]')).toHaveLength(1);
     expect(container.querySelector('a[href="/suggestions/new?locationId=101"]')).toBeTruthy();
     expect(container.querySelector('a[href="/locations/athens/improve"]').textContent).toContain('Βελτίωσε αυτή τη σελίδα');
+    expect(container.querySelector('a[href="/creators?locationId=101"]').textContent).toBe('Δημιουργοί TikTok');
     await act(async () => container.querySelector('button[aria-label="Επεξεργασία τοποθεσίας"]').click());
     expect(onEdit).toHaveBeenCalledTimes(1);
     await act(async () => root.unmount());

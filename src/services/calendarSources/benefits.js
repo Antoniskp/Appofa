@@ -1,9 +1,10 @@
 const { calendarEntries } = require('../../../lib/benefits/catalog');
 
-async function list({ start, end, locationId, view, category, selection, limit, offset = 0, period }) {
+async function list({ start, end, locationId, view, categories, selection, limit, offset = 0, period }) {
   // National editorial dates have no author or moderation queue and must not
   // appear in a location's events tab or in a member's personal submissions.
-  if (locationId || view !== 'public' || (category && category !== 'benefits') || (selection && !selection.categories.includes('benefits'))) {
+  const filteredCategories = selection?.categories ?? categories;
+  if (locationId || view !== 'public' || (filteredCategories && !filteredCategories.includes('benefits'))) {
     return { data: [], total: 0, canManage: false };
   }
   const athensDate = value => new Intl.DateTimeFormat('en-CA', {

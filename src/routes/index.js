@@ -90,6 +90,7 @@ const routes = [
   { prefix: '/api/users/:id/political-affiliations', router: politicalAffiliationRoutes },
   { prefix: '/api/onboarding', router: onboardingEventRoutes },
   { prefix: '/api/video-pins', router: videoPinRoutes },
+  { prefix: '/api/tiktok-creators', router: require('./tiktokCreatorRoutes') },
 ];
 
 function registerRoutes(app) {

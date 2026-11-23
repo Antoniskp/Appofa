@@ -78,6 +78,9 @@ test('calendar selections combine categories and locations before counting and p
   expect(second.body.data.map(entry => entry.title)).toEqual(['Matches both', 'Location only', 'Linked poll']);
   expect((await request(app).get(`/api/calendar/next?from=2026-10-21&${filters}`)).body.day).toBe('2026-10-21');
   expect((await request(app).get(`${url}&category=culture`)).status).toBe(400);
+  const scoped = await request(app).get(`/api/calendar?${range}&categories=meeting,culture&locationId=${town.id}`);
+  expect(scoped.body.data.map(entry => entry.title)).toEqual(['Matches both', 'Location only']);
+  expect(scoped.body.pagination.total).toBe(2);
 });
 test('pending records are private and cannot forge publishing or ownership', async () => {
   const created = await create(author, { status: 'published', authorId: outsider.id });

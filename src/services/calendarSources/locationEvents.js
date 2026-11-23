@@ -14,7 +14,7 @@ function toEntry(event) {
   };
 }
 
-async function list({ start, end, locationId, descendants, view, category, selection, limit, offset, period }, user) {
+async function list({ start, end, locationId, descendants, view, categories, selection, limit, offset, period }, user) {
   const where = { start: { [Op.lt]: end }, end: { [Op.gt]: start } };
   // Expand around the cutoff for floating all-day dates, then compare those
   // against today's date in the event's own zone before counting/pagination.
@@ -25,12 +25,11 @@ async function list({ start, end, locationId, descendants, view, category, selec
     allowed = await canManage(user, locationId);
     where.locationId = descendants ? { [Op.in]: await getDescendantLocationIds(locationId, true) } : locationId;
   }
-  if (category) where.category = category;
+  if (categories) where.category = { [Op.in]: categories };
   if (selection) {
-    const categories = selection.categories.filter(value => EVENT_CATEGORIES.includes(value));
-    if (!categories.length && !selection.locationIds.length) return { data: [], total: 0 };
+    const eventCategories = selection.categories.filter(value => EVENT_CATEGORIES.includes(value));
     where[Op.or] = [
-      { category: { [Op.in]: categories } },
+      { category: { [Op.in]: eventCategories } },
       { locationId: { [Op.in]: selection.locationIds } },
     ];
   }
