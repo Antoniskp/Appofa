@@ -3,8 +3,7 @@
 import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
-import { UserCircleIcon } from '@heroicons/react/24/outline';
+import UserAvatar from '@/components/user/UserAvatar';
 import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -81,11 +80,7 @@ export default function ClaimProfilePage({ params }) {
           <p className="text-sm text-gray-500 mb-4">You are claiming the profile of <strong>{profile.fullName}</strong>. A moderator will review your request.</p>
 
           <div className="flex items-center gap-3 mb-5 p-3 bg-gray-50 rounded-lg border border-gray-200">
-            {profile.photo ? (
-              <Image src={profile.photo} alt={profile.fullName} width={80} height={80} className="w-10 h-10 rounded-full object-cover" />
-            ) : (
-              <UserCircleIcon className="w-10 h-10 text-gray-300" />
-            )}
+            <UserAvatar user={{ username: profile.fullName, avatar: profile.photo || profile.avatar }} showBadges={false} expandable />
             <div>
               <p className="font-medium text-gray-900">{profile.fullName}</p>
               {profile.constituency && <p className="text-sm text-gray-500">{profile.constituency.name}</p>}

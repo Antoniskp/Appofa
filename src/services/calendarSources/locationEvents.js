@@ -2,6 +2,7 @@ const { Op } = require('sequelize');
 const { LocationEvent, Location } = require('../../models');
 const { getDescendantLocationIds } = require('../../utils/locationUtils');
 const { canManage } = require('../locationEventPermissions');
+const { EVENT_CATEGORIES } = require('../../../lib/calendar/categories');
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 
 function toEntry(event) {
@@ -13,7 +14,7 @@ function toEntry(event) {
   };
 }
 
-async function list({ start, end, locationId, descendants, view, category, limit, offset, period }, user) {
+async function list({ start, end, locationId, descendants, view, category, selection, limit, offset, period }, user) {
   const where = { start: { [Op.lt]: end }, end: { [Op.gt]: start } };
   // Expand around the cutoff for floating all-day dates, then compare those
   // against today's date in the event's own zone before counting/pagination.
@@ -25,6 +26,14 @@ async function list({ start, end, locationId, descendants, view, category, limit
     where.locationId = descendants ? { [Op.in]: await getDescendantLocationIds(locationId, true) } : locationId;
   }
   if (category) where.category = category;
+  if (selection) {
+    const categories = selection.categories.filter(value => EVENT_CATEGORIES.includes(value));
+    if (!categories.length && !selection.locationIds.length) return { data: [], total: 0 };
+    where[Op.or] = [
+      { category: { [Op.in]: categories } },
+      { locationId: { [Op.in]: selection.locationIds } },
+    ];
+  }
   if (view === 'public') where.status = { [Op.in]: ['published', 'cancelled'] };
   else if (view === 'mine') {
     if (!user) fail(401, 'Please sign in.');

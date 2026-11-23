@@ -1,12 +1,13 @@
-const { sequelize, LocationEvent, Location } = require('../models');
+const { sequelize, CalendarSubscription, LocationEvent, Location } = require('../models');
 const { canManage } = require('../services/locationEventPermissions');
 const { listEntries, findNextEventDay } = require('../services/calendarService');
 const notificationService = require('../services/notificationService');
 const { CALENDAR_CATEGORIES, EVENT_CATEGORIES } = require('../../lib/calendar/categories');
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 const idOf = value => {
-  if (!/^\d+$/.test(String(value)) || !Number.isSafeInteger(Number(value)) || Number(value) < 1) fail(400, 'Invalid ID.');
-  return Number(value);
+  const id = Number(value);
+  if (!/^\d+$/.test(String(value)) || id < 1 || id > 2147483647) fail(400, 'Invalid ID.');
+  return id;
 };
 const text = (value, max, required = false) => {
   if (value == null && !required) return '';
@@ -43,9 +44,51 @@ function filtersOf(query) {
   const view = query.view || 'public';
   if (!['public', 'mine', 'review'].includes(view)) fail(400, 'Invalid view.');
   if (query.category && !CALENDAR_CATEGORIES.includes(query.category)) fail(400, 'Invalid category.');
+  let selection;
+  if (query.categories != null || query.locationIds != null) {
+    if (view !== 'public' || query.category || query.locationId || query.descendants === 'true') fail(400, 'Invalid calendar filter combination.');
+    const split = value => {
+      if (value == null) return [];
+      if (typeof value !== 'string' || !value) fail(400, 'Invalid calendar selection.');
+      return [...new Set(value.split(','))];
+    };
+    const categories = split(query.categories);
+    if (categories.some(category => !CALENDAR_CATEGORIES.includes(category))) fail(400, 'Invalid category.');
+    const locationIds = split(query.locationIds).map(idOf);
+    selection = { categories, locationIds };
+  }
   return { view, category: query.category,
-    locationId: query.locationId ? idOf(query.locationId) : null, descendants: query.descendants === 'true' };
+    locationId: query.locationId ? idOf(query.locationId) : null, descendants: query.descendants === 'true', selection };
 }
+async function subscriptionsFor(userId) {
+  const rows = await CalendarSubscription.findAll({
+    where: { userId },
+    include: [{ model: Location, as: 'location', attributes: ['id', 'name', 'name_local'] }],
+    order: [['id', 'ASC']],
+  });
+  return {
+    categories: rows.map(row => row.category).filter(Boolean),
+    locations: rows.map(row => row.location).filter(Boolean),
+  };
+}
+exports.subscriptions = handle(async (req, res) => {
+  res.json({ success: true, data: await subscriptionsFor(req.user.id) });
+});
+exports.setSubscription = handle(async (req, res) => {
+  const { category, locationId, subscribed } = req.body || {};
+  if ((category == null) === (locationId == null) || typeof subscribed !== 'boolean') fail(400, 'Choose one calendar subscription.');
+  const where = { userId: req.user.id };
+  if (category != null) {
+    if (!CALENDAR_CATEGORIES.includes(category)) fail(400, 'Invalid category.');
+    where.category = category;
+  } else {
+    where.locationId = idOf(locationId);
+    if (subscribed && !await Location.findByPk(where.locationId)) fail(404, 'Location not found.');
+  }
+  if (subscribed) await CalendarSubscription.bulkCreate([where], { ignoreDuplicates: true });
+  else await CalendarSubscription.destroy({ where });
+  res.json({ success: true, data: await subscriptionsFor(req.user.id) });
+});
 exports.list = handle(async (req, res) => {
   const start = date(req.query.start), end = date(req.query.end);
   if (end <= start || end - start > 370 * 86400000) fail(400, 'Choose a date range of up to one year.');

@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { User, Location, LocationLink, Article, Poll, PollOption, PollVote, Bookmark, Follow, sequelize, UserLocationRole, UserPoliticalAffiliation, Organization } = require('../models');
+const { User, Location, LocationLink, Article, Poll, PollOption, PollVote, Bookmark, CalendarSubscription, Follow, sequelize, UserLocationRole, UserPoliticalAffiliation, Organization } = require('../models');
 const {
   normalizeRequiredText,
   normalizeOptionalText,
@@ -544,30 +544,33 @@ async function deleteUserAccount(userId, password, mode) {
     });
   } else {
     const anonymousId = `deleted-user-${user.id}`;
-    await User.update({
-      username: anonymousId,
-      email: `${anonymousId}@deleted.invalid`,
-      password: null,
-      role: 'viewer',
-      firstNameNative: null,
-      lastNameNative: null,
-      firstNameEn: null,
-      lastNameEn: null,
-      nickname: null,
-      avatar: null,
-      avatarColor: null,
-      homeLocationId: null,
-      profileVisibility: PROFILE_VISIBILITY.HIDDEN,
-      githubId: null,
-      githubAccessToken: null,
-      googleId: null,
-      googleAccessToken: null,
-      professions: null,
-      interests: null,
-      dateOfBirth: null,
-      politicalAffiliationStatus: null,
-      politicalAffiliationOtherText: null
-    }, { where: { id: user.id }, individualHooks: false });
+    await sequelize.transaction(async transaction => {
+      await User.update({
+        username: anonymousId,
+        email: `${anonymousId}@deleted.invalid`,
+        password: null,
+        role: 'viewer',
+        firstNameNative: null,
+        lastNameNative: null,
+        firstNameEn: null,
+        lastNameEn: null,
+        nickname: null,
+        avatar: null,
+        avatarColor: null,
+        homeLocationId: null,
+        profileVisibility: PROFILE_VISIBILITY.HIDDEN,
+        githubId: null,
+        githubAccessToken: null,
+        googleId: null,
+        googleAccessToken: null,
+        professions: null,
+        interests: null,
+        dateOfBirth: null,
+        politicalAffiliationStatus: null,
+        politicalAffiliationOtherText: null
+      }, { where: { id: user.id }, individualHooks: false, transaction });
+      await CalendarSubscription.destroy({ where: { userId: user.id }, transaction });
+    });
   }
 }
 

@@ -667,7 +667,7 @@ export default function OrganizationProfilePage({ params }) {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-6">
             <div className="flex items-start gap-5">
-              <OrgAvatar org={organization} size="h-20 w-20" fallback={
+              <OrgAvatar org={organization} size="h-20 w-20" expandable fallback={
                 <div className="w-20 h-20 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
                   <ProfileTypeIcon className="w-10 h-10 text-gray-400" />
                 </div>
@@ -853,13 +853,13 @@ export default function OrganizationProfilePage({ params }) {
                         {parliamentarians.map((person) => {
                           const name = person.fullName || [person.firstNameNative, person.lastNameNative].filter(Boolean).join(' ') || person.username;
                           return (
-                            <Link key={person.id} href={`/persons/${person.slug}`} className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 hover:border-blue-300 hover:shadow-sm">
-                              <RolePersonPhoto person={person} name={name} />
-                              <span className="min-w-0">
+                            <div key={person.id} className="relative flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 hover:border-blue-300 hover:shadow-sm">
+                              <div className="relative z-10 shrink-0"><RolePersonPhoto person={person} name={name} expandable /></div>
+                              <Link href={`/persons/${person.slug}`} className="min-w-0 after:absolute after:inset-0 focus-visible:underline">
                                 <span className="block font-medium text-gray-900">{name}</span>
                                 <span className="block text-sm text-gray-500">{t('parliamentarian_position')}</span>
-                              </span>
-                            </Link>
+                              </Link>
+                            </div>
                           );
                         })}
                       </div>
@@ -1040,7 +1040,7 @@ export default function OrganizationProfilePage({ params }) {
                       return (
                         <article key={role.id} className="relative flex flex-wrap items-start gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
                           <div className="flex-shrink-0 mt-0.5">
-                            <RolePersonPhoto person={assignee} name={displayName} />
+                            <RolePersonPhoto person={assignee} name={displayName} expandable />
                           </div>
                           <div className={`min-w-0 flex-1 ${canManageMembers ? 'pr-8' : ''}`}>
                             <div className="flex flex-wrap items-center gap-1.5">

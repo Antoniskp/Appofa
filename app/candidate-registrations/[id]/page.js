@@ -2,9 +2,9 @@
 
 import { use } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { CheckBadgeIcon, MapPinIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { CheckBadgeIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import UserAvatar from '@/components/user/UserAvatar';
 import { candidateRegistrationAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -95,11 +95,7 @@ export default function CandidateRegistrationDetailPage({ params }) {
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
           <div className="border-b border-gray-100 p-6">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-              {avatar ? (
-                <Image src={avatar} alt={name} width={192} height={192} className="h-24 w-24 rounded-full object-cover" />
-              ) : (
-                <UserCircleIcon className="h-24 w-24 text-gray-300" />
-              )}
+                <UserAvatar user={{ username: name, avatar }} size="h-24 w-24" textSize="text-2xl" showBadges={false} expandable />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-3xl font-bold text-gray-900">{name}</h1>

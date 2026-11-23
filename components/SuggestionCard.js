@@ -11,6 +11,7 @@ import InlineSuggestionVote from '@/components/InlineSuggestionVote';
 import UserAvatar from '@/components/user/UserAvatar';
 import OrgAvatar from '@/components/organization/OrgAvatar';
 import RecipientLabel from '@/components/suggestions/RecipientLabel';
+import ExpandablePhoto from '@/components/ui/ExpandablePhoto';
 
 const TYPE_LABELS = {
   idea: 'Ιδέα',
@@ -34,10 +35,14 @@ export default function SuggestionCard({ suggestion }) {
   return (
     <div className="bg-white border border-brand-border rounded-2xl p-6 hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
       {!photo && <SuggestionLocation suggestion={suggestion} preview />}
+      {photo && (
+        <ExpandablePhoto src={photo.url} name={photo.caption || suggestion.title} className="mb-3 w-full rounded-lg">
+          <Image src={photo.url} alt="" width={640} height={320} sizes="(max-width: 768px) 100vw, 50vw"
+            unoptimized={photo.url.startsWith('/uploads/')} className="h-40 w-full rounded-lg object-cover"
+            onError={() => setFailedPhotos(urls => [...urls, photo.url])} />
+        </ExpandablePhoto>
+      )}
       <Link href={`/suggestions/${suggestion.id}`} className="block flex-1">
-        {photo && <Image src={photo.url} alt={photo.caption || ''} width={640} height={320} sizes="(max-width: 768px) 100vw, 50vw"
-          className="mb-3 h-40 w-full rounded-lg object-cover"
-          onError={() => setFailedPhotos(urls => [...urls, photo.url])} />}
         <div className="flex flex-wrap gap-2 mb-3">
           <Badge variant="default">
             {TYPE_LABELS[suggestion.type] || suggestion.type}

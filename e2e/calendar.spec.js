@@ -49,6 +49,7 @@ test('create a location event, display in both calendar views, export and cancel
   await page.locator('#tabpanel-events').screenshot({ path: testInfo.outputPath('location-calendar.png') });
   await page.goto('/calendar');
   await expect(page.getByRole('button', { name: t.month, exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: t.browseEvents, exact: true }).click();
   await page.getByLabel(t.month, { exact: true }).fill('2026-10');
   await page.getByRole('button', { name: t.jumpToNextEvent, exact: true }).click();
   await expect(page).toHaveURL(/day=2026-10-20/);
@@ -56,6 +57,51 @@ test('create a location event, display in both calendar views, export and cancel
   await page.goto(detailUrl);
   await page.getByRole('button', { name: t.cancel, exact: true }).click();
   await expect(page.getByText(t.statuses.cancelled, { exact: true })).toBeVisible();
+});
+
+test('personal calendar opens empty and shows events from enabled subscriptions', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/login');
+  const dismiss = page.getByRole('button', { name: 'Reject Non-Essential', exact: true });
+  if (await dismiss.isVisible()) await dismiss.click();
+  await page.locator('[name="email"]').fill('contributor@example.test');
+  await page.locator('[name="password"]').fill('TestPassword123!');
+  await page.getByRole('main').getByRole('button', { name: auth.submit_login, exact: true }).click();
+  await expect(page).not.toHaveURL(/\/login/);
+  await page.goto('/calendar?mode=list&period=month&month=2024-06');
+  await expect(page.getByRole('button', { name: t.myCalendar })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText(t.selectSources)).toBeVisible();
+  await expect(page.getByText(t.noSubscriptions)).toBeVisible();
+  const manage = page.getByRole('button', { name: t.manageSubscriptions });
+  await manage.click();
+  const electionSubscription = page.getByRole('checkbox', { name: t.categories.elections });
+  await electionSubscription.click();
+  await expect(electionSubscription).toBeChecked();
+  await page.getByRole('button', { name: t.chooseLocation }).click();
+  await page.getByRole('button', { name: /^Test Municipality/ }).click();
+  await page.getByRole('button', { name: t.followLocation, exact: true }).click();
+  await expect(page.getByRole('button', { name: t.unfollowLocation.replace('{location}', 'Test Municipality') })).toBeVisible();
+  await manage.click();
+  const electionPill = page.getByRole('button', { name: t.categories.elections, exact: true });
+  const locationPill = page.getByRole('button', { name: 'Test Municipality', exact: true });
+  const election = page.getByRole('link', { name: /European Parliament election in Greece/ });
+  await expect(electionPill).toHaveAttribute('aria-pressed', 'false');
+  await expect(locationPill).toHaveAttribute('aria-pressed', 'false');
+  await electionPill.click();
+  await expect(election).toBeVisible();
+  await locationPill.click();
+  await expect(locationPill).toHaveAttribute('aria-pressed', 'true');
+  await expect(election).toHaveCount(1);
+  await electionPill.click();
+  await expect(election).toHaveCount(0);
+  await page.goto('/calendar');
+  await expect(locationPill).toHaveAttribute('aria-pressed', 'false');
+  await expect(electionPill).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByText(t.selectSources)).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await manage.click();
+  await page.getByRole('button', { name: t.unfollowLocation.replace('{location}', 'Test Municipality') }).click();
+  await expect(locationPill).toHaveCount(0);
 });
 
 test('calendar follows the selected language', async ({ page, context }) => {

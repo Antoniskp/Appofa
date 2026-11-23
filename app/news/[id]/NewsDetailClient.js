@@ -1,10 +1,9 @@
 'use client';
-import { defaultArticleImage, articleBannerImage } from '@/lib/utils/articleImage';
 
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import ArticleCoverPhoto from '@/components/articles/ArticleCoverPhoto';
 import { ShareIcon, BookmarkIcon, PrinterIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
 import { bookmarkAPI } from '@/lib/api';
@@ -156,14 +155,7 @@ export default function NewsDetailPage() {
     );
   }
 
-  const defaultBannerImageUrl = defaultArticleImage(article);
-  const bannerImageUrl = article.coverImage?.variants?.articleCover?.url || articleBannerImage(article);
-  const handleBannerError = (event) => {
-    event.currentTarget.onerror = null;
-    event.currentTarget.src = defaultBannerImageUrl;
-  };
   const authorLabel = article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown');
-  const bannerAltText = article.bannerImageAltText || `${article.title} banner`;
 
   // For video articles the embed becomes the hero element at the top of the
   // card; the static banner image is hidden so the user lands directly on the
@@ -195,16 +187,7 @@ export default function NewsDetailPage() {
               <VideoEmbed article={article} autoplay />
             </div>
           ) : (
-            <Image
-              src={bannerImageUrl}
-              alt={bannerAltText}
-              width={1600}
-              height={900}
-              sizes="100vw"
-              priority
-              className="w-full h-64 object-cover"
-              onError={handleBannerError}
-            />
+            <ArticleCoverPhoto article={article} />
           )}
           {(article.bannerImageCaption || article.bannerImageCredit) && (
             <div className="border-b border-gray-100 bg-gray-50 px-8 py-3 text-sm text-gray-600">

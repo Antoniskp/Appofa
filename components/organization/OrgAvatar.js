@@ -3,12 +3,13 @@
 import { BuildingOffice2Icon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import { useState } from 'react';
+import ExpandablePhoto from '@/components/ui/ExpandablePhoto';
 
-export default function OrgAvatar({ org, size = 'h-6 w-6', fallback }) {
+export default function OrgAvatar({ org, size = 'h-6 w-6', fallback, expandable = false }) {
   const [failedSrc, setFailedSrc] = useState(null);
   const src = org?.logo;
   if (src && failedSrc !== src) {
-    return (
+    const logo = (
       <Image
         src={src}
         alt={org.name}
@@ -20,6 +21,7 @@ export default function OrgAvatar({ org, size = 'h-6 w-6', fallback }) {
         className={`${size} rounded object-contain p-1 border border-gray-200 flex-shrink-0 bg-white`}
       />
     );
+    return expandable ? <ExpandablePhoto src={src} name={org.name} className="rounded">{logo}</ExpandablePhoto> : logo;
   }
 
   return fallback || (

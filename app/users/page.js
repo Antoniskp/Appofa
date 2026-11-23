@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import UserAvatar from '@/components/user/UserAvatar';
 import {
   MagnifyingGlassIcon,
-  UserCircleIcon,
   MapPinIcon,
   BriefcaseIcon,
 } from '@heroicons/react/24/outline';
@@ -56,7 +55,7 @@ function ClaimStatusBadge({ status, t }) {
   return null;
 }
 
-// ─── PersonCard (fully clickable) ─────────────────────────────────────────────
+// ─── PersonCard ────────────────────────────────────────────────────────────────
 
 function PersonCard({ profile, t }) {
   const displayName =
@@ -79,27 +78,18 @@ function PersonCard({ profile, t }) {
   const href = profile.slug ? `/persons/${profile.slug}` : '#';
 
   return (
-    <Link
-      href={href}
-      className="group block min-w-0 overflow-hidden bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow p-4 sm:p-5"
+    <article
+      className="group relative block min-w-0 overflow-hidden bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow p-4 sm:p-5"
     >
       <div className="flex min-w-0 items-start gap-3 sm:gap-4">
-        {photo ? (
-          <Image
-            src={photo}
-            alt={displayName}
-            width={112}
-            height={112}
-            className="w-14 h-14 rounded-full object-cover flex-shrink-0 border border-gray-100"
-          />
-        ) : (
-          <UserCircleIcon className="w-14 h-14 text-gray-300 flex-shrink-0" />
-        )}
+        <div className={photo ? 'relative z-10 shrink-0' : 'shrink-0'}>
+          <UserAvatar user={{ username: displayName, avatar: photo }} size="h-14 w-14" showBadges={false} expandable />
+        </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="min-w-0 max-w-full text-base font-semibold text-gray-900 truncate group-hover:text-blue-700 transition-colors">
-              {displayName}
+              <Link href={href} className="after:absolute after:inset-0 focus-visible:underline">{displayName}</Link>
             </h2>
             <ClaimStatusBadge status={profile.claimStatus} t={t} />
           </div>
@@ -136,7 +126,7 @@ function PersonCard({ profile, t }) {
           )}
         </div>
       </div>
-    </Link>
+    </article>
   );
 }
 

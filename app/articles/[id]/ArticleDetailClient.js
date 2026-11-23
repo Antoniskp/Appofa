@@ -1,11 +1,10 @@
 'use client';
-import { defaultArticleImage, articleBannerImage } from '@/lib/utils/articleImage';
 import { editorialPreview } from '@/lib/utils/editorialPreview';
 
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import ArticleCoverPhoto from '@/components/articles/ArticleCoverPhoto';
 import { ShareIcon, BookmarkIcon, PrinterIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
 import { bookmarkAPI } from '@/lib/api';
@@ -184,14 +183,7 @@ export default function ArticleDetailPage() {
     );
   }
 
-  const defaultBannerImageUrl = defaultArticleImage(article);
-  const bannerImageUrl = article.coverImage?.variants?.articleCover?.url || articleBannerImage(article);
-  const handleBannerError = (event) => {
-    event.currentTarget.onerror = null;
-    event.currentTarget.src = defaultBannerImageUrl;
-  };
   const authorLabel = article.hideAuthor ? tCommon('anonymous') : (article.author?.username || tCommon('unknown'));
-  const bannerAltText = article.bannerImageAltText || `${article.title} banner`;
 
   return (
     <>
@@ -216,16 +208,7 @@ export default function ArticleDetailPage() {
               <VideoEmbed article={article} autoplay={true} compact={false} />
             </div>
           ) : (
-            <Image
-              src={bannerImageUrl}
-                alt={bannerAltText}
-              width={1600}
-              height={900}
-              sizes="100vw"
-              priority
-              className="w-full h-64 object-cover"
-              onError={handleBannerError}
-            />
+            <ArticleCoverPhoto article={article} />
           )}
           {(article.bannerImageCaption || article.bannerImageCredit) && (
             <div className="border-b border-gray-100 bg-gray-50 px-8 py-3 text-sm text-gray-600">

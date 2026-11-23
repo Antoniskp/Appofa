@@ -4,6 +4,7 @@ import { defaultArticleImage, articleBannerImage } from '@/lib/utils/articleImag
 import Image from 'next/image';
 import { useState } from 'react';
 import { ChartBarIcon } from '@heroicons/react/24/outline';
+import ExpandablePhoto from '@/components/ui/ExpandablePhoto';
 
 export default function LocationActivityImage({ item, poll = false }) {
   const [failedSource, setFailedSource] = useState(null);
@@ -17,13 +18,28 @@ export default function LocationActivityImage({ item, poll = false }) {
     </div>;
   }
 
-  return <Image
-    src={image || defaultArticleImage(item)}
-    alt={suggestionPhoto?.caption || ''}
-    width={640}
-    height={320}
-    sizes="(max-width: 768px) 100vw, 40vw"
-    className="h-40 w-full object-cover"
-    onError={() => { if (image) setFailedSource(source); }}
-  />;
+  const fallback = defaultArticleImage(item);
+  const thumbnail = (
+    <Image
+      src={image || fallback}
+      alt={suggestionPhoto?.caption || ''}
+      width={640}
+      height={320}
+      sizes="(max-width: 768px) 100vw, 40vw"
+      unoptimized={image?.startsWith('/uploads/')}
+      className="h-40 w-full object-cover"
+      onError={() => { if (image) setFailedSource(source); }}
+    />
+  );
+  if (!image || image === fallback) return thumbnail;
+
+  return (
+    <ExpandablePhoto
+      src={item.coverImage?.variants?.articleCover?.url || image}
+      name={suggestionPhoto?.caption || item.title}
+      className="z-10 w-full focus-visible:-outline-offset-2"
+    >
+      {thumbnail}
+    </ExpandablePhoto>
+  );
 }

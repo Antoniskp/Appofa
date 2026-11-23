@@ -8,6 +8,7 @@ const Article = require('./Article');
 const Location = require('./Location');
 const LocationImprovement = require('./LocationImprovement');
 const LocationEvent = require('./LocationEvent');
+const CalendarSubscription = require('./CalendarSubscription');
 const LocationLink = require('./LocationLink');
 const LocationRequest = require('./LocationRequest');
 const LocationSection = require('./LocationSection');
@@ -70,6 +71,7 @@ const VideoPin = require('./VideoPin');
 // Define associations
 LocationImprovement.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
 LocationEvent.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
+CalendarSubscription.belongsTo(Location, { foreignKey: 'locationId', as: 'location', onDelete: 'CASCADE' });
 LocationImprovement.belongsTo(User, { foreignKey: 'authorId', as: 'author' });
 LocationImprovement.belongsTo(User, { foreignKey: 'reviewerId', as: 'reviewer' });
 User.hasMany(Article, {
@@ -616,6 +618,7 @@ module.exports = {
   Location,
   LocationImprovement,
   LocationEvent,
+  CalendarSubscription,
   LocationLink,
   LocationRequest,
   LocationSection,

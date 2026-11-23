@@ -5,6 +5,7 @@ import PartyBallot from './PartyBallot';
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import ExpandablePhoto from '@/components/ui/ExpandablePhoto';
 import { CheckCircleIcon, LinkIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import { pollAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -560,15 +561,17 @@ function ComplexPollOptions({ options, selectedOptionId, setSelectedOptionId, us
             {/* Thumbnail */}
             {option.photoUrl ? (
               !imageErrors[option.id] ? (
-                <div className="relative flex-shrink-0 w-16 h-16 bg-gray-100 rounded-md overflow-hidden">
+                <ExpandablePhoto src={option.photoUrl} name={option.text} className="h-16 w-16 rounded-md bg-gray-100">
                   <Image
                     src={option.photoUrl}
-                    alt={option.text}
-                    fill
-                    className="object-cover"
+                    alt=""
+                    width={128}
+                    height={128}
+                    unoptimized={option.photoUrl.startsWith('/uploads/')}
+                    className="h-full w-full rounded-md object-cover"
                     onError={() => handleImageError(option.id)}
                   />
-                </div>
+                </ExpandablePhoto>
               ) : (
                 <div className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
                   <PhotoIcon className="h-7 w-7 text-gray-400" />

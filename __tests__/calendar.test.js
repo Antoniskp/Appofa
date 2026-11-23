@@ -39,6 +39,46 @@ test('mutations require authentication and CSRF', async () => {
   const auth = headers(author); delete auth['x-csrf-token'];
   expect((await request(app).post('/api/calendar/events').set(auth).send(payload)).status).toBe(403);
 });
+
+test('calendar subscriptions are account-specific and support idempotent changes', async () => {
+  const url = '/api/calendar/subscriptions';
+  const subscribe = (target, subscribed = true) => request(app).put(url).set(headers(author)).send({ ...target, subscribed });
+  expect((await request(app).get(url)).status).toBe(401);
+  expect((await request(app).put(url).set({ Authorization: headers(author).Authorization }).send({ category: 'meeting', subscribed: true })).status).toBe(403);
+  expect((await subscribe({ category: 'unknown' })).status).toBe(400);
+  expect((await subscribe({ category: 'meeting', locationId: town.id })).status).toBe(400);
+  expect((await subscribe({ locationId: 9999 })).status).toBe(404);
+  expect((await subscribe({ category: 'meeting' })).status).toBe(200);
+  expect((await subscribe({ category: 'meeting' })).status).toBe(200);
+  expect((await subscribe({ locationId: town.id })).status).toBe(200);
+  expect((await request(app).get(url).set(headers(author))).body.data).toEqual({
+    categories: ['meeting'],
+    locations: [expect.objectContaining({ id: town.id, name: town.name })],
+  });
+  expect((await request(app).get(url).set(headers(outsider))).body.data).toEqual({ categories: [], locations: [] });
+  expect((await subscribe({ locationId: town.id }, false)).body.data).toEqual({ categories: ['meeting'], locations: [] });
+  expect((await subscribe({ category: 'meeting' }, false)).body.data).toEqual({ categories: [], locations: [] });
+});
+
+test('calendar selections combine categories and locations before counting and paging', async () => {
+  await LocationEvent.bulkCreate([
+    ...Array.from({ length: 100 }, (_, i) => ({ title: `Matching meeting ${i}`, category: 'meeting', locationId: parent.id })),
+    { title: 'Matches both', category: 'meeting', locationId: town.id },
+    { title: 'Location only', category: 'culture', locationId: town.id },
+    { title: 'Excluded location', category: 'culture', locationId: parent.id },
+    { title: 'Excluded pending event', category: 'meeting', locationId: town.id, status: 'pending' },
+  ].map(values => ({ ...payload, authorId: author.id, status: 'published', ...values })));
+  const linked = await Poll.create({ creatorId: author.id, title: 'Linked poll', deadline: '2026-10-21T12:30:00Z' });
+  await LocationLink.create({ location_id: town.id, entity_type: 'poll', entity_id: linked.id });
+  const filters = `categories=meeting&locationIds=${town.id}`;
+  const url = `/api/calendar?${range}&${filters}`;
+  const first = await request(app).get(url);
+  expect(first.body.pagination).toEqual({ page: 1, total: 103, totalPages: 2 });
+  const second = await request(app).get(`${url}&page=2`);
+  expect(second.body.data.map(entry => entry.title)).toEqual(['Matches both', 'Location only', 'Linked poll']);
+  expect((await request(app).get(`/api/calendar/next?from=2026-10-21&${filters}`)).body.day).toBe('2026-10-21');
+  expect((await request(app).get(`${url}&category=culture`)).status).toBe(400);
+});
 test('pending records are private and cannot forge publishing or ownership', async () => {
   const created = await create(author, { status: 'published', authorId: outsider.id });
   expect(created.status).toBe(201);

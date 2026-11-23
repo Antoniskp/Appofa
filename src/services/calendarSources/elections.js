@@ -30,8 +30,8 @@ const entries = elections.map(({ id, date, titles, href }) => ({
   allDay: true, timezone, category: 'elections', href,
 }));
 
-async function list({ start, end, locationId, view, category, limit, offset = 0, period }) {
-  if (locationId || view !== 'public' || (category && category !== 'elections')) {
+async function list({ start, end, locationId, view, category, selection, limit, offset = 0, period }) {
+  if (locationId || view !== 'public' || (category && category !== 'elections') || (selection && !selection.categories.includes('elections'))) {
     return { data: [], total: 0 };
   }
 

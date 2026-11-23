@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import UserAvatar from '@/components/user/UserAvatar';
@@ -21,16 +22,18 @@ export default function UserCard({ user }) {
   const visibleTags = expertiseArea.slice(0, 2);
 
   return (
-    <Card hoverable href={`/users/${user.username}`} className="min-w-0 overflow-hidden" padding="sm">
+    <Card hoverable className="relative min-w-0 overflow-hidden" padding="sm">
       <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
         {/* Avatar */}
-        <UserAvatar user={user} size="h-12 w-12 sm:h-16 sm:w-16" textSize="text-lg sm:text-xl" />
+        <div className={user.avatar ? 'relative z-10 shrink-0' : 'shrink-0'}>
+          <UserAvatar user={user} size="h-12 w-12 sm:h-16 sm:w-16" textSize="text-lg sm:text-xl" expandable />
+        </div>
         
         {/* User Info */}
         <div className="flex-1 min-w-0">
           <div className="flex min-w-0 flex-wrap items-center gap-2 mb-1">
             <h3 className="min-w-0 flex-1 text-base sm:text-lg font-semibold text-gray-900 truncate">
-              {user.username}
+              <Link href={`/users/${user.username}`} className="after:absolute after:inset-0 focus-visible:underline">{user.username}</Link>
             </h3>
             {user.role && (
               <Badge variant={user.role === 'admin' ? 'danger' : 'primary'} size="sm" className="max-w-full shrink-0">

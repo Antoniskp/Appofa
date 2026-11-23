@@ -3,7 +3,7 @@
 import { use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { UserCircleIcon, MapPinIcon, EnvelopeIcon, GlobeAltIcon, PencilSquareIcon, BuildingLibraryIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, EnvelopeIcon, GlobeAltIcon, PencilSquareIcon, BuildingLibraryIcon } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon, ExclamationTriangleIcon, ClockIcon } from '@heroicons/react/24/solid';
 import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -14,6 +14,7 @@ import { formatPoliticalPosition } from '@/lib/utils/politicalParties';
 import { getExpertiseTagLabel, resolveProfessionLabel } from '@/lib/utils/professionTaxonomy';
 import ReportButton from '@/components/ReportButton';
 import EndorsementPanel from '@/components/EndorsementPanel';
+import UserAvatar from '@/components/user/UserAvatar';
 
 const SOCIAL_LINK_LABELS = {
   website: 'Ιστοσελίδα',
@@ -54,6 +55,7 @@ export default function PersonProfilePage({ params }) {
   const isPrivileged = user && ['admin', 'moderator'].includes(user.role);
   const socialLinksObj = profile.socialLinks || {};
   const politicalPositions = profile.politicalPositions || {};
+  const name = [profile.firstNameNative, profile.lastNameNative].filter(Boolean).join(' ') || profile.fullName || profile.username;
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -87,14 +89,16 @@ export default function PersonProfilePage({ params }) {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-6">
             <div className="flex items-start gap-5">
-              {profile.photo ? (
-                <Image src={profile.photo} alt={`${profile.firstNameNative} ${profile.lastNameNative}`} width={160} height={160} className="w-20 h-20 rounded-full object-cover flex-shrink-0" />
-              ) : (
-                <UserCircleIcon className="w-20 h-20 text-gray-300 flex-shrink-0" />
-              )}
+              <UserAvatar
+                user={{ username: name, avatar: profile.photo || profile.avatar || profile.avatarUrl }}
+                size="h-20 w-20"
+                textSize="text-2xl"
+                showBadges={false}
+                expandable
+              />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-2xl font-bold text-gray-900">{profile.firstNameNative} {profile.lastNameNative}</h1>
+                  <h1 className="text-2xl font-bold text-gray-900">{name}</h1>
                   {profile.claimStatus === 'claimed' && (
                     <CheckBadgeIcon className="h-6 w-6 text-green-500" title="Επαληθευμένο Προφίλ" />
                   )}

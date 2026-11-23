@@ -9,7 +9,9 @@ import {
 } from '@heroicons/react/24/outline';
 import { calendarAPI } from '@/lib/api/calendar';
 import { useAuth } from '@/lib/auth-context';
+import { useAsyncData } from '@/hooks/useAsyncData';
 import LocationSelector from '@/components/ui/LocationSelector';
+import CalendarSubscriptions from './CalendarSubscriptions';
 import { CALENDAR_CATEGORIES } from '@/lib/calendar/categories';
 import { calendarEntryDays, localDateTime, shiftDate } from '@/lib/calendar/dates';
 
@@ -64,13 +66,17 @@ function NextEventButton({ knownDay, from, filters, onJump }) {
 }
 
 export default function CalendarView(props) {
-  return <Suspense><CalendarContent {...props} /></Suspense>;
+  return <Suspense><CalendarSession {...props} /></Suspense>;
 }
 
-function CalendarContent({ locationId: fixedLocationId }) {
+function CalendarSession(props) {
+  const { user, loading } = useAuth();
+  return <CalendarContent key={user?.id ?? 'guest'} {...props} user={user} authLoading={loading} />;
+}
+
+function CalendarContent({ locationId: fixedLocationId, user, authLoading }) {
   const t = useTranslations('calendar');
   const locale = useLocale();
-  const { user } = useAuth();
   const searchParams = useSearchParams();
   const [localParams, setLocalParams] = useState('');
   const params = new URLSearchParams(fixedLocationId ? localParams : searchParams.toString());
@@ -86,6 +92,11 @@ function CalendarContent({ locationId: fixedLocationId }) {
   const period = hasListPeriod ? requestedPeriod : 'upcoming';
   const view = ['mine', 'review'].includes(params.get('view')) ? params.get('view') : 'public';
   const category = CALENDAR_CATEGORIES.includes(params.get('category')) ? params.get('category') : '';
+  const browsing = params.get('calendar') === 'browse' || Boolean(category || locationId || view !== 'public');
+  const hasPersonalCalendar = Boolean(user && !fixedLocationId);
+  const personal = hasPersonalCalendar && !browsing;
+  const waitingForAuth = !fixedLocationId && authLoading && !browsing;
+  const showBrowseFilters = !personal && !waitingForAuth;
   const page = Math.max(1, Math.min(100000, Math.floor(Number(params.get('page'))) || 1));
   const selectedDay = params.get('day') || '';
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -93,7 +104,8 @@ function CalendarContent({ locationId: fixedLocationId }) {
   const agendaHeading = useRef(null);
   const pendingJump = useRef('');
   function update(changes) {
-    const next = new URLSearchParams(params);
+    const next = new URLSearchParams(fixedLocationId ? localParams : window.location.search);
+    if (!fixedLocationId && user && browsing) next.set('calendar', 'browse');
     Object.entries(changes).forEach(([key, value]) => {
       if (value === '' || value === false || value == null) next.delete(key);
       else next.set(key, String(value));
@@ -111,24 +123,54 @@ function CalendarContent({ locationId: fixedLocationId }) {
   const filterCount = activeFilters.length + Number(Boolean(locationId));
   const filtered = filterCount > 0;
   const clearFilters = () => update({ category: '', location: '', view: '', descendants: '', page: '' });
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const { data: subscriptions, loading: subscriptionsLoading, error: subscriptionsError, setData: setSubscriptions, refetch: reloadSubscriptions } =
+    useAsyncData(async () => hasPersonalCalendar ? (await calendarAPI.subscriptions()).data : null, [hasPersonalCalendar]);
+  const requestedCategories = params.get('showCategories')?.split(',') || [];
+  const requestedLocations = params.get('showLocations')?.split(',') || [];
+  const selected = {
+    showCategories: (subscriptions?.categories || []).filter(value => requestedCategories.includes(value)),
+    showLocations: (subscriptions?.locations || []).map(location => String(location.id)).filter(value => requestedLocations.includes(value)),
+  };
+  const categories = selected.showCategories.join(',');
+  const locationIds = selected.showLocations.join(',');
+  const noSources = personal && !categories && !locationIds;
+  function toggleSource(key, value, enabled) {
+    const current = new URLSearchParams(window.location.search);
+    const values = new Set(current.get(key)?.split(',') || []);
+    if (values.has(value) === enabled) return;
+    if (enabled) values.add(value);
+    else values.delete(value);
+    update({ [key]: [...values].join(','), page: '' });
+  }
+  function unsubscribeSource({ category, locationId }) {
+    if (category) toggleSource('showCategories', category, false);
+    else toggleSource('showLocations', String(locationId), false);
+  }
+  const [response, setResponse] = useState(null);
   const effectiveView = user ? view : 'public';
-  const calendarFilters = useMemo(() => ({
+  const calendarFilters = useMemo(() => personal ? {
+    ...(categories ? { categories } : {}),
+    ...(locationIds ? { locationIds } : {}),
+  } : {
     view: effectiveView,
     ...(category ? { category } : {}),
     ...(selectedLocation ? { locationId: selectedLocation, descendants } : {}),
-  }), [effectiveView, category, selectedLocation, descendants]);
+  }, [personal, categories, locationIds, effectiveView, category, selectedLocation, descendants]);
   const addHref = user ? '/events/new' + (selectedLocation ? '?locationId=' + selectedLocation : '') : '/login';
   const monthView = mode === 'month' || period === 'month';
   const [year, number] = month.split('-').map(Number);
   const start = new Date(Date.UTC(year, number - 1, 1));
   const end = new Date(Date.UTC(year, number, 1));
+  const requestEnabled = !waitingForAuth && !noSources;
+  const requestKey = JSON.stringify([month, monthView, period, calendarFilters, page]);
+  const currentResponse = requestEnabled && response?.key === requestKey ? response : null;
+  const result = currentResponse?.result;
+  const error = currentResponse?.error;
+  const loading = waitingForAuth || (requestEnabled && !currentResponse);
 
   useEffect(() => {
-    let active = true;
-    setLoading(true); setError('');
+    if (!requestEnabled) return;
+    const controller = new AbortController();
     const [y, m] = month.split('-').map(Number);
     const now = Date.now();
     const range = monthView ? {
@@ -138,12 +180,11 @@ function CalendarContent({ locationId: fixedLocationId }) {
       start: new Date(period === 'past' ? now - 365 * 86400000 : now).toISOString(),
       end: new Date(period === 'past' ? now : now + 365 * 86400000).toISOString(), period,
     };
-    calendarAPI.list({ ...range, ...calendarFilters, page: monthView ? 1 : page })
-      .then(data => { if (active) setResult({ ...data, month }); })
-      .catch(e => { if (active) { setError(e.message); setResult(null); } })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [month, monthView, period, calendarFilters, page, user]);
+    calendarAPI.list({ ...range, ...calendarFilters, page: monthView ? 1 : page }, controller.signal)
+      .then(data => { if (!controller.signal.aborted) setResponse({ key: requestKey, result: { ...data, month } }); })
+      .catch(e => { if (!controller.signal.aborted) setResponse({ key: requestKey, error: e.message }); });
+    return () => controller.abort();
+  }, [requestEnabled, requestKey, month, monthView, period, calendarFilters, page]);
 
   const days = Array.from({ length: Math.round((end - start) / 86400000) },
     (_, i) => `${month}-${String(i + 1).padStart(2, '0')}`);
@@ -201,9 +242,9 @@ function CalendarContent({ locationId: fixedLocationId }) {
   const groups = Object.groupBy(entries, entry => entry.firstDay);
   const emptyState = <div className="rounded-2xl border border-brand-border bg-white px-6 py-10 text-center">
     <h3 className="text-lg font-semibold">{t(filtered ? 'emptyFiltered' : period === 'upcoming' && !monthView ? 'emptyUpcoming' : 'empty')}</h3>
-    <p className="mx-auto mt-2 max-w-md text-sm text-gray-600">{t(filtered ? 'emptyFilteredHint' : 'emptyHint')}</p>
-    {(!filtered || period !== 'past') && <div className="mt-5 flex flex-wrap justify-center gap-3">
-      {!filtered && <Link href={addHref} className="rounded-lg bg-blue-600 px-4 py-2 text-white">{t('suggestEvent')}</Link>}
+    <p className="mx-auto mt-2 max-w-md text-sm text-gray-600">{t(personal ? 'emptySourcesHint' : filtered ? 'emptyFilteredHint' : 'emptyHint')}</p>
+    {((!personal && !filtered) || period !== 'past') && <div className="mt-5 flex flex-wrap justify-center gap-3">
+      {!personal && !filtered && <Link href={addHref} className="rounded-lg bg-blue-600 px-4 py-2 text-white">{t('suggestEvent')}</Link>}
       {period !== 'past' && <button onClick={() => update({ mode: 'list', period: 'past', page: '' })} className="rounded-lg border border-brand-border px-4 py-2">{t('browsePast')}</button>}
     </div>}
   </div>;
@@ -213,7 +254,26 @@ function CalendarContent({ locationId: fixedLocationId }) {
       <div><h2 className="text-2xl font-bold sm:text-3xl">{t('title')}</h2><p className="mt-2 max-w-xl text-sm text-gray-600">{t('intro')}</p></div>
       <Link href={addHref} className="shrink-0 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white">{t('suggestEvent')}</Link>
     </header>
+    {hasPersonalCalendar && <div role="group" aria-label={t('calendarScope')} className="flex flex-wrap gap-2">
+      <button type="button" aria-pressed={personal}
+        onClick={() => update({ calendar: '', category: '', location: '', descendants: '', view: '', page: '' })}
+        className={`min-h-11 rounded-lg border border-brand-border px-4 text-sm font-semibold text-blue-800 hover:bg-ivory aria-pressed:border-blue-700 aria-pressed:bg-blue-700 aria-pressed:text-white aria-pressed:hover:bg-blue-800 ${FOCUS_RING}`}>
+        {t('myCalendar')}
+      </button>
+      <button type="button" aria-pressed={!personal} onClick={() => update({ calendar: 'browse', page: '' })}
+        className={`min-h-11 rounded-lg border border-brand-border px-4 text-sm font-semibold text-blue-800 hover:bg-ivory aria-pressed:border-blue-700 aria-pressed:bg-blue-700 aria-pressed:text-white aria-pressed:hover:bg-blue-800 ${FOCUS_RING}`}>
+        {t('browseEvents')}
+      </button>
+    </div>}
     <div className="space-y-3 rounded-2xl border border-brand-border bg-white p-3 shadow-sm sm:p-4">
+      {hasPersonalCalendar && <div hidden={!personal} className="border-b border-brand-border pb-3">
+        {subscriptionsLoading ? <p role="status" className="text-sm text-gray-600">{t('loadingSubscriptions')}</p>
+          : subscriptionsError ? <div className="flex flex-wrap items-center gap-x-3 text-sm">
+            <p role="alert" className="text-red-700">{t('subscriptionLoadError')}</p>
+            <button type="button" onClick={() => reloadSubscriptions()} className="min-h-11 font-semibold text-blue-700 underline">{t('retry')}</button>
+          </div> : subscriptions && <CalendarSubscriptions subscriptions={subscriptions} selected={selected}
+            onToggle={toggleSource} onChange={setSubscriptions} onUnsubscribe={unsubscribeSource} />}
+      </div>}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div role="group" aria-label={t('view')} className="inline-flex max-w-full rounded-xl bg-ivory p-1">
           {VIEW_OPTIONS.map(({ value, Icon }) => (
@@ -224,15 +284,15 @@ function CalendarContent({ locationId: fixedLocationId }) {
             </button>
           ))}
         </div>
-        <button type="button" aria-expanded={filtersOpen} aria-controls={filtersId} onClick={() => setFiltersOpen(open => !open)}
+        {showBrowseFilters && <button type="button" aria-expanded={filtersOpen} aria-controls={filtersId} onClick={() => setFiltersOpen(open => !open)}
           className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition ${FOCUS_RING} ${filtersOpen || filtered ? 'border-copper bg-ivory text-blue-700' : 'border-brand-border text-charcoal hover:bg-ivory'}`}>
           <AdjustmentsHorizontalIcon aria-hidden="true" className="h-4 w-4 shrink-0" />
           {t('filters')}
           {filtered && <span className="rounded-full bg-blue-600 px-1.5 text-xs leading-5 text-white">{filterCount}</span>}
           <ChevronDownIcon aria-hidden="true" className={`h-3.5 w-3.5 shrink-0 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
-        </button>
+        </button>}
       </div>
-      <div className="border-t border-brand-border pt-3">
+      {showBrowseFilters && <div className="border-t border-brand-border pt-3">
         {!fixedLocationId ? <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-1">
             <MapPinIcon aria-hidden="true" className="h-5 w-5 shrink-0 text-copper" />
@@ -250,12 +310,12 @@ function CalendarContent({ locationId: fixedLocationId }) {
             className={`min-h-10 rounded-lg px-3 text-sm font-semibold text-blue-700 hover:bg-ivory ${FOCUS_RING}`}>
             {t('allLocations')}
           </button>}
-        </div> : <Link href="/calendar" className={`inline-flex items-center gap-2 rounded text-sm font-semibold text-blue-700 hover:underline ${FOCUS_RING}`}>
+        </div> : <Link href="/calendar?calendar=browse" className={`inline-flex items-center gap-2 rounded text-sm font-semibold text-blue-700 hover:underline ${FOCUS_RING}`}>
           <MapPinIcon aria-hidden="true" className="h-4 w-4" />
           {t('allLocations')} <span aria-hidden="true">→</span>
         </Link>}
-      </div>
-      <div id={filtersId} hidden={!filtersOpen} className="space-y-3 rounded-xl border border-brand-border bg-ivory p-3 sm:p-4">
+      </div>}
+      {showBrowseFilters && <div id={filtersId} hidden={!filtersOpen} className="space-y-3 rounded-xl border border-brand-border bg-ivory p-3 sm:p-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex min-w-0 flex-col gap-1.5 text-sm font-semibold">
             {t('category')}
@@ -280,8 +340,8 @@ function CalendarContent({ locationId: fixedLocationId }) {
             className={`h-4 w-4 shrink-0 accent-copper ${FOCUS_RING}`} />
           {t('descendants')}
         </label>}
-      </div>
-      {filtered && <div className="flex flex-wrap items-center gap-2 border-t border-brand-border pt-3">
+      </div>}
+      {showBrowseFilters && filtered && <div className="flex flex-wrap items-center gap-2 border-t border-brand-border pt-3">
         {activeFilters.map(({ key, label }) => (
           <button key={key} type="button" aria-label={t('removeFilter', { filter: label })}
             onClick={() => update({ [key]: '', page: '' })}
@@ -311,7 +371,7 @@ function CalendarContent({ locationId: fixedLocationId }) {
       {entries.length ? Object.entries(groups).map(([day, group]) => <section key={day} className="flex gap-3 sm:gap-5">
         <div aria-hidden="true" className="w-12 shrink-0 pt-1 text-center text-blue-700"><span className="block text-2xl font-bold">{Number(day.slice(-2))}</span><span className="text-xs uppercase">{new Date(day + 'T12:00:00Z').toLocaleDateString(locale, { month: 'short', timeZone: 'UTC' })}</span></div>
         <div className="min-w-0 flex-1 space-y-3"><h3 className="pt-1 text-sm font-semibold">{formatDay(day)}</h3>{group.map(entry => entryLink(entry))}</div>
-      </section>) : !error && emptyState}
+      </section>) : noSources ? <p className="text-sm text-gray-600">{t('selectSources')}</p> : !error && emptyState}
     </div> : <>
       <div className="grid grid-cols-7 gap-1">
         {Array.from({ length: 7 }, (_, i) => <div key={i} className="min-w-0 truncate py-2 text-center text-xs font-semibold">
@@ -347,8 +407,8 @@ function CalendarContent({ locationId: fixedLocationId }) {
       <section aria-live="polite" className="space-y-3">
         <h3 ref={agendaHeading} tabIndex={-1} className={`w-fit rounded font-semibold ${FOCUS_RING}`}>{t('selectedDay', { date: formatDay(activeDay) })}</h3>
         {agenda.length ? agenda.map(entry => entryLink(entry)) : <>
-          <p className="text-sm text-gray-500">{t('emptyDay')}</p>
-          {!error && activeDay < '9999-12-31' && <NextEventButton
+          <p className="text-sm text-gray-500">{t(noSources ? 'selectSources' : 'emptyDay')}</p>
+          {!noSources && !error && activeDay < '9999-12-31' && <NextEventButton
             key={JSON.stringify([activeDay, calendarFilters, user?.id])}
             knownDay={nextDayInMonth} from={shiftDate(activeDay, 1)} filters={calendarFilters} onJump={jumpToDay} />}
         </>}

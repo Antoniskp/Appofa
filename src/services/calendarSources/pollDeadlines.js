@@ -2,7 +2,7 @@ const { Op } = require('sequelize');
 const { Location, LocationLink, Poll } = require('../../models');
 const { getDescendantLocationIds } = require('../../utils/locationUtils');
 
-async function list({ start, end, locationId, descendants, view, category, limit, offset, period }) {
+async function list({ start, end, locationId, descendants, view, category, selection, limit, offset, period }) {
   if (view !== 'public' || (category && category !== 'polls')) {
     return { data: [], total: 0 };
   }
@@ -17,8 +17,11 @@ async function list({ start, end, locationId, descendants, view, category, limit
     ],
   };
 
-  if (locationId) {
-    const scope = descendants ? await getDescendantLocationIds(locationId, true) : [locationId];
+  let scope;
+  if (locationId) scope = descendants ? await getDescendantLocationIds(locationId, true) : [locationId];
+  if (selection && !selection.categories.includes('polls')) scope = selection.locationIds;
+  if (scope) {
+    if (!scope.length) return { data: [], total: 0 };
     const links = await LocationLink.findAll({
       where: { entity_type: 'poll', location_id: { [Op.in]: scope } },
       attributes: ['entity_id'],

@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { sequelize, User } = require('../src/models');
+const { CalendarSubscription, sequelize, User } = require('../src/models');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -103,6 +103,7 @@ describe('Delete Account endpoint', () => {
     const loginRes = await request(app)
       .post('/api/auth/login')
       .send({ email: 'anon@test.com', password: 'anon1234' });
+    await CalendarSubscription.create({ userId: fresh.id, category: 'meeting' });
     const cookie = loginRes.headers['set-cookie']?.find((c) => c.startsWith('auth_token='));
     const token = cookie?.split(';')[0].replace('auth_token=', '');
 
@@ -124,6 +125,7 @@ describe('Delete Account endpoint', () => {
     expect(scrubbed.email).toBe(`deleted-user-${fresh.id}@deleted.invalid`);
     expect(scrubbed.password).toBeNull();
     expect(scrubbed.profileVisibility).toBe('hidden');
+    expect(await CalendarSubscription.count({ where: { userId: fresh.id } })).toBe(0);
   });
 
   test('should purge account successfully', async () => {

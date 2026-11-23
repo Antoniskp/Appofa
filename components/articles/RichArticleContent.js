@@ -3,9 +3,12 @@
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { useEffect, useRef } from 'react';
+import { createContext, useContext, useEffect, useRef } from 'react';
 import articleContents from '@/lib/utils/articleContents';
+import ExpandablePhoto from '@/components/ui/ExpandablePhoto';
 import ArticleContents from './ArticleContents';
+
+const InsideArticleLink = createContext(false);
 
 const isSafeUrl = (url) => {
   if (!url || typeof url !== 'string') return false;
@@ -68,6 +71,23 @@ const headings = Object.fromEntries(headingStyles.map((style, index) => {
     return <Heading id={id} tabIndex={id ? -1 : undefined} className={`${style} scroll-mt-6 break-words focus:outline-none target:rounded target:bg-blue-50`}>{children}</Heading>;
   }];
 }));
+
+function ArticleImage({ src, alt }) {
+  const insideLink = useContext(InsideArticleLink);
+  const safeSrc = (src || '').trim();
+  if (!isSafeUrl(safeSrc)) return null;
+
+  const name = alt || 'Article image';
+  const image = <img src={safeSrc} alt={name} className="w-full rounded-lg border border-gray-200" />;
+  if (insideLink) return image;
+
+  return (
+    <span className="my-4 block">
+      <ExpandablePhoto src={safeSrc} name={name} className="w-full rounded-lg">{image}</ExpandablePhoto>
+      {alt && <span className="mt-2 block text-sm text-gray-500">{alt}</span>}
+    </span>
+  );
+}
 
 const components = {
   ...headings,
@@ -134,23 +154,11 @@ const components = {
         rel="noopener noreferrer"
         className="text-blue-600 hover:text-blue-800 underline break-all"
       >
-        {children}
+        <InsideArticleLink.Provider value>{children}</InsideArticleLink.Provider>
       </a>
     );
   },
-  img: ({ src, alt }) => {
-    const safeSrc = (src || '').trim();
-    if (!isSafeUrl(safeSrc)) return null;
-    const altText = alt || 'Article image';
-    return (
-      <figure className="my-4">
-        <img src={safeSrc} alt={altText} className="w-full rounded-lg border border-gray-200" />
-        {altText && altText !== 'Article image' && (
-          <figcaption className="mt-2 text-sm text-gray-500">{altText}</figcaption>
-        )}
-      </figure>
-    );
-  },
+  img: ArticleImage,
   table: ({ children }) => (
     <div className="overflow-x-auto my-4">
       <table className="min-w-full border-collapse border border-gray-300 text-sm">{children}</table>

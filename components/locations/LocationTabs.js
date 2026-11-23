@@ -3,6 +3,7 @@ import LocationActivityImage from '@/components/locations/LocationActivityImage'
 import LocationActionSummary from '@/components/locations/LocationActionSummary';
 import CalendarView from '@/components/calendar/CalendarView';
 import Link from 'next/link';
+import ExpandablePhoto from '@/components/ui/ExpandablePhoto';
 import Image from 'next/image';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { idSlug } from '@/lib/utils/slugify';
@@ -48,10 +49,7 @@ function formatMetaDate(date) {
 
 function FeedItem({ href, title, excerpt, badges = [], metadata = [], compact = false, media, poll = false }) {
   return (
-    <Link
-      href={href}
-      className={`group block rounded-xl border border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/40 transition-all overflow-hidden h-full`}
-    >
+    <article className="group relative h-full overflow-hidden rounded-xl border border-gray-200 bg-white transition-all hover:border-blue-300 hover:bg-blue-50/40">
       {media && <LocationActivityImage item={media} poll={poll} />}
       <div className={compact ? 'p-3' : 'p-4'}>
       {badges.length > 0 && (
@@ -66,7 +64,9 @@ function FeedItem({ href, title, excerpt, badges = [], metadata = [], compact = 
           ))}
         </div>
       )}
-      <h3 className={`${compact ? 'text-sm' : 'text-base'} font-semibold text-gray-900 group-hover:text-blue-700 transition-colors`}>{title}</h3>
+      <h3 className={`${compact ? 'text-sm' : 'text-base'} font-semibold text-gray-900 group-hover:text-blue-700 transition-colors`}>
+        <Link href={href} className="after:absolute after:inset-0 focus-visible:underline">{title}</Link>
+      </h3>
       {excerpt && (
         <p className={`mt-1.5 ${compact ? 'text-xs leading-5' : 'text-sm leading-6'} text-gray-600 line-clamp-2`}>{excerpt}</p>
       )}
@@ -78,7 +78,7 @@ function FeedItem({ href, title, excerpt, badges = [], metadata = [], compact = 
         </div>
       )}
       </div>
-    </Link>
+    </article>
   );
 }
 
@@ -396,25 +396,24 @@ export default function LocationTabs({
                     .join(' ')
                     .trim() || person.username?.trim() || 'Άγνωστο';
                   const claimBadge = CLAIM_STATUS_BADGES[person.claimStatus] || CLAIM_STATUS_BADGES.claimed;
-                  const content = (
-                    <div className="flex items-center gap-4 px-4 py-3">
+                  return (
+                    <div key={person.id} className="relative flex items-center gap-4 rounded-lg px-4 py-3 hover:bg-gray-50">
                       {person.photo
-                        ? <Image src={person.photo} alt={fullName} width={80} height={80} className="h-10 w-10 rounded-full object-cover flex-shrink-0" />
+                        ? <ExpandablePhoto src={person.photo} name={fullName} className="z-10 rounded-full">
+                            <Image src={person.photo} alt="" width={80} height={80} unoptimized={person.photo.startsWith('/uploads/')} className="h-10 w-10 rounded-full object-cover" />
+                          </ExpandablePhoto>
                         : <UserCircleIcon className="h-10 w-10 text-gray-300 flex-shrink-0" />
                       }
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-gray-900 truncate">{fullName}</span>
+                          {person.slug ? (
+                            <Link href={`/persons/${person.slug}`} className="truncate font-medium text-gray-900 after:absolute after:inset-0 focus-visible:underline">{fullName}</Link>
+                          ) : <span className="truncate font-medium text-gray-900">{fullName}</span>}
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${claimBadge.cls}`}>{claimBadge.label}</span>
                         </div>
                         {person.username && <p className="text-xs text-gray-500">@{person.username}</p>}
                       </div>
                     </div>
-                  );
-                  return person.slug ? (
-                    <Link key={person.id} href={`/persons/${person.slug}`} className="block hover:bg-gray-50 transition-colors rounded-lg">{content}</Link>
-                  ) : (
-                    <div key={person.id}>{content}</div>
                   );
                 })}
               </div>
