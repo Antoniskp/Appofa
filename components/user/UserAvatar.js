@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import VerifiedBadge from '@/components/VerifiedBadge';
 import PartyBadge from '@/components/PartyBadge';
+import ExpandablePhoto from '@/components/ui/ExpandablePhoto';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
 
@@ -63,8 +64,9 @@ function DisplayBadgeOverlay({ slug, tier, size }) {
  *                 displayBadgeSlug, displayBadgeTier
  *   size        - tailwind size class for width/height (default: 'h-10 w-10')
  *   textSize    - tailwind text size for initials (default: 'text-sm')
+ *   expandable  - enable the large photo viewer on profile headers
  */
-export default function UserAvatar({ user, size = 'h-10 w-10', textSize = 'text-sm', showBadges = true }) {
+export default function UserAvatar({ user, size = 'h-10 w-10', textSize = 'text-sm', showBadges = true, expandable = false }) {
   const [avatarLoadError, setAvatarLoadError] = useState(false);
 
   useEffect(() => {
@@ -73,26 +75,36 @@ export default function UserAvatar({ user, size = 'h-10 w-10', textSize = 'text-
 
   const hasDisplayBadge = user?.displayBadgeSlug && user?.displayBadgeTier;
   const badgeSize = deriveBadgeSize(size);
+  const { avatar, avatarColor, username } = user;
+  const hasPhoto = avatar && !avatarLoadError;
+  const portrait = (
+    <span
+      className={`${size} rounded-full border border-gray-200 flex items-center justify-center text-white ${textSize} font-semibold`}
+      style={{ backgroundColor: avatarColor || DEFAULT_AVATAR_COLOR }}
+    >
+      {hasPhoto ? (
+        <Image
+          src={avatar}
+          alt={username}
+          width={128}
+          height={128}
+          unoptimized={avatar.startsWith('/uploads/')}
+          className="h-full w-full rounded-full object-cover"
+          onError={() => setAvatarLoadError(true)}
+        />
+      ) : (
+        <span>{(username || 'U').charAt(0).toUpperCase()}</span>
+      )}
+    </span>
+  );
 
   return (
     <div className="relative inline-flex flex-shrink-0">
-      <div
-        className={`${size} rounded-full border border-gray-200 flex items-center justify-center text-white ${textSize} font-semibold`}
-        style={{ backgroundColor: user.avatarColor || DEFAULT_AVATAR_COLOR }}
-      >
-        {user.avatar && !avatarLoadError ? (
-          <Image
-            src={user.avatar}
-            alt={user.username}
-            width={128}
-            height={128}
-            className="h-full w-full rounded-full object-cover"
-            onError={() => setAvatarLoadError(true)}
-          />
-        ) : (
-          <span>{(user.username || 'U').charAt(0).toUpperCase()}</span>
-        )}
-      </div>
+      {expandable && hasPhoto ? (
+        <ExpandablePhoto src={avatar} name={username || 'U'} className="rounded-full">
+          {portrait}
+        </ExpandablePhoto>
+      ) : portrait}
       {showBadges && hasDisplayBadge ? (
         <DisplayBadgeOverlay slug={user.displayBadgeSlug} tier={user.displayBadgeTier} size={badgeSize} />
       ) : showBadges && user.isVerified ? (

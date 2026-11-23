@@ -159,10 +159,12 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
           <div className="flex items-center gap-3 mb-2">
             {profileData.avatar && (
               <Image
+                key={profileData.avatar}
                 src={profileData.avatar}
                 alt="Current avatar"
                 width={96}
                 height={96}
+                unoptimized={profileData.avatar.startsWith('/uploads/')}
                 className="w-12 h-12 rounded-full object-cover border border-gray-200 flex-shrink-0"
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />

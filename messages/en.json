@@ -838,6 +838,11 @@
     "app_name": "Appofasi",
     "information": "Information",
     "open_in_app": "Open in Appofasi",
+    "photoViewer": {
+      "view": "View larger photo of {name}",
+      "close": "Close photo",
+      "unavailable": "This photo could not be loaded."
+    },
     "share": {
       "title": "Share",
       "close": "Close",
@@ -1019,7 +1024,7 @@
     "google_unlinked": "Google account disconnected",
     "google_unlink_failed": "Failed to unlink Google account.",
     "avatar_source": "Avatar Source",
-    "choose_avatar_source": "Choose which connected account photo to use as your profile avatar.",
+    "choose_avatar_source": "Use your uploaded photo or a photo from a connected account.",
     "avatar_updated": "Avatar updated successfully!",
     "avatar_update_failed": "Failed to update avatar.",
     "active_avatar": "Currently active avatar",

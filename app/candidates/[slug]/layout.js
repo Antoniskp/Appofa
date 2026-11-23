@@ -1,4 +1,5 @@
 export const metadata = {
+  title: 'Προφίλ υποψηφίου',
   robots: {
     index: false,
     follow: true,

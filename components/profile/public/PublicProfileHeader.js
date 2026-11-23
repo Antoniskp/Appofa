@@ -29,7 +29,7 @@ export default function PublicProfileHeader({
 
   return (
     <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-      <UserAvatar user={user} size="h-24 w-24" textSize="text-2xl" />
+      <UserAvatar user={user} size="h-24 w-24" textSize="text-2xl" expandable />
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="min-w-0">

@@ -1,5 +1,9 @@
 import EventForm from '@/components/calendar/EventForm';
 import { getTranslations } from 'next-intl/server';
+import { privatePageMetadata } from '@/lib/route-metadata';
+
+export const generateMetadata = privatePageMetadata('calendar.newEvent');
+
 export default async function NewEventPage({ searchParams }) {
   const { locationId } = await searchParams;
   const t = await getTranslations('calendar');

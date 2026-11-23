@@ -838,6 +838,11 @@
     "app_name": "Appofasi",
     "information": "Informații",
     "open_in_app": "Deschide în Appofasi",
+    "photoViewer": {
+      "view": "Mărește fotografia pentru {name}",
+      "close": "Închide fotografia",
+      "unavailable": "Fotografia nu a putut fi încărcată."
+    },
     "share": {
       "title": "Distribuie",
       "close": "Închide",
@@ -1019,7 +1024,7 @@
     "google_unlinked": "Contul Google a fost deconectat",
     "google_unlink_failed": "Deconectarea contului Google a eșuat.",
     "avatar_source": "Sursa avatarului",
-    "choose_avatar_source": "Alege ce fotografie a contului conectat să fie folosită ca avatar de profil.",
+    "choose_avatar_source": "Folosește fotografia încărcată sau o fotografie dintr-un cont conectat.",
     "avatar_updated": "Avatar actualizat cu succes!",
     "avatar_update_failed": "Actualizarea avatarului a eșuat.",
     "active_avatar": "Avatar activ în prezent",

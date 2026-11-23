@@ -5,7 +5,7 @@ import GoogleAnalytics from '@/components/GoogleAnalytics';
 import GeoTracker from '@/components/GeoTracker';
 import AppShell from '@/components/layout/AppShell';
 import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getMessages } from 'next-intl/server';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import './globals.css';
 import localFont from 'next/font/local';
 
@@ -20,12 +20,8 @@ const notoSans = localFont({
 
 const APP_ICON = '/images/branding/appofa-app-icon.png';
 
-export const metadata = {
+const siteMetadata = {
   metadataBase: new URL(SITE_URL),
-  title: {
-    default: 'Απόφαση',
-    template: '%s | Απόφαση',
-  },
   description: 'Προτάσεις πολιτών, δημόσιες διαβουλεύσεις και παρακολούθηση της υλοποίησης στην κοινότητά σας',
   manifest: '/manifest.webmanifest',
   icons: {
@@ -45,7 +41,6 @@ export const metadata = {
     siteName: 'Απόφαση',
     title: 'Απόφαση',
     description: 'Προτάσεις πολιτών, δημόσιες διαβουλεύσεις και παρακολούθηση της υλοποίησης στην κοινότητά σας',
-    url: SITE_URL,
     images: [{ url: DEFAULT_OG_IMAGE, width: 1536, height: 1024, alt: 'Απόφαση' }],
   },
   twitter: {
@@ -55,6 +50,12 @@ export const metadata = {
     images: [DEFAULT_OG_IMAGE],
   },
 };
+
+export async function generateMetadata() {
+  const t = await getTranslations('common');
+  const brand = t('app_name');
+  return { ...siteMetadata, title: { default: brand, template: `%s | ${brand}` } };
+}
 
 export default async function RootLayout({ children }) {
   const locale = await getLocale();

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { MapPinIcon, PencilIcon } from '@heroicons/react/24/outline';
+import ExpandablePhoto from '@/components/ui/ExpandablePhoto';
 
 const TYPE_LABELS = { country: 'Χώρα', prefecture: 'Νομός / Περιφέρεια', municipality: 'Δήμος', electoral_district: 'Εκλογική περιφέρεια', international: 'Διεθνές' };
 
@@ -26,17 +27,20 @@ export default function LocationHeader({ location, imageError, setImageError, ca
     <>
     <div className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <div className="flex items-center gap-4 min-w-0">
-        {image && !imageError && <Image
-          src={image}
-          alt={name}
-          width={192}
-          height={192}
-          // Uploaded photos are already processed by the backend. Serve their
-          // versioned URLs directly, as in the editor, to avoid optimizer rejection.
-          unoptimized={Boolean(location.imageUrl)}
-          className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl object-cover shrink-0"
-          onError={() => setImageError(true)}
-        />}
+        {image && !imageError && (
+          <ExpandablePhoto src={image} name={name} className="rounded-2xl">
+            <Image
+              src={image}
+              alt={name}
+              width={192}
+              height={192}
+              // Uploaded photos are already processed by the backend.
+              unoptimized={Boolean(location.imageUrl)}
+              className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl object-cover"
+              onError={() => setImageError(true)}
+            />
+          </ExpandablePhoto>
+        )}
         {(!image || imageError) && <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-blue-100/70 text-blue-700"><MapPinIcon className="h-9 w-9" aria-hidden="true" /></div>}
         <div className="min-w-0">
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-blue-700">Η τοπική σου κοινότητα</p>

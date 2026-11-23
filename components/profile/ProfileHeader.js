@@ -1,9 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
-import { DEFAULT_AVATAR_COLOR } from '@/lib/constants/profile';
+import UserAvatar from '@/components/user/UserAvatar';
 
 /**
  * Displays the user's avatar, username, display name, and header actions.
@@ -22,37 +20,13 @@ import { DEFAULT_AVATAR_COLOR } from '@/lib/constants/profile';
  * @param {number} [props.followingCount]
  */
 export default function ProfileHeader({ username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, email, avatar, avatarColor, followersCount, followingCount }) {
-  const [avatarLoadError, setAvatarLoadError] = useState(false);
-
-  useEffect(() => {
-    setAvatarLoadError(false);
-  }, [avatar]);
-
   const nativeName = `${firstNameNative || ''} ${lastNameNative || ''}`.trim();
   const enName = `${firstNameEn || ''} ${lastNameEn || ''}`.trim();
   const displayName = nativeName || enName || nickname || '';
 
-  const initials = (username || email || 'U').slice(0, 1).toUpperCase();
-
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-      <div
-        className="h-20 w-20 rounded-full border border-gray-200 flex items-center justify-center text-white text-2xl font-semibold flex-shrink-0"
-        style={{ backgroundColor: avatarColor || DEFAULT_AVATAR_COLOR }}
-      >
-        {avatar && !avatarLoadError ? (
-          <Image
-            src={avatar}
-            alt={username || 'User'}
-            width={160}
-            height={160}
-            className="h-full w-full rounded-full object-cover"
-            onError={() => setAvatarLoadError(true)}
-          />
-        ) : (
-          <span>{initials}</span>
-        )}
-      </div>
+      <UserAvatar user={{ username: username || email || 'U', avatar, avatarColor }} size="h-20 w-20" textSize="text-2xl" showBadges={false} expandable />
       <div className="min-w-0 flex-1">
         <h1 className="text-2xl font-bold text-gray-900 truncate">
           {username || email || 'My Profile'}

@@ -12,6 +12,7 @@ export default getRequestConfig(async () => {
     messages: {
       ...(await import(`./messages/${resolvedLocale}.json`)).default,
       calendar: (await import(`./messages/calendar/${resolvedLocale}.json`)).default,
+      metadata: (await import(`./messages/metadata/${resolvedLocale}.json`)).default,
     },
   };
 });

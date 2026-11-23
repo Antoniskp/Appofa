@@ -1,7 +1,7 @@
 'use client';
 
 import FormInput from '@/components/ui/FormInput';
-import Image from 'next/image';
+import UserAvatar from '@/components/user/UserAvatar';
 
 // GitHub SVG icon
 function GithubIcon({ className }) {
@@ -75,7 +75,7 @@ export default function ProfileSecuritySection({
   avatarSourceUpdating,
   avatarSourceLabels = {
     avatarSource: 'Avatar Source',
-    chooseAvatarSource: 'Choose which connected account photo to use as your profile avatar.',
+    chooseAvatarSource: 'Use your uploaded photo or a photo from a connected account.',
     activeAvatar: 'Currently active avatar',
     useAvatar: 'Use this avatar',
     uploadedLabel: 'Uploaded',
@@ -261,13 +261,7 @@ export default function ProfileSecuritySection({
                         : 'border-gray-200 hover:border-blue-400 hover:bg-gray-50'
                     } disabled:opacity-60 disabled:cursor-not-allowed`}
                   >
-                    <Image
-                      src={option.avatar}
-                      alt={`${option.label} avatar`}
-                      width={80}
-                      height={80}
-                      className="w-10 h-10 rounded-full object-cover border border-gray-200"
-                    />
+                    <UserAvatar user={{ avatar: option.avatar, username: option.label }} showBadges={false} />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
                         {option.icon}

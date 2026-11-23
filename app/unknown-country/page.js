@@ -1,4 +1,7 @@
 import Link from 'next/link';
+import { privatePageMetadata } from '@/lib/route-metadata';
+
+export const generateMetadata = privatePageMetadata('metadata.unknownCountry');
 
 export default function UnknownCountryPage() {
   return (

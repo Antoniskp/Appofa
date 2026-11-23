@@ -1,10 +1,6 @@
-export const metadata = {
-  title: 'Ειδοποιήσεις',
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
+import { privatePageMetadata } from '@/lib/route-metadata';
+
+export const generateMetadata = privatePageMetadata('nav.notifications');
 
 export default function NotificationsLayout({ children }) {
   return children;
