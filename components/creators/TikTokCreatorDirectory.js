@@ -3,11 +3,13 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { MagnifyingGlassIcon, MapPinIcon, PlusIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, MapPinIcon, PlusIcon, UserPlusIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
 import LocationSelector from '@/components/ui/LocationSelector';
 import Pagination from '@/components/ui/Pagination';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { tiktokCreatorAPI } from '@/lib/api/tiktokCreators';
+import { useAuth } from '@/lib/auth-context';
+import { buildAuthPath } from '@/lib/auth-redirect';
 import { getTikTokProfileHandle, TIKTOK_CREATOR_CATEGORIES, TIKTOK_CREATOR_LOCATION_TYPES, tikTokProfileUrl } from '@/config/tiktokCreators';
 
 const fieldClass = 'min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-charcoal';
@@ -15,6 +17,7 @@ const buttonClass = 'inline-flex min-h-11 items-center justify-center gap-2 roun
 
 export default function TikTokCreatorDirectory({ initialCategory, initialLocationId, initialSearch }) {
   const t = useTranslations('tiktokCreators');
+  const { user } = useAuth();
   const [draft, setDraft] = useState({ q: initialSearch, category: initialCategory, locationId: initialLocationId });
   const [filters, setFilters] = useState(draft);
   const [page, setPage] = useState(1);
@@ -74,25 +77,38 @@ export default function TikTokCreatorDirectory({ initialCategory, initialLocatio
           <h1 className="text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">{t('title')}</h1>
           <p className="mt-2 max-w-2xl text-gray-600">{t('subtitle')}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/live" className={`${buttonClass} border border-brand-border bg-white text-copper hover:bg-ivory`}>
-            <VideoCameraIcon className="h-5 w-5" aria-hidden="true" />{t('liveMap')}
-          </Link>
+        <Link href="/live" className={`${buttonClass} border border-brand-border bg-white text-copper hover:bg-ivory`}>
+          <VideoCameraIcon className="h-5 w-5" aria-hidden="true" />{t('liveMap')}
+        </Link>
+      </header>
+
+      <div className="mb-6 grid divide-y divide-brand-border rounded-2xl border border-brand-border bg-white sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+        <section aria-labelledby="tiktok-account-benefits" className="p-5">
+          <h2 id="tiktok-account-benefits" className="text-lg font-bold text-charcoal">{t('accountTitle')}</h2>
+          <p className="mt-1 text-sm leading-6 text-gray-600">{t('accountBenefit')}</p>
+          {!user && (
+            <Link href={buildAuthPath('/register', '/creators')} className={`${buttonClass} mt-3 bg-copper text-white hover:bg-[#693a28]`}>
+              <UserPlusIcon className="h-5 w-5" aria-hidden="true" />{t('signUp')}
+            </Link>
+          )}
+        </section>
+        <section aria-labelledby="tiktok-listing-benefits" className="p-5">
+          <h2 id="tiktok-listing-benefits" className="text-lg font-bold text-charcoal">{t('listingTitle')}</h2>
+          <p className="mt-1 text-sm leading-6 text-gray-600">{t('listingBenefit')}</p>
           <button type="button" aria-expanded={suggesting} aria-controls="suggest-tiktok-creator" disabled={submitting}
-            className={`${buttonClass} bg-copper text-white hover:bg-[#693a28]`} onClick={() => {
+            className={`${buttonClass} mt-3 border border-brand-border text-copper hover:bg-ivory`} onClick={() => {
               setNotice(null);
               setSuggesting(!suggesting);
               setSubmissionLocationId(draft.locationId);
             }}>
             <PlusIcon className="h-5 w-5" aria-hidden="true" />{t(suggesting ? 'close' : 'suggest')}
           </button>
-        </div>
-      </header>
+        </section>
+      </div>
 
       {suggesting && (
         <section id="suggest-tiktok-creator" aria-labelledby="suggest-tiktok-title" className="mb-6 rounded-2xl border border-brand-border bg-white p-5 sm:p-6">
           <h2 id="suggest-tiktok-title" className="text-lg font-bold text-charcoal">{t('suggest')}</h2>
-          <p className="mt-1 text-sm text-gray-600">{t('suggestHint')}</p>
           <form onSubmit={submitCreator} className="mt-4">
             <fieldset disabled={submitting} className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-1 text-sm font-medium">{t('profile')}

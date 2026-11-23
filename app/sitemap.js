@@ -36,6 +36,7 @@ const STATIC_ROUTES = [
   { url: '/economy', priority: 0.6, changeFrequency: 'weekly' },
   { url: '/education', priority: 0.6, changeFrequency: 'weekly' },
   { url: '/education/ai', priority: 0.6, changeFrequency: 'monthly' },
+  { url: '/education/digital-tools', priority: 0.6, changeFrequency: 'monthly' },
   { url: '/price-comparison', priority: 0.6, changeFrequency: 'weekly' },
   { url: '/car-transfer', priority: 0.6, changeFrequency: 'monthly' },
   { url: '/boat-transfer', priority: 0.6, changeFrequency: 'monthly' },

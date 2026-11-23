@@ -1,6 +1,10 @@
 import Link from 'next/link';
+import { BookOpenIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
+import { useLocale } from 'next-intl';
 
 import StaticPageLayout from '@/components/StaticPageLayout';
+import { getDirectoryContent } from './digital-tools/content';
+import { directoryPath } from './digital-tools/tools';
 
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
@@ -23,7 +27,35 @@ export const metadata = {
   },
 };
 
+const projectCopy = {
+  el: {
+    title: 'Appofasistis · Βιβλιοθήκη ελληνικής νομοθεσίας',
+    local: 'Το Appofasistis είναι εφαρμογή για Windows που ανοίγει στον browser και λειτουργεί αυτόνομα. Μπορείς να αναζητήσεις ελληνική νομοθεσία, να περιηγηθείς σε επιλεγμένα ΦΕΚ, να ακολουθήσεις παραπομπές μεταξύ διατάξεων και να αποθηκεύσεις PDF ή σημειώσεις στον υπολογιστή σου.',
+    connected: 'Με προαιρετική σύνδεση και ειδικά διαπιστευτήρια από την Απόφαση, ο υπολογιστής σου μπορεί να αναλάβει εργασίες όπως προεπισκοπήσεις συνδέσμων και υπολογισμούς για ψηφοφορίες. Όταν η κοινόχρηστη συλλογή είναι διαθέσιμη, η διαδικτυακή Νομική Βιβλιοθήκη προσφέρει πρόσβαση μόνο για ανάγνωση με επιβεβαιωμένο email.',
+    project: 'Κώδικας και εγκατάσταση στο GitHub',
+    reader: 'Διαδικτυακή Νομική Βιβλιοθήκη',
+  },
+  en: {
+    title: 'Appofasistis · Greek law library',
+    local: 'Appofasistis is a standalone Windows app that opens in your browser. Search Greek legislation, browse selected Government Gazette issues, follow citations between provisions, and save PDFs or personal notes on your computer.',
+    connected: 'With credentials from Appofa, you can optionally connect your computer to handle jobs such as generating link previews and calculating poll statistics. The online Legal Library offers read-only access to the shared collection when it is online. A verified email is required.',
+    project: 'Code and installation on GitHub',
+    reader: 'Online Legal Library',
+  },
+  ro: {
+    title: 'Appofasistis · Bibliotecă de legislație greacă',
+    local: 'Appofasistis este o aplicație autonomă pentru Windows, care se deschide în browser. Poți căuta în legislația greacă, consulta ediții selectate ale Monitorului Oficial al Greciei, urmări trimiteri între dispoziții și salva PDF-uri sau notițe pe calculator.',
+    connected: 'Cu date de acces de la Appofa, poți conecta opțional calculatorul pentru sarcini precum generarea previzualizărilor și calcularea statisticilor sondajelor. Biblioteca juridică online oferă acces doar pentru citire când colecția partajată este disponibilă. Este necesară o adresă de e-mail verificată.',
+    project: 'Cod și instalare pe GitHub',
+    reader: 'Biblioteca juridică online',
+  },
+};
+
 export default function EducationPage() {
+  const locale = useLocale();
+  const directory = getDirectoryContent(locale);
+  const project = projectCopy[locale] ?? projectCopy.el;
+
   return (
     <StaticPageLayout title="Εκπαίδευση" maxWidth="max-w-4xl" breadcrumb={<Link href="/pages" className="text-gray-500 hover:text-blue-600 transition-colors">← Σελίδες</Link>}>
       <section>
@@ -31,6 +63,15 @@ export default function EducationPage() {
           Η εκπαίδευση είναι θεμέλιο κάθε κοινωνίας. Εδώ παρουσιάζουμε πληροφορίες για το ελληνικό
           εκπαιδευτικό σύστημα, τις προκλήσεις που αντιμετωπίζει και προτάσεις βελτίωσης.
         </p>
+      </section>
+
+      <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 sm:p-6">
+        <div className="flex items-center gap-3">
+          <Squares2X2Icon className="h-6 w-6 shrink-0 text-emerald-800" aria-hidden="true" />
+          <h2 className="text-xl font-semibold text-emerald-950">{directory.title}</h2>
+        </div>
+        <p className="my-3 text-gray-700">{directory.intro}</p>
+        <Link href={directoryPath} className="inline-flex min-h-11 items-center rounded-lg bg-emerald-900 px-4 py-2 font-semibold text-white hover:bg-emerald-950">{directory.browse}</Link>
       </section>
 
       <section>
@@ -134,6 +175,19 @@ export default function EducationPage() {
           >
             🚀 Εξερεύνησε τα Δωρεάν Εργαλεία AI →
           </Link>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-brand-border bg-ivory p-5 sm:p-6" aria-labelledby="appofasistis">
+        <div className="flex items-center gap-3">
+          <BookOpenIcon className="h-6 w-6 shrink-0 text-copper" aria-hidden="true" />
+          <h2 id="appofasistis" className="text-xl font-semibold">{project.title}</h2>
+        </div>
+        <p className="mt-3 text-gray-700">{project.local}</p>
+        <p className="mt-3 text-gray-700">{project.connected}</p>
+        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1">
+          <a href="https://github.com/Antoniskp/Appofasistis" className="inline-flex min-h-11 items-center font-semibold text-copper underline underline-offset-4">{project.project}</a>
+          <a href="/laws" className="inline-flex min-h-11 items-center font-semibold text-copper underline underline-offset-4">{project.reader}</a>
         </div>
       </section>
 
