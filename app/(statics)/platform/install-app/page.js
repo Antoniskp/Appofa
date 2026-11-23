@@ -10,7 +10,7 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Πρόσθεσέ μας στην Αρχική σου | Appofasi',
+  title: 'Πρόσθεσέ μας στην Αρχική σου',
   description:
     'Μάθε πώς να προσθέσεις το Appofasi στην αρχική οθόνη του κινητού σου και να το χρησιμοποιείς σαν εφαρμογή — χωρίς λήψη.',
   openGraph: {

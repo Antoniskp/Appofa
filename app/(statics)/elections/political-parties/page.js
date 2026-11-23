@@ -5,7 +5,7 @@ import PoliticalPartyComparison from '@/components/political/PoliticalPartyCompa
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Πολιτικά Κόμματα στην Ελλάδα | Appofasi',
+  title: 'Πολιτικά Κόμματα στην Ελλάδα',
   description:
     'Σύγκριση κομματικών οργανώσεων στην Appofasi με φιλοσοφία, ανθρώπους, δημόσια στατιστικά και συνδέσμους.',
   openGraph: {

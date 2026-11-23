@@ -4,6 +4,7 @@ import robots from '@/app/robots';
 import { generateMetadata as newsMetadata } from '@/app/news/[id]/page';
 import { generateMetadata as articleMetadata } from '@/app/articles/[id]/page';
 import { generateMetadata as suggestionMetadata } from '@/app/suggestions/[id]/page';
+import { generateMetadata as videoMetadata } from '@/app/videos/[id]/page';
 
 jest.mock('@/app/news/[id]/NewsDetailClient', () => () => null);
 jest.mock('@/app/articles/[id]/ArticleDetailClient', () => () => null);
@@ -44,6 +45,22 @@ test('suggestion metadata resolves promised parameters', async () => {
   const result = await suggestionMetadata({ params: Promise.resolve({ id: '17' }) });
   expect(result.alternates.canonical).toBe(`${SITE_URL}/suggestions/17`);
   expect(result.title).toBe('Safer streets');
+});
+
+test('video metadata and the sitemap use the same detail URL', async () => {
+  const video = { id: 42, title: 'Public transport', type: 'video', summary: 'Better buses' };
+  global.fetch = jest.fn(async (url) => ({
+    ok: true,
+    json: async () => ({ data: new URL(url).pathname === '/api/articles/42'
+      ? { article: video }
+      : { articles: [video] } }),
+  }));
+
+  const metadata = await videoMetadata({ params: Promise.resolve({ id: '42-public-transport' }) });
+  const canonical = `${SITE_URL}/videos/42-public-transport`;
+  expect(metadata.title).toBe(video.title);
+  expect(metadata.alternates.canonical).toBe(canonical);
+  expect((await sitemap()).map(entry => entry.url)).toContain(canonical);
 });
 
 test('sitemap follows capped API pages, deduplicates and omits unknown dates', async () => {

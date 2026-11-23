@@ -6,7 +6,7 @@ const title = 'Ευρωβουλευτές & Βουλευτές Επικρατε�
 const description = 'Πόσους ευρωβουλευτές εκλέγει η Ελλάδα, πότε ψηφίζουμε, πώς λειτουργεί το ψηφοδέλτιο Επικρατείας και πώς αναδεικνύονται άλλα δημόσια αξιώματα.';
 
 export const metadata = {
-  title: `${title} | Appofasi`,
+  title: title,
   description,
   openGraph: { title, description, url: `${SITE_URL}/elections/representation`, type: 'website' },
   twitter: { card: 'summary', title, description },

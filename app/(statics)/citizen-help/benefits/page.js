@@ -3,7 +3,7 @@ import StaticPageLayout from '@/components/StaticPageLayout';
 import BenefitsGuide from '@/components/benefits/BenefitsGuide';
 
 export const metadata = {
-  title: 'Επιδόματα — δικαιούχοι, αιτήσεις & ημερολόγιο | Appofasi',
+  title: 'Επιδόματα — δικαιούχοι, αιτήσεις & ημερολόγιο',
   description: 'Οδηγός επιδομάτων στην Ελλάδα: οικογένεια, ανεργία, στέγαση, αναπηρία, ηλικιωμένοι και σπουδές. Προϋποθέσεις, δικαιολογητικά και επίσημες προθεσμίες.',
   alternates: { canonical: '/citizen-help/benefits' },
 };

@@ -4,7 +4,7 @@ import StaticPageLayout from '@/components/StaticPageLayout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Τεχνητή Νοημοσύνη (AI) — Δωρεάν Εργαλεία & Λύσεις | Απόφαση',
+  title: 'Τεχνητή Νοημοσύνη (AI) — Δωρεάν Εργαλεία & Λύσεις',
   description:
     'Δωρεάν εργαλεία AI για γραφή, έρευνα, κώδικα, εικόνες, μετάφραση και μάθηση — συν πρακτικοί οδηγοί για κάθε χρήση.',
   openGraph: {

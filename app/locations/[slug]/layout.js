@@ -43,7 +43,7 @@ export async function generateMetadata({ params }) {
   const image = absoluteImageUrl(location?.image_url || location?.imageUrl);
 
   return {
-    title: `${name} - Απόφαση`,
+    title: name,
     description,
     alternates: { canonical: canonicalUrl },
     openGraph: {

@@ -25,6 +25,7 @@ const siteMetadata = {
   description: 'Προτάσεις πολιτών, δημόσιες διαβουλεύσεις και παρακολούθηση της υλοποίησης στην κοινότητά σας',
   manifest: '/manifest.webmanifest',
   icons: {
+    icon: [{ url: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' }],
     apple: [{ url: APP_ICON, sizes: '512x512', type: 'image/png' }],
   },
   appleWebApp: {

@@ -12,7 +12,7 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Υπευθυνότητες | Appofasi',
+  title: 'Υπευθυνότητες',
   description:
     'Ποιος είναι υπεύθυνος για τι στην πλατφόρμα Appofasi — ρόλοι, αποφάσεις, περιεχόμενο και ασφάλεια.',
   openGraph: {

@@ -12,7 +12,7 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Κανόνες Παραγωγής | Appofasi',
+  title: 'Κανόνες Παραγωγής',
   description:
     'Κανόνες και πρότυπα για αλλαγές κώδικα, deployment και ποιότητα στην πλατφόρμα Appofasi.',
   openGraph: {

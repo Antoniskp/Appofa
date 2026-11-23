@@ -5,7 +5,7 @@ import categoriesData from '@/config/articleCategories.json';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Κατηγορίες - Απόφαση',
+  title: 'Κατηγορίες',
   description: 'Όλες οι κατηγορίες άρθρων, ειδήσεων και ψηφοφοριών της πλατφόρμας Απόφαση.',
   openGraph: {
     title: 'Κατηγορίες - Απόφαση',

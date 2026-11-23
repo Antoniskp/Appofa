@@ -41,7 +41,7 @@ export async function generateMetadata({ params }) {
   const poll = await fetchPoll(id);
   if (!poll) {
     return {
-      title: 'Δημοσκόπηση | Απόφαση',
+      title: 'Δημοσκόπηση',
       alternates: { canonical: `${SITE_URL}/polls/${id}` },
     };
   }

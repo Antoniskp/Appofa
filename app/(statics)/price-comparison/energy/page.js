@@ -4,7 +4,7 @@ import StaticPageLayout from '@/components/StaticPageLayout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Σύγκριση Τιμών Ενέργειας - Απόφαση',
+  title: 'Σύγκριση Τιμών Ενέργειας',
   description: 'Σύγκριση τιμών παρόχων ηλεκτρικής ενέργειας στην Ελλάδα. Χρεώσεις kWh, πάγια, εκπτώσεις και πράσινη ενέργεια για ΔΕΗ, Protergia, Elpedison, Ηρών, Volton, NRG, Watt+Volt, Zenith.',
   openGraph: {
     title: 'Σύγκριση Τιμών Ενέργειας - Απόφαση',

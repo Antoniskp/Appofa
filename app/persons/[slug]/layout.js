@@ -36,7 +36,7 @@ export async function generateMetadata({ params }) {
   const profile = await fetchPerson(slug);
   if (!profile) {
     return {
-      title: 'Πρόσωπο | Απόφαση',
+      title: 'Πρόσωπο',
       alternates: { canonical: `${SITE_URL}/persons/${slug}` },
     };
   }

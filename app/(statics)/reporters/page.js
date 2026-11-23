@@ -4,7 +4,7 @@ import StaticPageLayout from '@/components/StaticPageLayout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Δημοσιογράφοι & Συντάκτες - Απόφαση',
+  title: 'Δημοσιογράφοι & Συντάκτες',
   description: 'Πώς να υποβάλετε αίτηση, οδηγίες δημοσίευσης και κατευθυντήριες γραμμές για δημοσιογράφους στο Apofasi.',
   openGraph: {
     title: 'Δημοσιογράφοι & Συντάκτες - Απόφαση',

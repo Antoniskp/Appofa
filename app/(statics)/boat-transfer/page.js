@@ -4,7 +4,7 @@ import StaticPageLayout from '@/components/StaticPageLayout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Αγορά & Μεταβίβαση Σκάφους - Απόφαση',
+  title: 'Αγορά & Μεταβίβαση Σκάφους',
   description: 'Πλήρης οδηγός για την αγορά, πώληση και μεταβίβαση σκάφους αναψυχής στην Ελλάδα. Έγγραφα, κόστη, νηολόγηση, διαδικασία βήμα-βήμα και χρήσιμοι σύνδεσμοι.',
   openGraph: {
     title: 'Αγορά & Μεταβίβαση Σκάφους - Απόφαση',

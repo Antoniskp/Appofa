@@ -6,7 +6,7 @@ const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export async function generateMetadata() {
   const tStatic = await getTranslations('static_pages');
-  const title = tStatic('instructions_meta_title');
+  const title = tStatic('instructions_title');
   const description = tStatic('instructions_meta_description');
 
   return {

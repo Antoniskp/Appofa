@@ -11,7 +11,7 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Ρόλοι & Δικαιώματα | Appofasi',
+  title: 'Ρόλοι & Δικαιώματα',
   description:
     'Πλήρης οδηγός ρόλων χρηστών της πλατφόρμας Appofasi — Viewer, Editor, Moderator και Admin με αναλυτικό πίνακα δικαιωμάτων.',
   openGraph: {

@@ -38,7 +38,7 @@ export async function generateMetadata({ params }) {
   }
 
   return {
-    title: 'Ιδανική Κυβέρνηση — Appofasi',
+    title: 'Ιδανική Κυβέρνηση',
     description: 'Δείτε μια ιδανική κυβέρνηση στο Appofasi.',
   };
 }

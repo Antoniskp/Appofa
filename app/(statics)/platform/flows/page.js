@@ -5,7 +5,7 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Ροές Εφαρμογής | Appofasi',
+  title: 'Ροές Εφαρμογής',
   description:
     'Κατανοήστε τις κύριες ροές της εφαρμογής Appofasi — εγγραφή, δημιουργία άρθρου, έγκριση ειδήσεων, δημοσκοπήσεις και περισσότερα.',
   openGraph: {

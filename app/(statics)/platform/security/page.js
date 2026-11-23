@@ -12,7 +12,7 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Ασφάλεια Πλατφόρμας | Appofasi',
+  title: 'Ασφάλεια Πλατφόρμας',
   description:
     'Επισκόπηση των μέτρων ασφάλειας της πλατφόρμας Appofasi — αυθεντικοποίηση, CSRF, rate limiting, κρυπτογράφηση και προστασία δεδομένων.',
   openGraph: {

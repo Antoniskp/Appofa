@@ -1,9 +1,6 @@
-import { getTranslations } from 'next-intl/server';
+import { publicPageMetadata } from '@/lib/route-metadata';
 
-export async function generateMetadata() {
-  const t = await getTranslations('civicQuestions.list');
-  return { title: t('title'), description: t('intro'), alternates: { canonical: '/civic-questions' } };
-}
+export const generateMetadata = publicPageMetadata('civicQuestions.list.title', 'civicQuestions.list.intro', '/civic-questions');
 
 export default function CivicQuestionsLayout({ children }) {
   return children;

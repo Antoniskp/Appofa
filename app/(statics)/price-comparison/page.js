@@ -4,7 +4,7 @@ import StaticPageLayout from '@/components/StaticPageLayout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Σύγκριση Τιμών - Απόφαση',
+  title: 'Σύγκριση Τιμών',
   description: 'Πληροφορίες και αναλύσεις για τις τιμές καταναλωτικών αγαθών στην Ελλάδα.',
   openGraph: {
     title: 'Σύγκριση Τιμών - Απόφαση',

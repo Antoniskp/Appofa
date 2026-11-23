@@ -4,7 +4,7 @@ import StaticPageLayout from '@/components/StaticPageLayout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Πολιτική Απορρήτου - Απόφαση',
+  title: 'Πολιτική Απορρήτου',
   description: 'Πώς συλλέγουμε, χρησιμοποιούμε και προστατεύουμε τα προσωπικά σας δεδομένα',
   openGraph: {
     title: 'Πολιτική Απορρήτου - Απόφαση',

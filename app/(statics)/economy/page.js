@@ -6,7 +6,7 @@ const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 export const revalidate = 21600;
 
 export const metadata = {
-  title: 'Οικονομία - Απόφαση',
+  title: 'Οικονομία',
   description: 'Ζωντανοί δείκτες, απλές εξηγήσεις και σύγκριση της ελληνικής οικονομίας με την Ευρώπη.',
   openGraph: {
     title: 'Οικονομία - Απόφαση',

@@ -4,7 +4,7 @@ import StaticPageLayout from '@/components/StaticPageLayout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Όροι Χρήσης - Απόφαση',
+  title: 'Όροι Χρήσης',
   description: 'Όροι και προϋποθέσεις χρήσης της πλατφόρμας Απόφαση',
   openGraph: {
     title: 'Όροι Χρήσης - Απόφαση',

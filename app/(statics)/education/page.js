@@ -5,7 +5,7 @@ import StaticPageLayout from '@/components/StaticPageLayout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Εκπαίδευση - Απόφαση',
+  title: 'Εκπαίδευση',
   description: 'Το εκπαιδευτικό σύστημα, προκλήσεις και προτάσεις για τη βελτίωσή του.',
   openGraph: {
     title: 'Εκπαίδευση - Απόφαση',

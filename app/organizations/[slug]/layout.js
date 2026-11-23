@@ -29,7 +29,7 @@ export async function generateMetadata({ params }) {
   const organization = await fetchOrganization(slug);
   if (!organization) {
     return {
-      title: 'Οργάνωση | Απόφαση',
+      title: 'Οργάνωση',
       alternates: { canonical: `${SITE_URL}/organizations/${slug}` },
     };
   }

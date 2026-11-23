@@ -32,7 +32,7 @@ export async function generateMetadata({ params }) {
   const { id } = await params;
   const article = await fetchArticle(id);
   if (!article) {
-    return { title: 'Είδηση | Απόφαση' };
+    return { title: 'Είδηση' };
   }
 
   const slug = idSlug(article.id, article.title);

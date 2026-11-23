@@ -4,7 +4,7 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Τεχνολογίες Πλατφόρμας | Appofasi',
+  title: 'Τεχνολογίες Πλατφόρμας',
   description:
     'Οι τεχνολογίες που χρησιμοποιεί η πλατφόρμα Appofasi, με ομαδοποιημένη παρουσίαση και συνδέσμους προς κάθε εργαλείο.',
   openGraph: {

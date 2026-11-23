@@ -4,7 +4,7 @@ import StaticPageLayout from '@/components/StaticPageLayout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Σχετικά με εμάς - Απόφαση',
+  title: 'Σχετικά με εμάς',
   description: 'Η ιστορία, το όραμα και η ομάδα πίσω από την πλατφόρμα Απόφαση',
   openGraph: {
     title: 'Σχετικά με εμάς - Απόφαση',

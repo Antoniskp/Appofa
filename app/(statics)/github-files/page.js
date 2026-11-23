@@ -4,7 +4,7 @@ import StaticPageLayout from '@/components/StaticPageLayout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Αρχεία GitHub - Απόφαση',
+  title: 'Αρχεία GitHub',
   description:
     'Αρχεία του αποθετηρίου που αλλάζουν συχνά — κατηγορίες, χρώματα, μεταφράσεις και ρυθμίσεις.',
   openGraph: {

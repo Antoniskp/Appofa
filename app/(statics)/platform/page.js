@@ -28,7 +28,7 @@ import {
 import { StaticPageLayout } from '@/components/layout';
 
 export const metadata = {
-  title: 'Πλατφόρμα | Appofasi',
+  title: 'Πλατφόρμα',
   description: 'Μάθετε περισσότερα για την πλατφόρμα Appofasi — αποστολή, κανόνες, συνεισφορά και επικοινωνία.',
 };
 

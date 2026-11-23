@@ -4,7 +4,7 @@ import StaticPageLayout from '@/components/StaticPageLayout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Αγορά & Μεταβίβαση Ακινήτου - Απόφαση',
+  title: 'Αγορά & Μεταβίβαση Ακινήτου',
   description: 'Πλήρης οδηγός για την αγορά, πώληση και μεταβίβαση ακινήτου (γης, κατοικίας, κτιρίου) στην Ελλάδα. Έγγραφα, κόστη, φόροι, συμβολαιογράφος, Κτηματολόγιο και χρήσιμοι σύνδεσμοι.',
   openGraph: {
     title: 'Αγορά & Μεταβίβαση Ακινήτου - Απόφαση',

@@ -25,7 +25,7 @@ export async function generateMetadata({ params }) {
   const suggestion = await fetchSuggestion(id);
   if (!suggestion) {
     return {
-      title: 'Πρόταση | Απόφαση',
+      title: 'Πρόταση',
       alternates: { canonical: `${SITE_URL}/suggestions/${id}` },
     };
   }

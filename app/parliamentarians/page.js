@@ -5,7 +5,7 @@ import ParliamentarianDirectory from '@/components/political/ParliamentarianDire
 const districtsGeoJson = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'config', 'map-data', 'electoral-districts.geojson'), 'utf8'));
 
 export const metadata = {
-  title: 'Βουλευτές | Appofasi',
+  title: 'Βουλευτές',
   description: 'Αναζητήστε τους βουλευτές ανά κόμμα και εκλογική περιφέρεια.',
 };
 

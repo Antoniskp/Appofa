@@ -12,7 +12,7 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Εκλογές & Πολιτική | Appofasi',
+  title: 'Εκλογές & Πολιτική',
   description:
     'Πληροφορίες για τις εκλογές, τα πολιτικά κόμματα, τους αξιωματούχους και τους θεσμούς της Ελληνικής Δημοκρατίας.',
   openGraph: {

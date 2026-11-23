@@ -4,7 +4,7 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Κόστος & Ώρες Ανάπτυξης | Appofasi',
+  title: 'Κόστος & Ώρες Ανάπτυξης',
   description:
     'Εκτιμώμενο κόστος ανάπτυξης και συντήρησης της πλατφόρμας Appofasi — ώρες εργασίας ανά ενότητα, ετήσιες ώρες συντήρησης και εύρος κόστους.',
   openGraph: {

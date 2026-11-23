@@ -4,7 +4,7 @@ import StaticPageLayout from '@/components/StaticPageLayout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Αγορά & Μεταβίβαση Αυτοκινήτου - Απόφαση',
+  title: 'Αγορά & Μεταβίβαση Αυτοκινήτου',
   description: 'Πλήρης οδηγός για την αγορά, πώληση και μεταβίβαση αυτοκινήτου στην Ελλάδα. Έγγραφα, κόστη, φόροι, διαδικασία βήμα-βήμα και χρήσιμοι σύνδεσμοι.',
   openGraph: {
     title: 'Αγορά & Μεταβίβαση Αυτοκινήτου - Απόφαση',

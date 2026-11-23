@@ -14,7 +14,7 @@ import { StaticPageLayout } from '@/components/layout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Χαρακτηριστικά Πλατφόρμας | Appofasi',
+  title: 'Χαρακτηριστικά Πλατφόρμας',
   description:
     'Ανακαλύψτε όλα τα χαρακτηριστικά της πλατφόρμας Appofasi — ειδήσεις, δημοσκοπήσεις, τοποθεσίες, ασφάλεια και περισσότερα.',
   openGraph: {

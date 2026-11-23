@@ -4,7 +4,7 @@ import StaticPageLayout from '@/components/StaticPageLayout';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Σύγκριση Τιμών Τηλεπικοινωνιών - Απόφαση',
+  title: 'Σύγκριση Τιμών Τηλεπικοινωνιών',
   description: 'Σύγκριση τιμών παρόχων τηλεπικοινωνιών στην Ελλάδα. Πακέτα κινητής, internet και σταθερής τηλεφωνίας για Cosmote, Vodafone, Nova, CYTA, INALAN και HCN.',
   openGraph: {
     title: 'Σύγκριση Τιμών Τηλεπικοινωνιών - Απόφαση',

@@ -8,7 +8,7 @@ import badges from '@/config/badges.json';
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
 export const metadata = {
-  title: 'Badges & Επιτεύγματα | Appofasi',
+  title: 'Badges & Επιτεύγματα',
   description:
     'Ανακαλύψτε το σύστημα badges της πλατφόρμας Appofasi — κερδίστε επιτεύγματα για τη δραστηριότητά σας. Τρία επίπεδα: Χάλκινο, Ασημένιο, Χρυσό.',
   openGraph: {
