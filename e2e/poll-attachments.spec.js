@@ -1,5 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const sharp = require('sharp');
+const { common: { photoViewer } } = require('../messages/el.json');
 
 test('poll attachments upload, preview, edit and respect visibility on desktop and mobile', async ({ page, context, playwright }, testInfo) => {
   await context.addCookies([{ name: 'NEXT_LOCALE', value: 'el', domain: '127.0.0.1', path: '/' }]);
@@ -44,10 +45,13 @@ test('poll attachments upload, preview, edit and respect visibility on desktop a
   await expect(page).toHaveURL(new RegExp(`/polls/${poll.id}`));
   const gallery = page.getByRole('region', { name: 'Φωτογραφίες και έγγραφα δημοσκόπησης' });
   await expect(gallery.getByText('Current park layout')).toBeVisible();
-  await gallery.getByRole('button', { name: 'Μεγέθυνση: Park today' }).click();
-  await expect(page.getByRole('dialog', { name: 'Park today' })).toBeVisible();
-  await page.getByRole('button', { name: 'Κλείσιμο', exact: true }).click();
-  await expect(gallery.locator('dialog')).not.toBeVisible();
+  const photoLabel = photoViewer.view.replace('{name}', 'Park today');
+  await gallery.getByRole('button', { name: photoLabel, exact: true }).click();
+  const viewer = page.getByRole('dialog', { name: photoLabel, exact: true });
+  await expect(viewer).toBeVisible();
+  await expect(viewer.getByRole('img')).toHaveJSProperty('naturalWidth', 800);
+  await viewer.getByRole('button', { name: photoViewer.close, exact: true }).click();
+  await expect(viewer).toBeHidden();
   for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport);
     await gallery.scrollIntoViewIfNeeded();
