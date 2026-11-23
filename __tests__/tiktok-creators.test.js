@@ -7,6 +7,7 @@ const authRoutes = require('../src/routes/authRoutes');
 const creatorRoutes = require('../src/routes/tiktokCreatorRoutes');
 const videoPinRoutes = require('../src/routes/videoPinRoutes');
 const creatorMigration = require('../src/migrations/20261123000001-create-tiktok-creators');
+const optionalMetadataMigration = require('../src/migrations/20261123000002-make-tiktok-creator-metadata-optional');
 
 const app = express();
 app.use(express.json());
@@ -35,9 +36,13 @@ describe('TikTok directory and creator stream pins', () => {
     await sequelize.sync();
     // Exercise the deployed migration schema alongside the other synced models.
     await TikTokCreator.drop();
-    await creatorMigration.up(sequelize.getQueryInterface(), sequelize.Sequelize);
+    const queryInterface = sequelize.getQueryInterface();
+    await creatorMigration.up(queryInterface, sequelize.Sequelize);
     region = await Location.create({ name: 'Attica', slug: 'attica', type: 'prefecture' });
     town = await Location.create({ name: 'Athens', slug: 'athens', type: 'municipality', parent_id: region.id });
+    const existing = await TikTokCreator.create({ handle: 'existing_creator', category: 'gaming', locationId: town.id, status: 'rejected' });
+    await optionalMetadataMigration.up(queryInterface, sequelize.Sequelize);
+    expect(await TikTokCreator.findByPk(existing.id)).toMatchObject({ handle: 'existing_creator', category: 'gaming', locationId: town.id });
     staff = await staffHeaders();
   });
 
@@ -51,10 +56,10 @@ describe('TikTok directory and creator stream pins', () => {
     await request(app).post(directoryUrl).send({ ...profile, profile: '@civic_voice' }).expect(409);
     await request(app).post(directoryUrl).send({ ...profile, profile: 'https://www.tiktok.com.example/@other' }).expect(400);
     await request(app).get(`${directoryUrl}/review`).expect(401);
-    const pending = await request(app).get(directoryUrl).query({ status: 'pending' }).expect(200);
+    const pending = await request(app).get(directoryUrl).query({ status: 'pending', q: profile.displayName }).expect(200);
     expect(pending.body.data.creators).toEqual([]);
 
-    const queue = await request(app).get(`${directoryUrl}/review`).set(staff).expect(200);
+    const queue = await request(app).get(`${directoryUrl}/review`).set(staff).query({ q: profile.displayName }).expect(200);
     const [suggestion] = queue.body.data.creators;
     expect(suggestion).toMatchObject({ handle: 'civic_voice', status: 'pending' });
     await request(app).put(`${directoryUrl}/review/${suggestion.id}`).set(staff)
@@ -73,8 +78,35 @@ describe('TikTok directory and creator stream pins', () => {
       .send({ status: 'rejected', expectedStatus: 'pending' }).expect(409);
     await request(app).put(`${directoryUrl}/review/${suggestion.id}`).set(staff)
       .send({ status: 'rejected', expectedStatus: 'approved' }).expect(200);
-    const hidden = await request(app).get(directoryUrl).expect(200);
+    const hidden = await request(app).get(directoryUrl).query({ q: profile.displayName }).expect(200);
     expect(hidden.body.data.creators).toEqual([]);
+  });
+
+  test.each([
+    { handle: 'profile_only', input: {}, category: null, hasArea: false },
+    { handle: 'profile_with_area', input: { category: '' }, category: null, hasArea: true },
+    { handle: 'profile_with_category', input: { category: 'sports', locationId: null }, category: 'sports', hasArea: false },
+  ])('lets guests suggest $handle and keeps it searchable after approval', async ({ handle, input, category, hasArea }) => {
+    const locationId = hasArea ? town.id : null;
+    await request(app).post(directoryUrl).send({ profile: `@${handle}`, ...input, ...(hasArea && { locationId }) }).expect(201);
+    const queue = await request(app).get(`${directoryUrl}/review`).set(staff).query({ q: handle }).expect(200);
+    const [suggestion] = queue.body.data.creators;
+    expect(suggestion).toMatchObject({ handle, category, locationId, status: 'pending' });
+    await request(app).put(`${directoryUrl}/review/${suggestion.id}`).set(staff)
+      .send({ status: 'approved', expectedStatus: 'pending' }).expect(200);
+
+    const byHandle = await request(app).get(directoryUrl).query({ q: handle }).expect(200);
+    expect(byHandle.body.data.creators).toHaveLength(1);
+    expect(byHandle.body.data.creators[0]).toMatchObject({ handle, category, locationId });
+    const byCategory = await request(app).get(directoryUrl).query({ q: handle, category: 'sports' }).expect(200);
+    expect(byCategory.body.data.creators).toHaveLength(category ? 1 : 0);
+    const byRegion = await request(app).get(directoryUrl).query({ q: handle, locationId: region.id }).expect(200);
+    expect(byRegion.body.data.creators).toHaveLength(hasArea ? 1 : 0);
+  });
+
+  test('rejects invalid optional metadata when it is supplied', async () => {
+    await request(app).post(directoryUrl).send({ profile: '@invalid_creator', category: 'unknown' }).expect(400);
+    await request(app).post(directoryUrl).send({ profile: '@invalid_creator', locationId: 'unknown' }).expect(400);
   });
 
   test('matches direct TikTok LIVE links by handle without leaking pending or expired streams', async () => {

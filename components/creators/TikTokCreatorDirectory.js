@@ -50,8 +50,8 @@ export default function TikTokCreatorDirectory({ initialCategory, initialLocatio
     event.preventDefault();
     const fields = new FormData(event.currentTarget);
     const profile = fields.get('profile');
-    if (!getTikTokProfileHandle(profile) || !submissionLocationId) {
-      setNotice({ error: true, text: t(submissionLocationId ? 'invalidProfile' : 'locationRequired') });
+    if (!getTikTokProfileHandle(profile)) {
+      setNotice({ error: true, text: t('invalidProfile') });
       return;
     }
     setSubmitting(true);
@@ -102,17 +102,21 @@ export default function TikTokCreatorDirectory({ initialCategory, initialLocatio
                 <input name="displayName" maxLength={100} className={fieldClass} />
               </label>
               <div className="grid gap-1 text-sm font-medium">
-                <label htmlFor="suggest-tiktok-category">{t('category')}</label>
-                <select id="suggest-tiktok-category" name="category" required defaultValue="" className={fieldClass}>
-                  <option value="" disabled>{t('chooseCategory')}</option>
+                <label htmlFor="suggest-tiktok-category">{t('optionalCategory')}</label>
+                <select id="suggest-tiktok-category" name="category" defaultValue="" aria-describedby="suggest-tiktok-discovery" className={fieldClass}>
+                  <option value="">{t('chooseCategory')}</option>
                   {TIKTOK_CREATOR_CATEGORIES.map((category) => <option key={category} value={category}>{t(`categories.${category}`)}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium">{t('publicLocation')}</p>
+                <div className="flex flex-wrap items-center justify-between gap-x-3 text-sm font-medium">
+                  <p>{t('publicLocation')}</p>
+                  {submissionLocationId && <button type="button" className="text-copper hover:underline" onClick={() => setSubmissionLocationId(null)}>{t('clearLocation')}</button>}
+                </div>
                 <LocationSelector value={submissionLocationId} onChange={setSubmissionLocationId} placeholder={t('chooseLocation')}
                   allowedTypes={TIKTOK_CREATOR_LOCATION_TYPES} searchOnServer allowClear={false} labels={locationLabels} />
               </div>
+              <p id="suggest-tiktok-discovery" className="text-sm text-gray-600 sm:col-span-2">{t('discoveryHint')}</p>
               <div className="sm:col-span-2">
                 <button type="submit" className={`${buttonClass} bg-copper text-white hover:bg-[#693a28] disabled:opacity-60`}>
                   {t(submitting ? 'submitting' : 'submit')}
@@ -158,8 +162,8 @@ export default function TikTokCreatorDirectory({ initialCategory, initialLocatio
             : <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {data.creators.map((creator) => (
                 <li key={creator.id} className="flex min-w-0 flex-col rounded-2xl border border-brand-border bg-white p-5 shadow-sm">
-                  <span className="self-start rounded-full bg-ivory px-2.5 py-1 text-xs font-semibold text-copper">{t(`categories.${creator.category}`)}</span>
-                  <h2 className="mt-3 break-words text-lg font-bold text-charcoal">{creator.displayName || `@${creator.handle}`}</h2>
+                  {creator.category && <span className="mb-3 self-start rounded-full bg-ivory px-2.5 py-1 text-xs font-semibold text-copper">{t(`categories.${creator.category}`)}</span>}
+                  <h2 className="break-words text-lg font-bold text-charcoal">{creator.displayName || `@${creator.handle}`}</h2>
                   {creator.displayName && <p className="break-words text-sm text-gray-600">@{creator.handle}</p>}
                   {creator.location && <Link href={`/locations/${creator.location.slug || creator.location.id}`} className="mt-2 inline-flex items-center gap-1.5 text-sm text-gray-700 hover:underline">
                     <MapPinIcon className="h-4 w-4 shrink-0 text-copper" aria-hidden="true" />{creator.location.name_local || creator.location.name}

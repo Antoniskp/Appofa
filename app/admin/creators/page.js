@@ -77,6 +77,8 @@ function TikTokReviewQueue() {
                 const isStream = view === 'streams';
                 const url = isStream ? getVideoPinWatchUrl(item) : tikTokProfileUrl(item.handle);
                 const title = isStream ? item.title : item.displayName || `@${item.handle}`;
+                const details = isStream ? (item.isExpired ? t('review.expired') : `${item.lat}, ${item.lng}`)
+                  : [item.category && t(`categories.${item.category}`), item.location?.name_local || item.location?.name].filter(Boolean).join(' · ');
                 return (
                   <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-4">
                     <div className="min-w-0 break-words">
@@ -84,10 +86,7 @@ function TikTokReviewQueue() {
                       {url && <a href={url} target="_blank" rel="noreferrer" className="text-sm font-medium text-blue-700 hover:underline">
                         {isStream ? item.creatorHandle || t('openTikTok') : `@${item.handle}`}
                       </a>}
-                      <p className="text-sm text-gray-600">
-                        {isStream ? (item.isExpired ? t('review.expired') : `${item.lat}, ${item.lng}`)
-                          : [t(`categories.${item.category}`), item.location?.name_local || item.location?.name].filter(Boolean).join(' · ')}
-                      </p>
+                      {details && <p className="text-sm text-gray-600">{details}</p>}
                     </div>
                     <div className="flex gap-2">
                       {item.status !== 'approved' && !item.isExpired && <button type="button" disabled={savingId !== null}

@@ -49,16 +49,20 @@ async function listCreators(query, review = false) {
 async function submitCreator(input) {
   const handle = getTikTokProfileHandle(input.profile);
   if (!handle) throw createError('Enter a valid TikTok username or public profile URL.', 400);
-  if (!TIKTOK_CREATOR_CATEGORIES.includes(input.category)) throw createError('Choose a creator category.', 400);
+  const category = input.category === '' ? null : input.category ?? null;
+  if (category !== null && !TIKTOK_CREATOR_CATEGORIES.includes(category)) throw createError('Choose a valid creator category.', 400);
   const displayName = typeof input.displayName === 'string' ? input.displayName.trim() : '';
   if (displayName.length > 100) throw createError('The display name must be 100 characters or fewer.', 400);
 
-  const locationId = positiveId(input.locationId);
-  const location = locationId && await Location.findByPk(locationId, { attributes: ['type'] });
-  if (!location || !TIKTOK_CREATOR_LOCATION_TYPES.includes(location.type)) throw createError('Choose a public area.', 400);
+  let locationId = null;
+  if (input.locationId != null && input.locationId !== '') {
+    locationId = positiveId(input.locationId);
+    const location = locationId && await Location.findByPk(locationId, { attributes: ['type'] });
+    if (!location || !TIKTOK_CREATOR_LOCATION_TYPES.includes(location.type)) throw createError('Choose a public area.', 400);
+  }
 
   try {
-    await TikTokCreator.create({ handle, displayName: displayName || null, category: input.category, locationId });
+    await TikTokCreator.create({ handle, displayName: displayName || null, category, locationId });
   } catch (error) {
     if (error instanceof UniqueConstraintError) throw createError('This TikTok profile has already been suggested.', 409);
     if (error instanceof ForeignKeyConstraintError) throw createError('Choose a public area.', 400);
