@@ -3,17 +3,22 @@ const { test, expect } = require('@playwright/test');
 const auth = require('../messages/en.json').auth;
 const t = require('../messages/calendar/en.json');
 
-test.beforeEach(async ({ context }) => {
+async function prepareCalendarContext(context) {
   await context.addCookies([{ name: 'NEXT_LOCALE', value: 'en', domain: '127.0.0.1', path: '/' }]);
-  await context.addInitScript(() => localStorage.setItem('appofa_country_entry_decision_v1', 'stay'));
+  await context.addInitScript(() => {
+    localStorage.setItem('appofa_country_entry_decision_v1', 'stay');
+    localStorage.setItem('gdpr_consent', JSON.stringify({ necessary: true, analytics: false, functional: false }));
+  });
+}
+
+test.beforeEach(async ({ context }) => {
+  await prepareCalendarContext(context);
 });
 
 test('create a location event, display in both calendar views, export and cancel', async ({ page }, testInfo) => {
   await page.goto('/login');
   await page.locator('[name="email"]').fill('author@example.test');
   await page.locator('[name="password"]').fill('TestPassword123!');
-  const dismiss = page.getByRole('button', { name: 'Reject Non-Essential', exact: true });
-  if (await dismiss.isVisible()) await dismiss.click();
   await page.getByRole('button', { name: auth.submit_login, exact: true }).click();
   await expect(page).not.toHaveURL(/\/login/);
   await page.goto('/events/new?locationId=3');
@@ -63,8 +68,6 @@ test('create a location event, display in both calendar views, export and cancel
 test('personal calendar opens empty and shows events from enabled subscriptions', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/login');
-  const dismiss = page.getByRole('button', { name: 'Reject Non-Essential', exact: true });
-  if (await dismiss.isVisible()) await dismiss.click();
   await page.locator('[name="email"]').fill('contributor@example.test');
   await page.locator('[name="password"]').fill('TestPassword123!');
   await page.getByRole('main').getByRole('button', { name: auth.submit_login, exact: true }).click();
@@ -124,8 +127,6 @@ test('calendar follows the selected language', async ({ page, context }) => {
 test('moderator rejection supplies private feedback and notifies the author', async ({ page, browser }, testInfo) => {
   async function login(target, email) {
     await target.goto('/login');
-    const dismiss = target.getByRole('button', { name: 'Reject Non-Essential', exact: true });
-    if (await dismiss.isVisible()) await dismiss.click();
     const loginForm = target.getByRole('main');
     await loginForm.locator('[name="email"]').fill(email);
     await loginForm.locator('[name="password"]').fill('TestPassword123!');
@@ -145,8 +146,7 @@ test('moderator rejection supplies private feedback and notifies the author', as
   const url = page.url();
   const adminContext = await browser.newContext({ baseURL: 'http://127.0.0.1:3101', viewport: testInfo.project.use.viewport });
   try {
-    await adminContext.addCookies([{ name: 'NEXT_LOCALE', value: 'en', domain: '127.0.0.1', path: '/' }]);
-    await adminContext.addInitScript(() => localStorage.setItem('appofa_country_entry_decision_v1', 'stay'));
+    await prepareCalendarContext(adminContext);
     const adminPage = await adminContext.newPage();
     await login(adminPage, 'author@example.test');
     await adminPage.goto(url);
@@ -165,8 +165,6 @@ test('moderator rejection supplies private feedback and notifies the author', as
 test('calendar category pills combine and reset on mobile and survive browser history', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/calendar?category=culture&month=2024-06&mode=list&period=month');
-  const dismiss = page.getByRole('button', { name: 'Reject Non-Essential', exact: true });
-  if (await dismiss.isVisible()) await dismiss.click();
   await expect(page.getByRole('button', { name: t.list, exact: true })).toHaveAttribute('aria-pressed', 'true');
   const culture = page.getByRole('button', { name: t.categories.culture, exact: true });
   const elections = page.getByRole('button', { name: t.categories.elections, exact: true });
@@ -215,8 +213,6 @@ test('older calendar period links still open the list', async ({ page }) => {
 test('mobile calendar jumps across months to an election and links to the official source', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/calendar?month=2024-05&day=2024-05-31&category=elections');
-  const dismiss = page.getByRole('button', { name: 'Reject Non-Essential', exact: true });
-  if (await dismiss.isVisible()) await dismiss.click();
   await page.getByRole('button', { name: t.jumpToNextEvent, exact: true }).click();
   await expect(page).toHaveURL(/day=2024-06-09/);
   await expect(page).toHaveURL(/category=elections/);

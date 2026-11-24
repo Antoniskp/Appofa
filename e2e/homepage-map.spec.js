@@ -51,15 +51,21 @@ test('homepage local map keeps the layout fixed across layers and candidate filt
   } } }));
   await page.goto('/map?layer=political&district=district-athens-a');
   const section = page.getByRole('region', { name: 'Explore the map', exact: true });
-  const layout = () => section.locator('.leaflet-container').evaluate(map => {
-    const frame = map.closest('.home-map');
+  const layout = () => section.locator('.home-map').evaluate(frame => {
+    const elements = [frame, frame.querySelector('[type="search"]'), frame.querySelector('.leaflet-container'), frame.querySelector('aside'), frame.lastElementChild];
+    if (!elements.every(Boolean)) return null;
+
     const origin = frame.getBoundingClientRect();
-    return [frame, frame.querySelector('[type="search"]'), map, frame.querySelector('aside'), frame.lastElementChild].map(element => {
+    return elements.map(element => {
       const { x, y, width, height } = element.getBoundingClientRect();
       return [x - origin.x, y - origin.y, width, height].map(Math.round);
     });
   });
-  const initialLayout = await layout();
+  let initialLayout;
+  await expect.poll(async () => {
+    initialLayout = await layout();
+    return initialLayout;
+  }).not.toBeNull();
   const electoral = section.getByRole('complementary', { name: 'People by electoral district' });
   await electoral.getByRole('button', { name: 'Candidates', exact: true }).click();
   await expect(page.locator('a[href^="/candidate-registrations/"]')).toHaveCount(2);
@@ -69,7 +75,7 @@ test('homepage local map keeps the layout fixed across layers and candidate filt
   const aboutCandidates = electoral.locator('summary').filter({ hasText: 'About these candidates' });
   await aboutCandidates.click();
   await expect(electoral.getByText(/Approved parliamentary registrations/)).toBeVisible();
-  expect(await layout()).toEqual(initialLayout);
+  await expect.poll(layout).toEqual(initialLayout);
   await aboutCandidates.click();
   await section.screenshot({ path: testInfo.outputPath('political-map-candidates.png') });
   const layers = section.getByRole('group', { name: 'Map content', exact: true });
@@ -78,7 +84,7 @@ test('homepage local map keeps the layout fixed across layers and candidate filt
     await expect(page).toHaveURL(new RegExp(`layer=${value}$`));
     await expect(layers.getByRole('button', { name: label, exact: true })).toHaveAttribute('aria-pressed', 'true');
     await expect(section.getByRole('region', { name: /^Local activity map:/ })).toBeVisible();
-    expect(await layout()).toEqual(initialLayout);
+    await expect.poll(layout).toEqual(initialLayout);
   }
   if (testInfo.project.name === 'mobile') {
     await section.getByRole('button', { name: 'Collapse results' }).click();
@@ -89,7 +95,7 @@ test('homepage local map keeps the layout fixed across layers and candidate filt
     await expect(section.getByRole('button', { name: 'Show results' })).toHaveAttribute('aria-expanded', 'false');
     await section.getByRole('button', { name: 'Show results' }).click();
   }
-  expect(await layout()).toEqual(initialLayout);
+  await expect.poll(layout).toEqual(initialLayout);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
