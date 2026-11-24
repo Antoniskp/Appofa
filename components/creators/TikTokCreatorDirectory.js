@@ -3,14 +3,16 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { ChartBarIcon, MagnifyingGlassIcon, MapPinIcon, PlusIcon, UserPlusIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
 import CreatorLocationPicker from '@/components/creators/CreatorLocationPicker';
+import Modal from '@/components/ui/Modal';
 import Pagination from '@/components/ui/Pagination';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { tiktokCreatorAPI } from '@/lib/api/tiktokCreators';
 import { useAuth } from '@/lib/auth-context';
 import { buildAuthPath } from '@/lib/auth-redirect';
+import { buildTikTokCreatorEmbedUrl } from '@/lib/utils/tiktokEmbed';
 import { getTikTokProfileHandle, TIKTOK_CREATOR_CATEGORIES, tikTokProfileUrl } from '@/config/tiktokCreators';
 
 const fieldClass = 'min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-charcoal';
@@ -24,6 +26,7 @@ const benefits = [
 
 export default function TikTokCreatorDirectory({ initialCategory, initialLocationId, initialSearch }) {
   const t = useTranslations('tiktokCreators');
+  const locale = useLocale();
   const { user } = useAuth();
   const [draft, setDraft] = useState({ q: initialSearch, category: initialCategory, locationId: initialLocationId });
   const [filters, setFilters] = useState(draft);
@@ -32,6 +35,7 @@ export default function TikTokCreatorDirectory({ initialCategory, initialLocatio
   const [submissionLocationId, setSubmissionLocationId] = useState(initialLocationId);
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState(null);
+  const [previewHandle, setPreviewHandle] = useState(null);
 
   const { data, loading, error, refetch } = useAsyncData(
     async () => (await tiktokCreatorAPI.getAll({ ...filters, page })).data,
@@ -191,6 +195,8 @@ export default function TikTokCreatorDirectory({ initialCategory, initialLocatio
                     <MapPinIcon className="h-4 w-4 shrink-0 text-copper" aria-hidden="true" />{creator.location.name_local || creator.location.name}
                   </Link>}
                   <div className="mt-auto flex flex-wrap gap-x-4 gap-y-2 pt-5 text-sm font-semibold text-copper">
+                    <button type="button" aria-haspopup="dialog" aria-label={t('previewProfile', { handle: `@${creator.handle}` })}
+                      onClick={() => setPreviewHandle(creator.handle)} className="text-left hover:underline">{t('previewTikTok')}</button>
                     {creator.username && <Link href={`/users/${encodeURIComponent(creator.username)}`} className="hover:underline">{t('openAppofasiProfile')}</Link>}
                     <a href={tikTokProfileUrl(creator.handle)} target="_blank" rel="noreferrer" className="hover:underline">{t('openTikTok')}</a>
                     <Link href={`/live?creator=${encodeURIComponent(creator.handle)}`} className="hover:underline">{t('streamsOnMap')}</Link>
@@ -200,6 +206,19 @@ export default function TikTokCreatorDirectory({ initialCategory, initialLocatio
             </ul>}
       {!loading && !error && <Pagination currentPage={page} totalPages={data?.totalPages ?? 0} onPageChange={setPage}
         onPrevious={() => setPage(page - 1)} onNext={() => setPage(page + 1)} />}
+      <Modal isOpen={Boolean(previewHandle)} onClose={() => setPreviewHandle(null)}
+        title={previewHandle ? t('previewProfile', { handle: `@${previewHandle}` }) : undefined}
+        footer={previewHandle && (
+          <a href={tikTokProfileUrl(previewHandle)} target="_blank" rel="noreferrer" className={`${buttonClass} text-copper hover:underline`}>
+            {t('openTikTok')}
+          </a>
+        )}>
+        {previewHandle && (
+          <iframe src={buildTikTokCreatorEmbedUrl(previewHandle, locale)} title={t('previewProfile', { handle: `@${previewHandle}` })}
+            sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" referrerPolicy="no-referrer"
+            tabIndex={0} className="h-[min(29rem,58dvh)] w-full rounded-xl border border-brand-border bg-white" />
+        )}
+      </Modal>
     </main>
   );
 }

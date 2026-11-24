@@ -59,6 +59,8 @@
     "clearFilters": "Clear filters",
     "empty": "No creators match these filters.",
     "openAppofasiProfile": "Appofasi profile",
+    "previewTikTok": "Preview TikTok",
+    "previewProfile": "TikTok preview for {handle}",
     "openTikTok": "Open TikTok",
     "streamsOnMap": "Streams on map",
     "creatorStreams": "Streams from {handle}",

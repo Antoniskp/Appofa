@@ -59,6 +59,8 @@
     "clearFilters": "Εκκαθάριση φίλτρων",
     "empty": "Δεν βρέθηκαν δημιουργοί με αυτά τα φίλτρα.",
     "openAppofasiProfile": "Προφίλ στην Απόφαση",
+    "previewTikTok": "Προεπισκόπηση TikTok",
+    "previewProfile": "Προεπισκόπηση TikTok για {handle}",
     "openTikTok": "Άνοιγμα στο TikTok",
     "streamsOnMap": "Μεταδόσεις στον χάρτη",
     "creatorStreams": "Μεταδόσεις από {handle}",
