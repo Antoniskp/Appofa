@@ -30,7 +30,7 @@
     "benefits": {
       "discover": {
         "title": "Ajută publicul să te găsească",
-        "description": "Un profil TikTok aprobat ajută publicul să te găsească după nume, categorie sau zonă."
+        "description": "Adaugă TikTok în profilul Appofasi pentru ca publicul să te găsească după nume sau zonă, în funcție de vizibilitatea profilului."
       },
       "locations": {
         "title": "Organizează după zonă",
@@ -57,7 +57,8 @@
     "searchPlaceholder": "Nume sau @utilizator",
     "allCategories": "Toate categoriile",
     "clearFilters": "Șterge filtrele",
-    "empty": "Niciun creator aprobat nu corespunde acestor filtre.",
+    "empty": "Niciun creator nu corespunde acestor filtre.",
+    "openAppofasiProfile": "Profil Appofasi",
     "openTikTok": "Deschide pe TikTok",
     "streamsOnMap": "Transmisiuni pe hartă",
     "creatorStreams": "Transmisiuni de la {handle}",

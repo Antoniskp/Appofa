@@ -35,7 +35,7 @@ export default function TikTokCreatorDirectory({ initialCategory, initialLocatio
 
   const { data, loading, error, refetch } = useAsyncData(
     async () => (await tiktokCreatorAPI.getAll({ ...filters, page })).data,
-    [filters, page]
+    [filters, page, user?.id]
   );
 
   const applyFilters = (event) => {
@@ -191,6 +191,7 @@ export default function TikTokCreatorDirectory({ initialCategory, initialLocatio
                     <MapPinIcon className="h-4 w-4 shrink-0 text-copper" aria-hidden="true" />{creator.location.name_local || creator.location.name}
                   </Link>}
                   <div className="mt-auto flex flex-wrap gap-x-4 gap-y-2 pt-5 text-sm font-semibold text-copper">
+                    {creator.username && <Link href={`/users/${encodeURIComponent(creator.username)}`} className="hover:underline">{t('openAppofasiProfile')}</Link>}
                     <a href={tikTokProfileUrl(creator.handle)} target="_blank" rel="noreferrer" className="hover:underline">{t('openTikTok')}</a>
                     <Link href={`/live?creator=${encodeURIComponent(creator.handle)}`} className="hover:underline">{t('streamsOnMap')}</Link>
                   </div>

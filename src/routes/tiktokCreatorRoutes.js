@@ -10,7 +10,8 @@ const router = express.Router();
 const staffOnly = [auth, checkRole('admin', 'moderator')];
 
 router.get('/', optionalAuth, apiLimiter, async (req, res) => {
-  res.json({ success: true, data: await listCreators(req.query) });
+  res.set('Cache-Control', 'private, no-store');
+  res.json({ success: true, data: await listCreators(req.query, { viewer: req.user }) });
 });
 
 router.post('/', apiLimiter, createLimiter, async (req, res) => {
@@ -22,7 +23,7 @@ router.post('/', apiLimiter, createLimiter, async (req, res) => {
 });
 
 router.get('/review', apiLimiter, staffOnly, async (req, res) => {
-  res.json({ success: true, data: await listCreators(req.query, true) });
+  res.json({ success: true, data: await listCreators(req.query, { review: true }) });
 });
 
 router.put('/review/:id', apiLimiter, staffOnly, csrfProtection, async (req, res) => {

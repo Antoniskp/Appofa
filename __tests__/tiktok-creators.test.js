@@ -109,6 +109,57 @@ describe('TikTok directory and creator stream pins', () => {
     await request(app).post(directoryUrl).send({ profile: '@invalid_creator', locationId: 'unknown' }).expect(400);
   });
 
+  test('discovers saved member TikTok links according to profile visibility', async () => {
+    const member = await User.create({
+      username: 'member-creator', email: 'member-creator@example.test', password: 'Test1234!',
+      firstNameNative: 'Marina', lastNameNative: 'Local', homeLocationId: town.id, profileVisibility: 'registered',
+      socialLinks: { tiktok: 'https://www.tiktok.com/@Member_Creates?lang=en' },
+    });
+    const guestSearch = () => request(app).get(directoryUrl).query({ q: 'member_creates' }).expect(200);
+    expect((await guestSearch()).body.data.creators).toEqual([]);
+    const signedIn = await request(app).get(directoryUrl).set(staff).query({ q: 'Marina', locationId: region.id }).expect(200);
+    expect(signedIn.headers['cache-control']).toBe('private, no-store');
+    expect(signedIn.body.data.creators).toEqual([{
+      id: `member-${member.id}`, handle: 'member_creates', username: 'member-creator', displayName: 'Marina Local',
+      category: null, locationId: town.id, location: { id: town.id, name: 'Athens', name_local: null, slug: 'athens' },
+    }]);
+
+    await member.update({ profileVisibility: 'public' });
+    expect((await guestSearch()).body.data.creators).toHaveLength(1);
+    await TikTokCreator.create({ handle: 'member_creates', displayName: 'Pending name' });
+    expect((await guestSearch()).body.data.creators).toMatchObject([{ displayName: 'Marina Local' }]);
+    const listing = await TikTokCreator.findOne({ where: { handle: 'member_creates' } });
+    await listing.update({ status: 'approved', category: 'sports', displayName: 'Public creator' });
+    const combined = await request(app).get(directoryUrl).query({ q: 'Marina', category: 'sports', locationId: region.id }).expect(200);
+    expect(combined.body.data.creators).toHaveLength(1);
+    expect(combined.body.data.creators[0]).toMatchObject({ id: listing.id, category: 'sports', username: 'member-creator', locationId: town.id });
+
+    await member.update({ profileVisibility: 'hidden' });
+    expect((await guestSearch()).body.data.creators[0]).not.toHaveProperty('username');
+    const hiddenSearch = await request(app).get(directoryUrl).set(staff).query({ q: 'Marina' }).expect(200);
+    expect(hiddenSearch.body.data.creators).toEqual([]);
+    await listing.update({ status: 'rejected' });
+    await member.update({ profileVisibility: 'public' });
+    expect((await guestSearch()).body.data.creators).toEqual([]);
+  });
+
+  test('paginates member profiles and reviewed listings together', async () => {
+    await User.bulkCreate(Array.from({ length: 24 }, (_, index) => ({
+      username: `pagination-${index}`,
+      email: `pagination-${index}@example.test`,
+      profileVisibility: 'public',
+      socialLinks: { tiktok: `https://www.tiktok.com/@pagination_${index}` },
+    })));
+    await TikTokCreator.create({ handle: 'pagination_approved', status: 'approved' });
+
+    const first = await request(app).get(directoryUrl).query({ q: 'pagination', page: 1 }).expect(200);
+    expect(first.body.data).toMatchObject({ totalPages: 2 });
+    expect(first.body.data.creators).toHaveLength(24);
+    expect(first.body.data.creators.every(creator => creator.username)).toBe(true);
+    const second = await request(app).get(directoryUrl).query({ q: 'pagination', page: 2 }).expect(200);
+    expect(second.body.data.creators).toMatchObject([{ handle: 'pagination_approved' }]);
+  });
+
   test('matches direct TikTok LIVE links by handle without leaking pending or expired streams', async () => {
     const pin = await request(app).post('/api/video-pins').set(staff)
       .send({ sourceUrl: 'https://www.tiktok.com/@Civic_Voice/live?lang=en', contentType: 'live', lat: 38, lng: 24 }).expect(201);

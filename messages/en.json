@@ -30,7 +30,7 @@
     "benefits": {
       "discover": {
         "title": "Get discovered",
-        "description": "An approved TikTok listing helps people find you by name, category or area."
+        "description": "Add TikTok to your Appofasi profile so people can find you by name or area, according to your profile visibility."
       },
       "locations": {
         "title": "Organize by location",
@@ -57,7 +57,8 @@
     "searchPlaceholder": "Name or @username",
     "allCategories": "All categories",
     "clearFilters": "Clear filters",
-    "empty": "No approved creators match these filters.",
+    "empty": "No creators match these filters.",
+    "openAppofasiProfile": "Appofasi profile",
     "openTikTok": "Open TikTok",
     "streamsOnMap": "Streams on map",
     "creatorStreams": "Streams from {handle}",
