@@ -30,7 +30,7 @@
     "benefits": {
       "discover": {
         "title": "Βοήθησε το κοινό να σε βρει",
-        "description": "Πρόσθεσε το TikTok στο προφίλ σου στην Απόφαση για να σε βρίσκουν ανά όνομα ή περιοχή, ανάλογα με τις ρυθμίσεις ορατότητας του προφίλ σου."
+        "description": "Πρόσθεσε το TikTok στο προφίλ σου στην Απόφαση για να σε βρίσκουν ανά όνομα, περιοχή ή κατηγορία (αν έχει προστεθεί), ανάλογα με τις ρυθμίσεις ορατότητας του προφίλ σου."
       },
       "locations": {
         "title": "Οργάνωσε ανά περιοχή",
@@ -59,8 +59,10 @@
     "clearFilters": "Εκκαθάριση φίλτρων",
     "empty": "Δεν βρέθηκαν δημιουργοί με αυτά τα φίλτρα.",
     "openAppofasiProfile": "Προφίλ στην Απόφαση",
-    "previewTikTok": "Προεπισκόπηση TikTok",
-    "previewProfile": "Προεπισκόπηση TikTok για {handle}",
+    "embedProfile": "Προφίλ TikTok για {handle}",
+    "refreshTikTok": "Ανανέωση TikTok",
+    "refreshingTikTok": "Ανανέωση…",
+    "refreshProfile": "Ανανέωση TikTok για {handle}",
     "openTikTok": "Άνοιγμα στο TikTok",
     "streamsOnMap": "Μεταδόσεις στον χάρτη",
     "creatorStreams": "Μεταδόσεις από {handle}",
@@ -3347,7 +3349,8 @@
       "poll": "Δημοσκόπηση",
       "comment": "Σχόλιο",
       "candidate": "Υποψήφιος",
-      "user": "Χρήστης"
+      "user": "Χρήστης",
+      "law": "Νομοθεσία"
     },
     "categories": {
       "misinformation": "Παραπληροφόρηση",
@@ -3356,7 +3359,9 @@
       "privacy_violation": "Παραβίαση ιδιωτικότητας",
       "impersonation": "Πλαστοπροσωπία",
       "inappropriate_content": "Ακατάλληλο περιεχόμενο",
-      "other": "Άλλο"
+      "other": "Άλλο",
+      "harmful_legislation": "Επιβλαβής διάταξη",
+      "corruption_risk": "Πιθανός κίνδυνος διαφθοράς"
     }
   },
   "videos": {

@@ -3,17 +3,16 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { ChartBarIcon, MagnifyingGlassIcon, MapPinIcon, PlusIcon, UserPlusIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
 import CreatorLocationPicker from '@/components/creators/CreatorLocationPicker';
-import Modal from '@/components/ui/Modal';
+import TikTokCreatorCard from '@/components/creators/TikTokCreatorCard';
 import Pagination from '@/components/ui/Pagination';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { tiktokCreatorAPI } from '@/lib/api/tiktokCreators';
 import { useAuth } from '@/lib/auth-context';
 import { buildAuthPath } from '@/lib/auth-redirect';
-import { buildTikTokCreatorEmbedUrl } from '@/lib/utils/tiktokEmbed';
-import { getTikTokProfileHandle, TIKTOK_CREATOR_CATEGORIES, tikTokProfileUrl } from '@/config/tiktokCreators';
+import { getTikTokProfileHandle, TIKTOK_CREATOR_CATEGORIES } from '@/config/tiktokCreators';
 
 const fieldClass = 'min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-charcoal';
 const buttonClass = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold';
@@ -26,7 +25,6 @@ const benefits = [
 
 export default function TikTokCreatorDirectory({ initialCategory, initialLocationId, initialSearch }) {
   const t = useTranslations('tiktokCreators');
-  const locale = useLocale();
   const { user } = useAuth();
   const [draft, setDraft] = useState({ q: initialSearch, category: initialCategory, locationId: initialLocationId });
   const [filters, setFilters] = useState(draft);
@@ -35,7 +33,6 @@ export default function TikTokCreatorDirectory({ initialCategory, initialLocatio
   const [submissionLocationId, setSubmissionLocationId] = useState(initialLocationId);
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState(null);
-  const [previewHandle, setPreviewHandle] = useState(null);
 
   const { data, loading, error, refetch } = useAsyncData(
     async () => (await tiktokCreatorAPI.getAll({ ...filters, page })).data,
@@ -186,39 +183,10 @@ export default function TikTokCreatorDirectory({ initialCategory, initialLocatio
         : error ? <p role="alert" className="text-sm text-red-800">{t('loadError')} <button type="button" onClick={refetch} className="font-semibold underline">{t('retry')}</button></p>
           : !data?.creators.length ? <p className="rounded-2xl border border-dashed border-brand-border bg-white px-5 py-12 text-center text-gray-600">{t('empty')}</p>
             : <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {data.creators.map((creator) => (
-                <li key={creator.id} className="flex min-w-0 flex-col rounded-2xl border border-brand-border bg-white p-5 shadow-sm">
-                  {creator.category && <span className="mb-3 self-start rounded-full bg-ivory px-2.5 py-1 text-xs font-semibold text-copper">{t(`categories.${creator.category}`)}</span>}
-                  <h2 className="break-words text-lg font-bold text-charcoal">{creator.displayName || `@${creator.handle}`}</h2>
-                  {creator.displayName && <p className="break-words text-sm text-gray-600">@{creator.handle}</p>}
-                  {creator.location && <Link href={`/locations/${creator.location.slug || creator.location.id}`} className="mt-2 inline-flex items-center gap-1.5 text-sm text-gray-700 hover:underline">
-                    <MapPinIcon className="h-4 w-4 shrink-0 text-copper" aria-hidden="true" />{creator.location.name_local || creator.location.name}
-                  </Link>}
-                  <div className="mt-auto flex flex-wrap gap-x-4 gap-y-2 pt-5 text-sm font-semibold text-copper">
-                    <button type="button" aria-haspopup="dialog" aria-label={t('previewProfile', { handle: `@${creator.handle}` })}
-                      onClick={() => setPreviewHandle(creator.handle)} className="text-left hover:underline">{t('previewTikTok')}</button>
-                    {creator.username && <Link href={`/users/${encodeURIComponent(creator.username)}`} className="hover:underline">{t('openAppofasiProfile')}</Link>}
-                    <a href={tikTokProfileUrl(creator.handle)} target="_blank" rel="noreferrer" className="hover:underline">{t('openTikTok')}</a>
-                    <Link href={`/live?creator=${encodeURIComponent(creator.handle)}`} className="hover:underline">{t('streamsOnMap')}</Link>
-                  </div>
-                </li>
-              ))}
+              {data.creators.map((creator) => <TikTokCreatorCard key={creator.id} creator={creator} />)}
             </ul>}
       {!loading && !error && <Pagination currentPage={page} totalPages={data?.totalPages ?? 0} onPageChange={setPage}
         onPrevious={() => setPage(page - 1)} onNext={() => setPage(page + 1)} />}
-      <Modal isOpen={Boolean(previewHandle)} onClose={() => setPreviewHandle(null)}
-        title={previewHandle ? t('previewProfile', { handle: `@${previewHandle}` }) : undefined}
-        footer={previewHandle && (
-          <a href={tikTokProfileUrl(previewHandle)} target="_blank" rel="noreferrer" className={`${buttonClass} text-copper hover:underline`}>
-            {t('openTikTok')}
-          </a>
-        )}>
-        {previewHandle && (
-          <iframe src={buildTikTokCreatorEmbedUrl(previewHandle, locale)} title={t('previewProfile', { handle: `@${previewHandle}` })}
-            sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" referrerPolicy="no-referrer"
-            tabIndex={0} className="h-[min(29rem,58dvh)] w-full rounded-xl border border-brand-border bg-white" />
-        )}
-      </Modal>
     </main>
   );
 }

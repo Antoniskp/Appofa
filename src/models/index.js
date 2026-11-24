@@ -32,6 +32,7 @@ const SuggestionVote = require('./SuggestionVote');
 const LinkPreviewCache = require('./LinkPreviewCache');
 const PersonRemovalRequest = require('./PersonRemovalRequest');
 const Report = require('./Report');
+const { LegalLibraryTarget, LegalLibraryVote } = require('./LegalLibraryFeedback');
 const Formation = require('./Formation');
 const FormationPick = require('./FormationPick');
 const FormationLike = require('./FormationLike');
@@ -645,6 +646,8 @@ module.exports = {
   LinkPreviewCache,
   PersonRemovalRequest,
   Report,
+  LegalLibraryTarget,
+  LegalLibraryVote,
   GovernmentPosition,
   GovernmentCurrentHolder,
   GovernmentPositionSuggestion,

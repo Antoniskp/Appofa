@@ -59,8 +59,10 @@
     "clearFilters": "Clear filters",
     "empty": "No creators match these filters.",
     "openAppofasiProfile": "Appofasi profile",
-    "previewTikTok": "Preview TikTok",
-    "previewProfile": "TikTok preview for {handle}",
+    "embedProfile": "TikTok profile for {handle}",
+    "refreshTikTok": "Refresh TikTok",
+    "refreshingTikTok": "Refreshing…",
+    "refreshProfile": "Refresh TikTok for {handle}",
     "openTikTok": "Open TikTok",
     "streamsOnMap": "Streams on map",
     "creatorStreams": "Streams from {handle}",
@@ -3347,7 +3349,8 @@
       "poll": "Poll",
       "comment": "Comment",
       "candidate": "Candidate",
-      "user": "User"
+      "user": "User",
+      "law": "Legislation"
     },
     "categories": {
       "misinformation": "Misinformation",
@@ -3356,7 +3359,9 @@
       "privacy_violation": "Privacy violation",
       "impersonation": "Impersonation",
       "inappropriate_content": "Inappropriate content",
-      "other": "Other"
+      "other": "Other",
+      "harmful_legislation": "Harmful provision",
+      "corruption_risk": "Possible corruption risk"
     }
   },
   "videos": {

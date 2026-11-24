@@ -4,6 +4,7 @@ const { pipeline } = require('node:stream/promises');
 const optionalAuth = require('../middleware/optionalAuth');
 const { apiLimiter } = require('../middleware/rateLimiter');
 const { libraryStatus, requestLibrary } = require('../services/legalLibraryService');
+const lawFeedbackRoutes = require('./lawFeedbackRoutes');
 
 const router = express.Router();
 const READER_ASSETS = new Map([
@@ -31,6 +32,13 @@ const offline = res => res.status(503).json({ error: 'Η Νομική Βιβλι
 const missing = res => res.status(404).json({ error: 'Δεν βρέθηκε το περιεχόμενο.' });
 const isReaderPage = req => /^\/view\/?$/.test(req.path);
 
+function readerDestination({ law, unit }) {
+  if (typeof law !== 'string' || !law || law.length > 255) return '/laws';
+  const target = new URLSearchParams({ law });
+  if (typeof unit === 'string' && unit && unit.length <= 255) target.set('unit', unit);
+  return '/laws#' + target.toString();
+}
+
 router.use((req, res, next) => {
   res.set('Cache-Control', 'private, no-store');
   next();
@@ -42,7 +50,7 @@ router.get('/availability', apiLimiter, async (req, res) => {
 
 router.use(apiLimiter, optionalAuth, (req, res, next) => {
   if (!req.user) {
-    if (isReaderPage(req) && req.method === 'GET') return res.redirect('/login?next=%2Flaws');
+    if (isReaderPage(req) && req.method === 'GET') return res.redirect('/login?next=' + encodeURIComponent(readerDestination(req.query)));
     return res.status(401).json({ error: 'Απαιτείται σύνδεση.' });
   }
   if (req.user.emailVerified !== true) {
@@ -51,6 +59,8 @@ router.use(apiLimiter, optionalAuth, (req, res, next) => {
   }
   next();
 });
+
+router.use('/feedback', lawFeedbackRoutes);
 
 router.get('/view', async (req, res) => {
   if (!(await libraryStatus({ fresh: true }))) return offline(res);
@@ -83,7 +93,12 @@ router.get('/:resource', (req, res) => {
 async function serveReader(req, res, path, mediaType) {
   try {
     const queryIndex = req.url.indexOf('?');
-    const search = mediaType === 'application/json' && queryIndex !== -1 ? req.url.slice(queryIndex) : '';
+    let search = mediaType === 'application/json' && queryIndex !== -1 ? req.url.slice(queryIndex) : '';
+    if (path === '/api/laws/document') {
+      const params = new URLSearchParams(search);
+      params.set('scope', 'source');
+      search = params.toString();
+    }
     const response = await requestLibrary(path, { search });
     if (!response.ok || response.headers.get('content-type')?.split(';')[0] !== mediaType) {
       await response.body?.cancel();
@@ -110,7 +125,7 @@ async function serveReader(req, res, path, mediaType) {
     if (path === '/api/laws/document') {
       const { document, sourceText, units, references, incoming, attachments } = await response.json();
       return res.json({
-        document, sourceText, units, references, incoming,
+        document, sourceText, units, references, incoming, participation: true,
         attachments: attachments.map(attachment => ({ ...attachment, local_file: Boolean(attachment.local_file) })),
         annotation: { summary: '', notes: '', tags: [], revision: 0 },
         revisions: [],

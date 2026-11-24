@@ -59,8 +59,10 @@
     "clearFilters": "Șterge filtrele",
     "empty": "Niciun creator nu corespunde acestor filtre.",
     "openAppofasiProfile": "Profil Appofasi",
-    "previewTikTok": "Previzualizează TikTok",
-    "previewProfile": "Previzualizare TikTok pentru {handle}",
+    "embedProfile": "Profil TikTok pentru {handle}",
+    "refreshTikTok": "Actualizează TikTok",
+    "refreshingTikTok": "Se actualizează…",
+    "refreshProfile": "Actualizează TikTok pentru {handle}",
     "openTikTok": "Deschide pe TikTok",
     "streamsOnMap": "Transmisiuni pe hartă",
     "creatorStreams": "Transmisiuni de la {handle}",
@@ -3413,7 +3415,8 @@
       "poll": "Sondaj",
       "comment": "Comentariu",
       "candidate": "Candidat",
-      "user": "Utilizator"
+      "user": "Utilizator",
+      "law": "Legislație"
     },
     "categories": {
       "misinformation": "Dezinformare",
@@ -3422,7 +3425,9 @@
       "privacy_violation": "Încălcarea confidențialității",
       "impersonation": "Uzurparea identității",
       "inappropriate_content": "Conținut inadecvat",
-      "other": "Altele"
+      "other": "Altele",
+      "harmful_legislation": "Dispoziție dăunătoare",
+      "corruption_risk": "Posibil risc de corupție"
     }
   },
   "mapExplorer": {

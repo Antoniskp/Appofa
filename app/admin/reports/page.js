@@ -20,7 +20,14 @@ const STATUS_COLORS = {
   actioned: 'bg-red-100 text-red-800',
 };
 
-const CONTENT_TYPES = ['article', 'person', 'poll', 'comment', 'candidate', 'user'];
+const CONTENT_TYPES = ['article', 'person', 'poll', 'comment', 'candidate', 'user', 'law'];
+
+function lawTargetUrl(report) {
+  if (!report.lawTarget) return undefined;
+  const params = new URLSearchParams({ law: report.lawTarget.documentId });
+  if (report.lawTarget.unitId) params.set('unit', report.lawTarget.unitId);
+  return '/laws#' + params.toString();
+}
 
 
 function ReportsContent() {
@@ -162,10 +169,10 @@ function ReportsContent() {
           candidate: `/persons/${row.contentId}`,
           user: `/users/${row.contentId}`,
         };
-        const url = urlMap[row.contentType];
+        const url = urlMap[row.contentType] || lawTargetUrl(row);
         return url ? (
           <Link href={url} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
-            {row.contentId}
+            {row.lawTarget?.label || row.contentId}
           </Link>
         ) : (
           <span>{row.contentId}</span>
@@ -193,13 +200,13 @@ function ReportsContent() {
   const isFinalized = selectedReport && (selectedReport.status === 'dismissed' || selectedReport.status === 'actioned');
   const isPendingOrReviewed = selectedReport && (selectedReport.status === 'pending' || selectedReport.status === 'reviewed');
 
-  const contentUrl = selectedReport && {
+  const contentUrl = selectedReport && ({
     article: `/articles/${selectedReport.contentId}`,
     person: `/persons/${selectedReport.contentId}`,
     poll: `/polls/${selectedReport.contentId}`,
     candidate: `/persons/${selectedReport.contentId}`,
     user: `/users/${selectedReport.contentId}`,
-  }[selectedReport.contentType];
+  }[selectedReport.contentType] || lawTargetUrl(selectedReport));
 
   const canDeleteContent = selectedReport && (selectedReport.contentType === 'article' || selectedReport.contentType === 'comment');
 
@@ -281,7 +288,7 @@ function ReportsContent() {
                 <dd>
                   {contentUrl ? (
                     <Link href={contentUrl} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
-                      {selectedReport.contentId}
+                      {selectedReport.lawTarget?.label || selectedReport.contentId}
                     </Link>
                   ) : (
                     <span>{selectedReport.contentId}</span>

@@ -1,15 +1,27 @@
 'use strict';
 
-const { Report, User } = require('../models');
+const { UniqueConstraintError } = require('sequelize');
+const { Report, User, LegalLibraryTarget } = require('../models');
 
 const CONTENT_TYPES = ['article', 'person', 'poll', 'comment', 'candidate', 'user'];
 const CATEGORIES = ['misinformation', 'harassment', 'spam', 'privacy_violation', 'impersonation', 'inappropriate_content', 'other'];
+const REVIEW_CONTENT_TYPES = [...CONTENT_TYPES, 'law'];
 const REPORT_STATUSES = ['pending', 'reviewed', 'dismissed', 'actioned'];
 
 function parseListPagination(query = {}) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(query.limit, 10) || 20));
   return { page, limit, offset: (page - 1) * limit };
+}
+
+async function attachLawTargets(reports) {
+  const ids = [...new Set(reports.filter(report => report.contentType === 'law').map(report => report.contentId))];
+  if (!ids.length) return reports;
+  const targets = await LegalLibraryTarget.findAll({ where: { id: ids }, attributes: ['id', 'documentId', 'unitId', 'label'], raw: true });
+  const byId = new Map(targets.map(target => [target.id, target]));
+  return reports.map(report => report.contentType === 'law'
+    ? { ...report.toJSON(), lawTarget: byId.get(report.contentId) || null }
+    : report);
 }
 
 const reportController = {
@@ -90,7 +102,7 @@ const reportController = {
       where.status = status;
     }
     if (contentType) {
-      if (!CONTENT_TYPES.includes(contentType)) {
+      if (!REVIEW_CONTENT_TYPES.includes(contentType)) {
         return res.status(400).json({ success: false, message: 'Invalid contentType.' });
       }
       where.contentType = contentType;
@@ -110,7 +122,7 @@ const reportController = {
     return res.status(200).json({
       success: true,
       data: {
-        reports: rows,
+        reports: await attachLawTargets(rows),
         pagination: {
           total: count,
           page,
@@ -134,7 +146,8 @@ const reportController = {
       return res.status(404).json({ success: false, message: 'Report not found.' });
     }
 
-    return res.status(200).json({ success: true, data: { report } });
+    const [withTarget] = await attachLawTargets([report]);
+    return res.status(200).json({ success: true, data: { report: withTarget } });
   },
 
   // POST /api/reports/:id/review — admin/moderator
@@ -152,12 +165,17 @@ const reportController = {
     }
 
     if (action === 'reopen') {
-      await report.update({
-        status: 'pending',
-        adminNotes: null,
-        reviewedBy: null,
-        reviewedAt: null
-      });
+      try {
+        await report.update({
+          status: 'pending',
+          adminNotes: null,
+          reviewedBy: null,
+          reviewedAt: null
+        });
+      } catch (error) {
+        if (!(error instanceof UniqueConstraintError) || report.contentType !== 'law') throw error;
+        return res.status(409).json({ success: false, message: 'The reporter already has a pending report for this provision.' });
+      }
     } else if (action === 'update_notes') {
       await report.update({ adminNotes: adminNotes || null });
     } else {
@@ -174,14 +192,15 @@ const reportController = {
       });
     }
 
-    return res.status(200).json({ success: true, data: { report } });
+    const [withTarget] = await attachLawTargets([report]);
+    return res.status(200).json({ success: true, data: { report: withTarget } });
   },
 
   // GET /api/reports/content/:contentType/:contentId — admin/moderator
   getReportsByContent: async (req, res) => {
     const { contentType, contentId } = req.params;
 
-    if (!CONTENT_TYPES.includes(contentType)) {
+    if (!REVIEW_CONTENT_TYPES.includes(contentType)) {
       return res.status(400).json({ success: false, message: 'Invalid contentType.' });
     }
 
@@ -199,7 +218,7 @@ const reportController = {
       order: [['createdAt', 'DESC']]
     });
 
-    return res.status(200).json({ success: true, data: { reports } });
+    return res.status(200).json({ success: true, data: { reports: await attachLawTargets(reports) } });
   }
 };
 

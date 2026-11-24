@@ -5,12 +5,12 @@ const sequelize = require('../config/database');
 const Report = sequelize.define('Report', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   contentType: {
-    type: DataTypes.ENUM('article', 'person', 'poll', 'comment', 'candidate', 'user'),
+    type: DataTypes.ENUM('article', 'person', 'poll', 'comment', 'candidate', 'user', 'law'),
     allowNull: false
   },
   contentId: { type: DataTypes.INTEGER, allowNull: false },
   category: {
-    type: DataTypes.ENUM('misinformation', 'harassment', 'spam', 'privacy_violation', 'impersonation', 'inappropriate_content', 'other'),
+    type: DataTypes.ENUM('misinformation', 'harassment', 'spam', 'privacy_violation', 'impersonation', 'inappropriate_content', 'other', 'harmful_legislation', 'corruption_risk'),
     allowNull: false
   },
   message: { type: DataTypes.TEXT, allowNull: true },
@@ -28,6 +28,11 @@ const Report = sequelize.define('Report', {
   adminNotes: { type: DataTypes.TEXT, allowNull: true },
   reviewedBy: { type: DataTypes.INTEGER, allowNull: true },
   reviewedAt: { type: DataTypes.DATE, allowNull: true }
+}, {
+  indexes: [{
+    name: 'reports_pending_law_user_unique', unique: true, fields: ['contentId', 'reportedByUserId'],
+    where: { contentType: 'law', status: 'pending' },
+  }],
 });
 
 module.exports = Report;

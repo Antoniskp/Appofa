@@ -48,6 +48,8 @@ test('exposes only a cached availability flag to signed-out visitors', async () 
 
 test('requires a live, email-verified session for the reader, assets and data', async () => {
   await request(app).get('/api/laws/view').expect(302).expect('Location', '/login?next=%2Flaws');
+  await request(app).get('/api/laws/view?law=law:1:2020&unit=unit:1').expect(302)
+    .expect('Location', '/login?next=' + encodeURIComponent('/laws#law=law%3A1%3A2020&unit=unit%3A1'));
   await request(app).get('/api/laws/view/app.js').expect(401).expect('Cache-Control', 'private, no-store');
   await request(app).get('/api/laws/document?id=law:1:2020').expect(401);
   User.findByPk.mockResolvedValue({ id: 1, role: 'admin', isVerified: true, emailVerified: false, sessionVersion: '0' });
@@ -84,10 +86,11 @@ test('opens the online reader and limits verified accounts to read-only content'
   expect(status.body).not.toHaveProperty('databasePath');
   const document = await signedIn('/document?id=law%3A1%3A2020').expect(200);
   expect(document.body).toMatchObject({
-    sourceText: 'Law text', annotation: { notes: '' }, revisions: [],
+    sourceText: 'Law text', annotation: { notes: '' }, revisions: [], participation: true,
     attachments: [{ id: 'file', local_file: true }],
   });
   expect(global.fetch.mock.calls.at(-1)[0].searchParams.get('id')).toBe('law:1:2020');
+  expect(global.fetch.mock.calls.at(-1)[0].searchParams.get('scope')).toBe('source');
   expect(global.fetch.mock.calls.at(-1)[1]).not.toHaveProperty('headers');
   await signedIn('/documents?q=law&scope=personal').expect(200);
   expect(global.fetch.mock.calls.at(-1)[0].searchParams.get('scope')).toBe('source');
