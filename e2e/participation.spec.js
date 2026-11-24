@@ -79,7 +79,7 @@ test('registers, submits a proposal, votes and rejects admin access', async ({ p
   await expect(page).toHaveURL(/\/suggestions\/\d+$/);
   await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
 
-  await page.goto('/polls/1');
+  await page.goto('/polls/1-improve-our-local-park');
   // The ballot is open by default for users who have not voted yet.
   await page.getByRole('radio', { name: /More trees/ }).check();
   const vote = page.waitForResponse(response => /\/api\/polls\/1\/vote$/.test(response.url()) && response.request().method() === 'POST');
