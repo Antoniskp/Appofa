@@ -942,6 +942,7 @@ describe('Suggestions & Solutions API Tests', () => {
         .set('Authorization', `Bearer ${user1Token}`)
         .set(csrfHeadersFor(csrf1, user1Id))
         .send({
+          locationId: childLocationId,
           title: 'Private planning thread',
           body: 'This should be visible only to authenticated users for planning.',
           type: 'idea',
@@ -981,6 +982,15 @@ describe('Suggestions & Solutions API Tests', () => {
       const ids = res.body.data.map((s) => s.id);
       expect(ids).toContain(parentSuggestionId);
       expect(ids).not.toContain(localsOnlySuggestionId);
+    });
+
+    it('lists only public descendant proposals with their original area in the broader location feed', async () => {
+      const res = await request(app)
+        .get(`/api/suggestions?locationId=${parentLocationId}&locationScope=descendants`)
+        .set('Authorization', `Bearer ${user1Token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data.map(item => item.id)).toEqual([localsOnlySuggestionId]);
+      expect(res.body.data[0].location).toMatchObject({ id: childLocationId, type: 'municipality' });
     });
 
     it('should deny vote on locals_only suggestion for non-local user', async () => {

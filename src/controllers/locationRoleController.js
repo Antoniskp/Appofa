@@ -103,7 +103,23 @@ exports.getRoles = async (req, res) => {
       ],
     });
 
-    const assignmentsByRole = groupAssignmentsByRoleKey(assignments);
+    // A term belongs to a particular office, country and holder.
+    let assignmentRows = assignments;
+    if (location.type === 'country' && location.code && assignments.some(row => row.userId && ROLE_KEY_TO_POSITION_TYPE[row.roleKey])) {
+      const holders = await GovernmentCurrentHolder.findAll({
+        where: { isActive: true, userId: assignments.map(row => row.userId).filter(Boolean) },
+        attributes: ['userId', 'since'],
+        include: [{ model: GovernmentPosition, as: 'position', required: true,
+          where: { countryCode: location.code.toUpperCase(), scope: 'national', positionTypeKey: Object.values(ROLE_KEY_TO_POSITION_TYPE) },
+          attributes: ['positionTypeKey'],
+        }],
+      });
+      assignmentRows = assignments.map(row => {
+        const holder = holders.find(item => item.userId === row.userId && item.position.positionTypeKey === ROLE_KEY_TO_POSITION_TYPE[row.roleKey]);
+        return holder?.since ? { ...row.toJSON(), termStart: holder.since } : row;
+      });
+    }
+    const assignmentsByRole = groupAssignmentsByRoleKey(assignmentRows);
 
     // Merge definitions with assignments
     const roles = definitions.map((def) => {

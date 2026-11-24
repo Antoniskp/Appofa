@@ -12,6 +12,7 @@ coverage/
 .next-homepage-review/
 .next-signup-review/
 .next-electoral-review/
+/.next-location-review/
 .next-contributions/
 playwright-report/
 test-results/

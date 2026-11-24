@@ -73,6 +73,27 @@ describe('LocationTabs suggestion anonymity', () => {
     });
   });
 
+  test('restores an area filter and links the latest reported update to the response and decision', async () => {
+    const container = document.createElement('div');
+    const root = createRoot(container);
+    const country = { id: 1, slug: 'greece', name: 'Ελλάδα', type: 'country' };
+    const town = { id: 2, name: 'Athens', name_local: 'Αθήνα' };
+    const progress = { stage: 'response', note: 'Ανακοινώθηκε απόφαση', response: 'Θετική απάντηση', decisionPollId: 10,
+      history: [{ at: '2026-11-18T09:00:00Z' }] };
+    const props = { activeTab: 'suggestions', location: country, scope: '2', onScopeChange: jest.fn(),
+      suggestions: [{ id: 4, title: 'National', location: country }, { id: 5, title: 'Local', location: town, progress }],
+      entities: { users: [], usersCount: 0, unclaimed: [], unclaimedCount: 0 }, TAB_LABELS: {}, visibleTabs: ['suggestions'] };
+    await act(async () => root.render(React.createElement(LocationTabs, props)));
+    const panel = container.querySelector('#tabpanel-suggestions');
+    expect(panel.textContent).toContain('Ανακοινώθηκε απόφαση');
+    expect(panel.textContent).not.toContain('National');
+    expect(panel.querySelector('time').dateTime).toBe(progress.history[0].at);
+    expect(panel.querySelector('a[href="/suggestions/5#proposal-progress"]')).toBeTruthy();
+    expect(panel.querySelector('a[href="/polls/10"]')).toBeTruthy();
+    expect(container.querySelector('option[value="1"]').textContent).toBe('Πανελλαδικά');
+    await act(async () => root.unmount());
+  });
+
   test('renders polls in compact grid layout and explicit empty CTA copy', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);

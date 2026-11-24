@@ -1,6 +1,7 @@
 const request = require('supertest');
 const app = require('../src/index');
-const { sequelize, User, Location, LocationLink, Article, UserLocationRole, LocationRole, CandidateRegistration } = require('../src/models');
+const { sequelize, User, Location, LocationLink, Article, UserLocationRole, LocationRole, CandidateRegistration,
+  LocationImprovement, GovernmentPosition, GovernmentCurrentHolder } = require('../src/models');
 const { storeCsrfToken } = require('../src/utils/csrf');
 
 describe('Location API Tests', () => {
@@ -558,6 +559,31 @@ describe('Location API Tests', () => {
   });
 
   describe('GET /api/locations/:id', () => {
+    it('only attributes a reviewed population source to its matching current figure', async () => {
+      const place = await Location.create({ name: 'Test Town', type: 'municipality', slug: 'reviewed-population', population_override: 1200 });
+      await LocationImprovement.create({ locationId: place.id, field: 'population_override', kind: 'source',
+        originalValue: '1000', proposedValue: '1200', status: 'accepted', reviewedAt: new Date(), sourceUrl: 'https://example.org/census' });
+      const read = () => request(app).get(`/api/locations/${place.id}`).expect(200);
+      expect((await read()).body.location.populationReview.sourceUrl).toBe('https://example.org/census');
+      await place.update({ population_override: 1300 });
+      expect((await read()).body.location.populationReview).toBeNull();
+    });
+
+    it('uses the term start for the same national office and holder', async () => {
+      const place = await Location.create({ name: 'Country fixture', type: 'country', slug: 'term-date-fixture', code: 'GR' });
+      const user = await User.findOne({ where: { username: 'admin' } });
+      await LocationRole.create({ locationId: place.id, roleKey: 'president', userId: user.id });
+      const position = await GovernmentPosition.create({ slug: 'term-date-head-of-state', title: 'Head of State', positionTypeKey: 'head_of_state', scope: 'national', countryCode: 'GR' });
+      const holder = await GovernmentCurrentHolder.create({ userId: user.id, positionId: position.id, since: '2025-03-13' });
+      const assignment = async () => {
+        const res = await request(app).get(`/api/locations/${place.id}/roles`).expect(200);
+        return res.body.roles.find(role => role.key === 'president').assignment;
+      };
+      expect((await assignment()).termStart).toBe('2025-03-13');
+      await holder.update({ isActive: false });
+      expect((await assignment()).termStart).toBeUndefined();
+    });
+
     it('should get location by id', async () => {
       const response = await request(app)
         .get(`/api/locations/${testLocation.id}`)

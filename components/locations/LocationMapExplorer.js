@@ -28,7 +28,8 @@ function safeCameraUrl(url) {
 }
 
 export default function LocationMapExplorer({ location, childLocations = EMPTY, breadcrumb = EMPTY, summaryCounts,
-  pendingIssuePin, reporting = false, onReportingChange, onMapClick, reportForm, isAuthenticated, refreshKey = 0 }) {
+  pendingIssuePin, reporting = false, onReportingChange, onMapClick, reportForm, isAuthenticated, refreshKey = 0,
+  panel, onPanelChange }) {
   const t = useTranslations('mapExplorer');
   const cameraText = useTranslations('cameras');
   const locale = useLocale();
@@ -49,7 +50,9 @@ export default function LocationMapExplorer({ location, childLocations = EMPTY, 
   const [searchedViewport, setSearchedViewport] = useState(null);
   const [viewResetKey, setViewResetKey] = useState(0);
   const [tileMode, setTileMode] = useState('light');
-  const [activePanel, setActivePanel] = useState('issues');
+  const [localPanel, setLocalPanel] = useState('issues');
+  const activePanel = panel === undefined ? localPanel : (['areas', 'cameras'].includes(panel) ? panel : 'issues');
+  const setActivePanel = onPanelChange || setLocalPanel;
   const [expanded, setExpanded] = useState(false);
   const [sheetHeight, setSheetHeight] = useState(248);
   const [addressState, setAddressState] = useState({ results: null, loading: false, error: false });
@@ -166,7 +169,7 @@ export default function LocationMapExplorer({ location, childLocations = EMPTY, 
     if (id.startsWith('issue-')) { setSelectedId(id.slice(6)); setActivePanel('issues'); }
     if (id.startsWith('child-')) { setSelectedChildId(id.slice(6)); setActivePanel('areas'); }
     if (id.startsWith('camera-')) { setSelectedCameraId(id.slice(7)); setActivePanel('cameras'); }
-  }, []);
+  }, [setActivePanel]);
   const markersReady = useCallback(controls => { markerControls.current = controls; }, []);
   const areasReady = useCallback(controls => { areaControls.current = controls; }, []);
   const resetView = () => {

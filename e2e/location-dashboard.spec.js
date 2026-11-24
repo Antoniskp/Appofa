@@ -23,12 +23,14 @@ test('location dashboard provides useful routes and a scoped agenda', async ({ p
   const dashboard = page.getByRole('region', { name: 'Η περιοχή με μια ματιά' });
   await expect(dashboard.getByText('Neighbourhood gathering')).toBeVisible();
   const cameras = dashboard.getByRole('link', { name: /Κάμερες/ });
-  await expect(cameras).toHaveAttribute('href', '#location-cameras');
+  await expect(cameras).toHaveAttribute('href', '/locations/test-municipality?map=cameras#location-map');
   await page.screenshot({ path: testInfo.outputPath('location-dashboard.png'), fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await cameras.click();
-  await expect(page).toHaveURL(/#location-cameras$/);
-  const cameraSection = page.locator('#location-cameras');
+  await expect(page).toHaveURL(/\?map=cameras#location-map$/);
+  await page.reload();
+  await expect(page.locator('#map-tab-cameras')).toHaveAttribute('aria-selected', 'true');
+  const cameraSection = page.locator('#map-panel-cameras');
   await expect(cameraSection.getByText('Harbour camera', { exact: true })).toBeVisible();
   await expect(cameraSection.locator('a[href="https://camera.example/harbour"]').first()).toBeVisible();
   await dashboard.getByRole('link', { name: /Κοινότητα/ }).click();
