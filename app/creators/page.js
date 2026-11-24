@@ -2,7 +2,17 @@ import TikTokCreatorDirectory from '@/components/creators/TikTokCreatorDirectory
 import { publicPageMetadata } from '@/lib/route-metadata';
 import { TIKTOK_CREATOR_CATEGORIES } from '@/config/tiktokCreators';
 
-export const generateMetadata = publicPageMetadata('tiktokCreators.title', 'tiktokCreators.subtitle', '/creators');
+const creatorMetadata = publicPageMetadata('tiktokCreators.invitationTitle', 'tiktokCreators.shareDescription', '/creators');
+
+export async function generateMetadata() {
+  const metadata = await creatorMetadata();
+  const image = new URL('/images/branding/tiktok-creator-share.jpg', metadata.openGraph.url).href;
+  return {
+    ...metadata,
+    openGraph: { ...metadata.openGraph, images: [{ url: image, width: 1200, height: 630, alt: metadata.openGraph.title }] },
+    twitter: { ...metadata.twitter, images: [image] },
+  };
+}
 
 export default async function CreatorsPage({ searchParams }) {
   const { category, locationId, q } = await searchParams;

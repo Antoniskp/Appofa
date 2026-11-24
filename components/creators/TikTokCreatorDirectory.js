@@ -1,19 +1,26 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { MagnifyingGlassIcon, MapPinIcon, PlusIcon, UserPlusIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
-import LocationSelector from '@/components/ui/LocationSelector';
+import { ChartBarIcon, MagnifyingGlassIcon, MapPinIcon, PlusIcon, UserPlusIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
+import CreatorLocationPicker from '@/components/creators/CreatorLocationPicker';
 import Pagination from '@/components/ui/Pagination';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { tiktokCreatorAPI } from '@/lib/api/tiktokCreators';
 import { useAuth } from '@/lib/auth-context';
 import { buildAuthPath } from '@/lib/auth-redirect';
-import { getTikTokProfileHandle, TIKTOK_CREATOR_CATEGORIES, TIKTOK_CREATOR_LOCATION_TYPES, tikTokProfileUrl } from '@/config/tiktokCreators';
+import { getTikTokProfileHandle, TIKTOK_CREATOR_CATEGORIES, tikTokProfileUrl } from '@/config/tiktokCreators';
 
 const fieldClass = 'min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-charcoal';
 const buttonClass = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold';
+const benefits = [
+  { key: 'discover', icon: MagnifyingGlassIcon },
+  { key: 'locations', icon: MapPinIcon, href: '/profile#location-politics' },
+  { key: 'polls', icon: ChartBarIcon, href: '/polls/create' },
+  { key: 'live', icon: VideoCameraIcon, href: '/live' },
+];
 
 export default function TikTokCreatorDirectory({ initialCategory, initialLocationId, initialSearch }) {
   const t = useTranslations('tiktokCreators');
@@ -30,11 +37,6 @@ export default function TikTokCreatorDirectory({ initialCategory, initialLocatio
     async () => (await tiktokCreatorAPI.getAll({ ...filters, page })).data,
     [filters, page]
   );
-
-  const locationLabels = {
-    search: t('searchLocations'), loading: t('loading'), empty: t('noLocations'),
-    types: Object.fromEntries(TIKTOK_CREATOR_LOCATION_TYPES.map((type) => [type, t(`locationTypes.${type}`)])),
-  };
 
   const applyFilters = (event) => {
     event.preventDefault();
@@ -72,39 +74,51 @@ export default function TikTokCreatorDirectory({ initialCategory, initialLocatio
 
   return (
     <main className="app-container py-8 sm:py-12">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">{t('title')}</h1>
-          <p className="mt-2 max-w-2xl text-gray-600">{t('subtitle')}</p>
+      <header className="mb-5 grid overflow-hidden rounded-3xl bg-[#273b34] text-white lg:grid-cols-[1.05fr_1fr]">
+        <div className="flex flex-col justify-center p-6 sm:p-9 lg:p-10">
+          <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">{t('invitationTitle')}</h1>
+          <p className="mt-4 max-w-lg text-sm leading-7 text-[#e0e9df] sm:text-base">{t('invitationIntro')}</p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <Link href={user ? '/polls/create' : buildAuthPath('/register', '/creators')}
+              className={`${buttonClass} bg-[#faf1df] text-[#273b34] hover:bg-white`}>
+              {user ? <ChartBarIcon className="h-5 w-5 shrink-0" aria-hidden="true" /> : <UserPlusIcon className="h-5 w-5 shrink-0" aria-hidden="true" />}
+              {t(user ? 'createPoll' : 'signUp')}
+            </Link>
+            <a href="#creator-directory" className={`${buttonClass} border border-white/40 text-white hover:bg-white/10`}>{t('browseCreators')}</a>
+          </div>
         </div>
-        <Link href="/live" className={`${buttonClass} border border-brand-border bg-white text-copper hover:bg-ivory`}>
-          <VideoCameraIcon className="h-5 w-5" aria-hidden="true" />{t('liveMap')}
-        </Link>
+        <div className="relative min-h-48 sm:min-h-60 lg:min-h-[23rem]">
+          <Image src="/images/branding/tiktok-creator-invitation.webp" alt="" fill sizes="(min-width: 1024px) 50vw, 100vw"
+            className="object-cover" preload />
+        </div>
       </header>
 
-      <div className="mb-6 grid divide-y divide-brand-border rounded-2xl border border-brand-border bg-white sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-        <section aria-labelledby="tiktok-account-benefits" className="p-5">
-          <h2 id="tiktok-account-benefits" className="text-lg font-bold text-charcoal">{t('accountTitle')}</h2>
-          <p className="mt-1 text-sm leading-6 text-gray-600">{t('accountBenefit')}</p>
-          {!user && (
-            <Link href={buildAuthPath('/register', '/creators')} className={`${buttonClass} mt-3 bg-copper text-white hover:bg-[#693a28]`}>
-              <UserPlusIcon className="h-5 w-5" aria-hidden="true" />{t('signUp')}
-            </Link>
-          )}
-        </section>
-        <section aria-labelledby="tiktok-listing-benefits" className="p-5">
+      <ul className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {benefits.map(({ key, icon: Icon, href }) => (
+          <li key={key} className="rounded-2xl border border-brand-border bg-white p-5">
+            <Icon className="h-6 w-6 text-copper" aria-hidden="true" />
+            <h2 className="mt-2 font-semibold text-charcoal">
+              {href && (user || key === 'live') ? <Link href={href} className="hover:text-copper hover:underline">{t(`benefits.${key}.title`)}</Link> : t(`benefits.${key}.title`)}
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-gray-600">{t(`benefits.${key}.description`)}</p>
+          </li>
+        ))}
+      </ul>
+
+      <section aria-labelledby="tiktok-listing-benefits" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-border bg-white p-5">
+        <div className="max-w-2xl">
           <h2 id="tiktok-listing-benefits" className="text-lg font-bold text-charcoal">{t('listingTitle')}</h2>
           <p className="mt-1 text-sm leading-6 text-gray-600">{t('listingBenefit')}</p>
-          <button type="button" aria-expanded={suggesting} aria-controls="suggest-tiktok-creator" disabled={submitting}
-            className={`${buttonClass} mt-3 border border-brand-border text-copper hover:bg-ivory`} onClick={() => {
-              setNotice(null);
-              setSuggesting(!suggesting);
-              setSubmissionLocationId(draft.locationId);
-            }}>
-            <PlusIcon className="h-5 w-5" aria-hidden="true" />{t(suggesting ? 'close' : 'suggest')}
-          </button>
-        </section>
-      </div>
+        </div>
+        <button type="button" aria-expanded={suggesting} aria-controls="suggest-tiktok-creator" disabled={submitting}
+          className={`${buttonClass} border border-brand-border text-copper hover:bg-ivory`} onClick={() => {
+            setNotice(null);
+            setSuggesting(!suggesting);
+            setSubmissionLocationId(draft.locationId);
+          }}>
+          <PlusIcon className="h-5 w-5" aria-hidden="true" />{t(suggesting ? 'close' : 'suggest')}
+        </button>
+      </section>
 
       {suggesting && (
         <section id="suggest-tiktok-creator" aria-labelledby="suggest-tiktok-title" className="mb-6 rounded-2xl border border-brand-border bg-white p-5 sm:p-6">
@@ -124,14 +138,8 @@ export default function TikTokCreatorDirectory({ initialCategory, initialLocatio
                   {TIKTOK_CREATOR_CATEGORIES.map((category) => <option key={category} value={category}>{t(`categories.${category}`)}</option>)}
                 </select>
               </div>
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center justify-between gap-x-3 text-sm font-medium">
-                  <p>{t('publicLocation')}</p>
-                  {submissionLocationId && <button type="button" className="text-copper hover:underline" onClick={() => setSubmissionLocationId(null)}>{t('clearLocation')}</button>}
-                </div>
-                <LocationSelector value={submissionLocationId} onChange={setSubmissionLocationId} placeholder={t('chooseLocation')}
-                  allowedTypes={TIKTOK_CREATOR_LOCATION_TYPES} searchOnServer allowClear={false} labels={locationLabels} />
-              </div>
+              <CreatorLocationPicker value={submissionLocationId} onChange={setSubmissionLocationId} label={t('publicLocation')} rootLabel={t('clearLocation')} />
+              <p className="text-sm text-gray-600 sm:col-span-2">{t('hierarchyHint')}</p>
               <p id="suggest-tiktok-discovery" className="text-sm text-gray-600 sm:col-span-2">{t('discoveryHint')}</p>
               <div className="sm:col-span-2">
                 <button type="submit" className={`${buttonClass} bg-copper text-white hover:bg-[#693a28] disabled:opacity-60`}>
@@ -145,8 +153,9 @@ export default function TikTokCreatorDirectory({ initialCategory, initialLocatio
 
       {notice && <p role={notice.error ? 'alert' : 'status'} className={`mb-5 rounded-lg border px-4 py-3 text-sm ${notice.error ? 'border-red-200 bg-red-50 text-red-800' : 'border-green-200 bg-green-50 text-green-800'}`}>{notice.text}</p>}
 
+      <h2 id="creator-directory" className="mb-3 scroll-mt-24 text-2xl font-bold text-charcoal">{t('title')}</h2>
       <form onSubmit={applyFilters} className="mb-6 rounded-2xl border border-brand-border bg-white p-4 sm:p-5">
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid items-start gap-3 sm:grid-cols-3">
           <label className="grid gap-1 text-sm font-medium">{t('search')}
             <input type="search" value={draft.q} onChange={(event) => setDraft({ ...draft, q: event.target.value })}
               maxLength={100} placeholder={t('searchPlaceholder')} className={fieldClass} />
@@ -158,11 +167,8 @@ export default function TikTokCreatorDirectory({ initialCategory, initialLocatio
               {TIKTOK_CREATOR_CATEGORIES.map((category) => <option key={category} value={category}>{t(`categories.${category}`)}</option>)}
             </select>
           </div>
-          <div className="space-y-1">
-            <p className="text-sm font-medium">{t('location')}</p>
-            <LocationSelector value={draft.locationId} onChange={(locationId) => setDraft({ ...draft, locationId })}
-              placeholder={t('allLocations')} allowedTypes={TIKTOK_CREATOR_LOCATION_TYPES} searchOnServer allowClear={false} labels={locationLabels} />
-          </div>
+          <CreatorLocationPicker value={draft.locationId} onChange={(locationId) => setDraft({ ...draft, locationId })}
+            label={t('location')} rootLabel={t('allLocations')} />
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           <button type="submit" className={`${buttonClass} bg-copper text-white hover:bg-[#693a28]`}>

@@ -1,15 +1,12 @@
 {
   "tiktokCreators": {
     "title": "TikTok creators",
-    "subtitle": "Find community-suggested TikTok creators by area and topic, from local politics to beauty, sports and gaming.",
     "liveMap": "Live map",
     "suggest": "Suggest a creator",
     "close": "Close form",
-    "accountTitle": "Share your livestreams",
-    "accountBenefit": "With a free Appofasi account, you can create your own profile and submit TikTok LIVE links for review to appear on the live map.",
     "signUp": "Create a free Appofasi account",
-    "listingTitle": "Help people find a creator",
-    "listingBenefit": "Anyone can suggest their own public TikTok profile or recommend another creator. Once approved, the listing links to TikTok and helps people find the creator by name, category or area.",
+    "listingTitle": "Add a TikTok profile",
+    "listingBenefit": "Suggest your own public TikTok profile or recommend another creator without signing up. Approved listings link directly to TikTok.",
     "discoveryHint": "Adding a category or area helps people find this creator when they filter the directory. If you add an area, choose one the creator publicly covers or identifies with.",
     "profile": "TikTok username or profile link",
     "displayName": "Display name (optional)",
@@ -17,14 +14,37 @@
     "optionalCategory": "Category (optional)",
     "chooseCategory": "Choose a category",
     "publicLocation": "Public area (optional)",
-    "chooseLocation": "Choose an area",
     "clearLocation": "Clear area",
     "location": "Location",
     "allLocations": "All locations",
-    "searchLocations": "Search locations",
-    "noLocations": "No matching locations",
     "loadError": "Could not load results.",
     "retry": "Try again",
+    "invitationTitle": "Bring your TikTok audience together",
+    "invitationIntro": "Find people who care about the places and topics you cover. Join Appofasi for free to ask your audience what they think and share where you’re going live.",
+    "shareDescription": "Get discovered by area and topic, create polls for your TikTok audience, and share your livestreams on Appofasi’s map.",
+    "browseCreators": "Browse the directory",
+    "createPoll": "Create a poll",
+    "chooseCountry": "Choose a country",
+    "chooseChildLocation": "Narrow to a smaller area",
+    "hierarchyHint": "Start with a country and narrow down to a region, district or municipality if you know it.",
+    "benefits": {
+      "discover": {
+        "title": "Get discovered",
+        "description": "An approved TikTok listing helps people find you by name, category or area."
+      },
+      "locations": {
+        "title": "Organize by location",
+        "description": "Set a home area on your Appofasi profile and link your polls to the places they’re about."
+      },
+      "polls": {
+        "title": "Ask your audience",
+        "description": "Create a poll, share its link with your TikTok audience, and follow the results."
+      },
+      "live": {
+        "title": "Put your LIVE on the map",
+        "description": "Submit a TikTok LIVE link for review so viewers can find your broadcast on the map."
+      }
+    },
     "loading": "Loading…",
     "submit": "Submit for review",
     "submitting": "Submitting…",

@@ -1,15 +1,12 @@
 {
   "tiktokCreators": {
     "title": "Creatori TikTok",
-    "subtitle": "Găsește creatori TikTok propuși de comunitate după zonă și categorie, de la politică locală la frumusețe, sport și jocuri.",
     "liveMap": "Harta transmisiunilor live",
     "suggest": "Propune un creator",
     "close": "Închide formularul",
-    "accountTitle": "Distribuie transmisiunile tale live",
-    "accountBenefit": "Cu un cont gratuit Appofasi, îți poți crea propriul profil și poți trimite linkuri TikTok LIVE spre verificare pentru a apărea pe hartă.",
     "signUp": "Creează un cont Appofasi gratuit",
-    "listingTitle": "Ajută publicul să găsească un creator",
-    "listingBenefit": "Oricine își poate propune propriul profil public de TikTok sau poate recomanda alt creator. După aprobare, profilul din director trimite către TikTok și ajută publicul să găsească acel creator după nume, categorie sau zonă.",
+    "listingTitle": "Adaugă un profil TikTok",
+    "listingBenefit": "Propune-ți profilul public de TikTok sau recomandă alt creator fără să îți faci cont. Profilurile aprobate trimit direct către TikTok.",
     "discoveryHint": "Categoria și zona îi ajută pe oameni să găsească acest creator când folosesc filtrele din director. Dacă adaugi o zonă, alege una despre care creatorul vorbește sau pe care o menționează public.",
     "profile": "Nume de utilizator sau link către profilul TikTok",
     "displayName": "Nume afișat (opțional)",
@@ -17,14 +14,37 @@
     "optionalCategory": "Categorie (opțională)",
     "chooseCategory": "Alege o categorie",
     "publicLocation": "Zonă publică (opțională)",
-    "chooseLocation": "Alege o zonă",
     "clearLocation": "Elimină zona",
     "location": "Locație",
     "allLocations": "Toate locațiile",
-    "searchLocations": "Caută locații",
-    "noLocations": "Nu s-au găsit locații",
     "loadError": "Rezultatele nu au putut fi încărcate.",
     "retry": "Încearcă din nou",
+    "invitationTitle": "Adu-ți publicul de pe TikTok mai aproape",
+    "invitationIntro": "Găsește oameni interesați de locurile și subiectele despre care vorbești. Creează un cont gratuit pe Appofasi, întreabă-ți publicul ce părere are și arată unde transmiți live.",
+    "shareDescription": "Ajută publicul să te găsească după zonă și subiect, creează sondaje și publică transmisiunile tale live pe harta Appofasi.",
+    "browseCreators": "Vezi directorul",
+    "createPoll": "Creează un sondaj",
+    "chooseCountry": "Alege o țară",
+    "chooseChildLocation": "Alege o zonă mai restrânsă",
+    "hierarchyHint": "Începe cu țara și alege o regiune, o circumscripție sau o municipalitate dacă o cunoști.",
+    "benefits": {
+      "discover": {
+        "title": "Ajută publicul să te găsească",
+        "description": "Un profil TikTok aprobat ajută publicul să te găsească după nume, categorie sau zonă."
+      },
+      "locations": {
+        "title": "Organizează după zonă",
+        "description": "Alege zona de reședință din profilul Appofasi și asociază sondajele cu locurile la care se referă."
+      },
+      "polls": {
+        "title": "Întreabă-ți publicul",
+        "description": "Creează un sondaj, trimite linkul publicului tău de pe TikTok și urmărește rezultatele."
+      },
+      "live": {
+        "title": "Pune transmisiunea live pe hartă",
+        "description": "Trimite un link TikTok LIVE spre verificare pentru ca publicul să găsească transmisiunea pe hartă."
+      }
+    },
     "loading": "Se încarcă…",
     "submit": "Trimite spre verificare",
     "submitting": "Se trimite…",
