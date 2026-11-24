@@ -12,6 +12,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import Badge from '@/components/ui/Badge';
 import CivicQuestionVoting from '@/components/civicQuestions/CivicQuestionVoting';
 import CivicQuestionResults from '@/components/civicQuestions/CivicQuestionResults';
+import ConsultationDecision from '@/components/civicQuestions/ConsultationDecision';
 import CommentsThread from '@/components/comments/CommentsThread';
 import {
   getCivicQuestionLifecycleStatus,
@@ -30,6 +31,7 @@ const toDisplayDate = (value, locale, withTime = false) => {
 
 export default function CivicQuestionDetailClient() {
   const t = useTranslations('civicQuestions');
+  const tConsultations = useTranslations('consultations');
   const locale = useLocale();
   const params = useParams();
   const router = useRouter();
@@ -86,7 +88,10 @@ export default function CivicQuestionDetailClient() {
   }
 
   const isCreator = user && civicQuestion.creatorId === user.id;
-  const canEdit = isCreator || user?.role === 'admin';
+  const consultation = civicQuestion.parliamentaryConsultation;
+  const canEdit = !consultation && (isCreator || user?.role === 'admin');
+  const backHref = consultation ? '/parliamentary-consultations' : '/civic-questions';
+  const backLabel = consultation ? tConsultations('title') : t('detail.back_list');
   const lifecycleStatus = getCivicQuestionLifecycleStatus(civicQuestion);
   const participationOpen = lifecycleStatus === 'open' || lifecycleStatus === 'closing_soon';
   const canVote = user && participationOpen;
@@ -96,18 +101,19 @@ export default function CivicQuestionDetailClient() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-5xl space-y-6">
-        <Link href="/civic-questions" className="inline-block text-sm text-blue-700">← {t('detail.back_list')}</Link>
+        <Link href={backHref} className="inline-block text-sm text-blue-700">← {backLabel}</Link>
         {/* Header card */}
         <div className={`${sectionCardClass} space-y-3`}>
           <div className="flex flex-wrap items-start gap-2">
             <Badge variant={getCivicQuestionStatusBadgeVariant(lifecycleStatus)}>{t('card.participation_status', { status: t(`status.${lifecycleStatus}`) })}</Badge>
-            <Badge variant="primary">{t(`source_types.${civicQuestion.sourceType}`)}</Badge>
+            <Badge variant="primary">{consultation ? tConsultations('title') : t(`source_types.${civicQuestion.sourceType}`)}</Badge>
 
             {civicQuestion.visibility === 'locals_only' && <Badge variant="warning">{t('local_badge')}</Badge>}
 
           </div>
           <div className="flex flex-col gap-3">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">{civicQuestion.title}</h1>
+            {consultation && <p className="text-sm font-semibold text-teal-800">{tConsultations('askedBy', { name: consultation.publisherName })}</p>}
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -151,7 +157,7 @@ export default function CivicQuestionDetailClient() {
           <a href="#question-sources" className="inline-block text-blue-700 underline">{t('detail.source_origin')}</a>
         </section>
 
-        <p className="text-sm text-gray-600">{t('detail.editorial_note')}</p>
+        <p className="text-sm text-gray-600">{consultation ? tConsultations('advisory') : t('detail.editorial_note')}</p>
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-green-50 border border-green-200 rounded-lg p-5">
             <h2 className="text-lg font-semibold text-green-800 mb-3 flex items-center gap-1.5">
@@ -183,6 +189,8 @@ export default function CivicQuestionDetailClient() {
           <CivicQuestionResults civicQuestion={civicQuestion} />
         </div>
 
+        {consultation && <ConsultationDecision question={civicQuestion} user={user} votingOpen={participationOpen} onPublished={fetchQuestion} />}
+
         <details id="question-sources" className={sectionCardClass}>
           <summary className="cursor-pointer text-lg font-semibold">{t('detail.source_origin')}</summary>
           <dl className="mt-4 space-y-4 text-sm text-gray-700">
@@ -212,8 +220,8 @@ export default function CivicQuestionDetailClient() {
           />
         </div>
 
-        <Link href="/civic-questions" className="inline-block text-blue-600 hover:text-blue-800 font-medium">
-          ← {t('detail.back_list')}
+        <Link href={backHref} className="inline-block text-blue-600 hover:text-blue-800 font-medium">
+          ← {backLabel}
         </Link>
       </div>
       {showShareModal && (

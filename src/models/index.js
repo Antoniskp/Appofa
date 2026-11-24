@@ -21,6 +21,7 @@ const PollOption = require('./PollOption');
 const PollVote = require('./PollVote');
 const CivicQuestion = require('./CivicQuestion');
 const CivicQuestionVote = require('./CivicQuestionVote');
+const ConsultationEvaluation = require('./ConsultationEvaluation');
 const Bookmark = require('./Bookmark');
 const Message = require('./Message');
 const Follow = require('./Follow');
@@ -635,6 +636,7 @@ module.exports = {
   PollVote,
   CivicQuestion,
   CivicQuestionVote,
+  ConsultationEvaluation,
   Bookmark,
   Message,
   Follow,

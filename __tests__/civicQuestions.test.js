@@ -93,6 +93,79 @@ describe('Civic Questions API', () => {
     expect(response.body.success).toBe(false);
   });
 
+  test('runs a consultation from approved publication through public decision evaluation', async () => {
+    const admin = await registerAndLogin('consultation_admin', 'admin');
+    const publisher = await registerAndLogin('consultation_publisher');
+    const endpoint = '/api/civic-questions';
+    const as = (req, account) => {
+      const csrf = csrfHeadersFor(`csrf-consultation-${account.id}`, account.id);
+      return req.set({ ...csrf, Cookie: [...csrf.Cookie, `auth_token=${account.token}`] });
+    };
+    const setPublisher = name => as(request(app).put(`${endpoint}/consultations/publishers/${publisher.id}`), admin).send({ name });
+    const publish = (account, payload) => as(request(app).post(`${endpoint}/consultations`), account).send(payload);
+    const input = {
+      title: 'Should we support this proposal?',
+      simplified: 'The MP is deciding whether to support the proposal in Parliament.',
+      deadline: new Date(Date.now() + 60000).toISOString(),
+      sourceName: 'Spoofed official name',
+      visibility: 'private',
+    };
+
+    expect((await publish(publisher, input)).status).toBe(403);
+    expect((await setPublisher('Alex Example')).status).toBe(400);
+    await User.update({ isVerified: true }, { where: { id: publisher.id } });
+    expect((await as(request(app).put(`${endpoint}/consultations/publishers/${publisher.id}`), publisher).send({ name: 'Self approved' })).status).toBe(403);
+    expect((await setPublisher('Alex Example')).status).toBe(200);
+    expect((await publish(publisher, { ...input, deadline: '2020-01-01T00:00:00.000Z' })).status).toBe(400);
+
+    const created = await publish(publisher, input);
+    expect(created.status).toBe(201);
+    expect(created.body.data).toMatchObject({ sourceType: 'parliament', visibility: 'public', creatorId: publisher.id, parliamentaryConsultation: { publisherName: 'Alex Example' } });
+    const id = created.body.data.id;
+    const url = `${endpoint}/${id}`;
+    const decision = {
+      decision: 'I supported the proposal.',
+      reasoning: 'The result confirmed that citizens wanted the proposal to move forward.',
+      evidenceUrl: 'https://example.test/parliamentary-record',
+    };
+
+    try {
+      const ordinary = await as(request(app).post(endpoint), voter).send({ title: 'Ordinary parliamentary topic', sourceType: 'parliament', parliamentaryConsultation: { publisherName: 'Spoofed' } });
+      expect(ordinary.status).toBe(201);
+      expect(ordinary.body.data.parliamentaryConsultation).toBeNull();
+      const publicList = await request(app).get(endpoint).query({ parliamentaryConsultations: 'true' });
+      expect(publicList.status).toBe(200);
+      expect(publicList.body.data.map(question => question.id)).toEqual([id]);
+      await CivicQuestion.destroy({ where: { id: ordinary.body.data.id } });
+
+      expect((await as(request(app).put(url), publisher).send({ title: 'A different question' })).status).toBe(409);
+      expect((await as(request(app).post(`${url}/vote`), voter).send({ choice: 'agree' })).status).toBe(200);
+      expect((await as(request(app).put(`${url}/consultation-evaluation`), voter).send({ choice: 'reflects' })).status).toBe(409);
+      expect((await as(request(app).post(`${url}/consultation-decision`), publisher).send(decision)).status).toBe(409);
+      await CivicQuestion.update({ deadline: new Date(Date.now() - 1000) }, { where: { id } });
+      expect((await as(request(app).post(`${url}/consultation-decision`), admin).send(decision)).status).toBe(403);
+      expect((await as(request(app).post(`${url}/consultation-decision`), publisher).send({ ...decision, evidenceUrl: 'javascript:alert(1)' })).status).toBe(400);
+      expect((await as(request(app).post(`${url}/consultation-decision`), publisher).send(decision)).status).toBe(201);
+      expect((await as(request(app).post(`${url}/consultation-decision`), publisher).send(decision)).status).toBe(409);
+      const published = await request(app).get(url);
+      expect(published.body.data.parliamentaryConsultation.response).toMatchObject(decision);
+      expect(published.body.data.voteCounts.agree).toBe(1);
+
+      const evaluate = (account, choice) => as(request(app).put(`${url}/consultation-evaluation`), account).send({ choice });
+      expect((await request(app).put(`${url}/consultation-evaluation`).send({ choice: 'reflects' })).status).toBe(401);
+      expect((await evaluate(voter, 'reflects')).status).toBe(200);
+      expect((await evaluate(voter, 'partly')).status).toBe(200);
+      expect((await evaluate(outsider, 'does_not_reflect')).status).toBe(200);
+      const evaluation = await request(app).get(`${url}/consultation-evaluation`);
+      expect(evaluation.body.data).toEqual({ counts: { reflects: 0, partly: 1, does_not_reflect: 1 }, myEvaluation: null });
+      expect((await as(request(app).get(`${url}/consultation-evaluation`), voter)).body.data.myEvaluation).toBe('partly');
+      expect((await setPublisher(null)).status).toBe(200);
+      expect((await publish(publisher, input)).status).toBe(403);
+    } finally {
+      await CivicQuestion.destroy({ where: { id } });
+    }
+  });
+
   test('category choices span pages, split compound categories and respect visibility', async () => {
     const created = await CivicQuestion.bulkCreate([
       { category: 'Energy / Consumers', visibility: 'public' },

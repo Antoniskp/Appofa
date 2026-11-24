@@ -100,6 +100,10 @@ const CivicQuestion = sequelize.define('CivicQuestion', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  parliamentaryConsultation: {
+    type: DataTypes.JSON,
+    allowNull: true,
+  },
   commentsEnabled: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

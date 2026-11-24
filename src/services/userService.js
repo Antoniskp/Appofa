@@ -734,7 +734,7 @@ async function getAdminUsers(actorId, actorRole, { search, role, verified, place
   const query = {
     distinct: true,
     where: whereClause,
-    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified', 'claimStatus'],
+    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified', 'claimStatus', 'parliamentaryPublisherName'],
     include: [
       {
         model: Location,
@@ -1010,6 +1010,7 @@ async function verifyUser(actorId, actorRole, actorHomeLocationId, targetId, isV
     }
   } else {
     target.isVerified = false;
+    target.parliamentaryPublisherName = null;
     target.verifiedAt = null;
     target.verifiedByUserId = null;
     target.verifiedScopeLocationId = null;

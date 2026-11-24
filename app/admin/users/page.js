@@ -3,10 +3,11 @@
 import { useAdminQueryState } from '@/hooks/useAdminQueryState';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { TrashIcon, ShieldCheckIcon, UserGroupIcon, ShieldExclamationIcon, UserIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { authAPI } from '@/lib/api';
+import { authAPI, civicQuestionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -22,6 +23,7 @@ import AdminHeader from '@/components/admin/AdminHeader';
 const USERS_PER_PAGE = 20;
 
 function AdminUsersContent() {
+  const tConsultations = useTranslations('consultations');
   const { user } = useAuth();
   const { addToast } = useToast();
 
@@ -38,6 +40,7 @@ function AdminUsersContent() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [verifyingUserId, setVerifyingUserId] = useState(null);
+  const [updatingPublisherId, setUpdatingPublisherId] = useState(null);
 
   // Fetch users with server-side pagination and filtering
   const { data: usersData, loading, error, refetch } = useAsyncData(
@@ -115,6 +118,19 @@ function AdminUsersContent() {
     if (user.role === 'moderator') return true;
     return false;
   };
+
+  async function updatePublisher(targetId, name) {
+    setUpdatingPublisherId(targetId);
+    try {
+      await civicQuestionAPI.setConsultationPublisher(targetId, name);
+      await refetch();
+      addToast(tConsultations('accessSaved'), { type: 'success' });
+    } catch (error) {
+      addToast(error.message, { type: 'error' });
+    } finally {
+      setUpdatingPublisherId(null);
+    }
+  }
 
   // Delete user
   const handleDeleteUser = async () => {
@@ -271,6 +287,22 @@ function AdminUsersContent() {
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-600 mt-0.5">
                               {u.claimStatus === 'unclaimed' ? 'Αδιεκδίκητο' : u.claimStatus === 'pending' ? 'Σε Αναμονή' : 'Διεκδικημένο'}
                             </span>
+                          )}
+                          {user?.role === 'admin' && u.claimStatus === null && u.isVerified && (
+                            <details className="mt-2 min-w-44 text-xs">
+                              <summary className="cursor-pointer font-medium text-teal-800">{tConsultations(u.parliamentaryPublisherName ? 'publisherEnabled' : 'publisherAccess')}</summary>
+                              <p className="mt-2 text-gray-600">{tConsultations('publisherInstructions')}</p>
+                              <form key={u.parliamentaryPublisherName || 'new'} className="mt-2 space-y-2" onSubmit={event => {
+                                event.preventDefault();
+                                updatePublisher(u.id, new FormData(event.currentTarget).get('name'));
+                              }}>
+                                <label className="block">{tConsultations('publisherName')}
+                                  <input name="name" defaultValue={u.parliamentaryPublisherName || ''} required minLength={2} maxLength={200} className="mt-1 block w-full rounded border p-1.5" />
+                                </label>
+                                <button disabled={updatingPublisherId !== null} className="rounded bg-teal-800 px-2 py-1.5 font-semibold text-white disabled:opacity-50">{tConsultations('saveAccess')}</button>
+                                {u.parliamentaryPublisherName && <button type="button" disabled={updatingPublisherId !== null} onClick={() => updatePublisher(u.id, null)} className="ml-2 py-1.5 text-red-700 underline disabled:opacity-50">{tConsultations('revokeAccess')}</button>}
+                              </form>
+                            </details>
                           )}
                         </td>
 

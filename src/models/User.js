@@ -244,6 +244,10 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(50),
     allowNull: true
   },
+  parliamentaryPublisherName: {
+    type: DataTypes.STRING(200),
+    allowNull: true,
+  },
   isVerified: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

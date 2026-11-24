@@ -40,6 +40,7 @@ export default function TopNav() {
   const tCalendar = useTranslations('calendar');
   const tOrganizations = useTranslations('organizations');
   const tPositions = useTranslations('positions');
+  const tConsultations = useTranslations('consultations');
   const { user, loading, logout } = useAuth();
   const { canAccessAdmin } = usePermissions();
   const pathname = usePathname();
@@ -166,6 +167,11 @@ export default function TopNav() {
           id: 'positions', label: tPositions('heading'), href: '/positions',
           icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
           mobileIcon: <ClipboardDocumentListIcon className="h-5 w-5" />,
+        },
+        {
+          id: 'parliamentary-consultations', label: tConsultations('title'), href: '/parliamentary-consultations',
+          icon: <ChatBubbleLeftRightIcon className="h-4 w-4" />,
+          mobileIcon: <ChatBubbleLeftRightIcon className="h-5 w-5" />,
         },
         {
           id: 'parties', label: tOrganizations('parties'), href: '/elections/political-parties',

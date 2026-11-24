@@ -27,6 +27,12 @@ const CIVIC_QUESTION_SORT_OPTIONS = ['newest', 'closing_soon', 'most_voted'];
 
 const CHOICE_ORDER = ['agree', 'disagree', 'present'];
 
+function votingError(question) {
+  if (question.status !== 'open') return 'Voting is closed for this civic question.';
+  if (question.deadline && new Date(question.deadline) <= new Date()) return 'Voting deadline has passed for this civic question.';
+  return null;
+}
+
 const requiresLocation = (visibility, voteRestriction) =>
   visibility === 'locals_only' || voteRestriction === 'locals_only';
 
@@ -421,6 +427,11 @@ const listCivicQuestions = async (query, user) => {
 
     const where = {};
 
+    if (query.parliamentaryConsultations === 'true') {
+      where.parliamentaryConsultation = { [Op.ne]: null };
+      where.visibility = 'public';
+    }
+
     const statusFilter = normalizeEnum(query.status, CIVIC_QUESTION_STATUSES, 'Status');
     if (statusFilter.error) return { success: false, status: 400, message: statusFilter.error };
     if (statusFilter.value) where.status = statusFilter.value;
@@ -663,7 +674,7 @@ const getCivicQuestionById = async (id, user) => {
   }
 };
 
-const createCivicQuestion = async (userId, payload) => {
+const createCivicQuestion = async (userId, payload, parliamentaryConsultation) => {
   try {
     const validated = await validateCreatePayload(payload);
     if (validated.error) {
@@ -673,6 +684,7 @@ const createCivicQuestion = async (userId, payload) => {
     const created = await CivicQuestion.create({
       ...validated.value,
       creatorId: userId,
+      parliamentaryConsultation,
     });
 
     const withIncludes = await CivicQuestion.findByPk(created.id, {
@@ -708,6 +720,10 @@ const updateCivicQuestion = async (id, userId, userRole, payload) => {
     const canEdit = question.creatorId === userId || ['admin', 'moderator'].includes(userRole);
     if (!canEdit) {
       return { success: false, status: 403, message: 'Forbidden.' };
+    }
+
+    if (question.parliamentaryConsultation) {
+      return { success: false, status: 409, message: 'Published consultation questions and voting rules are fixed.' };
     }
 
     const validated = await validateUpdatePayload(payload);
@@ -758,7 +774,8 @@ const deleteCivicQuestion = async (id, userId, userRole) => {
       return { success: false, status: 404, message: 'Civic question not found.' };
     }
 
-    const canDelete = question.creatorId === userId || ['admin', 'moderator'].includes(userRole);
+    const canDelete = ['admin', 'moderator'].includes(userRole)
+      || (!question.parliamentaryConsultation && question.creatorId === userId);
     if (!canDelete) {
       return { success: false, status: 403, message: 'Forbidden.' };
     }
@@ -795,13 +812,8 @@ const voteCivicQuestion = async (id, user, payload) => {
       return { success: false, status: 403, message: 'Access denied.' };
     }
 
-    if (question.status !== 'open') {
-      return { success: false, status: 400, message: 'Voting is closed for this civic question.' };
-    }
-
-    if (question.deadline && new Date(question.deadline) <= new Date()) {
-      return { success: false, status: 400, message: 'Voting deadline has passed for this civic question.' };
-    }
+    const closed = votingError(question);
+    if (closed) return { success: false, status: 400, message: closed };
 
     if (question.voteRestriction === 'locals_only') {
       const allowed = await hasLocalAccess(user, question.locationId);
@@ -810,18 +822,25 @@ const voteCivicQuestion = async (id, user, payload) => {
       }
     }
 
-    const existing = await CivicQuestionVote.findOne({
-      where: { civicQuestionId: questionId, userId: user.id },
-    });
-
-    if (existing) {
-      await existing.update({ choice: choiceResult.value });
-    } else {
-      await CivicQuestionVote.create({
-        civicQuestionId: questionId,
-        userId: user.id,
-        choice: choiceResult.value,
+    const vote = {
+      civicQuestionId: questionId,
+      userId: user.id,
+      choice: choiceResult.value,
+    };
+    const conflictFields = ['civicQuestionId', 'userId'];
+    if (question.parliamentaryConsultation) {
+      // Check the deadline under the same lock used to publish the decision.
+      const failure = await sequelize.transaction(async (transaction) => {
+        const current = await CivicQuestion.findByPk(questionId, { transaction, lock: transaction.LOCK.UPDATE });
+        if (!current) return { success: false, status: 404, message: 'Civic question not found.' };
+        const error = votingError(current);
+        if (error) return { success: false, status: 400, message: error };
+        await CivicQuestionVote.upsert(vote, { conflictFields, transaction });
+        return null;
       });
+      if (failure) return failure;
+    } else {
+      await CivicQuestionVote.upsert(vote, { conflictFields });
     }
 
     const refreshed = await CivicQuestion.findByPk(question.id, {
