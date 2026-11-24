@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -144,6 +144,16 @@ export default function LocationDetailPage() {
   const [isReportingMapIssue, setIsReportingMapIssue] = useState(false);
   const [mapRefreshKey, setMapRefreshKey] = useState(0);
 
+  const locationRequest = useRef(0);
+  useEffect(() => () => { locationRequest.current += 1; }, [params.slug]);
+
+  const handleMapPanelChange = useCallback(panel => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('map', panel);
+    url.hash = 'location-map';
+    window.history.replaceState(null, '', url);
+  }, []);
+
   // Derive active tab from URL query param
   const rawTab = searchParams.get('tab');
   const activeTab = VALID_TABS.includes(rawTab) ? rawTab : DEFAULT_TAB;
@@ -151,7 +161,8 @@ export default function LocationDetailPage() {
   const handleTabChange = (tab) => {
     const next = new URLSearchParams(searchParams.toString());
     next.set('tab', tab);
-    window.history.replaceState(null, '', `${pathname}?${next.toString()}${window.location.hash}`);
+    next.delete('scope');
+    window.history.replaceState(null, '', `${pathname}?${next.toString()}#location-content`);
   };
 
   const { data: location, loading, error, refetch } = useAsyncData(
@@ -165,6 +176,7 @@ export default function LocationDetailPage() {
     [params.slug],
     {
       onSuccess: async (loc) => {
+        const requestId = ++locationRequest.current;
         // Reset secondary state to prevent stale data from previous location
         setEntities({ articles: [], users: [], polls: [], usersCount: 0, unclaimed: [], unclaimedCount: 0 });
         setSuggestions([]);
@@ -210,7 +222,7 @@ export default function LocationDetailPage() {
         // Use the resolved numeric ID for subsequent queries
         const locId = loc.id;
         // Fetch all secondary data in parallel
-        const [entitiesRes, childrenRes, sectionsRes, suggestionsRes, siblingsRes, candidatesRes] =
+        const [entitiesRes, childrenRes, sectionsRes, suggestionsRes, siblingsRes, candidatesRes, descendantSuggestions] =
           await Promise.allSettled([
             // 0: linked entities/content
             locationAPI.getLocationEntities(locId),
@@ -224,7 +236,12 @@ export default function LocationDetailPage() {
             loc.parent?.id ? locationAPI.getAll({ parent_id: loc.parent.id }) : Promise.resolve({ success: true, locations: [] }),
             // 5: candidate registrations scoped to this location tree
             candidateRegistrationAPI.getAll({ locationId: locId, limit: 50 }),
+            loc.children?.length
+              ? suggestionAPI.getAll({ locationId: locId, locationScope: 'descendants', limit: 50 })
+              : Promise.resolve({ success: true, data: [] }),
           ]);
+
+        if (requestId !== locationRequest.current) return;
 
         if (entitiesRes.status === 'fulfilled' && entitiesRes.value.success) {
           setEntities({
@@ -251,11 +268,10 @@ export default function LocationDetailPage() {
           console.error('Failed to load sections:', sectionsRes.reason);
         }
 
-        if (suggestionsRes.status === 'fulfilled' && suggestionsRes.value.success) {
-          setSuggestions(suggestionsRes.value.data || []);
-        } else if (suggestionsRes.status === 'rejected') {
-          console.error('Failed to load suggestions:', suggestionsRes.reason);
-        }
+        const proposalRows = [suggestionsRes, descendantSuggestions].flatMap(result =>
+          result.status === 'fulfilled' && result.value?.success ? result.value.data || [] : []
+        );
+        setSuggestions(proposalRows.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)));
 
         if (siblingsRes.status === 'fulfilled' && siblingsRes.value.success) {
           setSiblings((siblingsRes.value.locations || []).filter((item) => item.id !== locId));
@@ -272,9 +288,9 @@ export default function LocationDetailPage() {
         setSecondaryLoading(false);
         if (loc.type === 'country') {
           geoAPI.getCountryFunding(loc.id)
-            .then((res) => { if (res?.success) setFundingData(res.data); })
+            .then((res) => { if (requestId === locationRequest.current && res?.success) setFundingData(res.data); })
             .catch(() => {})
-            .finally(() => setFundingLoaded(true));
+            .finally(() => { if (requestId === locationRequest.current) setFundingLoaded(true); });
         } else {
           setFundingLoaded(true);
         }
@@ -290,7 +306,7 @@ export default function LocationDetailPage() {
   useEffect(() => {
     if (!location?.slug) return;
     if (/^\d+$/.test(params.slug) && location.slug !== params.slug) {
-      router.replace(`/locations/${location.slug}`);
+      router.replace(`/locations/${location.slug}${window.location.search}${window.location.hash}`);
     }
   }, [location, params.slug, router]);
 
@@ -542,6 +558,12 @@ export default function LocationDetailPage() {
     }
   };
 
+  useEffect(() => {
+    if (loading || secondaryLoading || !location) return;
+    const section = window.location.hash.slice(1);
+    if (section.startsWith('location-')) document.getElementById(section)?.scrollIntoView?.();
+  }, [loading, secondaryLoading, location]);
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
@@ -699,6 +721,7 @@ export default function LocationDetailPage() {
             <LocationPageNav items={pageNavItems} />
 
             <LocationDashboard
+              hasMap={showMainLocationMap}
               key={location.id}
               location={location}
               polls={activePolls}
@@ -712,6 +735,8 @@ export default function LocationDetailPage() {
               <div id="location-map" className="mb-8 scroll-mt-36">
                   <LocationMapExplorer
                     key={location.id}
+                    panel={searchParams.get('map') || 'issues'}
+                    onPanelChange={handleMapPanelChange}
                     location={location}
                     childLocations={children}
                     breadcrumb={breadcrumb}
@@ -828,6 +853,15 @@ export default function LocationDetailPage() {
             <div id="location-content" className="mb-8 space-y-3 scroll-mt-36">
               <h2 className="text-lg font-semibold text-gray-900">Συμμετοχή και δραστηριότητα</h2>
               <LocationTabs
+                location={location}
+                scope={searchParams.get('scope') || ''}
+                onScopeChange={scope => {
+                  const url = new URL(window.location.href);
+                  if (scope) url.searchParams.set('scope', scope);
+                  else url.searchParams.delete('scope');
+                  url.hash = 'location-content';
+                  window.history.replaceState(null, '', url);
+                }}
                 activeTab={resolvedActiveTab}
                 onTabChange={handleTabChange}
                 activePolls={activePolls}

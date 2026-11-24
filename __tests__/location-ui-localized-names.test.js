@@ -81,7 +81,8 @@ describe('Location UI localized names', () => {
     expect(container.textContent).toContain('Ελλάδα');
     expect(container.textContent).toContain('Αττική');
     expect(container.textContent).toContain('Αθήνα');
-    expect(container.textContent).toContain('Προβολή:');
+    expect(container.querySelector('[aria-current="page"]').textContent).toBe('Αθήνα');
+    expect(container.querySelector('a[href="/locations/greece"]').textContent).toContain('Η περιοχή μου');
     expect(container.textContent).not.toContain('Greece');
     expect(container.textContent).not.toContain('Attica');
     expect(container.textContent).not.toContain('Athens');
@@ -89,6 +90,35 @@ describe('Location UI localized names', () => {
     await act(async () => {
       root.unmount();
     });
+  });
+
+  test('ends the breadcrumb at the viewed ancestor and marks the home separately', async () => {
+    const country = { id: 1, slug: 'greece', name_local: 'Ελλάδα' };
+    const home = { id: 2, slug: 'ithaki', name_local: 'Ιθάκη' };
+    const { container, root } = await renderComponent(LocationBreadcrumb, { breadcrumb: [country], homeBreadcrumb: [country, home] });
+    expect(container.querySelector('nav').textContent).toBe('Ελλάδα');
+    expect(container.querySelector('a[href="/locations/ithaki"]').textContent).toContain('Η περιοχή μου');
+    await act(async () => root.unmount());
+  });
+
+  test('shares the open section and attributes the preliminary population figure', async () => {
+    const url = '/locations/greece?tab=polls&scope=1#location-content';
+    window.history.replaceState({}, '', url);
+    const share = jest.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'share', { configurable: true, value: share });
+    try {
+      const { container, root } = await renderComponent(LocationHeader, {
+        location: { id: 1, type: 'country', code: 'GR', name: 'Ελλάδα', population: 10432481 },
+        imageError: false, canManageLocations: () => false,
+      });
+      await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Κοινοποίηση').click());
+      expect(share).toHaveBeenCalledWith({ title: 'Ελλάδα', url: window.location.href });
+      expect(container.querySelector('a[href*="statistics.gr"]').textContent).toContain('2021 (προσωρινά στοιχεία)');
+      await act(async () => root.unmount());
+    } finally {
+      delete navigator.share;
+      window.history.replaceState({}, '', '/');
+    }
   });
 
   test('shows breadcrumb fallback name when local name is missing', async () => {

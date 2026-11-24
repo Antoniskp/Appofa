@@ -1,6 +1,6 @@
 'use strict';
 
-const { sequelize, Location, LocationLink, Article, User, UserLocationRole, Poll, LocationRequest, MunicipalityDistrictMap, CandidateRegistration } = require('../models');
+const { sequelize, Location, LocationLink, LocationImprovement, Article, User, UserLocationRole, Poll, LocationRequest, MunicipalityDistrictMap, CandidateRegistration } = require('../models');
 const { Op, fn, col, where, QueryTypes } = require('sequelize');
 const { fetchWikipediaData } = require('../utils/wikipediaFetcher');
 const { getDescendantLocationIds, getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
@@ -609,17 +609,17 @@ const getLocation = async (id) => {
         {
           model: Location,
           as: 'parent',
-          attributes: ['id', 'name', 'type', 'slug'],
+          attributes: ['id', 'name', 'name_local', 'parent_id', 'type', 'slug'],
           include: [
             {
               model: Location,
               as: 'parent',
-              attributes: ['id', 'name', 'type', 'slug'],
+              attributes: ['id', 'name', 'name_local', 'parent_id', 'type', 'slug'],
               include: [
                 {
                   model: Location,
                   as: 'parent',
-                  attributes: ['id', 'name', 'type', 'slug']
+                  attributes: ['id', 'name', 'name_local', 'parent_id', 'type', 'slug']
                 }
               ]
             }
@@ -628,7 +628,7 @@ const getLocation = async (id) => {
         {
           model: Location,
           as: 'children',
-          attributes: ['id', 'name', 'type', 'slug']
+          attributes: ['id', 'name', 'name_local', 'parent_id', 'type', 'slug']
         },
         {
           model: LocationLink,
@@ -695,6 +695,14 @@ const getLocation = async (id) => {
     const moderator = moderatorAssignment ? moderatorAssignment.user : null;
 
     const locationData = location.toJSON();
+    if (location.population_override != null) {
+      locationData.populationReview = await LocationImprovement.findOne({
+        where: { locationId, field: 'population_override', status: 'accepted', proposedValue: String(location.population_override) },
+        attributes: ['sourceUrl', 'reviewedAt'],
+        order: [['reviewedAt', 'DESC'], ['id', 'DESC']],
+        raw: true,
+      });
+    }
     locationData.hasModerator = !!moderator;
     locationData.moderatorPreview = moderator ? moderator.toJSON() : null;
 
@@ -1195,8 +1203,9 @@ const getLocationEntities = async (locationId, queryParams, user) => {
 
     const polls = pollIds.length > 0 ? await Poll.findAll({
       where: { id: pollIds },
-      attributes: ['id', 'title', 'description', 'status', 'visibility', 'createdAt', 'creatorId', 'hideCreator'],
+      attributes: ['id', 'title', 'description', 'status', 'visibility', 'createdAt', 'creatorId', 'hideCreator', 'locationId'],
       include: [
+        { model: Location, as: 'location', attributes: ['id', 'name', 'name_local', 'type', 'slug', 'code'], required: false },
         {
           model: User,
           as: 'creator',

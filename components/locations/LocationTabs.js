@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import LocationActivityImage from '@/components/locations/LocationActivityImage';
 import LocationActionSummary from '@/components/locations/LocationActionSummary';
+import ProposalUpdate from './ProposalUpdate';
+import { activityScopeLabel } from '@/lib/utils/locationActivity';
 import CalendarView from '@/components/calendar/CalendarView';
 import Link from 'next/link';
 import ExpandablePhoto from '@/components/ui/ExpandablePhoto';
@@ -26,14 +28,6 @@ const SUGGESTION_TYPE_BADGES = {
   request: 'bg-indigo-50 text-indigo-700 border-indigo-200',
 };
 
-const SUGGESTION_STATUS_BADGES = {
-  open: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  accepted: 'bg-green-50 text-green-700 border-green-200',
-  in_review: 'bg-blue-50 text-blue-700 border-blue-200',
-  rejected: 'bg-red-50 text-red-700 border-red-200',
-  closed: 'bg-gray-100 text-gray-700 border-gray-200',
-};
-
 const POLL_STATUS_BADGES = {
   open: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -47,7 +41,7 @@ function formatMetaDate(date) {
   return new Date(date).toLocaleDateString('el-GR');
 }
 
-function FeedItem({ href, title, excerpt, badges = [], metadata = [], compact = false, media, poll = false }) {
+function FeedItem({ href, title, excerpt, badges = [], metadata = [], compact = false, media, poll = false, children }) {
   return (
     <article className="group relative h-full overflow-hidden rounded-xl border border-gray-200 bg-white transition-all hover:border-blue-300 hover:bg-blue-50/40">
       {media && <LocationActivityImage item={media} poll={poll} />}
@@ -70,6 +64,7 @@ function FeedItem({ href, title, excerpt, badges = [], metadata = [], compact = 
       {excerpt && (
         <p className={`mt-1.5 ${compact ? 'text-xs leading-5' : 'text-sm leading-6'} text-gray-600 line-clamp-2`}>{excerpt}</p>
       )}
+      {children}
       {metadata.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
           {metadata.map((item) => (
@@ -115,11 +110,14 @@ function TabEmptyState({ title, description, actions = [] }) {
 export default function LocationTabs({
   activeTab,
   onTabChange,
-  activePolls,
-  newsArticles,
-  regularArticles,
+  activePolls: polls = [],
+  newsArticles: news = [],
+  regularArticles: articles = [],
   entities,
-  suggestions,
+  suggestions: proposals = [],
+  location,
+  scope = '',
+  onScopeChange,
   candidates = [],
   isAuthenticated,
   locationIdentifier,
@@ -139,6 +137,22 @@ export default function LocationTabs({
 
   // Fall back to all tabs if visibleTabs not provided (e.g. during initial load)
   const tabs = visibleTabs && visibleTabs.length > 0 ? visibleTabs : VALID_TABS;
+  const feeds = { polls, news, articles, suggestions: proposals };
+  const rows = selectedTab === 'recent' ? Object.values(feeds).flat() : feeds[selectedTab] || [];
+  const areas = new Map();
+  for (const item of rows) {
+    const place = item.location || location;
+    const label = activityScopeLabel(place);
+    if (place?.id && label) areas.set(String(place.id), label);
+  }
+  const selectedScope = areas.has(scope) ? scope : '';
+  const byScope = items => selectedScope
+    ? items.filter(item => String(item.location?.id ?? location?.id) === selectedScope)
+    : items;
+  const activePolls = byScope(polls);
+  const newsArticles = byScope(news);
+  const regularArticles = byScope(articles);
+  const suggestions = byScope(proposals);
 
   const suggestionHref = locationId ? '/suggestions/new?locationId=' + locationId : '/suggestions/new';
 
@@ -197,9 +211,17 @@ export default function LocationTabs({
 
       {/* Tab panels */}
       <div className="p-4 sm:p-6">
+        {!loading && areas.size > 1 && (
+          <label className="mb-4 flex flex-wrap items-center gap-2 text-sm font-medium">Περιοχή
+            <select value={selectedScope} onChange={event => onScopeChange(event.target.value)} className="rounded-lg border bg-white px-3 py-2">
+              <option value="">Όλες οι περιοχές</option>
+              {[...areas].sort((a, b) => a[1].localeCompare(b[1], 'el')).map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+            </select>
+          </label>
+        )}
         {selectedTab === 'recent' && (
           <div id="tabpanel-recent" role="tabpanel" aria-labelledby="tab-recent">
-            <LocationActionSummary polls={activePolls} suggestions={suggestions} news={newsArticles} articles={regularArticles} loading={loading} embedded />
+            <LocationActionSummary location={location} polls={activePolls} suggestions={suggestions} news={newsArticles} articles={regularArticles} loading={loading} embedded />
           </div>
         )}
         {/* Polls tab */}
@@ -242,6 +264,7 @@ export default function LocationTabs({
                     poll.hideCreator || poll.creator?.username
                       ? `από ${poll.hideCreator ? 'Ανώνυμος' : poll.creator?.username}`
                       : null,
+                    activityScopeLabel(poll.location || location),
                     formatMetaDate(poll.createdAt),
                   ].filter(Boolean)}
                   compact
@@ -284,6 +307,7 @@ export default function LocationTabs({
                     article.hideAuthor || article.author?.username
                       ? `από ${article.hideAuthor ? 'Ανώνυμος' : article.author?.username}`
                       : null,
+                    activityScopeLabel(article.location || location),
                     formatMetaDate(article.createdAt),
                   ].filter(Boolean)}
                 />
@@ -325,6 +349,7 @@ export default function LocationTabs({
                     article.hideAuthor || article.author?.username
                       ? `από ${article.hideAuthor ? 'Ανώνυμος' : article.author?.username}`
                       : null,
+                    activityScopeLabel(article.location || location),
                     formatMetaDate(article.createdAt),
                   ].filter(Boolean)}
                 />
@@ -486,19 +511,18 @@ export default function LocationTabs({
                       label: ({ idea: 'Ιδέα', problem: 'Πρόβλημα', problem_request: 'Ερώτημα κοινότητας', location_suggestion: 'Αίτημα τοποθεσίας' })[suggestion.type] || 'Πρόταση',
                       className: SUGGESTION_TYPE_BADGES[suggestion.type] || 'bg-indigo-50 text-indigo-700 border-indigo-200'
                     },
-                    {
-                      label: ({ open: 'Ανοιχτή', accepted: 'Αποδεκτή', in_review: 'Υπό εξέταση', rejected: 'Απορρίφθηκε', closed: 'Ολοκληρωμένη' })[suggestion.status] || 'Πρόταση',
-                      className: SUGGESTION_STATUS_BADGES[suggestion.status] || 'bg-gray-100 text-gray-700 border-gray-200'
-                    },
                   ]}
                   metadata={[
                     (suggestion.hideCreator && !suggestion.author)
                       ? 'από Ανώνυμος'
                       : (suggestion.author?.username ? `από ${suggestion.author.username}` : null),
+                    activityScopeLabel(suggestion.location || location),
                     formatMetaDate(suggestion.createdAt),
                   ].filter(Boolean)}
                   media={suggestion.photos?.some((photo) => photo?.url) ? suggestion : null}
-                />
+                >
+                  <ProposalUpdate proposal={suggestion} />
+                </FeedItem>
               ))}
             </div>
           )}

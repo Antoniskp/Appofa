@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { suggestionAPI } from '@/lib/api';
@@ -12,6 +12,10 @@ const FIELDS = ['responsibleBody', 'responseDeadline', 'cost', 'decisionPollId',
 export default function ProposalProgress({ proposal, user, onUpdated }) {
   const t = useTranslations('democracy');
   const progress = proposal.progress;
+  const sectionRef = useRef(null);
+  useEffect(() => {
+    if (window.location.hash === '#proposal-progress') sectionRef.current?.scrollIntoView?.();
+  }, [proposal.id]);
   const canManage = user && (user.id === proposal.authorId || ['admin', 'moderator'].includes(user.role));
   const isProblem = proposal.type === 'problem';
   const stages = isProblem ? STAGES.filter(item => item !== 'voting') : STAGES;
@@ -37,7 +41,7 @@ export default function ProposalProgress({ proposal, user, onUpdated }) {
     finally { setSaving(false); }
   }
   return (
-    <section aria-label={t('progressTitle')} className="mb-6 rounded-2xl border border-teal-200 bg-white p-5 sm:p-6">
+    <section ref={sectionRef} id="proposal-progress" aria-label={t('progressTitle')} className="mb-6 scroll-mt-24 rounded-2xl border border-teal-200 bg-white p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-semibold text-slate-900">{isProblem ? 'Εξέλιξη και ιστορικό αναφοράς' : t('progressTitle')}</h2>
         {canManage && !draft && <button type="button" onClick={startEditing} className="rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white">{t('update')}</button>}

@@ -2,7 +2,7 @@ const { Op } = require('sequelize');
 const { Suggestion, Solution, SuggestionVote, User, Location, Organization, Tag, TaggableItem, sequelize } = require('../models');
 const { normalizeRequiredText, normalizeEnum, normalizeBoolean } = require('../utils/validators');
 const badgeService = require('../services/badgeService');
-const { getAncestorLocationIds } = require('../utils/locationUtils');
+const { getAncestorLocationIds, getDescendantLocationIds } = require('../utils/locationUtils');
 const { shouldHideSuggestionAuthor } = require('../utils/suggestionAuthorVisibility');
 const { syncTags, attachTags } = require('../utils/tagUtils');
 const { getRecipients, resolveRecipient, validRecipientKey } = require('../services/suggestionRecipientService');
@@ -179,6 +179,10 @@ const suggestionController = {
       const { type, status, locationId, authorId, sort = 'newest', page = 1, limit = 12, category, search, tag } = req.query;
 
       const where = {};
+      const descendantsOnly = req.query.locationScope === 'descendants';
+      if (descendantsOnly && (!Number.isSafeInteger(Number(locationId)) || Number(locationId) <= 0)) {
+        return res.status(400).json({ success: false, message: 'A location ID is required for descendant suggestions.' });
+      }
       if (req.query.recipientKey) {
         if (!validRecipientKey(req.query.recipientKey)) return res.status(400).json({ success: false, message: 'Invalid recipient.' });
         where.recipientKey = req.query.recipientKey;
@@ -197,7 +201,11 @@ const suggestionController = {
       if (locationId) {
         const parsedLocationId = parseInt(locationId, 10);
         if (!isNaN(parsedLocationId)) {
-          where.locationId = parsedLocationId;
+          if (descendantsOnly) {
+            where.locationId = { [Op.in]: await getDescendantLocationIds(parsedLocationId) };
+          } else {
+            where.locationId = parsedLocationId;
+          }
         }
       }
       if (authorId) {
@@ -205,7 +213,7 @@ const suggestionController = {
         if (!isNaN(parsedAuthorId)) where.authorId = parsedAuthorId;
       }
 
-      if (!user) {
+      if (!user || descendantsOnly) {
         where.visibility = 'public';
       } else if (user.role !== 'admin') {
         const userRecord = await User.findByPk(user.id, { attributes: ['homeLocationId'] });
@@ -270,7 +278,7 @@ const suggestionController = {
             attributes: ['id', 'name', 'slug', 'type', 'logo', 'isVerified'],
             required: false
           },
-          { model: Location, as: 'location', attributes: ['id', 'name', 'slug'], required: false }
+          { model: Location, as: 'location', attributes: ['id', 'name', 'name_local', 'slug', 'type', 'code'], required: false }
         ],
         order,
         limit: parsedLimit,

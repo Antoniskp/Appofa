@@ -1,12 +1,14 @@
 import LocationActivityImage from '@/components/locations/LocationActivityImage';
 import Link from 'next/link';
+import ProposalUpdate from './ProposalUpdate';
+import { activityScopeLabel } from '@/lib/utils/locationActivity';
 import { idSlug } from '@/lib/utils/slugify';
 
-export default function LocationActionSummary({ polls = [], suggestions = [], news = [], articles = [], loading, embedded = false }) {
-  const recent = (a, b) => (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0);
+export default function LocationActionSummary({ location, polls = [], suggestions = [], news = [], articles = [], loading, embedded = false }) {
+  const recent = (a, b) => (Date.parse(b.activityAt || b.createdAt) || 0) - (Date.parse(a.activityAt || a.createdAt) || 0);
   const votes = polls.filter(p => ['active', 'open'].includes(p.status)).sort(recent).slice(0, 2).map(p => ({ ...p, kind: 'Ανοιχτή ψηφοφορία', href: '/polls/' + idSlug(p.id, p.title), excerpt: p.description }));
   const updates = [
-    ...suggestions.map(p => ({ ...p, kind: 'Πρόταση', href: '/suggestions/' + p.id, excerpt: p.body })),
+    ...suggestions.map(p => ({ ...p, kind: 'Πρόταση', href: '/suggestions/' + p.id, excerpt: p.body, activityAt: p.progress?.history?.at(-1)?.at || p.createdAt })),
     ...news.map(p => ({ ...p, kind: 'Είδηση', href: '/news/' + idSlug(p.id, p.title), excerpt: p.summary })),
     ...articles.map(p => ({ ...p, kind: 'Ανάλυση', href: '/articles/' + idSlug(p.id, p.title), excerpt: p.summary })),
   ].sort(recent);
@@ -21,17 +23,18 @@ export default function LocationActionSummary({ polls = [], suggestions = [], ne
       {!embedded && <h2 className="text-lg font-semibold text-gray-950">Τι συμβαίνει εδώ;</h2>}
       {loading ? <p role="status" className="py-6 text-sm text-gray-500">Φόρτωση δραστηριότητας…</p> : items.length ? (
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          {items.map(item => <Link key={item.href} href={item.href} className="group block rounded-xl border border-gray-100 bg-white overflow-hidden transition hover:border-blue-200 hover:bg-blue-50/50">
+          {items.map(item => <article key={item.href} className="group relative rounded-xl border border-gray-100 bg-white overflow-hidden transition hover:border-blue-200 hover:bg-blue-50/50">
             {(item.kind !== 'Πρόταση' || item.photos?.some((photo) => photo?.url)) && (
               <LocationActivityImage item={item} poll={item.kind === 'Ανοιχτή ψηφοφορία'} />
             )}
             <div className="p-4">
-            <p className="text-xs text-gray-500">{item.kind}{item.createdAt && !Number.isNaN(Date.parse(item.createdAt)) ? ' · ' + new Date(item.createdAt).toLocaleDateString('el-GR') : ''}</p>
-            <h3 className="mt-1 font-semibold text-gray-900 group-hover:text-blue-700">{item.title}</h3>
+            <p className="text-xs text-gray-500">{[item.kind, activityScopeLabel(item.location || location), item.createdAt && !Number.isNaN(Date.parse(item.createdAt)) && new Date(item.createdAt).toLocaleDateString('el-GR')].filter(Boolean).join(' · ')}</p>
+            <h3 className="mt-1 font-semibold text-gray-900 group-hover:text-blue-700"><Link className="after:absolute after:inset-0" href={item.href}>{item.title}</Link></h3>
+            {item.kind === 'Πρόταση' && <ProposalUpdate proposal={item} />}
             {item.excerpt && <p className="mt-1 text-sm text-gray-600 line-clamp-2">{item.excerpt}</p>}
             {item.kind === 'Ανοιχτή ψηφοφορία' && <span className="mt-2 inline-block text-sm font-semibold text-blue-700">Δες την ψηφοφορία →</span>}
             </div>
-          </Link>)}
+          </article>)}
         </div>
       ) : <p className="mt-3 text-sm leading-6 text-gray-600">Δεν υπάρχει ακόμη πρόσφατη δραστηριότητα. Μπορείς να ξεκινήσεις την πρώτη πρόταση για την περιοχή ή να γνωρίσεις τους εκπροσώπους και τις τοπικές πληροφορίες παρακάτω.</p>}
     </section>

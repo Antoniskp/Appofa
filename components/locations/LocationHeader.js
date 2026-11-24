@@ -14,12 +14,13 @@ export default function LocationHeader({ location, imageError, setImageError, ca
   const [shareState, setShareState] = useState('');
   const name = location.name_local || location.name;
   const population = location.population_override ?? location.population;
+  const preliminaryGreekCensus = location.type === 'country' && (location.code === 'GR' || location.slug === 'greece') && Number(population) === 10432481;
   const image = location.imageUrl
     ? location.imageUrl + (location.imageUpdatedAt ? '?v=' + new Date(location.imageUpdatedAt).getTime() : '')
     : location.wikipedia_image_url;
   const share = async () => {
     try {
-      const url = window.location.origin + '/locations/' + (location.slug || location.id);
+      const url = window.location.href;
       if (navigator.share) await navigator.share({ title: name, url });
       else if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(url); setShareState('Ο σύνδεσμος αντιγράφηκε'); }
       else setShareState('Η κοινοποίηση δεν υποστηρίζεται');
@@ -51,6 +52,19 @@ export default function LocationHeader({ location, imageError, setImageError, ca
             {canManageLocations() && <button type="button" onClick={onEdit} aria-label="Επεξεργασία τοποθεσίας" className="p-2 text-gray-500 hover:text-gray-900"><PencilIcon className="h-4 w-4" /></button>}
           </div>
           <p className="mt-2 text-sm text-gray-500">{TYPE_LABELS[location.type] || 'Περιοχή'}{population != null && ' · ' + new Intl.NumberFormat('el-GR').format(population) + ' κάτοικοι'}</p>
+          {population != null && <p className="mt-1 text-xs text-gray-600">
+            {preliminaryGreekCensus ? (
+              <a className="underline" href="https://www.statistics.gr/documents/20181/17938086/APOTELESMATA_APOGRAFI_PLITHISMOU_IG.pdf/e557d7d8-e49b-f84f-ec98-192cb963e34e">ΕΛΣΤΑΤ · Απογραφή 2021 (προσωρινά στοιχεία)</a>
+            ) : location.population_override != null ? (
+              <>{location.populationReview?.sourceUrl
+                ? <a className="underline" href={location.populationReview.sourceUrl}>Πηγή πληθυσμού</a>
+                : 'Καταχώριση στην Απόφαση'}
+                {location.populationReview?.reviewedAt && ` · Έλεγχος ${new Date(location.populationReview.reviewedAt).toLocaleDateString('el-GR')}`}</>
+            ) : location.wikipedia_url ? (
+              <><a className="underline" href={location.wikipedia_url}>Wikipedia</a>
+                {location.wikipedia_data_updated_at && ` · Ανάκτηση ${new Date(location.wikipedia_data_updated_at).toLocaleDateString('el-GR')}`}</>
+            ) : 'Χωρίς καταγεγραμμένη πηγή'}
+          </p>}
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-4 shrink-0">
