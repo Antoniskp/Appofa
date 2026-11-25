@@ -62,6 +62,7 @@ function FoundingRequests() {
                 <p className="break-words font-semibold text-slate-900">{row.participant.username}</p>
                 <a href={`mailto:${encodeURIComponent(row.participant.email)}`} className="break-all text-sm text-teal-800 underline">{row.participant.email}</a>
                 {row.wantsToVolunteer && <p className="mt-1 text-xs text-slate-600">{t('status_volunteer')}</p>}
+                {row.wantsToSign && <p className="mt-1 text-xs text-slate-600">{t('preferredMethod', { method: t(`method_${row.signingPreference || 'either'}`) })}</p>}
               </div>
               {row.wantsToSign && <form key={row.signingStatus} onSubmit={event => saveStatus(event, row.userId)} className="flex flex-wrap items-end gap-2">
                 <label className="text-sm font-medium text-slate-800">{t('signingStatus')}
