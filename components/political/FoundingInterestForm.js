@@ -14,26 +14,29 @@ function InterestForm({ initialInterest }) {
   const [wantsToSign, setWantsToSign] = useState(Boolean(initialInterest?.wantsToSign));
   const [wantsToVolunteer, setWantsToVolunteer] = useState(Boolean(initialInterest?.wantsToVolunteer));
   const [signingPreference, setSigningPreference] = useState(initialInterest?.signingPreference || '');
+  const [contactPhone, setContactPhone] = useState(initialInterest?.contactPhone || '');
   const [consent, setConsent] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
-  const [error, setError] = useState(false);
+  const [error, setError] = useState('');
 
   async function save(event) {
     event.preventDefault();
     setSaving(true);
-    setError(false);
+    setError('');
     setNotice('');
     try {
       const result = await foundingInitiativeAPI.saveInterest({
-        wantsToSign, wantsToVolunteer, signingPreference: wantsToSign ? signingPreference || null : null, consent,
+        wantsToSign, wantsToVolunteer, signingPreference: wantsToSign ? signingPreference || null : null,
+        contactPhone: wantsToSign ? contactPhone : null, consent,
       });
       setInterest(result.data);
       setSigningPreference(result.data.signingPreference || '');
+      setContactPhone(result.data.contactPhone || '');
       setConsent(false);
       setNotice('interestSaved');
-    } catch {
-      setError(true);
+    } catch (err) {
+      setError(err.status === 400 ? 'signatures.phoneError' : 'saveError');
     } finally {
       setSaving(false);
     }
@@ -41,7 +44,7 @@ function InterestForm({ initialInterest }) {
 
   async function withdraw() {
     setSaving(true);
-    setError(false);
+    setError('');
     setNotice('');
     try {
       await foundingInitiativeAPI.withdrawInterest();
@@ -49,10 +52,11 @@ function InterestForm({ initialInterest }) {
       setWantsToSign(false);
       setWantsToVolunteer(false);
       setSigningPreference('');
+      setContactPhone('');
       setConsent(false);
       setNotice('interestWithdrawn');
     } catch {
-      setError(true);
+      setError('saveError');
     } finally {
       setSaving(false);
     }
@@ -73,6 +77,9 @@ function InterestForm({ initialInterest }) {
             <option value="remote">{t('method_remote')}</option>
           </select>
           <p id="founding-signing-preference-note" className="mt-1 text-xs leading-5 text-slate-600">{t('signingPreferenceNote')}</p>
+          <label htmlFor="founding-contact-phone" className="mt-3 block font-medium">{t('signatures.phone')}</label>
+          <input id="founding-contact-phone" type="tel" autoComplete="tel" maxLength={32} value={contactPhone}
+            onChange={event => setContactPhone(event.target.value)} className="mt-1 block w-full rounded-lg border border-teal-300 bg-white px-3 py-2" />
         </div>}
         <label className="flex items-start gap-3 text-sm font-medium text-slate-900">
           <input type="checkbox" checked={wantsToVolunteer} onChange={event => setWantsToVolunteer(event.target.checked)} className="mt-0.5 h-4 w-4 accent-teal-800" />{t('wantToVolunteer')}
@@ -87,7 +94,7 @@ function InterestForm({ initialInterest }) {
       </fieldset>
       {interest?.signingStatus && <p className="text-sm text-slate-700">{t('mySigningStatus', { status: t(`status_${interest.signingStatus}`) })}</p>}
       {notice && <p role="status" className="text-sm font-medium text-teal-900">{t(notice)}</p>}
-      {error && <AlertMessage message={t('saveError')} />}
+        {error && <AlertMessage message={t(error)} />}
     </form>
   );
 }

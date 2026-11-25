@@ -3,10 +3,12 @@ import { getTranslations } from 'next-intl/server';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
 import FoundingInterestForm from '@/components/political/FoundingInterestForm';
 import FoundingCandidateDistrictPicker from '@/components/political/FoundingCandidateDistrictPicker';
+import FoundingSignatureProgress from '@/components/political/FoundingSignatureProgress';
 import { publicPageMetadata } from '@/lib/route-metadata';
 
 const namePollUrl = 'https://appofasi.gr/polls/78';
 const foundingLawUrl = 'https://www.hellenicparliament.gr/UserFiles/67715b2c-ec81-4f0c-ad6a-476a34d732bd/13130509.pdf';
+const ministerialAppointmentsUrl = 'https://www.hellenicparliament.gr/Vouli-ton-Ellinon/To-Politevma/Syntagma/article-39/';
 
 export const generateMetadata = publicPageMetadata('foundingInitiative.title', 'foundingInitiative.intro', '/founding-initiative');
 
@@ -29,14 +31,17 @@ export default async function FoundingInitiativePage() {
           <h2 id="founding-interest" className="text-2xl font-semibold text-slate-900">{t('getInvolved')}</h2>
           <div className="mt-4 grid items-start gap-6 lg:grid-cols-2">
             <FoundingInterestForm />
-            <div>
-              <h3 className="font-semibold text-slate-900">{t('signingNext')}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-700">{t('signingIntro')}</p>
-              <details className="mt-3 border-t border-slate-200 pt-2">
-                <summary className="w-fit cursor-pointer rounded py-2 text-sm font-semibold text-teal-800">{t('signingRequirements')}</summary>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{t('signingLaw')}</p>
-                <a href={foundingLawUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-medium text-teal-800 underline">{t('signingSource')}</a>
-              </details>
+            <div className="space-y-5">
+              <FoundingSignatureProgress />
+              <div>
+                <h3 className="font-semibold text-slate-900">{t('signingNext')}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-700">{t('signingIntro')}</p>
+                <details className="mt-3 border-t border-slate-200 pt-2">
+                  <summary className="w-fit cursor-pointer rounded py-2 text-sm font-semibold text-teal-800">{t('signingRequirements')}</summary>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{t('signingLaw')}</p>
+                  <a href={foundingLawUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-medium text-teal-800 underline">{t('signingSource')}</a>
+                </details>
+              </div>
             </div>
           </div>
         </section>
@@ -69,6 +74,32 @@ export default async function FoundingInitiativePage() {
             </li>)}
           </ol>
           <Link href="/parliamentary-consultations" className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-teal-800 hover:underline">{t('seeConsultations')} <ArrowRightIcon className="h-4 w-4" aria-hidden="true" /></Link>
+        </section>
+
+        <section id="government-choices" aria-labelledby="founding-government-choices" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+          <h2 id="founding-government-choices" className="text-2xl font-semibold text-slate-900">{t('governmentChoices.title')}</h2>
+          <p className="mt-3 max-w-3xl leading-7 text-slate-700">{t('governmentChoices.intro')}</p>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col items-start rounded-xl bg-slate-50 p-5">
+              <h3 className="font-semibold text-slate-900">{t('governmentChoices.exploreTitle')}</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-slate-600">{t('governmentChoices.exploreDetail')}</p>
+              <Link href="/users" className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-teal-800 hover:underline">
+                {t('governmentChoices.exploreAction')} <ArrowRightIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              </Link>
+            </div>
+            <div className="flex flex-col items-start rounded-xl bg-teal-50 p-5">
+              <h3 className="font-semibold text-slate-900">{t('governmentChoices.voteTitle')}</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-slate-600">{t('governmentChoices.voteDetail')}</p>
+              <Link href="/dream-team/gr" className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg bg-teal-800 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-900">
+                {t('governmentChoices.voteAction')} <ArrowRightIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+          <p className="mt-5 max-w-3xl text-sm leading-6 text-slate-700">{t('governmentChoices.followUp')}</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            {t('governmentChoices.appointments')}{' '}
+            <a href={ministerialAppointmentsUrl} className="font-medium text-teal-800 underline">{t('governmentChoices.appointmentsSource')}</a>
+          </p>
         </section>
       </div>
     </main>

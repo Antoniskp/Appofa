@@ -23,6 +23,8 @@ const CivicQuestion = require('./CivicQuestion');
 const CivicQuestionVote = require('./CivicQuestionVote');
 const ConsultationEvaluation = require('./ConsultationEvaluation');
 const FoundingInterest = require('./FoundingInterest');
+const FoundingSignature = require('./FoundingSignature');
+const FoundingSigningDocument = require('./FoundingSigningDocument');
 const Bookmark = require('./Bookmark');
 const Message = require('./Message');
 const Follow = require('./Follow');
@@ -641,6 +643,8 @@ module.exports = {
   CivicQuestionVote,
   ConsultationEvaluation,
   FoundingInterest,
+  FoundingSignature,
+  FoundingSigningDocument,
   Bookmark,
   Message,
   Follow,

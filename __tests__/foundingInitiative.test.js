@@ -1,6 +1,6 @@
 const express = require('express');
 const request = require('supertest');
-const { sequelize, User } = require('../src/models');
+const { sequelize, User, FoundingSignature } = require('../src/models');
 const { storeCsrfToken } = require('../src/utils/csrf');
 
 const app = express();
@@ -61,4 +61,65 @@ test('collects explicit opt-in and lets admins organize signatures while partici
   expect((await request(app).delete(interest).set(participant.headers)).status).toBe(200);
   expect((await request(app).get(queue).query({ status: 'requested' }).set(admin.headers)).body.data).toEqual([]);
   expect((await request(app).patch(status).set(admin.headers).send({ signingStatus: 'received' })).status).toBe(404);
+});
+
+test('counts only verified signatures and publishes an eligible name only with separate, revocable consent', async () => {
+  const signer = await login('verified_signer', 'viewer');
+  const nextSigner = await login('after_the_first_200', 'viewer');
+  const admin = await login('signature_admin', 'admin');
+  const base = '/api/founding-initiative';
+  const progress = () => request(app).get(`${base}/progress?recognition=true`);
+  const lock = headers => request(app).post(`${base}/organizers/document`).set(headers).send({
+    version: '1.0', pdfUrl: 'https://example.test/founding-v1.pdf', sha256: 'a'.repeat(64), confirmFinal: true,
+  });
+  const interest = { wantsToSign: true, wantsToVolunteer: false, contactPhone: '+30 210 123 4567', consent: true };
+  const register = (account, payload = interest) => request(app).put(`${base}/interest`).set(account.headers).send(payload);
+  const status = (account, signingStatus) => request(app).patch(`${base}/organizers/${account.id}`).set(admin.headers).send({ signingStatus });
+  const verify = (account, recordReference, headers = admin.headers) => request(app).post(`${base}/organizers/${account.id}/verify`)
+    .set(headers).send({ legalName: 'Confidential legal name', recordReference, confirmSignature: true });
+  const publish = (account, consent) => request(app).put(`${base}/recognition`).set(account.headers).send({ publicName: 'Public display name', consent });
+
+  expect((await progress()).body.data).toEqual({ goal: 200, verifiedCount: 0, document: null, names: [] });
+  expect((await register(signer, { ...interest, contactPhone: 'not a phone' })).status).toBe(400);
+  expect((await register(signer)).body.data.contactPhone).toBe(interest.contactPhone);
+  expect((await status(signer, 'received')).status).toBe(200);
+  expect((await verify(signer, 'F-001')).status).toBe(409);
+  expect((await lock(signer.headers)).status).toBe(403);
+  expect((await lock(admin.headers)).status).toBe(201);
+  expect((await lock(admin.headers)).status).toBe(409);
+  expect((await publish(signer, true)).status).toBe(403);
+  expect((await verify(signer, 'F-001', signer.headers)).status).toBe(403);
+  expect((await verify(signer, 'F-001')).status).toBe(201);
+  expect((await status(signer, 'received')).status).toBe(404);
+  expect((await verify(signer, 'F-002')).status).toBe(409);
+
+  const privateProgress = await progress();
+  expect(privateProgress.headers['cache-control']).toBe('private, no-store');
+  expect(privateProgress.headers['x-robots-tag']).toBe('noindex');
+  expect(privateProgress.body.data).toEqual({
+    goal: 200, verifiedCount: 1, names: [],
+    document: { version: '1.0', pdfUrl: 'https://example.test/founding-v1.pdf', sha256: 'a'.repeat(64) },
+  });
+  expect((await publish(signer, false)).status).toBe(400);
+  expect((await publish(signer, true)).status).toBe(200);
+  expect((await progress()).body.data.names).toEqual(['Public display name']);
+  expect((await request(app).delete(`${base}/interest`).set(signer.headers)).status).toBe(200);
+  expect((await request(app).delete(`${base}/recognition`).set(signer.headers)).status).toBe(200);
+  expect((await progress()).body.data).toMatchObject({ verifiedCount: 1, names: [] });
+
+  await FoundingSignature.bulkCreate(Array.from({ length: 199 }, (_, i) => ({
+    recordReference: `ARCHIVE-${i}`, legalName: 'Existing signer',
+  })));
+  expect((await register(nextSigner)).status).toBe(200);
+  expect((await status(nextSigner, 'received')).status).toBe(200);
+  expect((await verify(nextSigner, 'f-001')).status).toBe(409);
+  expect((await verify(nextSigner, 'F-201')).status).toBe(201);
+  expect((await publish(nextSigner, true)).status).toBe(403);
+  expect((await progress()).body.data.verifiedCount).toBe(201);
+  const verified = await request(app).get(`${base}/organizers?status=verified`).set(admin.headers);
+  const firstId = verified.body.data[0].id;
+  expect(verified.body.data[0]).toMatchObject({ legalName: 'Confidential legal name', recordReference: 'F-001' });
+  expect((await request(app).delete(`${base}/organizers/signatures/${firstId}`).set(admin.headers)).status).toBe(200);
+  expect((await publish(nextSigner, true)).status).toBe(200);
+  expect((await progress()).body.data).toMatchObject({ verifiedCount: 200, names: ['Public display name'] });
 });
