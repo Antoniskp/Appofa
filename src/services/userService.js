@@ -734,7 +734,7 @@ async function getAdminUsers(actorId, actorRole, { search, role, verified, place
   const query = {
     distinct: true,
     where: whereClause,
-    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified', 'claimStatus', 'parliamentaryPublisherName'],
+    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified', 'claimStatus', 'parliamentaryPublisherName', 'pollVotingBlocked'],
     include: [
       {
         model: Location,

@@ -20,6 +20,7 @@ const CONTROL_CLASS = 'min-h-11 w-full min-w-0 rounded-lg border border-gray-300
 
 export default function CivicQuestionsPage() {
   const t = useTranslations('civicQuestions');
+  const tConsultations = useTranslations('consultations');
   const { user } = useAuth();
   const {
     filters, page, totalPages, setTotalPages, handleFilterChange,
@@ -84,7 +85,10 @@ export default function CivicQuestionsPage() {
         <header className="mb-5">
           <h1 className="text-3xl font-bold text-gray-900">{t('list.title')}</h1>
           <p className="mt-2 text-base text-gray-700">{t('list.intro')}</p>
-          <p className="mt-2 text-sm leading-relaxed text-gray-600">{t('list.advisory')}</p>
+          <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm leading-relaxed">
+            <p className="text-gray-600">{t('list.advisory')}</p>
+            <Link href="/parliamentary-consultations" className="rounded font-semibold text-blue-700 underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">{tConsultations('title')} <span aria-hidden="true">→</span></Link>
+          </div>
           <details className="mt-2">
             <summary id="participation-guide" className="w-fit cursor-pointer rounded py-2 text-sm font-semibold text-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">{t('guide.title')}</summary>
             <div className="mt-2 rounded-xl border border-gray-200 bg-white p-5">

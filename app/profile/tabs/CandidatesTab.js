@@ -159,10 +159,10 @@ export default function CandidatesTab() {
                   </div>
                   <p className="mt-1 text-sm text-gray-600">
                     {registration.location?.name_local || registration.location?.name || 'No location'}
-                    {registration.electionCycle ? ` · ${registration.electionCycle}` : ''}
+                    {registration.source !== 'founding_initiative' && registration.electionCycle ? ` · ${registration.electionCycle}` : ''}
                   </p>
                   <p className="mt-1 text-sm text-gray-600">
-                    {registration.isIndependent ? 'Independent' : (registration.partyName || 'No party/list listed')}
+                    {registration.source === 'founding_initiative' ? 'Founding initiative' : (registration.isIndependent ? 'Independent' : (registration.partyName || 'No party/list listed'))}
                   </p>
                   {registration.reviewNotes && (
                     <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
@@ -174,7 +174,7 @@ export default function CandidatesTab() {
                   <Link href={`/candidate-registrations/${registration.id}`} className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
                     View
                   </Link>
-                  {registration.status !== 'archived' && (
+                  {registration.status !== 'archived' && registration.source !== 'founding_initiative' && (
                     <button
                       type="button"
                       onClick={() => setEditing(registration)}

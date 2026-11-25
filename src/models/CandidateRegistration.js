@@ -31,6 +31,10 @@ const CandidateRegistration = sequelize.define('CandidateRegistration', {
     type: DataTypes.STRING(80),
     allowNull: true,
   },
+  source: {
+    type: DataTypes.STRING(30),
+    allowNull: true,
+  },
   partyName: {
     type: DataTypes.STRING(160),
     allowNull: true,

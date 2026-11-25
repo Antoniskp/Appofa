@@ -16,6 +16,7 @@ exports.listRegistrations = async (req, res) => {
       ...req.query,
       viewer: req.user || null,
     });
+    if (req.user?.role === 'admin' && req.query.source === 'founding_initiative') res.set('Cache-Control', 'private, no-store');
     return res.json({ success: true, data });
   } catch (error) {
     return handleError(res, error, 'Error fetching candidate registrations.');
@@ -25,6 +26,7 @@ exports.listRegistrations = async (req, res) => {
 exports.listMine = async (req, res) => {
   try {
     const data = await candidateRegistrationService.listMine(req.user.id, req.query);
+    res.set('Cache-Control', 'private, no-store');
     return res.json({ success: true, data });
   } catch (error) {
     return handleError(res, error, 'Error fetching your candidate registrations.');
@@ -37,6 +39,7 @@ exports.getRegistration = async (req, res) => {
       parseInt(req.params.id, 10),
       req.user || null
     );
+    if (registration.source === 'founding_initiative') res.set('Cache-Control', 'private, no-store');
     return res.json({ success: true, data: { registration } });
   } catch (error) {
     return handleError(res, error, 'Error fetching candidate registration.');

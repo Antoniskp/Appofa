@@ -8,6 +8,7 @@ import { candidateRegistrationAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import Button from '@/components/ui/Button';
+import FoundingCandidateForm from '@/components/political/FoundingCandidateForm';
 
 const POSITION_OPTIONS_BY_LOCATION_TYPE = {
   international: ['other'],
@@ -35,9 +36,17 @@ function getPositionOptions(locationType) {
 }
 
 export default function CandidateRegistrationPage() {
+  const searchParams = useSearchParams();
+  if (searchParams.get('initiative') === 'founding') {
+    const district = searchParams.get('district');
+    return <FoundingCandidateForm key={district} district={district} />;
+  }
+  return <GeneralCandidateRegistrationForm searchParams={searchParams} />;
+}
+
+function GeneralCandidateRegistrationForm({ searchParams }) {
   const t = useTranslations('candidates');
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const { success: toastSuccess, error: toastError } = useToast();
   const [submitting, setSubmitting] = useState(false);

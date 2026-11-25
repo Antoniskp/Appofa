@@ -1733,20 +1733,33 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent,
     transaction = await sequelize.transaction();
     let vote;
     const isAuthenticated = !!userId;
-    const voteIdentityVisibility = isAuthenticated && !isVotingIntention(poll) ? identityVisibilityResult.value : 'anonymous';
+    const votingIntention = isVotingIntention(poll);
+    const voteIdentityVisibility = isAuthenticated && !votingIntention ? identityVisibilityResult.value : 'anonymous';
 
     let voterKey = null;
     let accountVoterKey = null;
     let googleId = null;
-    if (isVotingIntention(poll)) {
+    if (votingIntention) {
       const lockedPoll = await Poll.findByPk(pollId, { transaction, lock: transaction.LOCK.UPDATE });
       const currentOption = await PollOption.findOne({ where: { id: optionIdResult.value, pollId }, transaction });
       if (!lockedPoll || lockedPoll.status !== 'active' || (lockedPoll.deadline && new Date(lockedPoll.deadline) <= new Date()) || !currentOption) {
         await transaction.rollback();
         return { success: false, status: 409, message: 'Η ψηφοφορία άλλαξε ή έληξε. Ανανεώστε τη σελίδα.' };
       }
-      // Serialize submissions with OAuth linking/unlinking and other votes by this account.
-      const voter = userId ? await User.findByPk(userId, { attributes: ['id', ...votingIntentionVoterAttributes], transaction, lock: transaction.LOCK.UPDATE }) : null;
+    }
+
+    // Serialize account votes with changes to their voting restriction and linked identity.
+    const voter = isAuthenticated ? await User.findByPk(userId, {
+      attributes: votingIntention ? ['id', 'pollVotingBlocked', ...votingIntentionVoterAttributes] : ['id', 'pollVotingBlocked'],
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    }) : null;
+    if (isAuthenticated && (!voter || voter.pollVotingBlocked)) {
+      await transaction.rollback();
+      return { success: false, status: 403, message: 'Poll voting is restricted for this account.' };
+    }
+
+    if (votingIntention) {
       if (!canVoteInVotingIntention(voter)) {
         await transaction.rollback();
         return { success: false, status: 403, message: 'Επιβεβαιώστε το email σας ή συνδέστε λογαριασμό Google για να συμμετάσχετε.' };

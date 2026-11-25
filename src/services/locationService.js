@@ -529,6 +529,7 @@ const getLocations = async (queryParams) => {
           const registrations = await CandidateRegistration.findAll({
             where: {
               status: 'approved',
+              source: null,
               locationId: { [Op.in]: allCandidateLocationIds },
             },
             include: [

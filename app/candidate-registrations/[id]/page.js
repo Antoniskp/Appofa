@@ -3,6 +3,7 @@
 import { use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { CheckBadgeIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import UserAvatar from '@/components/user/UserAvatar';
 import { candidateRegistrationAPI } from '@/lib/api';
@@ -33,6 +34,7 @@ export default function CandidateRegistrationDetailPage({ params }) {
   const { id } = use(params);
   const router = useRouter();
   const { user } = useAuth();
+  const t = useTranslations('foundingInitiative.candidates');
 
   const { data: registration, loading, error, refetch } = useAsyncData(
     async () => {
@@ -50,6 +52,31 @@ export default function CandidateRegistrationDetailPage({ params }) {
           <SkeletonLoader type="card" count={3} />
         </div>
       </div>
+    );
+  }
+
+  if (registration.source === 'founding_initiative') {
+    return (
+      <main className="min-h-screen bg-slate-50 py-8 sm:py-12">
+        <div className="app-container max-w-2xl">
+          <Link href="/founding-initiative#candidates" className="text-sm font-semibold text-teal-800 hover:underline">{t('back')}</Link>
+          <div className="mt-5 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+            <h1 className="text-2xl font-bold text-slate-900">{t('formTitle')}</h1>
+            <p className="font-medium text-slate-800">{registration.location.name_local || registration.location.name}</p>
+            <p className="text-sm leading-6 text-slate-600">{t('followUp')}</p>
+            <dl className="space-y-4 text-sm text-slate-800">
+              <div>
+                <dt className="font-semibold">{t('commitmentLabel')}</dt>
+                <dd className="mt-1 whitespace-pre-wrap break-words leading-6">{registration.consultationCommitment}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold">{t('contactLabel')}</dt>
+                <dd className="mt-1 break-words">{registration.contactEmail}</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </main>
     );
   }
 

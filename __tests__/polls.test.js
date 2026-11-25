@@ -11,6 +11,7 @@ process.env.NODE_ENV = 'test';
 
 const authRoutes = require('../src/routes/authRoutes');
 const pollRoutes = require('../src/routes/pollRoutes');
+const adminRoutes = require('../src/routes/adminRoutes');
 
 // Create test app
 const app = express();
@@ -20,6 +21,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/polls', pollRoutes);
+app.use('/api/admin', adminRoutes);
 
 describe('Poll API Tests', () => {
   let adminToken;
@@ -1010,6 +1012,37 @@ describe('Poll API Tests', () => {
   });
 
   describe('POST /api/polls/:id/vote - Vote on Poll', () => {
+    test('only an administrator with CSRF can suspend and restore poll voting', async () => {
+      const adminHeaders = csrfHeaderFor('admin-csrf-voting-restriction', adminUserId);
+      adminHeaders.Cookie.push(`auth_token=${adminToken}`);
+      const voterHeaders = csrfHeaderFor('voter-csrf-voting-restriction', regularUserId);
+      voterHeaders.Cookie.push(`auth_token=${userToken}`);
+      const poll = await Poll.create({ title: 'Moderated poll', creatorId: adminUserId, voteRestriction: 'anyone' });
+      const first = await PollOption.create({ pollId: poll.id, text: 'First', order: 0 });
+      const second = await PollOption.create({ pollId: poll.id, text: 'Second', order: 1 });
+      const endpoint = `/api/admin/users/${regularUserId}/poll-voting`;
+      const castVote = optionId => request(app).post(`/api/polls/${poll.id}/vote`).set(voterHeaders).send({ optionId });
+
+      try {
+        expect((await castVote(first.id)).status).toBe(200);
+        expect((await request(app).put(endpoint).set(voterHeaders).send({ blocked: true })).status).toBe(403);
+        expect((await request(app).put(endpoint).set('Cookie', `auth_token=${adminToken}`).send({ blocked: true })).status).toBe(403);
+        expect((await request(app).put(endpoint).set(adminHeaders).send({ blocked: true })).status).toBe(200);
+
+        const blocked = await castVote(second.id);
+        expect(blocked.status).toBe(403);
+        expect(blocked.body.message).toBe('Poll voting is restricted for this account.');
+        expect((await PollVote.findOne({ where: { pollId: poll.id, userId: regularUserId } })).optionId).toBe(first.id);
+
+        expect((await request(app).put(endpoint).set(adminHeaders).send({ blocked: false })).status).toBe(200);
+        expect((await castVote(second.id)).status).toBe(200);
+        expect(await PollVote.count({ where: { pollId: poll.id, userId: regularUserId } })).toBe(1);
+      } finally {
+        await User.update({ pollVotingBlocked: false }, { where: { id: regularUserId } });
+        await poll.destroy();
+      }
+    });
+
     test('should allow authenticated user to vote', async () => {
       const csrfToken = 'test-csrf-token-vote';
       const headers = csrfHeaderFor(csrfToken, regularUserId);

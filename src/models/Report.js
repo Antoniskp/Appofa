@@ -10,7 +10,7 @@ const Report = sequelize.define('Report', {
   },
   contentId: { type: DataTypes.INTEGER, allowNull: false },
   category: {
-    type: DataTypes.ENUM('misinformation', 'harassment', 'spam', 'privacy_violation', 'impersonation', 'inappropriate_content', 'other', 'harmful_legislation', 'corruption_risk'),
+    type: DataTypes.ENUM('misinformation', 'harassment', 'spam', 'privacy_violation', 'impersonation', 'inappropriate_content', 'other', 'harmful_legislation', 'corruption_risk', 'vote_manipulation'),
     allowNull: false
   },
   message: { type: DataTypes.TEXT, allowNull: true },

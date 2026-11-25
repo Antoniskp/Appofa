@@ -86,6 +86,69 @@ describe('Candidate registrations API', () => {
     await sequelize.close();
   });
 
+  it('records a founding application for the selected district and keeps it private after review', async () => {
+    const { user, token } = await registerAndLogin('founding_applicant');
+    await user.update({ homeLocationId: testLocation.id, profileVisibility: 'hidden' });
+    const district = await Location.create({
+      name: 'Arta',
+      name_local: 'Άρτας',
+      slug: 'arta-1',
+      type: 'electoral_district',
+    });
+    const payload = {
+      source: 'founding_initiative',
+      districtSlug: 'gr-electoral-arta',
+      consultationCommitment: 'I will consult constituents before major votes.',
+      acceptCommitment: true,
+      contactEmail: 'founding_applicant@test.com',
+    };
+    const submit = (data) => request(app).post('/api/candidate-registrations')
+      .set(withCsrf(user.id, token, 'csrf-founding-apply')).send(data);
+
+    expect((await submit({ ...payload, acceptCommitment: false })).status).toBe(400);
+    expect((await submit({ ...payload, consultationCommitment: ' ' })).status).toBe(400);
+    expect((await submit({ ...payload, districtSlug: 'candidate-test-prefecture' })).status).toBe(400);
+    const submitted = await submit(payload);
+    expect(submitted.status).toBe(201);
+    const registration = submitted.body.data.registration;
+    expect(registration).toMatchObject({
+      source: payload.source,
+      positionType: 'parliamentary',
+      status: 'submitted',
+      locationId: district.id,
+      consultationCommitment: payload.consultationCommitment,
+    });
+    expect((await submit(payload)).status).toBe(409);
+    const reloaded = await user.reload();
+    expect(reloaded).toMatchObject({ role: 'viewer', homeLocationId: testLocation.id, profileVisibility: 'hidden' });
+
+    const path = `/api/candidate-registrations/${registration.id}`;
+    const queue = await request(app).get('/api/candidate-registrations')
+      .set('Cookie', `auth_token=${adminToken}`).query({ source: payload.source, status: 'submitted' });
+    expect(queue.body.data.registrations.map(({ id }) => id)).toContain(registration.id);
+    const approved = await request(app).put(path)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-founding-review')).send({ status: 'approved' });
+    expect(approved.status).toBe(200);
+    expect((await request(app).get(path)).status).toBe(404);
+    const owned = await request(app).get(path).set('Cookie', `auth_token=${token}`);
+    expect(owned.status).toBe(200);
+    expect(owned.headers['cache-control']).toBe('private, no-store');
+
+    // Even an applicant who later publishes their profile stays off candidate lists.
+    await user.update({ profileVisibility: 'public' });
+    const publicList = await request(app).get('/api/candidate-registrations')
+      .query({ source: payload.source, locationId: district.id });
+    expect(publicList.body.data.registrations).toHaveLength(0);
+    const publicMap = await request(app).get('/api/electoral-districts/candidates');
+    expect(publicMap.body.data.registrations.map(({ id }) => id)).not.toContain(registration.id);
+
+    const archived = await request(app).delete(path).set(withCsrf(user.id, token, 'csrf-founding-withdraw'));
+    expect(archived.status).toBe(200);
+    const resubmitted = await submit(payload);
+    expect(resubmitted.status).toBe(201);
+    expect(resubmitted.body.data.registration).toMatchObject({ id: registration.id, status: 'submitted', reviewedAt: null });
+  });
+
   it('rejects registrations outside the user location hierarchy', async () => {
     const createRes = await request(app)
       .post('/api/candidate-registrations')

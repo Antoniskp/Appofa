@@ -253,6 +253,11 @@ const User = sequelize.define('User', {
     allowNull: false,
     defaultValue: false
   },
+  pollVotingBlocked: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
   verifiedAt: {
     type: DataTypes.DATE,
     allowNull: true

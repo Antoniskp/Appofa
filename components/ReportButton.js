@@ -19,6 +19,7 @@ const CATEGORIES = [
 export default function ReportButton({ contentType, contentId, label }) {
   const t = useTranslations('reportContent');
   const { user } = useAuth();
+  const categories = contentType === 'poll' ? [...CATEGORIES, { value: 'vote_manipulation' }] : CATEGORIES;
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({ category: '', message: '', reporterName: '', reporterEmail: '' });
   const [loading, setLoading] = useState(false);
@@ -135,7 +136,7 @@ export default function ReportButton({ contentType, contentId, label }) {
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">{t('reason')}</option>
-                {CATEGORIES.map((c) => (
+                {categories.map((c) => (
                   <option key={c.value} value={c.value}>{t(c.value)}</option>
                 ))}
               </select>

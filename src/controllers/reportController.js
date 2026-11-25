@@ -41,7 +41,8 @@ const reportController = {
     }
 
     // Validate category
-    if (!category || !CATEGORIES.includes(category)) {
+    const isVotingReport = contentType === 'poll' && category === 'vote_manipulation';
+    if (!CATEGORIES.includes(category) && !isVotingReport) {
       return res.status(400).json({ success: false, message: 'Invalid or missing category.' });
     }
 

@@ -31,6 +31,15 @@ export default async function ParticipationPage() {
           <li>{t('localEligibility')}</li>
         </ul>
       </section>
+      <section aria-labelledby="voting-integrity">
+        <h2 id="voting-integrity" className="text-xl font-semibold mb-3">{t('integrityTitle')}</h2>
+        <div className="space-y-3">
+          <p>{t('integrityLimits')}</p>
+          <p>{t('integrityRule')}</p>
+          <p>{t('integrityReview')}</p>
+          <Link href="/rules" className="text-teal-800 underline underline-offset-4">{t('integrityRulesLink')}</Link>
+        </div>
+      </section>
       <section>
         <h2 className="text-xl font-semibold mb-3">{t('privacyTitle')}</h2>
         <p>{t('privacy')}</p>

@@ -375,8 +375,8 @@ function ReportsContent() {
                       </button>
                     </div>
                   )}
-                  {selectedReport.contentType === 'user' && (
-                    <p className="mt-3 text-xs text-gray-500">{t('userBanning')}</p>
+                  {(selectedReport.contentType === 'user' || selectedReport.category === 'vote_manipulation') && (
+                    <Link href="/admin/users" className="mt-3 inline-block text-xs text-blue-700 underline">{t('userBanning')}</Link>
                   )}
                 </>
               )}

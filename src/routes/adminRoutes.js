@@ -11,6 +11,17 @@ const workerTokenService = require('../services/workerTokenService');
 const { sendRequest, sendTaskToWorker, getConnectedWorkers, getFirstConnectedWorkerId, updateWorkerLibraryAccess } = require('../websocket/workerWsServer');
 const { clearLibraryStatus } = require('../services/legalLibraryService');
 
+router.put('/users/:id/poll-voting', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, async (req, res) => {
+  const id = Number(req.params.id);
+  const { blocked } = req.body || {};
+  if (!/^\d+$/.test(req.params.id) || id < 1 || id > 2147483647 || typeof blocked !== 'boolean') {
+    return res.status(400).json({ success: false, message: 'A valid user ID and voting restriction are required.' });
+  }
+  const [updated] = await User.update({ pollVotingBlocked: blocked }, { where: { id } });
+  if (!updated) return res.status(404).json({ success: false, message: 'User not found.' });
+  return res.json({ success: true, data: { pollVotingBlocked: blocked } });
+});
+
 const runCheck = async (checkFn) => {
   const start = Date.now();
   try {

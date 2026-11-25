@@ -24,6 +24,7 @@ const USERS_PER_PAGE = 20;
 
 function AdminUsersContent() {
   const tConsultations = useTranslations('consultations');
+  const tVoting = useTranslations('democracy');
   const { user } = useAuth();
   const { addToast } = useToast();
 
@@ -41,6 +42,8 @@ function AdminUsersContent() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [verifyingUserId, setVerifyingUserId] = useState(null);
   const [updatingPublisherId, setUpdatingPublisherId] = useState(null);
+  const [votingTarget, setVotingTarget] = useState(null);
+  const [updatingVotingId, setUpdatingVotingId] = useState(null);
 
   // Fetch users with server-side pagination and filtering
   const { data: usersData, loading, error, refetch } = useAsyncData(
@@ -129,6 +132,21 @@ function AdminUsersContent() {
       addToast(error.message, { type: 'error' });
     } finally {
       setUpdatingPublisherId(null);
+    }
+  }
+
+  async function updatePollVoting() {
+    if (!votingTarget) return;
+    const { id, pollVotingBlocked } = votingTarget;
+    setUpdatingVotingId(id);
+    try {
+      await authAPI.setPollVotingRestriction(id, !pollVotingBlocked);
+      await refetch();
+      addToast(tVoting(pollVotingBlocked ? 'votingRestored' : 'votingSuspended'), { type: 'success' });
+    } catch {
+      addToast(tVoting('votingUpdateFailed'), { type: 'error' });
+    } finally {
+      setUpdatingVotingId(null);
     }
   }
 
@@ -388,6 +406,10 @@ function AdminUsersContent() {
                           {user?.role === 'admin' && u.claimStatus === null && <div className="mb-2 flex flex-col items-end gap-1 text-xs font-medium text-blue-700">
                             <Link href={`/admin/newsletter/campaigns/new?recipientUserId=${u.id}`}>Email user</Link>
                             {!(u.homeLocationId || u.homeLocation?.id) && <Link href={`/admin/newsletter/campaigns/new?template=profile_location_el&recipientUserId=${u.id}`}>Location reminder</Link>}
+                            {u.pollVotingBlocked && <span className="text-red-700">{tVoting('votingSuspended')}</span>}
+                            <button type="button" className="underline disabled:opacity-50" disabled={updatingVotingId !== null} onClick={() => setVotingTarget(u)}>
+                              {tVoting(u.pollVotingBlocked ? 'restoreVoting' : 'suspendVoting')}
+                            </button>
                           </div>}
                           {user?.role === 'admin' && u.role !== 'admin' && u.id !== user?.id && u.claimStatus === null && (
                             <TooltipIconButton
@@ -423,6 +445,17 @@ function AdminUsersContent() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={Boolean(votingTarget)}
+        onClose={() => setVotingTarget(null)}
+        onConfirm={updatePollVoting}
+        title={tVoting(votingTarget?.pollVotingBlocked ? 'restoreVoting' : 'suspendVoting')}
+        message={tVoting(votingTarget?.pollVotingBlocked ? 'confirmRestoreVoting' : 'confirmSuspendVoting', { username: votingTarget?.username || '' })}
+        confirmText={tVoting(votingTarget?.pollVotingBlocked ? 'restoreVoting' : 'suspendVoting')}
+        cancelText={tVoting('cancelVotingUpdate')}
+        variant={votingTarget?.pollVotingBlocked ? 'primary' : 'warning'}
+      />
 
       {/* Delete User Dialog */}
       <ConfirmDialog

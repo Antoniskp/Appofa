@@ -83,6 +83,21 @@ describe('Report API', () => {
   // ── POST /api/reports ─────────────────────────────────────────────────────
 
   describe('POST /api/reports', () => {
+    it('queues vote manipulation reports for moderators to review', async () => {
+      const body = { contentType: 'poll', contentId: 271, category: 'vote_manipulation', message: 'Suspected duplicate ballots.' };
+      const headers = csrfHeaders(viewerUserId, viewerToken);
+      expect((await request(app).post('/api/reports').set(headers).send({ ...body, contentType: 'article' })).status).toBe(400);
+      const submission = await request(app).post('/api/reports').set(headers).send(body);
+      expect(submission.status).toBe(201);
+      const reportId = submission.body.data.report.id;
+      try {
+        const queue = await request(app).get('/api/reports?status=pending&contentType=poll').set(csrfHeaders(adminUserId, adminToken));
+        expect(queue.body.data.reports).toContainEqual(expect.objectContaining({ id: reportId, category: 'vote_manipulation', status: 'pending' }));
+      } finally {
+        await Report.destroy({ where: { id: reportId } });
+      }
+    });
+
     it('201 — unauthenticated user can submit a report', async () => {
       const res = await request(app)
         .post('/api/reports')

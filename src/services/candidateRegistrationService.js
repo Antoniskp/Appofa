@@ -1,10 +1,13 @@
 'use strict';
 
-const { Op } = require('sequelize');
+const { Op, UniqueConstraintError } = require('sequelize');
 const { CandidateRegistration, Location, User } = require('../models');
 const dbConfig = require('../config/database');
 const { getDescendantLocationIds, getAncestorLocationIds } = require('../utils/locationUtils');
 const { PROFILE_VISIBILITY, getDiscoverableVisibilities } = require('../utils/profileVisibility');
+const districtSlugs = require('../../config/map-data/electoral-district-location-slugs.json');
+
+const FOUNDING_SOURCE = 'founding_initiative';
 
 const POSITION_TYPES = new Set([
   'mayor',
@@ -126,6 +129,8 @@ function buildCandidateSearchWhere(search) {
 }
 
 async function createRegistration(userId, data) {
+  if (data.source === FOUNDING_SOURCE) return createFoundingApplication(userId, data);
+
   const locationId = parseInt(data.locationId, 10);
   if (!Number.isInteger(locationId)) {
     throw new ServiceError(400, 'Location is required.');
@@ -144,7 +149,7 @@ async function createRegistration(userId, data) {
   const existing = await CandidateRegistration.findOne({
     where: { userId, locationId, positionType, electionCycle },
   });
-  if (existing && existing.status !== 'archived') {
+  if (existing && (existing.status !== 'archived' || existing.source !== null)) {
     throw new ServiceError(409, 'You already registered for this position in this location and election cycle.');
   }
 
@@ -184,6 +189,63 @@ async function createRegistration(userId, data) {
   return getRegistrationById(registration.id, userId);
 }
 
+async function createFoundingApplication(userId, data) {
+  const { districtSlug, acceptCommitment } = data;
+  if (typeof districtSlug !== 'string' || !Object.hasOwn(districtSlugs, districtSlug)
+    || districtSlugs[districtSlug] === 'district-state') {
+    throw new ServiceError(400, 'Select a parliamentary electoral district.');
+  }
+  const consultationCommitment = typeof data.consultationCommitment === 'string'
+    ? data.consultationCommitment.trim() : '';
+  if (!consultationCommitment || consultationCommitment.length > 1500 || acceptCommitment !== true) {
+    throw new ServiceError(400, 'A consultation commitment and confirmation are required.');
+  }
+  const contactEmail = cleanString(data.contactEmail);
+  if (!contactEmail || contactEmail.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+    throw new ServiceError(400, 'Enter a valid contact email.');
+  }
+
+  // The map uses canonical slugs. Existing location records may have shorter
+  // slugs or a suffix when the short slug is taken by another location type.
+  const shortSlug = districtSlug.slice('gr-electoral-'.length);
+  const locationSlugOptions = [districtSlug, shortSlug, `${shortSlug}-1`];
+  if (shortSlug === 'cephalonia') locationSlugOptions.push('kefalonia');
+  const locations = await Location.findAll({
+    where: { slug: { [Op.in]: locationSlugOptions }, type: 'electoral_district' },
+    attributes: ['id', 'slug'],
+  });
+  const location = locationSlugOptions
+    .map(slug => locations.find(candidate => candidate.slug === slug))
+    .find(Boolean);
+  if (!location) throw new ServiceError(404, 'Electoral district not found.');
+
+  const identity = { userId, locationId: location.id, positionType: 'parliamentary', electionCycle: 'current' };
+  const payload = {
+    source: FOUNDING_SOURCE,
+    consultationCommitment,
+    contactEmail,
+    status: 'submitted',
+    reviewedByUserId: null,
+    reviewedAt: null,
+    reviewNotes: null,
+  };
+  const [updated] = await CandidateRegistration.update(payload, {
+    where: { ...identity, source: FOUNDING_SOURCE, status: 'archived' },
+  });
+  let registration;
+  if (updated) {
+    registration = await CandidateRegistration.findOne({ where: identity });
+  } else {
+    try {
+      registration = await CandidateRegistration.create({ ...identity, ...payload });
+    } catch (error) {
+      if (!(error instanceof UniqueConstraintError)) throw error;
+      throw new ServiceError(409, 'You already have a candidate registration in this electoral district.');
+    }
+  }
+  return getRegistrationById(registration.id, userId);
+}
+
 async function getRegistrationById(id, viewer = null) {
   const viewerUserId = typeof viewer === 'object' ? viewer?.id : viewer;
   const isStaff = ['admin', 'moderator'].includes(viewer?.role);
@@ -203,6 +265,9 @@ async function getRegistrationById(id, viewer = null) {
   });
 
   if (!registration) throw new ServiceError(404, 'Candidate registration not found.');
+  if (registration.source === FOUNDING_SOURCE && registration.userId !== viewerUserId && viewer?.role !== 'admin') {
+    throw new ServiceError(404, 'Candidate registration not found.');
+  }
   if (registration.status !== 'approved' && registration.userId !== viewerUserId && !isStaff) {
     throw new ServiceError(404, 'Candidate registration not found.');
   }
@@ -219,6 +284,7 @@ async function listRegistrations({
   search,
   userId,
   status = 'approved',
+  source,
   includeDescendants = true,
   viewer = null,
 } = {}) {
@@ -227,6 +293,8 @@ async function listRegistrations({
   const offset = (pageNum - 1) * limitNum;
   const where = {};
   const isStaff = ['admin', 'moderator'].includes(viewer?.role);
+  const isFoundingQueue = source === FOUNDING_SOURCE && viewer?.role === 'admin';
+  where.source = isFoundingQueue ? FOUNDING_SOURCE : null;
 
   if (!isStaff) {
     where.status = 'approved';
@@ -263,7 +331,7 @@ async function listRegistrations({
       : { [Op.in]: await getDescendantLocationIds(parsedLocationId, true) };
   }
 
-  const candidateWhere = {
+  const candidateWhere = isFoundingQueue ? {} : {
     profileVisibility: { [Op.in]: getDiscoverableVisibilities(Boolean(viewer)) },
     claimStatus: null,
   };
@@ -349,6 +417,10 @@ async function updateRegistration(userId, userRole, id, data) {
   const registration = await CandidateRegistration.findByPk(id);
   if (!registration) throw new ServiceError(404, 'Candidate registration not found.');
   const isOwner = registration.userId === userId;
+  const isFoundingApplication = registration.source === FOUNDING_SOURCE;
+  if (isFoundingApplication && !isOwner && userRole !== 'admin') {
+    throw new ServiceError(404, 'Candidate registration not found.');
+  }
   const isModerator = ['admin', 'moderator'].includes(userRole);
   if (!isOwner && !isModerator) throw new ServiceError(403, 'You cannot update this candidate registration.');
 
@@ -375,6 +447,9 @@ async function updateRegistration(userId, userRole, id, data) {
   if (data.consultationCommitment !== undefined) updates.consultationCommitment = cleanString(data.consultationCommitment, 1500);
   if (data.websiteUrl !== undefined) updates.websiteUrl = validateUrl(data.websiteUrl);
   if (data.contactEmail !== undefined) updates.contactEmail = cleanString(data.contactEmail, 255);
+  if (isFoundingApplication && Object.keys(updates).length) {
+    throw new ServiceError(400, 'Withdraw and resubmit to change a founding candidate application.');
+  }
   if (isModerator && data.status !== undefined) {
     if (!STATUSES.has(data.status)) throw new ServiceError(400, 'Invalid status.');
     updates.status = data.status;
@@ -388,7 +463,7 @@ async function updateRegistration(userId, userRole, id, data) {
     updates.reviewNotes = null;
   }
 
-  if (isOwner) {
+  if (isOwner && !isFoundingApplication) {
     const targetLocationId = updates.locationId || registration.locationId;
     if (!targetLocation) {
       targetLocation = await Location.findByPk(targetLocationId);
@@ -406,6 +481,9 @@ async function updateRegistration(userId, userRole, id, data) {
 async function archiveRegistration(userId, userRole, id) {
   const registration = await CandidateRegistration.findByPk(id);
   if (!registration) throw new ServiceError(404, 'Candidate registration not found.');
+  if (registration.source === FOUNDING_SOURCE && registration.userId !== userId && userRole !== 'admin') {
+    throw new ServiceError(404, 'Candidate registration not found.');
+  }
   if (registration.userId !== userId && !['admin', 'moderator'].includes(userRole)) {
     throw new ServiceError(403, 'You cannot archive this candidate registration.');
   }

@@ -13,6 +13,7 @@ import { candidateRegistrationAPI, adminAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import { POSITION_TYPE_LABELS } from '@/components/locations/LocationCandidatesTab';
 import ConsultationCommitment from '@/components/political/ConsultationCommitment';
+import { useAuth } from '@/lib/auth-context';
 
 const STATUS_OPTIONS = ['submitted', 'approved', 'rejected', 'archived', 'all'];
 
@@ -75,7 +76,10 @@ function CandidateOnboardingContext({ userId }) {
 
 function AdminCandidatesContent() {
   const { success: toastSuccess, error: toastError } = useToast();
+  const { user } = useAuth();
   const [status, setStatus] = useAdminQueryState('status', 'submitted');
+  const [queue, setQueue] = useAdminQueryState('queue', 'campaigns');
+  const foundingQueue = user?.role === 'admin' && queue === 'founding_initiative';
   const [page, setPage] = useAdminQueryState('page', 1);
   const [totalPages, setTotalPages] = useState(1);
   const [selected, setSelected] = useState(null);
@@ -84,14 +88,17 @@ function AdminCandidatesContent() {
 
   const { data: registrations, loading, error, refetch } = useAsyncData(
     async () => {
-      const res = await candidateRegistrationAPI.getAll({ status, page, limit: 20, includeDescendants: false });
+      const res = await candidateRegistrationAPI.getAll({
+        status, page, limit: 20, includeDescendants: false,
+        ...(foundingQueue ? { source: 'founding_initiative' } : {}),
+      });
       if (res.success) {
         setTotalPages(res.data?.pagination?.totalPages || 1);
         return res.data?.registrations || [];
       }
       return [];
     },
-    [status, page],
+    [status, page, foundingQueue],
     { initialData: [] }
   );
 
@@ -147,7 +154,7 @@ function AdminCandidatesContent() {
     {
       key: 'party',
       label: 'Party',
-      render: (row) => row.isIndependent ? 'Independent' : (row.partyName || '-'),
+      render: (row) => row.source === 'founding_initiative' ? 'Founding initiative' : (row.isIndependent ? 'Independent' : (row.partyName || '-')),
     },
     {
       key: 'status',
@@ -213,7 +220,9 @@ function AdminCandidatesContent() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Candidate Registrations</h1>
-            <p className="mt-1 text-sm text-gray-600">Review self-declared campaign listings before they appear on location pages.</p>
+            <p className="mt-1 text-sm text-gray-600">{foundingQueue
+              ? 'Review private expressions of interest and contact applicants.'
+              : 'Review self-declared campaign listings before they appear on location pages.'}</p>
           </div>
           <Link href="/candidates/register" className="rounded border border-blue-600 bg-white px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50">
             New registration
@@ -221,6 +230,20 @@ function AdminCandidatesContent() {
         </div>
 
         <div className="mb-4 flex flex-wrap gap-3">
+          {user?.role === 'admin' && (
+            <select
+              value={queue}
+              onChange={(event) => {
+                setQueue(event.target.value);
+                setPage(1);
+              }}
+              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+              aria-label="Candidate registration queue"
+            >
+              <option value="campaigns">Campaign registrations</option>
+              <option value="founding_initiative">Founding initiative</option>
+            </select>
+          )}
           <select
             value={status}
             onChange={(event) => {
@@ -292,7 +315,7 @@ function AdminCandidatesContent() {
                 </div>
                 <div>
                   <dt className="font-medium text-gray-500">Party</dt>
-                  <dd className="mt-1">{selected.isIndependent ? 'Independent' : (selected.partyName || '-')}</dd>
+                  <dd className="mt-1">{selected.source === 'founding_initiative' ? 'Founding initiative' : (selected.isIndependent ? 'Independent' : (selected.partyName || '-'))}</dd>
                 </div>
                 <div>
                   <dt className="font-medium text-gray-500">Contact</dt>
