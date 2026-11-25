@@ -54,6 +54,7 @@ const routes = [
   { prefix: '/api/locations', router: locationRoutes },
   { prefix: '/api/polls', router: pollRoutes },
   { prefix: '/api/civic-questions', router: civicQuestionRoutes },
+  { prefix: '/api/founding-initiative', router: require('./foundingInitiativeRoutes') },
   { prefix: '/api/bookmarks', router: bookmarkRoutes },
   { prefix: '/api/messages', router: messageRoutes },
   { prefix: '/api/stats', router: statsRoutes },

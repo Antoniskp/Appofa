@@ -41,6 +41,7 @@ export default function TopNav() {
   const tOrganizations = useTranslations('organizations');
   const tPositions = useTranslations('positions');
   const tConsultations = useTranslations('consultations');
+  const tFounding = useTranslations('foundingInitiative');
   const { user, loading, logout } = useAuth();
   const { canAccessAdmin } = usePermissions();
   const pathname = usePathname();
@@ -172,6 +173,11 @@ export default function TopNav() {
           id: 'parliamentary-consultations', label: tConsultations('title'), href: '/parliamentary-consultations',
           icon: <ChatBubbleLeftRightIcon className="h-4 w-4" />,
           mobileIcon: <ChatBubbleLeftRightIcon className="h-5 w-5" />,
+        },
+        {
+          id: 'founding-initiative', label: tFounding('nav'), href: '/founding-initiative',
+          icon: <FlagIcon className="h-4 w-4" />,
+          mobileIcon: <FlagIcon className="h-5 w-5" />,
         },
         {
           id: 'parties', label: tOrganizations('parties'), href: '/elections/political-parties',

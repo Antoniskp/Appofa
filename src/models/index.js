@@ -22,6 +22,7 @@ const PollVote = require('./PollVote');
 const CivicQuestion = require('./CivicQuestion');
 const CivicQuestionVote = require('./CivicQuestionVote');
 const ConsultationEvaluation = require('./ConsultationEvaluation');
+const FoundingInterest = require('./FoundingInterest');
 const Bookmark = require('./Bookmark');
 const Message = require('./Message');
 const Follow = require('./Follow');
@@ -208,6 +209,8 @@ CivicQuestionVote.belongsTo(User, {
   foreignKey: 'userId',
   as: 'user'
 });
+
+FoundingInterest.belongsTo(User, { foreignKey: 'userId', as: 'participant' });
 
 User.hasMany(CivicQuestion, {
   foreignKey: 'creatorId',
@@ -637,6 +640,7 @@ module.exports = {
   CivicQuestion,
   CivicQuestionVote,
   ConsultationEvaluation,
+  FoundingInterest,
   Bookmark,
   Message,
   Follow,

@@ -69,6 +69,7 @@ function PublishQuestion({ publisherName }) {
 
 export default function ParliamentaryConsultations() {
   const t = useTranslations('consultations');
+  const tFounding = useTranslations('foundingInitiative');
   const format = useFormatter();
   const { user } = useAuth();
   const [page, setPage] = useState(1);
@@ -92,6 +93,14 @@ export default function ParliamentaryConsultations() {
             </li>)}
           </ol>
         </header>
+
+        <section className="flex flex-col gap-3 rounded-2xl border border-teal-200 bg-teal-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-semibold text-teal-950">{tFounding('nav')}</h2>
+            <p className="mt-1 text-sm text-slate-700">{tFounding('consultationsInvite')}</p>
+          </div>
+          <Link href="/founding-initiative" className="inline-flex min-h-11 shrink-0 items-center self-start rounded-lg bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900 sm:self-center">{tFounding('openInitiative')} →</Link>
+        </section>
 
         {publisher?.data?.publisherName && <PublishQuestion publisherName={publisher.data.publisherName} />}
 
