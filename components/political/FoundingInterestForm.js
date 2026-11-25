@@ -13,6 +13,7 @@ function InterestForm({ initialInterest }) {
   const [interest, setInterest] = useState(initialInterest);
   const [wantsToSign, setWantsToSign] = useState(Boolean(initialInterest?.wantsToSign));
   const [wantsToVolunteer, setWantsToVolunteer] = useState(Boolean(initialInterest?.wantsToVolunteer));
+  const [signingPreference, setSigningPreference] = useState(initialInterest?.signingPreference || '');
   const [consent, setConsent] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
@@ -24,8 +25,11 @@ function InterestForm({ initialInterest }) {
     setError(false);
     setNotice('');
     try {
-      const result = await foundingInitiativeAPI.saveInterest({ wantsToSign, wantsToVolunteer, consent });
+      const result = await foundingInitiativeAPI.saveInterest({
+        wantsToSign, wantsToVolunteer, signingPreference: wantsToSign ? signingPreference || null : null, consent,
+      });
       setInterest(result.data);
+      setSigningPreference(result.data.signingPreference || '');
       setConsent(false);
       setNotice('interestSaved');
     } catch {
@@ -44,6 +48,7 @@ function InterestForm({ initialInterest }) {
       setInterest(null);
       setWantsToSign(false);
       setWantsToVolunteer(false);
+      setSigningPreference('');
       setConsent(false);
       setNotice('interestWithdrawn');
     } catch {
@@ -60,6 +65,15 @@ function InterestForm({ initialInterest }) {
         <label className="flex items-start gap-3 text-sm font-medium text-slate-900">
           <input type="checkbox" checked={wantsToSign} onChange={event => setWantsToSign(event.target.checked)} className="mt-0.5 h-4 w-4 accent-teal-800" />{t('wantToSign')}
         </label>
+        {wantsToSign && <div className="pl-7 text-sm text-slate-900">
+          <label htmlFor="founding-signing-preference" className="font-medium">{t('signingPreference')}</label>
+          <select id="founding-signing-preference" aria-describedby="founding-signing-preference-note" value={signingPreference} onChange={event => setSigningPreference(event.target.value)} className="mt-1 block w-full rounded-lg border border-teal-300 bg-white px-3 py-2">
+            <option value="">{t('method_either')}</option>
+            <option value="in_person">{t('method_in_person')}</option>
+            <option value="remote">{t('method_remote')}</option>
+          </select>
+          <p id="founding-signing-preference-note" className="mt-1 text-xs leading-5 text-slate-600">{t('signingPreferenceNote')}</p>
+        </div>}
         <label className="flex items-start gap-3 text-sm font-medium text-slate-900">
           <input type="checkbox" checked={wantsToVolunteer} onChange={event => setWantsToVolunteer(event.target.checked)} className="mt-0.5 h-4 w-4 accent-teal-800" />{t('wantToVolunteer')}
         </label>

@@ -37,7 +37,8 @@ test('collects explicit opt-in and lets admins organize signatures while partici
   expect((await request(app).get(queue)).status).toBe(401);
   expect((await request(app).get(queue).set(moderator.headers)).status).toBe(403);
   expect((await request(app).put(interest).set(participant.headers).send({ ...signUp, consent: false })).status).toBe(400);
-  expect((await request(app).put(interest).set(participant.headers).send({ ...signUp, signingStatus: 'received' })).body.data).toEqual({ wantsToSign: true, wantsToVolunteer: true, signingStatus: 'requested' });
+  expect((await request(app).put(interest).set(participant.headers).send({ ...signUp, signingPreference: 'unknown' })).status).toBe(400);
+  expect((await request(app).put(interest).set(participant.headers).send({ ...signUp, signingStatus: 'received', signingPreference: 'remote' })).body.data).toEqual({ wantsToSign: true, wantsToVolunteer: true, signingStatus: 'requested', signingPreference: 'remote' });
   expect((await request(app).get(interest).set(volunteer.headers)).body.data).toBeNull();
   expect((await request(app).put(interest).set(volunteer.headers).send({ ...signUp, wantsToSign: false })).body.data.signingStatus).toBeNull();
   expect((await request(app).patch(status).set(participant.headers).send({ signingStatus: 'received' })).status).toBe(403);
@@ -47,15 +48,16 @@ test('collects explicit opt-in and lets admins organize signatures while partici
   expect(pending.body.data).toEqual([{
     userId: participant.id,
     participant: { username: 'first_signer', email: 'first_signer@example.test' },
-    wantsToSign: true, wantsToVolunteer: true, signingStatus: 'requested',
+    wantsToSign: true, wantsToVolunteer: true, signingStatus: 'requested', signingPreference: 'remote',
   }]);
   expect((await request(app).get(queue).query({ status: 'volunteer' }).set(admin.headers)).body.pagination.total).toBe(2);
   expect((await request(app).patch(status).set(admin.headers).send({ signingStatus: 'received' })).status).toBe(200);
   const updated = await request(app).put(interest).set(participant.headers).send({ ...signUp, wantsToVolunteer: false });
-  expect(updated.body.data).toEqual({ wantsToSign: true, wantsToVolunteer: false, signingStatus: 'received' });
+  expect(updated.body.data).toEqual({ wantsToSign: true, wantsToVolunteer: false, signingStatus: 'received', signingPreference: 'remote' });
   expect((await request(app).get(interest).set(participant.headers)).body.data.signingStatus).toBe('received');
   expect((await request(app).put(interest).set(participant.headers).send({ ...signUp, wantsToSign: false })).body.data.signingStatus).toBeNull();
-  expect((await request(app).put(interest).set(participant.headers).send(signUp)).body.data.signingStatus).toBe('requested');
+  const renewed = await request(app).put(interest).set(participant.headers).send(signUp);
+  expect(renewed.body.data).toMatchObject({ signingStatus: 'requested', signingPreference: null });
   expect((await request(app).delete(interest).set(participant.headers)).status).toBe(200);
   expect((await request(app).get(queue).query({ status: 'requested' }).set(admin.headers)).body.data).toEqual([]);
   expect((await request(app).patch(status).set(admin.headers).send({ signingStatus: 'received' })).status).toBe(404);

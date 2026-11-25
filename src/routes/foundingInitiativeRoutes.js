@@ -8,12 +8,18 @@ const checkRole = require('../middleware/checkRole');
 const { apiLimiter } = require('../middleware/rateLimiter');
 
 const statuses = ['requested', 'contacted', 'received'];
+const signingPreferences = ['in_person', 'remote'];
 const admin = checkRole('admin');
 
 function serializeInterest(interest) {
   if (!interest) return null;
-  const { wantsToSign, wantsToVolunteer, signingStatus } = interest;
-  return { wantsToSign, wantsToVolunteer, signingStatus: wantsToSign ? signingStatus : null };
+  const { wantsToSign, wantsToVolunteer, signingPreference, signingStatus } = interest;
+  return {
+    wantsToSign,
+    wantsToVolunteer,
+    signingPreference: wantsToSign ? signingPreference : null,
+    signingStatus: wantsToSign ? signingStatus : null,
+  };
 }
 
 router.use(apiLimiter, (req, res, next) => {
@@ -27,13 +33,18 @@ router.get('/interest', auth, async (req, res) => {
 });
 
 router.put('/interest', auth, csrf, async (req, res) => {
-  const { wantsToSign, wantsToVolunteer, consent } = req.body || {};
+  const { wantsToSign, wantsToVolunteer, signingPreference, consent } = req.body || {};
   if (typeof wantsToSign !== 'boolean' || typeof wantsToVolunteer !== 'boolean' || (!wantsToSign && !wantsToVolunteer) || consent !== true) {
     return res.status(400).json({ success: false, message: 'Select how you want to help and explicitly consent to being contacted.' });
   }
 
+  if (wantsToSign && signingPreference != null && !signingPreferences.includes(signingPreference)) {
+    return res.status(400).json({ success: false, message: 'Invalid signing preference.' });
+  }
+
   const preferences = { userId: req.user.id, wantsToSign, wantsToVolunteer };
-  if (!wantsToSign) preferences.signingStatus = 'requested';
+  if (!wantsToSign) Object.assign(preferences, { signingStatus: 'requested', signingPreference: null });
+  else if (signingPreference !== undefined) preferences.signingPreference = signingPreference;
   await FoundingInterest.upsert(preferences, {
     fields: Object.keys(preferences),
     conflictFields: ['userId'],
