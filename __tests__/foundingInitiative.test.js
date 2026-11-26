@@ -1,6 +1,6 @@
 const express = require('express');
 const request = require('supertest');
-const { sequelize, User, FoundingSignature } = require('../src/models');
+const { sequelize, User, FoundingSignature, FoundingSigningDocument } = require('../src/models');
 const { storeCsrfToken } = require('../src/utils/csrf');
 
 const app = express();
@@ -122,4 +122,48 @@ test('counts only verified signatures and publishes an eligible name only with s
   expect((await request(app).delete(`${base}/organizers/signatures/${firstId}`).set(admin.headers)).status).toBe(200);
   expect((await publish(nextSigner, true)).status).toBe(200);
   expect((await progress()).body.data).toMatchObject({ verifiedCount: 200, names: ['Public display name'] });
+});
+
+test('accepts a private gov.gr receipt only for the enabled final version and deduplicates it after verification', async () => {
+  const signer = await login('digital_signer', 'viewer');
+  const other = await login('second_digital_signer', 'viewer');
+  const admin = await login('digital_admin', 'admin');
+  const base = '/api/founding-initiative';
+  const [document] = await FoundingSigningDocument.findOrCreate({
+    where: { id: 1 },
+    defaults: { version: '1.0', pdfUrl: 'https://example.test/founding-v1.pdf', sha256: 'a'.repeat(64) },
+  });
+  const code = 'DemoReceiptCode_abCD-zz';
+  const submit = (account, fields = {}) => request(app).post(`${base}/digital-signature`).set(account.headers)
+    .send({ code, consent: true, documentSha256: document.sha256, ...fields });
+  const enable = (account, enabled) => request(app).patch(`${base}/organizers/document/gov-gr`).set(account.headers).send({ enabled });
+  const progress = () => request(app).get(`${base}/progress?recognition=true`);
+  const initialCount = (await progress()).body.data.verifiedCount;
+
+  expect((await submit(signer)).status).toBe(409);
+  expect((await enable(signer, true)).status).toBe(403);
+  expect((await enable(admin, true)).status).toBe(200);
+  expect((await submit(signer, { documentSha256: 'b'.repeat(64) })).status).toBe(409);
+  expect((await submit(signer, { consent: false })).status).toBe(400);
+  expect((await submit(signer)).body.data).toEqual({ received: true, verified: false });
+  expect((await submit(signer)).status).toBe(201);
+  expect((await submit(other)).status).toBe(409);
+  expect((await request(app).get(`${base}/digital-signature`).set(signer.headers)).body.data).toEqual({ received: true, verified: false });
+  expect((await request(app).get(`${base}/interest`).set(signer.headers)).body.data).not.toHaveProperty('govVerificationCode');
+  const pending = await request(app).get(`${base}/organizers?status=received`).set(admin.headers);
+  expect(pending.body.data.find(row => row.userId === signer.id).govVerificationCode).toBe(code);
+  const before = await progress();
+  expect(before.body.data.verifiedCount).toBe(initialCount);
+  expect(before.text).not.toContain(code);
+
+  const verify = govVerificationCode => request(app).post(`${base}/organizers/${signer.id}/verify`).set(admin.headers)
+    .send({ legalName: 'Example legal name', recordReference: 'DIG-001', confirmSignature: true, govVerificationCode });
+  expect((await verify('outdated')).status).toBe(409);
+  expect((await verify(code)).status).toBe(201);
+  expect((await request(app).get(`${base}/digital-signature`).set(signer.headers)).body.data).toEqual({ received: false, verified: true });
+  expect((await submit(other)).status).toBe(409);
+  expect((await submit(signer, { code: 'DemoReceiptCode_UNIQUE' })).status).toBe(409);
+  expect((await progress()).body.data).toMatchObject({ verifiedCount: initialCount + 1, govGrEnabled: true });
+  expect((await enable(admin, false)).status).toBe(200);
+  expect((await progress()).body.data).not.toHaveProperty('govGrEnabled');
 });

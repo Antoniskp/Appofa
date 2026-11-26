@@ -16,14 +16,31 @@ const allowedRoles = ['admin'];
 const inputClass = 'mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2';
 const buttonClass = 'min-h-10 rounded-lg border border-teal-300 px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50 disabled:opacity-60';
 
-function SigningDocument({ document, loading, submit }) {
+function SigningDocument({ document, govGrEnabled, loading, submit }) {
   const t = useTranslations('foundingInitiative.signatures');
+  const tGov = useTranslations('foundingInitiative.digitalSigning');
   return <section className="mt-4 space-y-3 rounded-xl border border-slate-200 bg-white p-4">
     <h2 className="font-semibold text-slate-900">{t('finalDocument')}</h2>
     {document ? (
       <div className="space-y-1 text-sm text-slate-700">
         <a href={document.pdfUrl} className="font-medium text-teal-900 underline">{t('viewDocument', { version: document.version })}</a>
         <p className="break-all font-mono text-xs">SHA-256 {document.sha256}</p>
+        {govGrEnabled ? (
+          <button type="button" disabled={loading} className={`mt-3 ${buttonClass}`} onClick={() => submit(() => foundingInitiativeAPI.setGovGrSigning(false))}>{tGov('disable')}</button>
+        ) : (
+          <form onSubmit={event => {
+            event.preventDefault();
+            submit(() => foundingInitiativeAPI.setGovGrSigning(true));
+          }}>
+            <fieldset disabled={loading} className="mt-3 space-y-2">
+              <label className="flex items-start gap-2 text-sm leading-6 text-slate-700">
+                <input type="checkbox" required className="mt-1 accent-teal-800" />
+                {tGov('filingConfirmation')}
+              </label>
+              <button className={buttonClass}>{tGov('enable')}</button>
+            </fieldset>
+          </form>
+        )}
       </div>
     ) : !loading && (
       <form onSubmit={event => {
@@ -56,8 +73,9 @@ function SigningDocument({ document, loading, submit }) {
   </section>;
 }
 
-function VerificationForm({ userId, document, saving, submit }) {
+function VerificationForm({ userId, govVerificationCode, document, saving, submit }) {
   const t = useTranslations('foundingInitiative.signatures');
+  const tGov = useTranslations('foundingInitiative.digitalSigning');
   return (
     <form className="w-full space-y-3 border-t border-slate-200 pt-3" onSubmit={event => {
       event.preventDefault();
@@ -65,10 +83,18 @@ function VerificationForm({ userId, document, saving, submit }) {
       submit(() => foundingInitiativeAPI.verifySignature(userId, {
         legalName: fields.get('legalName'), recordReference: fields.get('recordReference'),
         confirmSignature: fields.has('confirmSignature'),
+        govVerificationCode,
       }));
     }}>
       <fieldset disabled={saving} className="space-y-3">
         <legend className="mb-2 text-sm font-semibold text-slate-900">{t('verifySignature')}</legend>
+        {govVerificationCode && (
+          <div className="space-y-1 rounded-lg bg-teal-50 p-3 text-sm text-slate-700">
+            <p>{tGov('reviewInstructions')}</p>
+            <p className="break-all font-mono font-semibold text-slate-900">{govVerificationCode}</p>
+            <a href="https://docs.gov.gr/validate/" target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center font-semibold text-teal-900 underline">{tGov('verifyAtGovGr')}</a>
+          </div>
+        )}
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm font-medium">{t('legalName')}
             <input name="legalName" required maxLength={160} className={inputClass} />
@@ -122,7 +148,7 @@ function FoundingRequests() {
       <AdminHeader title={t('adminTitle')} subtitle={t('adminIntro')} />
       <Link href="/founding-initiative" className="inline-flex min-h-11 items-center text-sm font-semibold text-teal-800 underline">{t('openPublicPage')}</Link>
       {documentError ? <AlertMessage message={t('loadError')} />
-        : <SigningDocument document={document} loading={loadingDocument || saving} submit={save} />}
+        : <SigningDocument document={document} govGrEnabled={progress?.data?.govGrEnabled} loading={loadingDocument || saving} submit={save} />}
       {progress?.data && <p className="mt-4 text-sm font-semibold text-teal-900">{t('signatures.progressCount', { count: progress.data.verifiedCount, goal: progress.data.goal })}</p>}
       <div className="mt-3 space-y-4">
         <label className="block text-sm font-medium text-slate-800">{t('filterRequests')}
@@ -170,7 +196,8 @@ function FoundingRequests() {
                 <button disabled={saving} className={buttonClass}>{t('saveStatus')}</button>
               </form>}
               {row.wantsToSign && row.signingStatus === 'received' && document && (
-                <VerificationForm userId={row.userId} document={document} saving={saving} submit={save} />
+                <VerificationForm key={row.govVerificationCode || row.userId} userId={row.userId}
+                  govVerificationCode={row.govVerificationCode} document={document} saving={saving} submit={save} />
               )}
             </li>)}
           </ul>

@@ -10,6 +10,7 @@ module.exports = sequelize.define('FoundingSignature', {
   },
   legalName: { type: DataTypes.STRING(160), allowNull: false },
   recordReference: { type: DataTypes.STRING(80), unique: true, allowNull: false },
+  govDocumentFingerprint: { type: DataTypes.STRING(64), allowNull: true, unique: true },
   verifiedByUserId: {
     type: DataTypes.INTEGER, allowNull: true,
     references: { model: 'Users', key: 'id' }, onDelete: 'SET NULL',

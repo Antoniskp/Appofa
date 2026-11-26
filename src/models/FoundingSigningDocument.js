@@ -8,4 +8,5 @@ module.exports = sequelize.define('FoundingSigningDocument', {
   version: { type: DataTypes.STRING(100), allowNull: false },
   pdfUrl: { type: DataTypes.STRING(500), allowNull: false },
   sha256: { type: DataTypes.STRING(64), allowNull: false },
+  govGrEnabled: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
 });

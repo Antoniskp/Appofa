@@ -12,5 +12,6 @@ module.exports = sequelize.define('FoundingInterest', {
   wantsToVolunteer: { type: DataTypes.BOOLEAN, allowNull: false },
   signingPreference: { type: DataTypes.STRING(12), allowNull: true },
   contactPhone: { type: DataTypes.STRING(32), allowNull: true },
+  govVerificationCode: { type: DataTypes.STRING(64), allowNull: true, unique: true },
   signingStatus: { type: DataTypes.STRING(12), allowNull: false, defaultValue: 'requested' },
 }, { tableName: 'FoundingInterests', timestamps: true });

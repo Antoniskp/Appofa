@@ -1,6 +1,7 @@
 'use strict';
 
 const router = require('express').Router();
+const { createHash } = require('node:crypto');
 const { Op, UniqueConstraintError } = require('sequelize');
 const { FoundingInterest, FoundingSignature, FoundingSigningDocument, User, sequelize } = require('../models');
 const auth = require('../middleware/auth');
@@ -16,6 +17,7 @@ const finalDocumentFields = ['version', 'pdfUrl', 'sha256'];
 
 const clean = value => typeof value === 'string' ? value.trim() : '';
 const validPhone = phone => /^\+?[\d ().-]{7,32}$/.test(phone) && /^\d{7,15}$/.test(phone.replace(/\D/g, ''));
+const fingerprint = code => createHash('sha256').update(code).digest('hex');
 
 function serializeInterest(interest) {
   if (!interest) return null;
@@ -37,18 +39,56 @@ router.use(apiLimiter, (req, res, next) => {
 router.get('/progress', async (req, res) => {
   const [verifiedCount, document, firstSigners] = await Promise.all([
     FoundingSignature.count(),
-    FoundingSigningDocument.findByPk(1, { attributes: finalDocumentFields }),
+    FoundingSigningDocument.findByPk(1, { attributes: [...finalDocumentFields, 'govGrEnabled'] }),
     req.query.recognition === 'true'
       ? FoundingSignature.findAll({ attributes: ['userId', 'publicName'], order: [['id', 'ASC']], limit: signatureGoal })
       : null,
   ]);
   res.set('X-Robots-Tag', 'noindex');
   res.json({ success: true, data: {
-    goal: signatureGoal, verifiedCount, document,
+    goal: signatureGoal, verifiedCount,
+    document: document && Object.fromEntries(finalDocumentFields.map(field => [field, document[field]])),
+    ...(document?.govGrEnabled && { govGrEnabled: true }),
     ...(firstSigners && {
       names: firstSigners.filter(signer => signer.userId && signer.publicName).map(signer => signer.publicName),
     }),
   } });
+});
+
+router.get('/digital-signature', auth, async (req, res) => {
+  const [interest, verified] = await Promise.all([
+    FoundingInterest.findByPk(req.user.id, { attributes: ['govVerificationCode'] }),
+    FoundingSignature.findOne({ where: { userId: req.user.id }, attributes: ['id'] }),
+  ]);
+  res.json({ success: true, data: { received: Boolean(interest?.govVerificationCode), verified: Boolean(verified) } });
+});
+
+router.post('/digital-signature', auth, csrf, async (req, res) => {
+  const code = clean(req.body?.code);
+  if (!/^[A-Za-z0-9_-]{12,64}$/.test(code) || req.body?.consent !== true) {
+    return res.status(400).json({ success: false, message: 'A verification code and explicit permission are required.' });
+  }
+  try {
+    const received = await sequelize.transaction(async transaction => {
+      const document = await FoundingSigningDocument.findByPk(1, { transaction, lock: transaction.LOCK.UPDATE });
+      if (!document?.govGrEnabled || document.sha256 !== req.body?.documentSha256) return false;
+      const alreadyVerified = await FoundingSignature.findOne({
+        where: { [Op.or]: [{ userId: req.user.id }, { govDocumentFingerprint: fingerprint(code) }] },
+        attributes: ['id'], transaction,
+      });
+      if (alreadyVerified) return false;
+      const values = { userId: req.user.id, wantsToSign: true, signingPreference: 'remote', signingStatus: 'received', govVerificationCode: code };
+      await FoundingInterest.upsert({ ...values, wantsToVolunteer: false }, {
+        fields: Object.keys(values), conflictFields: ['userId'], transaction,
+      });
+      return true;
+    });
+    if (!received) return res.status(409).json({ success: false, message: 'Digital signing is unavailable or this document was already verified.' });
+  } catch (error) {
+    if (!(error instanceof UniqueConstraintError)) throw error;
+    return res.status(409).json({ success: false, message: 'This verification code was already submitted.' });
+  }
+  res.status(201).json({ success: true, data: { received: true, verified: false } });
 });
 
 router.get('/recognition', auth, async (req, res) => {
@@ -95,7 +135,7 @@ router.put('/interest', auth, csrf, async (req, res) => {
   }
 
   const preferences = { userId: req.user.id, wantsToSign, wantsToVolunteer };
-  if (!wantsToSign) Object.assign(preferences, { signingStatus: 'requested', signingPreference: null, contactPhone: null });
+  if (!wantsToSign) Object.assign(preferences, { signingStatus: 'requested', signingPreference: null, contactPhone: null, govVerificationCode: null });
   else {
     if (signingPreference !== undefined) preferences.signingPreference = signingPreference;
     if (contactPhone !== undefined) preferences.contactPhone = phone || null;
@@ -137,7 +177,10 @@ router.get('/organizers', auth, admin, async (req, res) => {
   });
   return res.json({
     success: true,
-    data: rows.map(row => ({ userId: row.userId, participant: row.participant.get({ plain: true }), ...serializeInterest(row) })),
+    data: rows.map(row => ({
+      userId: row.userId, participant: row.participant.get({ plain: true }), ...serializeInterest(row),
+      ...(row.govVerificationCode && { govVerificationCode: row.govVerificationCode }),
+    })),
     pagination: { total: count, totalPages: Math.ceil(count / limit) },
   });
 });
@@ -148,7 +191,8 @@ router.patch('/organizers/:id', auth, admin, csrf, async (req, res) => {
   if (!Number.isSafeInteger(userId) || userId < 1 || !statuses.includes(signingStatus)) {
     return res.status(400).json({ success: false, message: 'Invalid signing request or status.' });
   }
-  const [updated] = await FoundingInterest.update({ signingStatus }, {
+  const updates = signingStatus === 'received' ? { signingStatus } : { signingStatus, govVerificationCode: null };
+  const [updated] = await FoundingInterest.update(updates, {
     where: { userId, wantsToSign: true, signingStatus: { [Op.ne]: 'verified' } },
   });
   if (!updated) return res.status(404).json({ success: false, message: 'This signing request is no longer active.' });
@@ -174,6 +218,14 @@ router.post('/organizers/document', auth, admin, csrf, async (req, res) => {
   res.status(201).json({ success: true });
 });
 
+router.patch('/organizers/document/gov-gr', auth, admin, csrf, async (req, res) => {
+  const enabled = req.body?.enabled;
+  if (typeof enabled !== 'boolean') return res.status(400).json({ success: false, message: 'Choose whether digital signing is open.' });
+  const [updated] = await FoundingSigningDocument.update({ govGrEnabled: enabled }, { where: { id: 1 } });
+  if (!updated) return res.status(409).json({ success: false, message: 'Lock the approved document before enabling digital signing.' });
+  res.json({ success: true });
+});
+
 router.post('/organizers/:id/verify', auth, admin, csrf, async (req, res) => {
   const userId = Number(req.params.id);
   const legalName = clean(req.body?.legalName);
@@ -186,14 +238,18 @@ router.post('/organizers/:id/verify', auth, admin, csrf, async (req, res) => {
     const verified = await sequelize.transaction(async transaction => {
       const document = await FoundingSigningDocument.findByPk(1, { transaction, lock: transaction.LOCK.UPDATE });
       if (!document) return false;
-      const [updated] = await FoundingInterest.update({ signingStatus: 'verified' }, {
-        where: { userId, wantsToSign: true, signingStatus: 'received' }, transaction,
+      const govVerificationCode = clean(req.body?.govVerificationCode) || null;
+      const [updated] = await FoundingInterest.update({ signingStatus: 'verified', govVerificationCode: null }, {
+        where: { userId, wantsToSign: true, signingStatus: 'received', govVerificationCode }, transaction,
       });
       if (!updated) return false;
-      await FoundingSignature.create({ userId, legalName, recordReference, verifiedByUserId: req.user.id }, { transaction });
+      await FoundingSignature.create({
+        userId, legalName, recordReference, verifiedByUserId: req.user.id,
+        govDocumentFingerprint: govVerificationCode ? fingerprint(govVerificationCode) : null,
+      }, { transaction });
       return true;
     });
-    if (!verified) return res.status(409).json({ success: false, message: 'Lock the final document and record receipt before verifying.' });
+    if (!verified) return res.status(409).json({ success: false, message: 'Check the final document and the latest receipt before verifying.' });
   } catch (error) {
     if (!(error instanceof UniqueConstraintError)) throw error;
     return res.status(409).json({ success: false, message: 'This signer or archive reference is already in the register.' });

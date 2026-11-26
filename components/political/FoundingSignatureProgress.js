@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { foundingInitiativeAPI } from '@/lib/api/foundingInitiative';
+import FoundingDigitalSigning from './FoundingDigitalSigning';
 
 export default function FoundingSignatureProgress({ showNames = false, refreshKey = 0 }) {
   const t = useTranslations('foundingInitiative.signatures');
@@ -34,6 +35,7 @@ export default function FoundingSignatureProgress({ showNames = false, refreshKe
               {showNames && <p className="break-all font-mono text-xs text-slate-700">SHA-256 {progress.document.sha256}</p>}
             </div>
           ) : <p className="mt-3 text-sm leading-6 text-slate-700">{t('waitingForDocument')}</p>}
+          {!showNames && <FoundingDigitalSigning document={progress.govGrEnabled ? progress.document : null} />}
           {showNames && (
             <div className="mt-5 border-t border-teal-200 pt-5">
               <h3 className="font-semibold text-slate-900">{t('publishedNames')}</h3>

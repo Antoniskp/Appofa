@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
 import FoundingInterestForm from '@/components/political/FoundingInterestForm';
@@ -9,6 +10,7 @@ import { publicPageMetadata } from '@/lib/route-metadata';
 const namePollUrl = 'https://appofasi.gr/polls/78';
 const foundingLawUrl = 'https://www.hellenicparliament.gr/UserFiles/67715b2c-ec81-4f0c-ad6a-476a34d732bd/13130509.pdf';
 const ministerialAppointmentsUrl = 'https://www.hellenicparliament.gr/Vouli-ton-Ellinon/To-Politevma/Syntagma/article-39/';
+const proclamationReviewUrl = '/documents/founding-proclamation-review.el.pdf';
 
 export const generateMetadata = publicPageMetadata('foundingInitiative.title', 'foundingInitiative.intro', '/founding-initiative');
 
@@ -26,6 +28,19 @@ export default async function FoundingInitiativePage() {
             <a href="#candidates" className="inline-flex min-h-11 items-center rounded-lg border border-teal-400 px-4 text-sm font-semibold text-white hover:bg-teal-900">{t('candidates.heroAction')}</a>
           </div>
         </header>
+
+        <section aria-labelledby="founding-proclamation" className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <Image src="/images/branding/appofasi-high-resolution-logo-transparent.png" width={400} height={94} alt="Appofasi" className="mb-4 h-auto w-28" />
+              <h2 id="founding-proclamation" className="text-2xl font-semibold text-slate-900">{t('digitalSigning.proclamationTitle')}</h2>
+              <p className="mt-2 max-w-xl leading-7 text-slate-700">{t('digitalSigning.proclamationIntro')}</p>
+            </div>
+            <a href={proclamationReviewUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border border-teal-300 px-4 py-2 text-sm font-semibold text-teal-900 hover:bg-teal-50">
+              {t('digitalSigning.readDraft')} <ArrowRightIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+            </a>
+          </div>
+        </section>
 
         <section id="get-involved" aria-labelledby="founding-interest" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
           <h2 id="founding-interest" className="text-2xl font-semibold text-slate-900">{t('getInvolved')}</h2>
