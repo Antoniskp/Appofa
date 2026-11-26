@@ -2953,6 +2953,7 @@
       "contactAction": "Contact us"
     },
     "proclamation": {
+      "heroAction": "Read the founding declaration",
       "what": "The founding proclamation is the text that at least 200 citizens with voting rights sign to found the party. It sets out what the party aims to achieve and the principles it will follow.",
       "summaryTitle": "In short",
       "purpose": "The aim is for citizens to take a real part in public decisions, with transparency and respect for fundamental rights.",
@@ -2960,7 +2961,8 @@
       "explain": "After the vote, they explain publicly how they voted and how they took citizens into account, and citizens can rate the decision.",
       "members": "Members propose and vote on the party's statute, programme and major decisions."
     },
-    "joinAction": "I want to sign",
+    "joinAction": "Register interest in signing",
+    "joinNote": "We’ll let you know when signing opens. You’ll need a free account to register your interest.",
     "purpose": "How the proposed party would work",
     "purposeIntro": "Members would be able to propose measures and vote in Appofa on the charter, platform, and other major party decisions. Its MPs would commit to a public consultation process.",
     "beforeDecision": "Ask before deciding",
@@ -2984,7 +2986,6 @@
       "appointmentsSource": "Article 37 of the Greek Constitution"
     },
     "candidates": {
-      "heroAction": "I'm interested in standing",
       "title": "We’re recruiting parliamentary candidates",
       "intro": "We’re looking for people in every electoral district who share the principles of direct democracy and transparency. Anyone interested is welcome to apply.",
       "pledge": "If elected, candidates commit to consulting constituents through an app of their choice before major decisions, explaining their vote publicly and inviting constituents to evaluate it.",

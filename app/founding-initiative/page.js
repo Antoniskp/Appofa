@@ -35,9 +35,10 @@ export default async function FoundingInitiativePage() {
           <h1 className="max-w-3xl text-3xl font-bold tracking-tight sm:text-5xl">{t('title')}</h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-ivory sm:text-lg">{t('intro')}</p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <a href="#get-involved" className="inline-flex min-h-11 items-center rounded-lg bg-white px-4 text-sm font-semibold text-charcoal hover:bg-ivory focus-visible:outline-sand">{t('joinAction')}</a>
-            <a href="#candidates" className="inline-flex min-h-11 items-center rounded-lg border border-white/50 px-4 text-sm font-semibold text-white hover:bg-white/10 focus-visible:outline-sand">{t('candidates.heroAction')}</a>
+            <a href="#get-involved" aria-describedby="founding-join-note" className="inline-flex min-h-11 items-center rounded-lg bg-white px-4 text-sm font-semibold text-charcoal hover:bg-ivory focus-visible:outline-sand">{t('joinAction')}</a>
+            <a href="#proclamation" className="inline-flex min-h-11 items-center rounded-lg border border-white/50 px-4 text-sm font-semibold text-white hover:bg-white/10 focus-visible:outline-sand">{t('proclamation.heroAction')}</a>
           </div>
+          <p id="founding-join-note" className="mt-3 max-w-xl text-sm leading-6 text-ivory">{t('joinNote')}</p>
         </header>
 
         <section aria-labelledby="founding-about" className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
@@ -58,7 +59,7 @@ export default async function FoundingInitiativePage() {
           </div>
         </section>
 
-        <section aria-labelledby="founding-proclamation" className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+        <section id="proclamation" aria-labelledby="founding-proclamation" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
           <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <div>
               <h2 id="founding-proclamation" className="text-2xl font-semibold text-slate-900">{t('digitalSigning.proclamationTitle')}</h2>
