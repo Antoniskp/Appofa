@@ -11,7 +11,6 @@ import FoundingDistrictSelect from './FoundingDistrictSelect';
 
 const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false });
 const greeceCenter = [38.5, 23.8];
-const greeceBounds = { north: 42, south: 34.7, east: 29.8, west: 19.2 };
 const districtsById = new Map(foundingCandidateDistricts.map(district => [district.id, district]));
 
 export default function FoundingCandidateDistrictPicker() {
@@ -20,6 +19,7 @@ export default function FoundingCandidateDistrictPicker() {
   const [boundaries, setBoundaries] = useState(null);
   const [mapUnavailable, setMapUnavailable] = useState(false);
   const district = foundingCandidateDistricts.find(option => option.slug === districtSlug);
+  const overviewBounds = useMemo(() => mapGeometryBounds(boundaries), [boundaries]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -63,7 +63,9 @@ export default function FoundingCandidateDistrictPicker() {
         {boundaries ? (
           <BaseMap
             center={greeceCenter}
-            bounds={greeceBounds}
+            bounds={overviewBounds}
+            boundsPadding={14}
+            zoomSnap={0.25}
             focusTarget={focusTarget}
             viewResetKey={districtSlug ? 1 : 0}
             polygonLayers={polygonLayers}

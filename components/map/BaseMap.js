@@ -7,6 +7,8 @@
  *   center        {[lat, lng]}     – map centre point (required)
  *   zoom          {number}         – initial zoom level (default 12)
  *   bounds        {{north,south,east,west}}  – if provided, the map fits to these bounds
+ *   boundsPadding {number}         – inset in pixels for the overview (default 32)
+ *   zoomSnap      {number}         – zoom increment used when fitting bounds (default 1)
  *   markers       {Array<{lat, lng, popup?, key?}>}  – list of marker objects
  *   clusterMarkers {boolean}     – group nearby markers into count bubbles (default false)
  *   clusterRadius  {number}      – grouping radius in screen pixels (default 44)
@@ -308,6 +310,8 @@ export default function BaseMap({
   center,
   zoom = 12,
   bounds,
+  boundsPadding = 32,
+  zoomSnap = 1,
   markers = [],
   clusterMarkers = false,
   clusterRadius = 44,
@@ -331,7 +335,7 @@ export default function BaseMap({
   ariaLabel = 'Interactive map',
   showResetControl = false,
 }) {
-  const initialMapOptionsRef = useRef({ scrollWheelZoom, zoomAnimation, interactive, tileMode });
+  const initialMapOptionsRef = useRef({ scrollWheelZoom, zoomAnimation, zoomSnap, interactive, tileMode });
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   // Layer groups for dynamic updates
@@ -361,6 +365,7 @@ export default function BaseMap({
     const map = L.map(mapContainerRef.current, {
       scrollWheelZoom: initialOptions.scrollWheelZoom,
       zoomAnimation: initialOptions.zoomAnimation,
+      zoomSnap: initialOptions.zoomSnap,
       zoomControl: initialOptions.interactive,
       dragging: initialOptions.interactive,
       touchZoom: initialOptions.interactive,
@@ -453,11 +458,11 @@ export default function BaseMap({
     if (!map) return;
     const leafletBounds = boundingBoxToLeaflet({ north, south, east, west });
     if (leafletBounds) {
-      map.fitBounds(leafletBounds, { padding: [32, 32], maxZoom: 16 });
+      map.fitBounds(leafletBounds, { padding: [boundsPadding, boundsPadding], maxZoom: 16 });
     } else if (centerLat != null && centerLng != null) {
       map.setView([centerLat, centerLng], overviewZoom);
     }
-  }, [north, south, east, west, centerLat, centerLng, overviewZoom, viewResetKey, localResetKey]);
+  }, [north, south, east, west, centerLat, centerLng, overviewZoom, boundsPadding, viewResetKey, localResetKey]);
 
   // Explicit camera selection is separate from hover and overall bounds.
   useEffect(() => {
