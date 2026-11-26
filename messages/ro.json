@@ -2952,10 +2952,33 @@
       "contact": "Pentru întrebări despre inițiativă, scrie-ne prin pagina de contact.",
       "contactAction": "Contactează-ne"
     },
+    "documents": {
+      "heroAction": "Citește documentele de înființare",
+      "title": "Proiecte de documente pentru consultare",
+      "intro": "Cele trei proiecte sunt în limba greacă. După aprobare, versiunea finală a proclamației va fi publicată în secțiunea de semnare.",
+      "version": "Versiunea {number}",
+      "readPdf": "Deschide PDF-ul",
+      "pdfLabel": "Deschide PDF-ul pentru documentul «{title}»",
+      "history": "Versiuni anterioare",
+      "versionPdf": "Versiunea {number} (PDF)",
+      "olderDraft": "Proiect anterior (PDF)",
+      "feedbackNote": "Dacă propui o corectură, precizează titlul documentului, versiunea și pagina sau articolul.",
+      "feedbackAction": "Trimite observații despre documente",
+      "proclamation": {
+        "title": "Proclamația fondatoare",
+        "description": "Principiile partidului și modul în care cetățenii ar participa la decizii."
+      },
+      "statement": {
+        "title": "Declarația de înființare",
+        "description": "Proiectul declarației adresate procurorului de pe lângă Curtea Supremă a Greciei."
+      },
+      "statute": {
+        "title": "Statutul partidului",
+        "description": "Regulile privind membrii, conducerea și luarea deciziilor."
+      }
+    },
     "proclamation": {
-      "heroAction": "Citește declarația de înființare",
-      "what": "Declarația de înființare este textul pe care îl semnează cel puțin 200 de cetățeni cu drept de vot pentru a înființa partidul. Ea arată ce urmărește partidul și principiile după care va funcționa.",
-      "summaryTitle": "Pe scurt",
+      "summaryTitle": "Proclamația pe scurt",
       "purpose": "Scopul este ca cetățenii să participe cu adevărat la deciziile publice, cu transparență și respect pentru drepturile fundamentale.",
       "ask": "Înaintea deciziilor importante, deputații partidului cer părerea cetățenilor din circumscripția lor. Votul este consultativ.",
       "explain": "După vot, explică public cum au votat și cum au ținut cont de cetățeni, iar aceștia pot evalua decizia.",
@@ -3055,9 +3078,6 @@
     "status_received": "Semnătură primită",
     "status_verified": "Semnătură verificată",
     "digitalSigning": {
-      "proclamationTitle": "Proclamația fondatoare",
-      "proclamationIntro": "Citește textul propus. Versiunea aprobată va fi publicată aici pentru semnare.",
-      "readDraft": "Citește proiectul (PDF)",
       "title": "Semnare digitală prin gov.gr",
       "pending": "Semnarea digitală va începe după aprobarea textului final și confirmarea formatului de depunere.",
       "steps": "Descarcă documentul PDF final din linkul de mai sus și certifică-l pe gov.gr. Apoi copiază aici codul de verificare din documentul emis.",

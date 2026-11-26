@@ -2952,10 +2952,33 @@
       "contact": "For questions about the initiative, write to us through the contact page.",
       "contactAction": "Contact us"
     },
+    "documents": {
+      "heroAction": "Read the founding documents",
+      "title": "Founding drafts for review",
+      "intro": "The three drafts are in Greek. Once the proclamation is approved, the final version will appear in the signing section.",
+      "version": "Version {number}",
+      "readPdf": "Open PDF",
+      "pdfLabel": "Open PDF for {title}",
+      "history": "Previous versions",
+      "versionPdf": "Version {number} (PDF)",
+      "olderDraft": "Earlier draft (PDF)",
+      "feedbackNote": "When suggesting a correction, include the document title, version, and page or article number.",
+      "feedbackAction": "Send feedback on the drafts",
+      "proclamation": {
+        "title": "Founding proclamation",
+        "description": "The party’s principles and how citizens would take part in decisions."
+      },
+      "statement": {
+        "title": "Founding statement",
+        "description": "The draft filing statement addressed to the Prosecutor of Greece’s Supreme Court."
+      },
+      "statute": {
+        "title": "Party statute",
+        "description": "The rules for membership, governance, and decision-making."
+      }
+    },
     "proclamation": {
-      "heroAction": "Read the founding declaration",
-      "what": "The founding proclamation is the text that at least 200 citizens with voting rights sign to found the party. It sets out what the party aims to achieve and the principles it will follow.",
-      "summaryTitle": "In short",
+      "summaryTitle": "The proclamation in brief",
       "purpose": "The aim is for citizens to take a real part in public decisions, with transparency and respect for fundamental rights.",
       "ask": "Before important decisions, the party's MPs ask the citizens of their constituency for their view. The vote is advisory.",
       "explain": "After the vote, they explain publicly how they voted and how they took citizens into account, and citizens can rate the decision.",
@@ -3055,9 +3078,6 @@
     "status_received": "Signature received",
     "status_verified": "Signature verified",
     "digitalSigning": {
-      "proclamationTitle": "Founding proclamation",
-      "proclamationIntro": "Read the proposed text. The approved version will be published here for signing.",
-      "readDraft": "Read the draft (PDF)",
       "title": "Sign digitally with gov.gr",
       "pending": "Digital signing will open once the final text is approved and the filing format is confirmed.",
       "steps": "Download the final PDF from the link above and certify it on gov.gr. Then copy the verification code from the issued document into this form.",

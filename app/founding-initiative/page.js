@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
+import { getFormatter, getTranslations } from 'next-intl/server';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
 import FoundingSigningPanel from '@/components/political/FoundingSigningPanel';
 import FoundingCandidateDistrictPicker from '@/components/political/FoundingCandidateDistrictPicker';
@@ -10,7 +10,18 @@ const namePollUrl = 'https://appofasi.gr/polls/78';
 const foundingLawUrl = 'https://www.hellenicparliament.gr/UserFiles/67715b2c-ec81-4f0c-ad6a-476a34d732bd/13130509.pdf';
 const ministerialAppointmentsUrl = 'https://www.hellenicparliament.gr/Vouli-ton-Ellinon/To-Politevma/Syntagma/article-39/';
 const founderName = 'Αντώνιος Παναγιωτόπουλος';
-const proclamationReviewUrl = '/documents/founding-proclamation-review.el.pdf';
+const foundingDocuments = [
+  { key: 'proclamation', versions: [
+    { number: 1, date: '2026-11-27', url: '/documents/founding-initiative/founding-proclamation-v1.el.pdf' },
+    { url: '/documents/founding-proclamation-review.el.pdf' },
+  ] },
+  { key: 'statement', versions: [
+    { number: 1, date: '2026-11-27', url: '/documents/founding-initiative/founding-statement-v1.el.pdf' },
+  ] },
+  { key: 'statute', versions: [
+    { number: 1, date: '2026-11-27', url: '/documents/founding-initiative/party-statute-v1.el.pdf' },
+  ] },
+];
 
 const ogImage = `${SITE_URL}/images/branding/founding-initiative-og.png?v=2`;
 const baseMetadata = publicPageMetadata('foundingInitiative.title', 'foundingInitiative.intro', '/founding-initiative');
@@ -26,7 +37,7 @@ export async function generateMetadata() {
 }
 
 export default async function FoundingInitiativePage() {
-  const t = await getTranslations('foundingInitiative');
+  const [t, format] = await Promise.all([getTranslations('foundingInitiative'), getFormatter()]);
 
   return (
     <main className="bg-ivory py-8 sm:py-12">
@@ -36,7 +47,7 @@ export default async function FoundingInitiativePage() {
           <p className="mt-4 max-w-2xl text-base leading-7 text-ivory sm:text-lg">{t('intro')}</p>
           <div className="mt-6 flex flex-wrap gap-3">
             <a href="#get-involved" aria-describedby="founding-join-note" className="inline-flex min-h-11 items-center rounded-lg bg-white px-4 text-sm font-semibold text-charcoal hover:bg-ivory focus-visible:outline-sand">{t('joinAction')}</a>
-            <a href="#proclamation" className="inline-flex min-h-11 items-center rounded-lg border border-white/50 px-4 text-sm font-semibold text-white hover:bg-white/10 focus-visible:outline-sand">{t('proclamation.heroAction')}</a>
+            <a href="#proclamation" className="inline-flex min-h-11 items-center rounded-lg border border-white/50 px-4 text-sm font-semibold text-white hover:bg-white/10 focus-visible:outline-sand">{t('documents.heroAction')}</a>
           </div>
           <p id="founding-join-note" className="mt-3 max-w-xl text-sm leading-6 text-ivory">{t('joinNote')}</p>
         </header>
@@ -60,22 +71,55 @@ export default async function FoundingInitiativePage() {
         </section>
 
         <section id="proclamation" aria-labelledby="founding-proclamation" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
-          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-              <h2 id="founding-proclamation" className="text-2xl font-semibold text-slate-900">{t('digitalSigning.proclamationTitle')}</h2>
-              <p className="mt-2 max-w-xl leading-7 text-slate-700">{t('proclamation.what')}</p>
-              <p className="mt-2 max-w-xl leading-7 text-slate-700">{t('digitalSigning.proclamationIntro')}</p>
-            </div>
-            <a href={proclamationReviewUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border border-brand-border px-4 py-2 text-sm font-semibold text-[var(--brand-hover)] hover:bg-ivory">
-              {t('digitalSigning.readDraft')} <ArrowRightIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
-            </a>
-          </div>
-          <h3 className="mt-6 font-semibold text-slate-900">{t('proclamation.summaryTitle')}</h3>
-          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-            {['purpose', 'ask', 'explain', 'members'].map(point => (
-              <li key={point} className="border-l-2 border-copper pl-4 text-sm leading-6 text-slate-700">{t(`proclamation.${point}`)}</li>
-            ))}
+          <h2 id="founding-proclamation" className="text-2xl font-semibold text-slate-900">{t('documents.title')}</h2>
+          <p className="mt-2 max-w-3xl leading-7 text-slate-700">{t('documents.intro')}</p>
+          <ul className="mt-5 grid gap-4 lg:grid-cols-3">
+            {foundingDocuments.map(({ key, versions: [current, ...previous] }) => {
+              const title = t(`documents.${key}.title`);
+              return (
+                <li key={key} className="flex flex-col items-start rounded-xl bg-slate-50 p-4 sm:p-5">
+                  <h3 className="font-semibold text-slate-900">{title}</h3>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {t('documents.version', { number: current.number })} {' · '}
+                    <time dateTime={current.date}>{format.dateTime(new Date(current.date), { dateStyle: 'long', timeZone: 'UTC' })}</time>
+                  </p>
+                  <p className="mt-2 flex-1 text-sm leading-6 text-slate-700">{t(`documents.${key}.description`)}</p>
+                  <a href={current.url} target="_blank" rel="noreferrer" aria-label={t('documents.pdfLabel', { title })}
+                    className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg border border-brand-border bg-white px-3 py-2 text-sm font-semibold text-[var(--brand-hover)] hover:bg-ivory">
+                    {t('documents.readPdf')} <ArrowRightIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  </a>
+                  {previous.length > 0 && (
+                    <details className="mt-2 text-sm text-slate-700">
+                      <summary className="cursor-pointer py-2 font-medium text-[var(--brand-hover)]">{t('documents.history')}</summary>
+                      <ul className="space-y-2">
+                        {previous.map(version => (
+                          <li key={version.url}>
+                            <a href={version.url} target="_blank" rel="noreferrer" className="inline-block py-2 text-[var(--brand-hover)] underline">
+                              {version.number ? t('documents.versionPdf', { number: version.number }) : t('documents.olderDraft')}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                </li>
+              );
+            })}
           </ul>
+          <div className="mt-5">
+            <p className="text-sm leading-6 text-slate-700">{t('documents.feedbackNote')}</p>
+            <Link href="/contact#contact-form" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--brand)] hover:underline">
+              {t('documents.feedbackAction')} <ArrowRightIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+            </Link>
+          </div>
+          <details className="mt-3 border-t border-slate-200 pt-2">
+            <summary className="cursor-pointer py-2 font-semibold text-slate-900">{t('proclamation.summaryTitle')}</summary>
+            <ul className="mt-2 grid gap-3 sm:grid-cols-2">
+              {['purpose', 'ask', 'explain', 'members'].map(point => (
+                <li key={point} className="border-l-2 border-copper pl-4 text-sm leading-6 text-slate-700">{t(`proclamation.${point}`)}</li>
+              ))}
+            </ul>
+          </details>
         </section>
 
         <section id="get-involved" aria-labelledby="founding-interest" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
