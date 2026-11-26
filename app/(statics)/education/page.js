@@ -65,13 +65,13 @@ export default function EducationPage() {
         </p>
       </section>
 
-      <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 sm:p-6">
+      <section className="rounded-xl border border-brand-border bg-ivory p-5 sm:p-6">
         <div className="flex items-center gap-3">
-          <Squares2X2Icon className="h-6 w-6 shrink-0 text-emerald-800" aria-hidden="true" />
-          <h2 className="text-xl font-semibold text-emerald-950">{directory.title}</h2>
+          <Squares2X2Icon className="h-6 w-6 shrink-0 text-[var(--brand)]" aria-hidden="true" />
+          <h2 className="text-xl font-semibold text-charcoal">{directory.title}</h2>
         </div>
         <p className="my-3 text-gray-700">{directory.intro}</p>
-        <Link href={directoryPath} className="inline-flex min-h-11 items-center rounded-lg bg-emerald-900 px-4 py-2 font-semibold text-white hover:bg-emerald-950">{directory.browse}</Link>
+        <Link href={directoryPath} className="inline-flex min-h-11 items-center rounded-lg bg-[var(--brand)] px-4 py-2 font-semibold text-white hover:bg-[var(--brand-hover)]">{directory.browse}</Link>
       </section>
 
       <section>

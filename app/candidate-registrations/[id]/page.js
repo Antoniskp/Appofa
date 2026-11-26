@@ -57,9 +57,9 @@ export default function CandidateRegistrationDetailPage({ params }) {
 
   if (registration.source === 'founding_initiative') {
     return (
-      <main className="min-h-screen bg-slate-50 py-8 sm:py-12">
+      <main className="min-h-screen bg-ivory py-8 sm:py-12">
         <div className="app-container max-w-2xl">
-          <Link href="/founding-initiative#candidates" className="text-sm font-semibold text-teal-800 hover:underline">{t('back')}</Link>
+          <Link href="/founding-initiative#candidates" className="text-sm font-semibold text-[var(--brand)] hover:underline">{t('back')}</Link>
           <div className="mt-5 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
             <h1 className="text-2xl font-bold text-slate-900">{t('formTitle')}</h1>
             <p className="font-medium text-slate-800">{registration.location.name_local || registration.location.name}</p>

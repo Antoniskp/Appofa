@@ -52,7 +52,7 @@ export default async function RulesPage() {
             <li>{tStatic('rules_forbidden_6')}</li>
             <li>
               {tStatic('rules_forbidden_7')}{' '}
-              <Link href="/platform/participation#voting-integrity" className="text-teal-800 underline underline-offset-4">
+              <Link href="/platform/participation#voting-integrity" className="text-[var(--brand)] underline underline-offset-4">
                 {tStatic('rules_voting_policy')}
               </Link>
             </li>

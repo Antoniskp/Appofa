@@ -39,10 +39,10 @@ export default function FoundingCandidateDistrictPicker() {
   const polygonLayers = useMemo(() => boundaries ? [{
     id: 'electoral-districts',
     geojson: boundaries,
-    style: { color: '#0f766e', weight: 1.25, fillColor: '#5eead4', fillOpacity: 0.27 },
-    hoverStyle: { color: '#115e59', weight: 2.5, fillOpacity: 0.5 },
+    style: { color: '#b5a598', weight: 1.25, fillColor: '#e9cbb9', fillOpacity: 0.4 },
+    hoverStyle: { color: '#80462f', weight: 2.5, fillOpacity: 0.65 },
     styleFeature: (feature, style) => feature.properties?.id === district?.id
-      ? { ...style, color: '#134e4a', weight: 3, fillColor: '#0f766e', fillOpacity: 0.53 }
+      ? { ...style, color: '#80462f', weight: 3, fillColor: '#bc8868', fillOpacity: 0.65 }
       : style,
     getTooltip: properties => districtsById.get(properties.id)?.name,
     fitBoundsOnClick: false,
@@ -59,7 +59,7 @@ export default function FoundingCandidateDistrictPicker() {
 
   return (
     <div className="grid gap-5 lg:grid-cols-[3fr_2fr]">
-      <div className="flex h-72 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 sm:h-96">
+      <div className="flex h-72 overflow-hidden rounded-xl border border-brand-border bg-sand sm:h-96">
         {boundaries ? (
           <BaseMap
             center={greeceCenter}
@@ -78,11 +78,11 @@ export default function FoundingCandidateDistrictPicker() {
           </p>
         )}
       </div>
-      <div className="flex flex-col justify-center rounded-xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+      <div className="flex flex-col justify-center rounded-xl border border-brand-border bg-ivory p-5 sm:p-6">
         <FoundingDistrictSelect id="founding-map-district" value={districtSlug} onChange={setDistrictSlug} />
         <p className="mt-3 text-sm leading-6 text-slate-600">{t('mapHelp')}</p>
         <Link href={foundingCandidateRegistrationPath(districtSlug)}
-          className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-lg bg-teal-800 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-teal-900">
+          className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-lg bg-[var(--brand)] px-4 py-2 text-center text-sm font-semibold text-white hover:bg-[var(--brand-hover)]">
           {t('applyAction')} <ArrowRightIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
         </Link>
       </div>

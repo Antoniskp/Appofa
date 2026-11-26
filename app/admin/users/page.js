@@ -308,7 +308,7 @@ function AdminUsersContent() {
                           )}
                           {user?.role === 'admin' && u.claimStatus === null && u.isVerified && (
                             <details className="mt-2 min-w-44 text-xs">
-                              <summary className="cursor-pointer font-medium text-teal-800">{tConsultations(u.parliamentaryPublisherName ? 'publisherEnabled' : 'publisherAccess')}</summary>
+                              <summary className="cursor-pointer font-medium text-[var(--brand)]">{tConsultations(u.parliamentaryPublisherName ? 'publisherEnabled' : 'publisherAccess')}</summary>
                               <p className="mt-2 text-gray-600">{tConsultations('publisherInstructions')}</p>
                               <form key={u.parliamentaryPublisherName || 'new'} className="mt-2 space-y-2" onSubmit={event => {
                                 event.preventDefault();
@@ -317,7 +317,7 @@ function AdminUsersContent() {
                                 <label className="block">{tConsultations('publisherName')}
                                   <input name="name" defaultValue={u.parliamentaryPublisherName || ''} required minLength={2} maxLength={200} className="mt-1 block w-full rounded border p-1.5" />
                                 </label>
-                                <button disabled={updatingPublisherId !== null} className="rounded bg-teal-800 px-2 py-1.5 font-semibold text-white disabled:opacity-50">{tConsultations('saveAccess')}</button>
+                                <button disabled={updatingPublisherId !== null} className="rounded bg-[var(--brand)] px-2 py-1.5 font-semibold text-white disabled:opacity-50">{tConsultations('saveAccess')}</button>
                                 {u.parliamentaryPublisherName && <button type="button" disabled={updatingPublisherId !== null} onClick={() => updatePublisher(u.id, null)} className="ml-2 py-1.5 text-red-700 underline disabled:opacity-50">{tConsultations('revokeAccess')}</button>}
                               </form>
                             </details>

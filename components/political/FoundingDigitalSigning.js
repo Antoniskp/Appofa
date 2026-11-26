@@ -36,13 +36,13 @@ function SubmitCode({ document }) {
 
   if (loading) return <p role="status" className="text-sm text-slate-700">{t('loading')}</p>;
   if (error) return <p className="text-sm text-slate-700">{t('submitError')}{' '}
-    <button type="button" onClick={refetch} className="font-semibold text-teal-900 underline">{t('retry')}</button>
+    <button type="button" onClick={refetch} className="font-semibold text-[var(--brand-hover)] underline">{t('retry')}</button>
   </p>;
-  if (data?.data?.verified) return <p role="status" className="text-sm font-semibold text-teal-900">{t('verified')}</p>;
+  if (data?.data?.verified) return <p role="status" className="text-sm font-semibold text-[var(--brand-hover)]">{t('verified')}</p>;
   if (data?.data?.received && !replacing) return (
     <div className="space-y-1">
-      <p role="status" className="text-sm font-semibold text-teal-900">{t('received')}</p>
-      <button type="button" onClick={() => setReplacing(true)} className="min-h-11 text-sm font-semibold text-teal-900 underline">{t('replace')}</button>
+      <p role="status" className="text-sm font-semibold text-[var(--brand-hover)]">{t('received')}</p>
+      <button type="button" onClick={() => setReplacing(true)} className="min-h-11 text-sm font-semibold text-[var(--brand-hover)] underline">{t('replace')}</button>
     </div>
   );
 
@@ -54,11 +54,11 @@ function SubmitCode({ document }) {
             className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono" />
         </label>
         <label className="flex items-start gap-2 text-sm leading-6 text-slate-700">
-          <input name="consent" type="checkbox" required className="mt-1 h-4 w-4 shrink-0 accent-teal-800" />
+          <input name="consent" type="checkbox" required className="mt-1 h-4 w-4 shrink-0 accent-[var(--brand)]" />
           {t('consent')}
         </label>
         {saveError && <p role="alert" className="text-sm text-red-700">{saveError}</p>}
-        <button className="min-h-11 rounded-lg bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-60">{t('submit')}</button>
+        <button className="min-h-11 rounded-lg bg-[var(--brand)] px-4 text-sm font-semibold text-white hover:bg-[var(--brand-hover)] disabled:opacity-60">{t('submit')}</button>
       </fieldset>
     </form>
   );
@@ -70,14 +70,14 @@ export default function FoundingDigitalSigning({ document, headingLevel = 3 }) {
   const { user, loading } = useAuth();
 
   return (
-    <div id="digital-signing" className="mt-4 scroll-mt-24 space-y-3 border-t border-teal-200 pt-4">
+    <div id="digital-signing" className="mt-4 scroll-mt-24 space-y-3 border-t border-brand-border pt-4">
       <Heading className="font-semibold text-slate-900">{t('title')}</Heading>
       {document ? (
         <>
           <p className="text-sm leading-6 text-slate-700">{t('steps')}</p>
-          <a href={govSigningUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center text-sm font-semibold text-teal-900 underline">{t('openGovGr')}</a>
+          <a href={govSigningUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center text-sm font-semibold text-[var(--brand-hover)] underline">{t('openGovGr')}</a>
           {user ? <SubmitCode key={user.id} document={document} /> : !loading && (
-            <LoginLink redirectTo="/founding-initiative#digital-signing" className="block min-h-11 text-sm font-semibold text-teal-900 underline">{t('signIn')}</LoginLink>
+            <LoginLink redirectTo="/founding-initiative#digital-signing" className="block min-h-11 text-sm font-semibold text-[var(--brand-hover)] underline">{t('signIn')}</LoginLink>
           )}
         </>
       ) : <p className="text-sm leading-6 text-slate-700">{t('pending')}</p>}

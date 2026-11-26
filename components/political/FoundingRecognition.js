@@ -46,7 +46,7 @@ function RecognitionForm({ onChange }) {
       <h2 className="font-semibold text-slate-900">{t('recognitionTitle')}</h2>
       {error ? (
         <p className="text-sm text-slate-700">{t('loadError')}{' '}
-          <button type="button" onClick={refetch} className="font-semibold text-teal-800 underline">{t('retry')}</button>
+          <button type="button" onClick={refetch} className="font-semibold text-[var(--brand)] underline">{t('retry')}</button>
         </p>
       ) : loading ? <p role="status" className="text-sm text-slate-700">{t('loading')}</p> : (
         <>
@@ -57,19 +57,19 @@ function RecognitionForm({ onChange }) {
                   className="mt-1 block w-full max-w-md rounded-lg border border-slate-300 px-3 py-2" />
               </label>
               <label className="flex items-start gap-2 text-sm leading-6 text-slate-700">
-                <input name="consent" type="checkbox" required className="mt-1 h-4 w-4 shrink-0 accent-teal-800" />
+                <input name="consent" type="checkbox" required className="mt-1 h-4 w-4 shrink-0 accent-[var(--brand)]" />
                 {t('publicationConsent')}
               </label>
-              <button type="submit" disabled={working} className="min-h-11 rounded-lg bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-50">{t('publishName')}</button>
+              <button type="submit" disabled={working} className="min-h-11 rounded-lg bg-[var(--brand)] px-4 text-sm font-semibold text-white hover:bg-[var(--brand-hover)] disabled:opacity-50">{t('publishName')}</button>
             </form>
           ) : <p className="text-sm leading-6 text-slate-700">{t('recognitionEligibility')}</p>}
           {recognition?.publicName && (
             <button type="button" disabled={working} onClick={() => update(() => foundingInitiativeAPI.hideName(), 'nameHidden')}
-              className="min-h-11 text-sm font-semibold text-teal-900 underline">{t('hideName')}</button>
+              className="min-h-11 text-sm font-semibold text-[var(--brand-hover)] underline">{t('hideName')}</button>
           )}
         </>
       )}
-      {notice && <p role="status" className="text-sm text-teal-900">{t(notice)}</p>}
+      {notice && <p role="status" className="text-sm text-[var(--brand-hover)]">{t(notice)}</p>}
       {actionError && <AlertMessage message={t('saveError')} />}
     </div>
   );
@@ -84,7 +84,7 @@ export default function FoundingRecognition() {
     <>
       <FoundingSignatureProgress showNames refreshKey={refreshKey} />
       {user ? <RecognitionForm key={user.id} onChange={() => setRefreshKey(value => value + 1)} /> : !loading && (
-        <LoginLink redirectTo="/founding-initiative/first-200" className="inline-flex min-h-11 items-center text-sm font-semibold text-teal-900 underline">
+        <LoginLink redirectTo="/founding-initiative/first-200" className="inline-flex min-h-11 items-center text-sm font-semibold text-[var(--brand-hover)] underline">
           {t('signInForRecognition')}
         </LoginLink>
       )}

@@ -169,7 +169,7 @@ export default function CookieBanner() {
             {showPanel ? (
               <button
                 onClick={handleSavePreferences}
-                className="flex-1 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors"
+                className="flex-1 px-3 py-1.5 bg-[var(--brand)] text-white text-xs font-semibold rounded-lg hover:bg-[var(--brand-hover)] transition-colors"
               >
                 {t('save_preferences')}
               </button>

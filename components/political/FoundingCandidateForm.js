@@ -11,7 +11,7 @@ import { buildAuthPath } from '@/lib/auth-redirect';
 import { foundingCandidateDistricts, foundingCandidateRegistrationPath } from '@/lib/founding-candidate-districts';
 import FoundingDistrictSelect from './FoundingDistrictSelect';
 
-const inputClass = 'mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700';
+const inputClass = 'mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-copper focus:outline-none focus:ring-2 focus:ring-copper';
 
 export default function FoundingCandidateForm({ district }) {
   const t = useTranslations('foundingInitiative.candidates');
@@ -51,9 +51,9 @@ export default function FoundingCandidateForm({ district }) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 py-8 sm:py-12">
+    <main className="min-h-screen bg-ivory py-8 sm:py-12">
       <div className="app-container max-w-2xl">
-        <Link href="/founding-initiative#candidates" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-teal-800 hover:underline">
+        <Link href="/founding-initiative#candidates" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--brand)] hover:underline">
           <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" /> {t('back')}
         </Link>
         <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
@@ -62,7 +62,7 @@ export default function FoundingCandidateForm({ district }) {
           {loading ? (
             <p className="mt-5 text-sm text-slate-600" role="status">{t('authLoading')}</p>
           ) : application ? (
-            <div className="mt-5 rounded-lg bg-teal-50 p-4 text-sm text-teal-950">
+            <div className="mt-5 rounded-lg bg-ivory p-4 text-sm text-charcoal">
               <p role="status" className="font-semibold">{t('submitted', { district: application.location.name_local || application.location.name })}</p>
               <Link href={`/candidate-registrations/${application.id}`} className="mt-2 inline-flex min-h-11 items-center font-medium underline">{t('viewApplication')}</Link>
             </div>
@@ -82,8 +82,8 @@ export default function FoundingCandidateForm({ district }) {
                     <textarea id="founding-candidate-commitment" name="commitment" aria-describedby="founding-candidate-help"
                       className={inputClass} maxLength={1500} rows={5} required />
                   </div>
-                  <label className="flex items-start gap-3 rounded-lg bg-teal-50 p-4 text-sm leading-6 text-teal-950">
-                    <input type="checkbox" name="pledge" required className="mt-1 h-4 w-4 shrink-0 accent-teal-800" />
+                  <label className="flex items-start gap-3 rounded-lg bg-ivory p-4 text-sm leading-6 text-charcoal">
+                    <input type="checkbox" name="pledge" required className="mt-1 h-4 w-4 shrink-0 accent-[var(--brand)]" />
                     {t('acceptPledge')}
                   </label>
                   {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
@@ -93,7 +93,7 @@ export default function FoundingCandidateForm({ district }) {
                 <>
                   <p className="text-sm leading-6 text-slate-600">{t('authRequired')}</p>
                   <div className="flex flex-wrap gap-3">
-                    <Link href={buildAuthPath('/login', returnPath)} className="inline-flex min-h-11 items-center rounded-lg bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900">{t('logIn')}</Link>
+                    <Link href={buildAuthPath('/login', returnPath)} className="inline-flex min-h-11 items-center rounded-lg bg-[var(--brand)] px-4 text-sm font-semibold text-white hover:bg-[var(--brand-hover)]">{t('logIn')}</Link>
                     <Link href={buildAuthPath('/register', returnPath)} className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50">{t('createAccount')}</Link>
                   </div>
                 </>

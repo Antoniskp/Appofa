@@ -113,7 +113,7 @@ export default function CivicQuestionDetailClient() {
           </div>
           <div className="flex flex-col gap-3">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">{civicQuestion.title}</h1>
-            {consultation && <p className="text-sm font-semibold text-teal-800">{tConsultations('askedBy', { name: consultation.publisherName })}</p>}
+            {consultation && <p className="text-sm font-semibold text-[var(--brand)]">{tConsultations('askedBy', { name: consultation.publisherName })}</p>}
             <div className="flex items-center gap-2">
               <button
                 type="button"

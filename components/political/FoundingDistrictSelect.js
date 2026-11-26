@@ -14,7 +14,7 @@ export default function FoundingDistrictSelect({ id, value, onChange, required =
         value={value}
         onChange={event => onChange(event.target.value)}
         required={required}
-        className="mt-2 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-700"
+        className="mt-2 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-copper focus:outline-none focus:ring-2 focus:ring-copper"
       >
         <option value="">{t('districtPlaceholder')}</option>
         {foundingCandidateDistricts.map(district => (

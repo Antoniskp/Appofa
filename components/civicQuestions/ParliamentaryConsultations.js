@@ -38,8 +38,8 @@ function PublishQuestion({ publisherName }) {
   }
 
   return (
-    <details className="rounded-2xl border border-teal-200 bg-white p-5 sm:p-6">
-      <summary className="cursor-pointer font-semibold text-teal-900">{t('publishQuestion')}</summary>
+    <details className="rounded-2xl border border-brand-border bg-white p-5 sm:p-6">
+      <summary className="cursor-pointer font-semibold text-[var(--brand-hover)]">{t('publishQuestion')}</summary>
       <form onSubmit={publish} className="mt-4 space-y-4">
         <p className="text-sm text-slate-600">{t('publishingAs', { name: publisherName })}</p>
         <AlertMessage message={error} />
@@ -61,7 +61,7 @@ function PublishQuestion({ publisherName }) {
           </label>
         </div>
         <p className="text-sm text-slate-600">{t('fixedQuestion')}</p>
-        <button disabled={saving} className="min-h-11 rounded-lg bg-teal-800 px-4 text-sm font-semibold text-white disabled:opacity-60">{t(saving ? 'saving' : 'publishQuestion')}</button>
+        <button disabled={saving} className="min-h-11 rounded-lg bg-[var(--brand)] px-4 text-sm font-semibold text-white disabled:opacity-60">{t(saving ? 'saving' : 'publishQuestion')}</button>
       </form>
     </details>
   );
@@ -81,25 +81,25 @@ export default function ParliamentaryConsultations() {
   );
 
   return (
-    <main className="bg-slate-50 py-8 sm:py-12">
+    <main className="bg-ivory py-8 sm:py-12">
       <div className="app-container max-w-5xl space-y-8">
-        <header className="rounded-3xl bg-teal-950 p-6 text-white sm:px-10 sm:py-9">
-          <BuildingLibraryIcon className="mb-5 h-9 w-9 text-teal-200" aria-hidden="true" />
+        <header className="rounded-3xl bg-charcoal p-6 text-white sm:px-10 sm:py-9">
+          <BuildingLibraryIcon className="mb-5 h-9 w-9 text-sand" aria-hidden="true" />
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{t('title')}</h1>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-teal-50">{t('intro')}</p>
-          <ol className="mt-7 grid gap-4 border-t border-teal-800 pt-5 sm:grid-cols-3">
+          <p className="mt-3 max-w-2xl text-base leading-7 text-ivory">{t('intro')}</p>
+          <ol className="mt-7 grid gap-4 border-t border-white/25 pt-5 sm:grid-cols-3">
             {steps.map(({ name, icon: Icon }) => <li key={name} className="flex items-center gap-2.5 text-sm font-semibold">
-              <Icon className="h-5 w-5 shrink-0 text-teal-200" aria-hidden="true" />{t(name)}
+              <Icon className="h-5 w-5 shrink-0 text-sand" aria-hidden="true" />{t(name)}
             </li>)}
           </ol>
         </header>
 
-        <section className="flex flex-col gap-3 rounded-2xl border border-teal-200 bg-teal-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <section className="flex flex-col gap-3 rounded-2xl border border-brand-border bg-ivory p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="font-semibold text-teal-950">{tFounding('nav')}</h2>
+            <h2 className="font-semibold text-charcoal">{tFounding('nav')}</h2>
             <p className="mt-1 text-sm text-slate-700">{tFounding('consultationsInvite')}</p>
           </div>
-          <Link href="/founding-initiative" className="inline-flex min-h-11 shrink-0 items-center self-start rounded-lg bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900 sm:self-center">{tFounding('openInitiative')} →</Link>
+          <Link href="/founding-initiative" className="inline-flex min-h-11 shrink-0 items-center self-start rounded-lg bg-[var(--brand)] px-4 text-sm font-semibold text-white hover:bg-[var(--brand-hover)] sm:self-center">{tFounding('openInitiative')} →</Link>
         </section>
 
         {publisher?.data?.publisherName && <PublishQuestion publisherName={publisher.data.publisherName} />}
@@ -109,7 +109,7 @@ export default function ParliamentaryConsultations() {
           {loading ? <p role="status" className="text-slate-600">{t('loading')}</p> : error ? (
             <div className="rounded-2xl border border-rose-200 bg-white p-5">
               <AlertMessage message={t('loadError')} />
-              <button type="button" onClick={() => refetch()} className="mt-2 min-h-11 font-semibold text-teal-800 underline">{t('retry')}</button>
+              <button type="button" onClick={() => refetch()} className="mt-2 min-h-11 font-semibold text-[var(--brand)] underline">{t('retry')}</button>
             </div>
           ) : data?.data?.length ? (
             <ul className="grid gap-4 sm:grid-cols-2">
@@ -117,14 +117,14 @@ export default function ParliamentaryConsultations() {
                 const { publisherName, response } = question.parliamentaryConsultation;
                 const closed = question.status !== 'open' || new Date(question.deadline) <= new Date();
                 return <li key={question.id}>
-                  <Link href={`/civic-questions/${question.id}`} className="block h-full rounded-2xl border border-slate-200 bg-white p-5 hover:border-teal-500 focus-visible:outline-2 focus-visible:outline-teal-700">
+                  <Link href={`/civic-questions/${question.id}`} className="block h-full rounded-2xl border border-slate-200 bg-white p-5 hover:border-copper focus-visible:outline-2 focus-visible:outline-copper">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                      <span className="font-semibold text-teal-800">{t(response ? 'decisionPublished' : closed ? 'awaitingDecision' : 'votingOpen')}</span>
+                      <span className="font-semibold text-[var(--brand)]">{t(response ? 'decisionPublished' : closed ? 'awaitingDecision' : 'votingOpen')}</span>
                       <span className="text-slate-600">{publisherName}</span>
                     </div>
                     <h3 className="mt-2 text-lg font-semibold text-slate-900">{question.title}</h3>
                     {!closed && <p className="mt-2 text-sm text-slate-600">{t('closesAt', { date: format.dateTime(new Date(question.deadline), { dateStyle: 'medium', timeStyle: 'short' }) })}</p>}
-                    <span className="mt-4 block text-sm font-semibold text-teal-800">{t(response ? 'seeDecision' : closed ? 'seeResults' : 'openQuestion')} →</span>
+                    <span className="mt-4 block text-sm font-semibold text-[var(--brand)]">{t(response ? 'seeDecision' : closed ? 'seeResults' : 'openQuestion')} →</span>
                   </Link>
                 </li>;
               })}

@@ -37,7 +37,7 @@ export default async function ParticipationPage() {
           <p>{t('integrityLimits')}</p>
           <p>{t('integrityRule')}</p>
           <p>{t('integrityReview')}</p>
-          <Link href="/rules" className="text-teal-800 underline underline-offset-4">{t('integrityRulesLink')}</Link>
+          <Link href="/rules" className="text-[var(--brand)] underline underline-offset-4">{t('integrityRulesLink')}</Link>
         </div>
       </section>
       <section>
