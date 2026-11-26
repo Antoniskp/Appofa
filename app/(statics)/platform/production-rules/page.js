@@ -191,7 +191,7 @@ export default function ProductionRulesPage() {
               </ul>
             </div>
             <div>
-              <p className="font-semibold text-blue-800 mb-2">Δημοσκοπήσεις & Προτάσεις</p>
+              <p className="font-semibold text-blue-800 mb-2">Ψηφοφορίες & Προτάσεις</p>
               <ul className="space-y-1.5">
                 <li className="flex items-start gap-2"><CheckCircleIcon className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />Μία ψήφος ανά χρήστη ανά δημοσκόπηση</li>
                 <li className="flex items-start gap-2"><CheckCircleIcon className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />Rate limiting στις ψηφοφορίες</li>

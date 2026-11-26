@@ -215,7 +215,7 @@ export default function PollDetailPage({ initialPoll = null }) {
             title="Δεν Βρέθηκε η Δημοσκόπηση"
             description={error || 'Η δημοσκόπηση που ζητήσατε δεν υπάρχει.'}
             action={{
-              text: 'Επιστροφή στις Δημοσκοπήσεις',
+              text: 'Επιστροφή στις Ψηφοφορίες',
               onClick: () => router.push('/polls')
             }}
           />
@@ -381,7 +381,7 @@ export default function PollDetailPage({ initialPoll = null }) {
             href="/polls"
             className="text-blue-600 hover:text-blue-800 font-medium"
           >
-            ← Επιστροφή στις Δημοσκοπήσεις
+            ← Επιστροφή στις Ψηφοφορίες
           </Link>
         </div>
       </div>

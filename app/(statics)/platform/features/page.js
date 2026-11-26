@@ -51,7 +51,7 @@ const features = [
     Icon: ChartBarIcon,
     iconBg: 'bg-indigo-100',
     iconColor: 'text-indigo-600',
-    title: 'Δημοσκοπήσεις',
+    title: 'Ψηφοφορίες',
     description:
       'Δημοτικές ψηφοφορίες για κοινοτικά θέματα. Κάθε χρήστης μπορεί να ψηφίσει μία φορά και τα αποτελέσματα είναι δημόσια και ορατά σε όλους.',
     link: '/polls',

@@ -18,6 +18,10 @@ async function createAccount(page, suffix, messages = en) {
   await page.getByRole('button', { name: messages.auth.submit_register, exact: true }).click();
 }
 
+// The location page swaps the numeric id for its slug as soon as it loads,
+// so either address means the user landed on their home location.
+const HOME_LOCATION_URL = /\/locations\/(3|test-municipality)$/;
+
 test('signup validates fields, confirms account creation and skips to the homepage', async ({ page }, testInfo) => {
   const browserErrors = [];
   page.on('pageerror', error => browserErrors.push(error.message));
@@ -77,7 +81,7 @@ test('signup can correct an email and save a location in Greek', async ({ page, 
   await page.getByRole('combobox', { name: labels.label_city, exact: true }).selectOption('3');
   await expect(page.getByRole('button', { name: el.locationOnboarding.skipSelected, exact: true })).toBeVisible();
   await page.getByRole('button', { name: el.locationOnboarding.saveLocation, exact: true }).click();
-  await expect(page).toHaveURL(/\/locations\/3$/);
+  await expect(page).toHaveURL(HOME_LOCATION_URL);
   await expect(page.getByRole('heading', { name: el.signupJourney.verification_title })).toBeVisible();
   const savedProfile = await (await page.request.get('/api/auth/profile')).json();
   expect(savedProfile.data.user.homeLocationId).toBe(3);
@@ -88,7 +92,7 @@ test('signup can correct an email and save a location in Greek', async ({ page, 
   await expect(page.getByRole('heading', { name: el.locationOnboarding.title, exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: el.onboarding.choose_one_primary, exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: el.locationOnboarding.continueSaved, exact: true }).click();
-  await expect(page).toHaveURL(/\/locations\/3$/);
+  await expect(page).toHaveURL(HOME_LOCATION_URL);
 });
 
 test('signup returns people to the action that prompted registration', async ({ page }) => {
@@ -126,7 +130,7 @@ test('signup opens a saved checklist without asking users to choose a role', asy
   await expect(page.getByText(en.onboarding.step_person_search, { exact: true })).toBeVisible();
   await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100');
   await page.getByRole('link', { name: en.onboarding.explore_platform, exact: true }).click();
-  await expect(page).toHaveURL(/\/locations\/3$/);
+  await expect(page).toHaveURL(HOME_LOCATION_URL);
 });
 
 test('signup lets an unverified user change their username', async ({ page }) => {
