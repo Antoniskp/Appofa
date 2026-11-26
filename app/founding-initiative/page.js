@@ -1,9 +1,8 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
-import FoundingInterestForm from '@/components/political/FoundingInterestForm';
+import FoundingSigningPanel from '@/components/political/FoundingSigningPanel';
 import FoundingCandidateDistrictPicker from '@/components/political/FoundingCandidateDistrictPicker';
-import FoundingSignatureProgress from '@/components/political/FoundingSignatureProgress';
 import { publicPageMetadata } from '@/lib/route-metadata';
 import { SITE_URL } from '@/lib/seo';
 
@@ -80,21 +79,17 @@ export default async function FoundingInitiativePage() {
 
         <section id="get-involved" aria-labelledby="founding-interest" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
           <h2 id="founding-interest" className="text-2xl font-semibold text-slate-900">{t('getInvolved')}</h2>
-          <div className="mt-4 grid items-start gap-6 lg:grid-cols-2">
-            <FoundingInterestForm />
-            <div className="space-y-5">
-              <FoundingSignatureProgress headingLevel={3} />
-              <div>
-                <h3 className="font-semibold text-slate-900">{t('signingNext')}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-700">{t('signingIntro')}</p>
-                <details className="mt-3 border-t border-slate-200 pt-2">
-                  <summary className="w-fit cursor-pointer rounded py-2 text-sm font-semibold text-[var(--brand)]">{t('signingRequirements')}</summary>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{t('signingLaw')}</p>
-                  <a href={foundingLawUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-medium text-[var(--brand)] underline">{t('signingSource')}</a>
-                </details>
-              </div>
+          <FoundingSigningPanel>
+            <div>
+              <h3 className="font-semibold text-slate-900">{t('signingNext')}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-700">{t('signingIntro')}</p>
+              <details className="mt-3 border-t border-slate-200 pt-2">
+                <summary className="w-fit cursor-pointer rounded py-2 text-sm font-semibold text-[var(--brand)]">{t('signingRequirements')}</summary>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{t('signingLaw')}</p>
+                <a href={foundingLawUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-medium text-[var(--brand)] underline">{t('signingSource')}</a>
+              </details>
             </div>
-          </div>
+          </FoundingSigningPanel>
         </section>
 
         <section id="candidates" aria-labelledby="founding-candidates" className="scroll-mt-24 space-y-5 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">

@@ -3082,6 +3082,8 @@
       "phone": "Telefon pentru programare (opțional)",
       "phoneError": "Verifică numărul de telefon sau lasă câmpul gol.",
       "progressTitle": "Progresul colectării semnăturilor",
+      "signingInterestTitle": "Interes pentru semnare",
+      "interestCount": "{count, plural, one {# persoană și-a exprimat interesul de a semna} few {# persoane și-au exprimat interesul de a semna} other {# de persoane și-au exprimat interesul de a semna}}",
       "progressCount": "{count, plural, one {# semnătură verificată} few {# semnături verificate} other {# de semnături verificate}} · Obiectiv {goal, number}",
       "first200": "Primii 200",
       "first200Intro": "Aici apar primii 200 de semnatari fondatori verificați care aleg să își publice numele. Totalul include persoanele care își păstrează numele privat.",

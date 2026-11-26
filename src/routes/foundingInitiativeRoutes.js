@@ -37,7 +37,8 @@ router.use(apiLimiter, (req, res, next) => {
 });
 
 router.get('/progress', async (req, res) => {
-  const [verifiedCount, document, firstSigners] = await Promise.all([
+  const [signingInterestCount, verifiedCount, document, firstSigners] = await Promise.all([
+    FoundingInterest.count({ where: { wantsToSign: true } }),
     FoundingSignature.count(),
     FoundingSigningDocument.findByPk(1, { attributes: [...finalDocumentFields, 'govGrEnabled'] }),
     req.query.recognition === 'true'
@@ -46,7 +47,7 @@ router.get('/progress', async (req, res) => {
   ]);
   res.set('X-Robots-Tag', 'noindex');
   res.json({ success: true, data: {
-    goal: signatureGoal, verifiedCount,
+    goal: signatureGoal, signingInterestCount, verifiedCount,
     document: document && Object.fromEntries(finalDocumentFields.map(field => [field, document[field]])),
     ...(document?.govGrEnabled && { govGrEnabled: true }),
     ...(firstSigners && {

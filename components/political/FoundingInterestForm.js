@@ -10,7 +10,7 @@ import LoginLink from '@/components/ui/LoginLink';
 import { buildAuthPath } from '@/lib/auth-redirect';
 import AlertMessage from '@/components/ui/AlertMessage';
 
-function InterestForm({ initialInterest }) {
+function InterestForm({ initialInterest, onInterestChange }) {
   const t = useTranslations('foundingInitiative');
   const [interest, setInterest] = useState(initialInterest);
   const [wantsToSign, setWantsToSign] = useState(Boolean(initialInterest?.wantsToSign));
@@ -37,6 +37,7 @@ function InterestForm({ initialInterest }) {
       setContactPhone(result.data.contactPhone || '');
       setConsent(false);
       setNotice('interestSaved');
+      onInterestChange();
     } catch (err) {
       setError(err.status === 400 ? 'signatures.phoneError' : 'saveError');
     } finally {
@@ -57,6 +58,7 @@ function InterestForm({ initialInterest }) {
       setContactPhone('');
       setConsent(false);
       setNotice('interestWithdrawn');
+      onInterestChange();
     } catch {
       setError('saveError');
     } finally {
@@ -101,21 +103,21 @@ function InterestForm({ initialInterest }) {
   );
 }
 
-function SavedInterest({ userId }) {
+function SavedInterest({ userId, onInterestChange }) {
   const t = useTranslations('foundingInitiative');
   const { data, loading, error, refetch } = useAsyncData(() => foundingInitiativeAPI.getMyInterest(), [userId]);
 
   if (loading) return <p role="status" className="text-sm text-slate-600">{t('loading')}</p>;
   if (error) return <div><AlertMessage message={t('loadError')} /><button type="button" onClick={refetch} className="mt-2 min-h-11 text-sm font-semibold text-[var(--brand)] underline">{t('retry')}</button></div>;
-  return <InterestForm initialInterest={data?.data ?? null} />;
+  return <InterestForm initialInterest={data?.data ?? null} onInterestChange={onInterestChange} />;
 }
 
-export default function FoundingInterestForm() {
+export default function FoundingInterestForm({ onInterestChange }) {
   const t = useTranslations('foundingInitiative');
   const { user, loading } = useAuth();
 
   if (loading) return <p role="status" className="text-sm text-slate-600">{t('loading')}</p>;
-  if (user) return <SavedInterest key={user.id} userId={user.id} />;
+  if (user) return <SavedInterest key={user.id} userId={user.id} onInterestChange={onInterestChange} />;
 
   return <div className="rounded-xl border border-brand-border bg-ivory p-4 sm:p-5">
     <p className="text-sm leading-6 text-slate-700">{t('privateInterest')}</p>

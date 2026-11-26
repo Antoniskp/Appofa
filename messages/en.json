@@ -3082,6 +3082,8 @@
       "phone": "Phone for arranging an appointment (optional)",
       "phoneError": "Check the phone number or leave it blank.",
       "progressTitle": "Signature progress",
+      "signingInterestTitle": "Interest in signing",
+      "interestCount": "{count, plural, one {# person has registered interest in signing} other {# people have registered interest in signing}}",
       "progressCount": "{count, plural, one {# verified signature} other {# verified signatures}} · Goal {goal, number}",
       "first200": "The first 200",
       "first200Intro": "This page names the first 200 verified founding signers who choose to be listed. The total includes people who keep their names private.",

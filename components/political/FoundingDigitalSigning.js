@@ -9,7 +9,7 @@ import LoginLink from '@/components/ui/LoginLink';
 
 const govSigningUrl = 'https://www.gov.gr/el/services/1001729/psephiake-bebaiose-eggraphou';
 
-function SubmitCode({ document }) {
+function SubmitCode({ document, onInterestChange }) {
   const t = useTranslations('foundingInitiative.digitalSigning');
   const { data, loading, error, refetch, setData } = useAsyncData(foundingInitiativeAPI.getDigitalSignature, []);
   const [replacing, setReplacing] = useState(false);
@@ -27,6 +27,7 @@ function SubmitCode({ document }) {
       });
       setData(result);
       setReplacing(false);
+      onInterestChange?.();
     } catch (err) {
       setSaveError(t(err.status === 409 ? 'codeConflict' : 'submitError'));
     } finally {
@@ -64,7 +65,7 @@ function SubmitCode({ document }) {
   );
 }
 
-export default function FoundingDigitalSigning({ document, headingLevel = 3 }) {
+export default function FoundingDigitalSigning({ document, headingLevel = 3, onInterestChange }) {
   const Heading = `h${headingLevel}`;
   const t = useTranslations('foundingInitiative.digitalSigning');
   const { user, loading } = useAuth();
@@ -76,7 +77,7 @@ export default function FoundingDigitalSigning({ document, headingLevel = 3 }) {
         <>
           <p className="text-sm leading-6 text-slate-700">{t('steps')}</p>
           <a href={govSigningUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center text-sm font-semibold text-[var(--brand-hover)] underline">{t('openGovGr')}</a>
-          {user ? <SubmitCode key={user.id} document={document} /> : !loading && (
+          {user ? <SubmitCode key={user.id} document={document} onInterestChange={onInterestChange} /> : !loading && (
             <LoginLink redirectTo="/founding-initiative#digital-signing" className="block min-h-11 text-sm font-semibold text-[var(--brand-hover)] underline">{t('signIn')}</LoginLink>
           )}
         </>

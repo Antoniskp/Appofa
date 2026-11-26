@@ -31,6 +31,7 @@ test('collects explicit opt-in and lets admins organize signatures while partici
   const base = '/api/founding-initiative';
   const interest = `${base}/interest`;
   const queue = `${base}/organizers`;
+  const progress = () => request(app).get(`${base}/progress`);
   const status = `${queue}/${participant.id}`;
   const signUp = { wantsToSign: true, wantsToVolunteer: true, consent: true };
 
@@ -41,6 +42,8 @@ test('collects explicit opt-in and lets admins organize signatures while partici
   expect((await request(app).put(interest).set(participant.headers).send({ ...signUp, signingStatus: 'received', signingPreference: 'remote' })).body.data).toEqual({ wantsToSign: true, wantsToVolunteer: true, signingStatus: 'requested', signingPreference: 'remote' });
   expect((await request(app).get(interest).set(volunteer.headers)).body.data).toBeNull();
   expect((await request(app).put(interest).set(volunteer.headers).send({ ...signUp, wantsToSign: false })).body.data.signingStatus).toBeNull();
+  const counts = await progress();
+  expect(counts.body.data).toEqual({ signingInterestCount: 1, verifiedCount: 0, goal: 200, document: null });
   expect((await request(app).patch(status).set(participant.headers).send({ signingStatus: 'received' })).status).toBe(403);
 
   const pending = await request(app).get(queue).query({ status: 'requested' }).set(admin.headers);
@@ -56,9 +59,11 @@ test('collects explicit opt-in and lets admins organize signatures while partici
   expect(updated.body.data).toEqual({ wantsToSign: true, wantsToVolunteer: false, signingStatus: 'received', signingPreference: 'remote' });
   expect((await request(app).get(interest).set(participant.headers)).body.data.signingStatus).toBe('received');
   expect((await request(app).put(interest).set(participant.headers).send({ ...signUp, wantsToSign: false })).body.data.signingStatus).toBeNull();
+  expect((await progress()).body.data.signingInterestCount).toBe(0);
   const renewed = await request(app).put(interest).set(participant.headers).send(signUp);
   expect(renewed.body.data).toMatchObject({ signingStatus: 'requested', signingPreference: null });
   expect((await request(app).delete(interest).set(participant.headers)).status).toBe(200);
+  expect((await progress()).body.data.signingInterestCount).toBe(0);
   expect((await request(app).get(queue).query({ status: 'requested' }).set(admin.headers)).body.data).toEqual([]);
   expect((await request(app).patch(status).set(admin.headers).send({ signingStatus: 'received' })).status).toBe(404);
 });
@@ -79,7 +84,7 @@ test('counts only verified signatures and publishes an eligible name only with s
     .set(headers).send({ legalName: 'Confidential legal name', recordReference, confirmSignature: true });
   const publish = (account, consent) => request(app).put(`${base}/recognition`).set(account.headers).send({ publicName: 'Public display name', consent });
 
-  expect((await progress()).body.data).toEqual({ goal: 200, verifiedCount: 0, document: null, names: [] });
+  expect((await progress()).body.data).toEqual({ goal: 200, signingInterestCount: 0, verifiedCount: 0, document: null, names: [] });
   expect((await register(signer, { ...interest, contactPhone: 'not a phone' })).status).toBe(400);
   expect((await register(signer)).body.data.contactPhone).toBe(interest.contactPhone);
   expect((await status(signer, 'received')).status).toBe(200);
@@ -97,7 +102,7 @@ test('counts only verified signatures and publishes an eligible name only with s
   expect(privateProgress.headers['cache-control']).toBe('private, no-store');
   expect(privateProgress.headers['x-robots-tag']).toBe('noindex');
   expect(privateProgress.body.data).toEqual({
-    goal: 200, verifiedCount: 1, names: [],
+    goal: 200, signingInterestCount: 1, verifiedCount: 1, names: [],
     document: { version: '1.0', pdfUrl: 'https://example.test/founding-v1.pdf', sha256: 'a'.repeat(64) },
   });
   expect((await publish(signer, false)).status).toBe(400);
