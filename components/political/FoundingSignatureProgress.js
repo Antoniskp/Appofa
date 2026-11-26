@@ -26,7 +26,6 @@ export default function FoundingSignatureProgress({ showNames = false, refreshKe
         </p>
       ) : progress ? (
         <>
-          {!showNames && <p role="status" className="mt-2 text-xl font-semibold text-charcoal">{t('interestCount', { count: progress.signingInterestCount })}</p>}
           {showVerified && (
             <div className={showNames ? 'mt-2' : 'mt-4 border-t border-brand-border pt-3'}>
               <p id="founding-verified-count" className={showNames ? 'text-xl font-semibold text-charcoal' : 'text-sm font-medium text-slate-700'}>
@@ -46,6 +45,7 @@ export default function FoundingSignatureProgress({ showNames = false, refreshKe
           ) : <p className="mt-3 text-sm leading-6 text-slate-700">{t('waitingForDocument')}</p>}
           {!showNames && <FoundingDigitalSigning document={progress.govGrEnabled ? progress.document : null} headingLevel={headingLevel + 1}
             onInterestChange={onInterestChange} />}
+          {!showNames && <p role="status" className="mt-3 text-sm leading-6 text-slate-600">{t('interestCount', { count: progress.signingInterestCount })}</p>}
           {showNames && (
             <div className="mt-5 border-t border-brand-border pt-5">
               <h3 className="font-semibold text-slate-900">{t('publishedNames')}</h3>

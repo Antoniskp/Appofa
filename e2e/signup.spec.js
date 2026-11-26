@@ -103,6 +103,41 @@ test('signup returns people to the action that prompted registration', async ({ 
   await expect(page.getByRole('heading', { name: en.signupJourney.verification_title })).toBeVisible();
 });
 
+test('founding initiative signup returns to the signing interest form', async ({ page, context }) => {
+  const founding = el.foundingInitiative;
+  await context.addCookies([{ name: 'NEXT_LOCALE', value: 'el', domain: '127.0.0.1', path: '/' }]);
+  await page.goto('/founding-initiative');
+
+  const join = page.getByRole('link', { name: founding.joinAction, exact: true });
+  await expect(join).toHaveAccessibleDescription(founding.joinNote);
+  await page.getByRole('link', { name: founding.proclamation.heroAction, exact: true }).click();
+  await expect(page).toHaveURL(/\/founding-initiative#proclamation$/);
+  const draft = page.getByRole('link', { name: founding.digitalSigning.readDraft, exact: true });
+  const pdf = await page.request.get(await draft.getAttribute('href'));
+  expect(pdf.ok()).toBe(true);
+  expect(pdf.headers()['content-type']).toContain('application/pdf');
+
+  await join.click();
+  await expect(page).toHaveURL(/\/founding-initiative#get-involved$/);
+  await page.getByRole('link', { name: founding.createAccount, exact: true }).click();
+  await createAccount(page, 'founding', el);
+  await expect(page).toHaveURL(/\/founding-initiative#get-involved$/);
+
+  const form = page.getByRole('group', { name: founding.chooseInvolvement, exact: true });
+  const submit = form.getByRole('button', { name: founding.submitInterest, exact: true });
+  await form.getByRole('checkbox', { name: founding.wantToSign, exact: true }).check();
+  await expect(submit).toBeDisabled();
+  await form.getByRole('checkbox', { name: founding.consent, exact: true }).check();
+  await submit.click();
+  await expect(page.getByText(founding.interestSaved, { exact: true })).toBeVisible();
+
+  const progress = page.getByRole('region', { name: founding.signatures.signingInterestTitle, exact: true });
+  await expect(progress.getByRole('status')).toHaveText('1 άτομο έχει δηλώσει ενδιαφέρον για υπογραφή');
+  await form.getByRole('button', { name: founding.withdrawInterest, exact: true }).click();
+  await expect(page.getByText(founding.interestWithdrawn, { exact: true })).toBeVisible();
+  await expect(progress.getByRole('status')).toHaveText('0 άτομα έχουν δηλώσει ενδιαφέρον για υπογραφή');
+});
+
 test('signup opens a saved checklist without asking users to choose a role', async ({ page }) => {
   await page.goto('/register');
   await createAccount(page, 'saved-checklist');

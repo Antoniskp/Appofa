@@ -2953,6 +2953,7 @@
       "contactAction": "Contactează-ne"
     },
     "proclamation": {
+      "heroAction": "Citește declarația de înființare",
       "what": "Declarația de înființare este textul pe care îl semnează cel puțin 200 de cetățeni cu drept de vot pentru a înființa partidul. Ea arată ce urmărește partidul și principiile după care va funcționa.",
       "summaryTitle": "Pe scurt",
       "purpose": "Scopul este ca cetățenii să participe cu adevărat la deciziile publice, cu transparență și respect pentru drepturile fundamentale.",
@@ -2960,7 +2961,8 @@
       "explain": "După vot, explică public cum au votat și cum au ținut cont de cetățeni, iar aceștia pot evalua decizia.",
       "members": "Membrii propun și votează statutul, programul și deciziile importante ale partidului."
     },
-    "joinAction": "Vreau să semnez",
+    "joinAction": "Anunță că vrei să semnezi",
+    "joinNote": "Te vom anunța când începe strângerea semnăturilor. Ai nevoie de un cont gratuit pentru a-ți declara interesul.",
     "purpose": "Cum ar funcționa partidul propus",
     "purposeIntro": "Membrii ar putea propune măsuri și vota în Appofa statutul, programul și alte decizii importante ale partidului. Parlamentarii săi s-ar angaja să consulte public cetățenii.",
     "beforeDecision": "Consultare înainte de decizie",
@@ -2984,7 +2986,6 @@
       "appointmentsSource": "Articolul 37 din Constituția Greciei"
     },
     "candidates": {
-      "heroAction": "Mă interesează să candidez",
       "title": "Căutăm candidați pentru Parlament",
       "intro": "Căutăm persoane din fiecare circumscripție electorală care împărtășesc principiile democrației directe și ale transparenței. Oricine este interesat își poate exprima intenția de a candida.",
       "pledge": "Dacă vor fi aleși, candidații se angajează să consulte cetățenii înaintea deciziilor importante printr-o aplicație la alegere, să își explice public votul și să îi invite pe cetățeni să evalueze decizia.",
