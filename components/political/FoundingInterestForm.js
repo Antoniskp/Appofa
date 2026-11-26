@@ -5,7 +5,9 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { foundingInitiativeAPI } from '@/lib/api/foundingInitiative';
+import Link from 'next/link';
 import LoginLink from '@/components/ui/LoginLink';
+import { buildAuthPath } from '@/lib/auth-redirect';
 import AlertMessage from '@/components/ui/AlertMessage';
 
 function InterestForm({ initialInterest }) {
@@ -117,6 +119,9 @@ export default function FoundingInterestForm() {
 
   return <div className="rounded-xl border border-teal-200 bg-teal-50 p-4 sm:p-5">
     <p className="text-sm leading-6 text-slate-700">{t('privateInterest')}</p>
-    <LoginLink redirectTo="/founding-initiative#get-involved" className="mt-3 inline-flex min-h-11 items-center rounded-lg bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900">{t('signInToHelp')}</LoginLink>
+    <div className="mt-3 flex flex-wrap gap-3">
+      <LoginLink redirectTo="/founding-initiative#get-involved" className="inline-flex min-h-11 items-center rounded-lg bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900">{t('signInToHelp')}</LoginLink>
+      <Link href={buildAuthPath('/register', '/founding-initiative#get-involved')} className="inline-flex min-h-11 items-center rounded-lg border border-teal-300 bg-white px-4 text-sm font-semibold text-teal-900 hover:bg-teal-50">{t('createAccount')}</Link>
+    </div>
   </div>;
 }

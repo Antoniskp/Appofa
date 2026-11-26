@@ -64,13 +64,14 @@ function SubmitCode({ document }) {
   );
 }
 
-export default function FoundingDigitalSigning({ document }) {
+export default function FoundingDigitalSigning({ document, headingLevel = 3 }) {
+  const Heading = `h${headingLevel}`;
   const t = useTranslations('foundingInitiative.digitalSigning');
   const { user, loading } = useAuth();
 
   return (
     <div id="digital-signing" className="mt-4 scroll-mt-24 space-y-3 border-t border-teal-200 pt-4">
-      <h3 className="font-semibold text-slate-900">{t('title')}</h3>
+      <Heading className="font-semibold text-slate-900">{t('title')}</Heading>
       {document ? (
         <>
           <p className="text-sm leading-6 text-slate-700">{t('steps')}</p>

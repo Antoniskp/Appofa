@@ -1,18 +1,30 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
 import FoundingInterestForm from '@/components/political/FoundingInterestForm';
 import FoundingCandidateDistrictPicker from '@/components/political/FoundingCandidateDistrictPicker';
 import FoundingSignatureProgress from '@/components/political/FoundingSignatureProgress';
 import { publicPageMetadata } from '@/lib/route-metadata';
+import { SITE_URL } from '@/lib/seo';
 
 const namePollUrl = 'https://appofasi.gr/polls/78';
 const foundingLawUrl = 'https://www.hellenicparliament.gr/UserFiles/67715b2c-ec81-4f0c-ad6a-476a34d732bd/13130509.pdf';
 const ministerialAppointmentsUrl = 'https://www.hellenicparliament.gr/Vouli-ton-Ellinon/To-Politevma/Syntagma/article-39/';
+const founderName = 'Αντώνιος Παναγιωτόπουλος';
 const proclamationReviewUrl = '/documents/founding-proclamation-review.el.pdf';
 
-export const generateMetadata = publicPageMetadata('foundingInitiative.title', 'foundingInitiative.intro', '/founding-initiative');
+const ogImage = `${SITE_URL}/images/branding/founding-initiative-og.png`;
+const baseMetadata = publicPageMetadata('foundingInitiative.title', 'foundingInitiative.intro', '/founding-initiative');
+
+export async function generateMetadata() {
+  const metadata = await baseMetadata();
+  const image = { url: ogImage, width: 1200, height: 630, alt: metadata.openGraph.title };
+  return {
+    ...metadata,
+    openGraph: { ...metadata.openGraph, images: [image] },
+    twitter: { ...metadata.twitter, images: [ogImage] },
+  };
+}
 
 export default async function FoundingInitiativePage() {
   const t = await getTranslations('foundingInitiative');
@@ -29,17 +41,41 @@ export default async function FoundingInitiativePage() {
           </div>
         </header>
 
+        <section aria-labelledby="founding-about" className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+          <h2 id="founding-about" className="text-2xl font-semibold text-slate-900">{t('about.title')}</h2>
+          <p className="mt-3 max-w-3xl leading-7 text-slate-700">{t('about.founder', { name: founderName })}</p>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl bg-slate-50 p-5">
+              <h3 className="font-semibold text-slate-900">{t('about.fundingTitle')}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{t('about.funding')}</p>
+            </div>
+            <div className="flex flex-col items-start rounded-xl bg-slate-50 p-5">
+              <h3 className="font-semibold text-slate-900">{t('about.contactTitle')}</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-slate-600">{t('about.contact')}</p>
+              <Link href="/contact" className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-teal-800 hover:underline">
+                {t('about.contactAction')} <ArrowRightIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+        </section>
+
         <section aria-labelledby="founding-proclamation" className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
           <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <div>
-              <Image src="/images/branding/appofasi-high-resolution-logo-transparent.png" width={400} height={94} alt="Appofasi" className="mb-4 h-auto w-28" />
               <h2 id="founding-proclamation" className="text-2xl font-semibold text-slate-900">{t('digitalSigning.proclamationTitle')}</h2>
+              <p className="mt-2 max-w-xl leading-7 text-slate-700">{t('proclamation.what')}</p>
               <p className="mt-2 max-w-xl leading-7 text-slate-700">{t('digitalSigning.proclamationIntro')}</p>
             </div>
             <a href={proclamationReviewUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border border-teal-300 px-4 py-2 text-sm font-semibold text-teal-900 hover:bg-teal-50">
               {t('digitalSigning.readDraft')} <ArrowRightIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
             </a>
           </div>
+          <h3 className="mt-6 font-semibold text-slate-900">{t('proclamation.summaryTitle')}</h3>
+          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+            {['purpose', 'ask', 'explain', 'members'].map(point => (
+              <li key={point} className="border-l-2 border-teal-500 pl-4 text-sm leading-6 text-slate-700">{t(`proclamation.${point}`)}</li>
+            ))}
+          </ul>
         </section>
 
         <section id="get-involved" aria-labelledby="founding-interest" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
@@ -47,7 +83,7 @@ export default async function FoundingInitiativePage() {
           <div className="mt-4 grid items-start gap-6 lg:grid-cols-2">
             <FoundingInterestForm />
             <div className="space-y-5">
-              <FoundingSignatureProgress />
+              <FoundingSignatureProgress headingLevel={3} />
               <div>
                 <h3 className="font-semibold text-slate-900">{t('signingNext')}</h3>
                 <p className="mt-2 text-sm leading-6 text-slate-700">{t('signingIntro')}</p>

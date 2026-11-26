@@ -6,7 +6,8 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { foundingInitiativeAPI } from '@/lib/api/foundingInitiative';
 import FoundingDigitalSigning from './FoundingDigitalSigning';
 
-export default function FoundingSignatureProgress({ showNames = false, refreshKey = 0 }) {
+export default function FoundingSignatureProgress({ showNames = false, refreshKey = 0, headingLevel = 2 }) {
+  const Heading = `h${headingLevel}`;
   const t = useTranslations('foundingInitiative.signatures');
   const { data, loading, error, refetch } = useAsyncData(
     () => foundingInitiativeAPI.getProgress(showNames),
@@ -16,7 +17,7 @@ export default function FoundingSignatureProgress({ showNames = false, refreshKe
 
   return (
     <section aria-labelledby="founding-signature-progress" className="rounded-xl border border-teal-200 bg-teal-50 p-5">
-      <h2 id="founding-signature-progress" className="font-semibold text-slate-900">{t('progressTitle')}</h2>
+      <Heading id="founding-signature-progress" className="font-semibold text-slate-900">{t('progressTitle')}</Heading>
       {error ? (
         <p className="mt-2 text-sm text-slate-700">
           {t('loadError')}{' '}
@@ -35,7 +36,7 @@ export default function FoundingSignatureProgress({ showNames = false, refreshKe
               {showNames && <p className="break-all font-mono text-xs text-slate-700">SHA-256 {progress.document.sha256}</p>}
             </div>
           ) : <p className="mt-3 text-sm leading-6 text-slate-700">{t('waitingForDocument')}</p>}
-          {!showNames && <FoundingDigitalSigning document={progress.govGrEnabled ? progress.document : null} />}
+          {!showNames && <FoundingDigitalSigning document={progress.govGrEnabled ? progress.document : null} headingLevel={headingLevel + 1} />}
           {showNames && (
             <div className="mt-5 border-t border-teal-200 pt-5">
               <h3 className="font-semibold text-slate-900">{t('publishedNames')}</h3>
@@ -50,7 +51,7 @@ export default function FoundingSignatureProgress({ showNames = false, refreshKe
           )}
         </>
       ) : loading && <p role="status" className="mt-2 text-sm text-slate-700">{t('loading')}</p>}
-      {!showNames && <Link href="/founding-initiative/first-200" className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-teal-900 underline">{t('first200Action')}</Link>}
+      {!showNames && progress?.verifiedCount > 0 && <Link href="/founding-initiative/first-200" className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-teal-900 underline">{t('first200Action')}</Link>}
     </section>
   );
 }
