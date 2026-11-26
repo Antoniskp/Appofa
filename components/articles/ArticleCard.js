@@ -118,7 +118,7 @@ export default function ArticleCard({ article, variant = 'grid', imageSizes }) {
             {article.type && <TypeBadge type={article.type} />}
             {article.category && <Badge variant="primary">{article.category}</Badge>}
             {Array.isArray(article.tags) && article.tags.length > 0 && (
-              <Badge variant="purple">{article.tags.join(', ')}</Badge>
+              <Badge variant="tag">{article.tags.map((t) => `#${t}`).join(' ')}</Badge>
             )}
           </div>
           <h3 className="headline hover:text-blue-600 flex items-start gap-1.5">
@@ -172,7 +172,7 @@ export default function ArticleCard({ article, variant = 'grid', imageSizes }) {
             {article.type && <TypeBadge type={article.type} />}
             {article.category && <Badge variant="primary">{article.category}</Badge>}
             {Array.isArray(article.tags) && article.tags.length > 0 && (
-              <Badge variant="purple">{article.tags.join(', ')}</Badge>
+              <Badge variant="tag">{article.tags.map((t) => `#${t}`).join(' ')}</Badge>
             )}
           </div>
           
@@ -231,7 +231,7 @@ export default function ArticleCard({ article, variant = 'grid', imageSizes }) {
           {article.type && <TypeBadge type={article.type} />}
           {article.category && <Badge variant="primary">{article.category}</Badge>}
           {Array.isArray(article.tags) && article.tags.length > 0 && (
-            <Badge variant="purple">{article.tags.join(', ')}</Badge>
+            <Badge variant="tag">{article.tags.map((t) => `#${t}`).join(' ')}</Badge>
           )}
         </div>
         <h3 className="headline hover:text-blue-600">

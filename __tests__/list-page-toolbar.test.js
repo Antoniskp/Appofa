@@ -175,13 +175,16 @@ describe('ListPageToolbar', () => {
 
     const search = container.querySelector('[data-testid="search"]');
     const row = search.parentElement.parentElement;
-    const controls = container.querySelector('[data-testid="filter-slot"]').parentElement;
+    // filters get their own flex-1 wrapper so they can share a row with the action on mobile
+    const controls = container.querySelector('[data-testid="filter-slot"]').parentElement.parentElement;
 
     expect(row.className).toContain('md:flex-row');
     expect(row.className).toContain('md:flex-wrap');
     expect(search.parentElement.className).toContain('md:min-w-[240px]');
-    expect(controls.className).toContain('flex-shrink-0');
+    expect(controls.className).toContain('md:flex-shrink-0');
     expect(controls.className).toContain('md:flex-wrap');
+    // mobile: filter toggle and action sit side by side
+    expect(controls.className).toContain('flex-row');
   });
 
   test('filtersSlot and actionsSlot share the same controls container', async () => {
@@ -201,8 +204,8 @@ describe('ListPageToolbar', () => {
     const filter = container.querySelector('[data-testid="filter-slot"]');
     const action = container.querySelector('[data-testid="action-slot"]');
 
-    // Both should be in the same flex-shrink-0 controls div
-    expect(filter.parentElement).toBe(action.parentElement);
+    // Both should be in the same controls row (filters wrapped in a flex-1 div)
+    expect(filter.parentElement.parentElement).toBe(action.parentElement);
   });
 
   test('accepts optional className prop', async () => {

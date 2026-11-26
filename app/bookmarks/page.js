@@ -55,7 +55,7 @@ export default function BookmarksPage() {
         <div className="app-container">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Αποθηκευμένα</h1>
-            <p className="text-gray-600 mt-2">Τα αποθηκευμένα άρθρα και δημοσκοπήσεις σας.</p>
+            <p className="text-gray-600 mt-2">Τα αποθηκευμένα άρθρα και ψηφοφορίες σας.</p>
           </div>
 
           <FilterBar
@@ -69,7 +69,7 @@ export default function BookmarksPage() {
                 options: [
                   { value: '', label: 'Όλα' },
                   { value: 'article', label: 'Άρθρα' },
-                  { value: 'poll', label: 'Δημοσκοπήσεις' },
+                  { value: 'poll', label: 'Ψηφοφορίες' },
                 ],
               },
             ]}
@@ -98,7 +98,7 @@ export default function BookmarksPage() {
             <EmptyState
               type="empty"
               title="Δεν υπάρχουν αποθηκευμένα"
-              description="Αποθηκεύστε άρθρα και δημοσκοπήσεις για να τα δείτε εδώ."
+              description="Αποθηκεύστε άρθρα και ψηφοφορίες για να τα δείτε εδώ."
               action={{
                 text: 'Δείτε άρθρα',
                 href: '/articles'
@@ -142,11 +142,11 @@ export default function BookmarksPage() {
 
               <section>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900">Δημοσκοπήσεις</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">Ψηφοφορίες</h2>
                   <span className="text-sm text-gray-500">{pollItems.length}</span>
                 </div>
                 {pollItems.length === 0 ? (
-                  <p className="text-sm text-gray-600">Δεν υπάρχουν αποθηκευμένες δημοσκοπήσεις.</p>
+                  <p className="text-sm text-gray-600">Δεν υπάρχουν αποθηκευμένες ψηφοφορίες.</p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {pollItems.map((poll) => (

@@ -65,7 +65,7 @@ describe('Political map homepage', () => {
     expect(mockPositions).toHaveBeenCalledWith(expect.objectContaining({ voteView: 'all', pool: 'home' }));
     expect(sections[1].querySelector('#policy-vote')).toBeTruthy();
     expect(sections[2].textContent).toContain('Local news');
-    expect(sections[3].textContent).toContain('Δημοφιλείς δημοσκοπήσεις');
+    expect(sections[3].textContent).toContain('Δημοφιλείς ψηφοφορίες');
     expect(sections[3].compareDocumentPosition(container.querySelector('[data-testid="action-lanes"]')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     for (const text of ['Local news', 'Community article', 'Community video', 'Public commitment']) expect(container.textContent).toContain(text);
     expect(container.querySelector('#home-area')).toBeNull();

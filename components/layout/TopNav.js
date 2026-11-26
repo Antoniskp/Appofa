@@ -87,13 +87,6 @@ export default function TopNav() {
       menuId: 'desktop-nav-information-menu',
       items: [
         {
-          id: 'news',
-          label: tNav('news'),
-          href: '/news',
-          icon: <NewspaperIcon className="h-4 w-4" />,
-          mobileIcon: <NewspaperIcon className="h-5 w-5" />
-        },
-        {
           id: 'analyses',
           label: tNav('analyses'),
           href: '/analyses',
@@ -129,25 +122,11 @@ export default function TopNav() {
       menuId: 'desktop-nav-participation-menu',
       items: [
         {
-          id: 'polls',
-          label: tNav('polls'),
-          href: '/polls',
-          icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
-          mobileIcon: <ClipboardDocumentListIcon className="h-5 w-5" />
-        },
-        {
           id: 'civic-questions',
           label: tNav('civic_polls'),
           href: '/civic-questions',
           icon: <ChatBubbleLeftRightIcon className="h-4 w-4" />,
           mobileIcon: <ChatBubbleLeftRightIcon className="h-5 w-5" />
-        },
-        {
-          id: 'suggestions',
-          label: tNav('suggestions'),
-          href: '/suggestions',
-          icon: <LightBulbIcon className="h-4 w-4" />,
-          mobileIcon: <LightBulbIcon className="h-5 w-5" />
         },
         {
           id: 'dream-team',
@@ -246,6 +225,24 @@ export default function TopNav() {
     }
   ];
 
+  // The few destinations most visitors come for get a direct link.
+  // Everything else lives in one grouped "Περισσότερα" menu.
+  const primaryLinks = [
+    { id: 'polls', label: tNav('polls'), href: '/polls', icon: ClipboardDocumentListIcon },
+    { id: 'suggestions', label: tNav('suggestions'), href: '/suggestions', icon: LightBulbIcon },
+    { id: 'news', label: tNav('news'), href: '/news', icon: NewspaperIcon },
+    { id: 'my-area', label: tNav('bottom_my_area'), href: user?.homeLocation?.slug ? myLocationHref : '/locations', icon: MapPinIcon },
+  ];
+
+  const moreMenuItems = navSections.flatMap((section) => [
+    { heading: section.label, id: `heading-${section.id}` },
+    ...section.items.map((item) => ({
+      ...item,
+      className: isPathActive(item.href) ? 'bg-blue-50 text-blue-700 font-semibold' : '',
+    })),
+  ]);
+  const moreActive = navSections.some((section) => section.items.some((item) => isPathActive(item.href)));
+
   // Keep the authenticated menu focused on account-level destinations.
   const userMenuItems = [
     {
@@ -329,28 +326,32 @@ export default function TopNav() {
                 priority
               />
             </Link>
-            <div className="hidden xl:ml-6 xl:flex xl:items-center xl:gap-2">
-              {navSections.map((section) => {
-                const sectionActive = section.items.some((item) => isPathActive(item.href));
-
+            <div className="hidden xl:ml-8 xl:flex xl:items-center xl:gap-1">
+              {primaryLinks.map((item) => {
+                const active = isPathActive(item.href);
                 return (
-                  <DropdownMenu
-                    key={section.id}
-                    triggerText={section.label}
-                    triggerClassName={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                      sectionActive
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-blue-900 hover:bg-seafoam/40'
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    aria-current={active ? 'page' : undefined}
+                    className={`rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
+                      active ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-blue-900 hover:bg-seafoam/40'
                     }`}
-                    items={section.items.map((item) => ({
-                      ...item,
-                      className: isPathActive(item.href) ? 'bg-blue-50 text-blue-700 font-semibold' : '',
-                    }))}
-                    align="left"
-                    menuId={section.menuId}
-                  />
+                  >
+                    {item.label}
+                  </Link>
                 );
               })}
+              <DropdownMenu
+                triggerText={tNav('more')}
+                triggerClassName={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  moreActive ? 'bg-blue-50 text-blue-700' : 'text-blue-900 hover:bg-seafoam/40'
+                }`}
+                items={moreMenuItems}
+                align="left"
+                menuClassName="w-[30rem] columns-2 gap-0"
+                menuId="desktop-nav-more-menu"
+              />
             </div>
           </div>
           <div className="hidden xl:flex items-center gap-4 ml-auto">
@@ -411,6 +412,20 @@ export default function TopNav() {
       </div>
       <div className={`xl:hidden ${isMenuOpen ? 'block' : 'hidden'} max-h-[calc(100dvh-8rem)] overflow-y-auto`} id="mobile-menu">
         <div className="border-t border-seafoam px-4 py-4 space-y-4">
+          <div className="grid grid-cols-2 gap-2">
+            {primaryLinks.map(({ id, label, href, icon: Icon }) => (
+              <Link
+                key={id}
+                href={href}
+                onClick={() => setIsMenuOpen(false)}
+                aria-current={isPathActive(href) ? 'page' : undefined}
+                className={`flex min-h-12 items-center gap-2 rounded-lg border border-brand-border px-3 py-2 text-sm font-semibold text-blue-900 transition-colors hover:bg-seafoam/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${isMobileActive(href)}`}
+              >
+                <Icon className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
+                {label}
+              </Link>
+            ))}
+          </div>
           {navSections.map((section) => (
             <section key={section.id} aria-labelledby={`mobile-nav-section-${section.id}`}>
               <p

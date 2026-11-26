@@ -99,28 +99,34 @@ function PollsContent() {
   );
 
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
+    <div className="bg-gray-50 min-h-screen py-6 md:py-8">
       <div className="app-container">
-        <section className="mb-6 rounded-xl border border-gray-200 bg-white p-5">
+        <header className="mb-4">
           <h1 className="text-2xl font-bold text-gray-900">{tPolls('hub_title')}</h1>
-          <p className="mt-2 text-sm text-gray-600">{tPolls('hub_description')}</p>
+          <p className="mt-1 hidden text-sm text-gray-600 sm:block">{tPolls('hub_description')}</p>
           {user ? (
             <>
-              <div className="mt-4 flex flex-wrap gap-2" aria-label={tPolls('hub_title')}>
+              <div
+                role="group"
+                aria-label={tPolls('hub_title')}
+                className="mt-3 inline-flex max-w-full overflow-x-auto rounded-lg border border-brand-border bg-white p-1 scrollbar-none"
+              >
                 {['unanswered', 'answered', 'all'].map(value => (
                   <button key={value} type="button" aria-pressed={view === value}
                     onClick={() => { setSelectedView(value); goToPage(1); }}
-                    className={`rounded-lg px-4 py-2 text-sm font-medium ${view === value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                    className={`shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${view === value ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-blue-50'}`}>
                     {tPolls(`hub_${value}`)}
                   </button>
                 ))}
               </div>
               {!user.homeLocationId && view !== 'all' && (
-                <Link href="/profile" className="mt-4 inline-block text-sm font-medium text-blue-700 underline">{tPolls('hub_set_location')}</Link>
+                <Link href="/profile" className="mt-2 block text-sm font-medium text-blue-700 underline">{tPolls('hub_set_location')}</Link>
               )}
             </>
-          ) : !authLoading && <Link href="/login" className="mt-4 inline-block text-blue-700 underline">{tPolls('hub_sign_in')}</Link>}
-        </section>
+          ) : !authLoading && (
+            <Link href="/login" className="mt-1 inline-block text-sm font-medium text-blue-700 underline">{tPolls('hub_sign_in')}</Link>
+          )}
+        </header>
         {/* Location Breadcrumb */}
         <LocationFilterBreadcrumb
           value={filters.locationId}

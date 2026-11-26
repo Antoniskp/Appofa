@@ -14,6 +14,7 @@ import Tooltip from '@/components/ui/Tooltip';
  *   - 'danger': Red (archived, deleted)
  *   - 'purple': Purple (special categories)
  *   - 'info': Cyan (informational tags)
+ *   - 'tag': Dashed outline (user tags / topics, shown as #tag)
  * @param {string} size - Badge size (sm, md, lg)
  * @param {boolean} removable - Show remove button
  * @param {function} onRemove - Remove button click handler
@@ -36,7 +37,8 @@ export default function Badge({
     warning: 'bg-orange-100 text-orange-800 border-orange-200',
     danger: 'bg-red-100 text-red-800 border-red-200',
     purple: 'bg-purple-100 text-purple-800 border-purple-200',
-    info: 'bg-cyan-100 text-cyan-800 border-cyan-200'
+    info: 'bg-cyan-100 text-cyan-800 border-cyan-200',
+    tag: 'bg-white text-gray-600 border-gray-300 border-dashed'
   };
   
   const sizes = {

@@ -39,7 +39,7 @@ function MyVotesContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Οι ψήφοι μου</h1>
-          <p className="text-gray-600 mt-1">Όλες οι δημοσκοπήσεις στις οποίες έχετε ψηφίσει.</p>
+          <p className="text-gray-600 mt-1">Όλες οι ψηφοφορίες στις οποίες έχετε ψηφίσει.</p>
         </div>
 
         <Card>
@@ -56,8 +56,8 @@ function MyVotesContent() {
             <EmptyState
               type="empty"
               title="Δεν έχετε ψηφίσει ακόμη"
-              description="Επισκεφθείτε τις δημοσκοπήσεις και ψηφίστε!"
-              action={{ text: 'Δείτε δημοσκοπήσεις', onClick: () => router.push('/polls') }}
+              description="Επισκεφθείτε τις ψηφοφορίες και ψηφίστε!"
+              action={{ text: 'Δείτε ψηφοφορίες', onClick: () => router.push('/polls') }}
             />
           )}
           {!loading && !error && votedPolls.length > 0 && (
@@ -88,14 +88,14 @@ function MyVotesContent() {
                           </Link>
                         ) : (
                           <p className="text-sm text-gray-400 italic">
-                            Η δημοσκόπηση έχει κλείσει — δεν είναι δυνατή η αλλαγή ψήφου.
+                            Η ψηφοφορία έχει κλείσει — δεν είναι δυνατή η αλλαγή ψήφου.
                           </p>
                         )}
                       </div>
                       <div className="flex gap-2 ml-4">
                         <TooltipIconButton
                           icon={EyeIcon}
-                          tooltip="Προβολή δημοσκόπησης"
+                          tooltip="Προβολή ψηφοφορίας"
                           onClick={() => router.push(`/polls/${poll.id}`)}
                         />
                       </div>

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { topicHref } from '@/lib/utils/topics';
 
 /**
- * Renders a row of top-tag pills (purple, rounded-full) that link
+ * Renders a row of top-tag pills (dashed outline, "#tag") that link
  * to a listing page filtered by tag.
  *
  * @param {string[]} tags       — tag names to display
@@ -17,9 +17,9 @@ export default function TopTagPills({ tags = [] }) {
         <Link
           key={tag}
           href={topicHref(tag)}
-          className="px-4 py-1 rounded-full border text-sm font-medium bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 transition-colors"
+          className="px-4 py-1 rounded-full border text-sm font-medium border-dashed bg-white text-gray-600 border-gray-300 hover:bg-blue-50 transition-colors"
         >
-          {tag}
+          #{tag}
         </Link>
       ))}
     </div>

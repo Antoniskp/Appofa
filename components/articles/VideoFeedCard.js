@@ -289,7 +289,7 @@ export default function VideoFeedCard({ article, onPlay }) {
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="text-xs text-purple-700 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded-full"
+                className="text-xs text-gray-600 bg-white border border-dashed border-gray-300 px-2 py-0.5 rounded-full"
               >
                 #{tag}
               </span>

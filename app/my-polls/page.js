@@ -49,7 +49,7 @@ function CreatedPollsTab({ user }) {
     try {
       await pollAPI.delete(id);
       refetch();
-      addToast('Η δημοσκόπηση διαγράφηκε.', { type: 'success' });
+      addToast('Η ψηφοφορία διαγράφηκε.', { type: 'success' });
     } catch (error) {
       addToast(`Αποτυχία διαγραφής: ${error.message}`, { type: 'error' });
     }
@@ -62,9 +62,9 @@ function CreatedPollsTab({ user }) {
   if (polls.length === 0) return (
     <EmptyState
       type="empty"
-      title="Δεν έχετε δημιουργήσει δημοσκοπήσεις"
-      description="Δημιουργήστε την πρώτη σας δημοσκόπηση!"
-      action={{ text: 'Δημιουργία δημοσκόπησης', onClick: () => router.push('/polls/create') }}
+      title="Δεν έχετε δημιουργήσει ψηφοφορίες"
+      description="Δημιουργήστε την πρώτη σας ψηφοφορία!"
+      action={{ text: 'Δημιουργία ψηφοφορίας', onClick: () => router.push('/polls/create') }}
     />
   );
 
@@ -106,8 +106,8 @@ function CreatedPollsTab({ user }) {
         isOpen={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={() => handleDelete(pollToDelete)}
-        title="Διαγραφή Δημοσκόπησης"
-        message="Είστε σίγουρος ότι θέλετε να διαγράψετε αυτή τη δημοσκόπηση; Η ενέργεια δεν μπορεί να αναιρεθεί."
+        title="Διαγραφή Ψηφοφορίας"
+        message="Είστε σίγουρος ότι θέλετε να διαγράψετε αυτή τη ψηφοφορία; Η ενέργεια δεν μπορεί να αναιρεθεί."
         confirmText="Διαγραφή"
         cancelText="Άκυρο"
         variant="danger"
@@ -137,9 +137,9 @@ function VotedPollsTab({ user }) {
   if (votedPolls.length === 0) return (
     <EmptyState
       type="empty"
-      title="Δεν έχετε συμμετάσχει σε δημοσκοπήσεις"
-      description="Επισκεφθείτε τις δημοσκοπήσεις και ψηφίστε!"
-      action={{ text: 'Δείτε δημοσκοπήσεις', onClick: () => router.push('/polls') }}
+      title="Δεν έχετε συμμετάσχει σε ψηφοφορίες"
+      description="Επισκεφθείτε τις ψηφοφορίες και ψηφίστε!"
+      action={{ text: 'Δείτε ψηφοφορίες', onClick: () => router.push('/polls') }}
     />
   );
 
@@ -170,11 +170,11 @@ function VotedPollsTab({ user }) {
                     Αλλαγή ψήφου →
                   </Link>
                 ) : (
-                  <p className="text-sm text-gray-400 italic">Η δημοσκόπηση έχει κλείσει — δεν είναι δυνατή η αλλαγή ψήφου.</p>
+                  <p className="text-sm text-gray-400 italic">Η ψηφοφορία έχει κλείσει — δεν είναι δυνατή η αλλαγή ψήφου.</p>
                 )}
               </div>
               <div className="flex gap-2 ml-4">
-                <TooltipIconButton icon={EyeIcon} tooltip="Προβολή δημοσκόπησης" onClick={() => router.push(`/polls/${poll.id}`)} />
+                <TooltipIconButton icon={EyeIcon} tooltip="Προβολή ψηφοφορίας" onClick={() => router.push(`/polls/${poll.id}`)} />
               </div>
             </div>
           </div>
@@ -193,13 +193,13 @@ function MyPollsContent() {
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Οι δημοσκοπήσεις μου</h1>
+          <h1 className="text-3xl font-bold">Οι ψηφοφορίες μου</h1>
           <Button
             onClick={() => router.push('/polls/create')}
             variant="primary"
             icon={<PlusCircleIcon className="h-5 w-5" />}
           >
-            Δημιουργία δημοσκόπησης
+            Δημιουργία ψηφοφορίας
           </Button>
         </div>
 

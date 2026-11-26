@@ -101,3 +101,30 @@ describe('DropdownMenu', () => {
     container.remove();
   });
 });
+
+describe('DropdownMenu group headings', () => {
+  it('renders headings as non-interactive labels that keyboard navigation skips', async () => {
+    const component = DropdownMenu.default || DropdownMenu;
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(React.createElement(component, {
+        triggerText: 'More',
+        open: true,
+        onOpenChange: () => {},
+        items: [
+          { heading: 'Group A', id: 'h-a' },
+          { id: 'a1', label: 'First', href: '/a1' },
+          { heading: 'Group B', id: 'h-b' },
+          { id: 'b1', label: 'Second', href: '/b1' },
+        ],
+      }));
+    });
+    const headings = Array.from(container.querySelectorAll('[role="presentation"]')).map((el) => el.textContent);
+    expect(headings).toEqual(['Group A', 'Group B']);
+    expect(container.querySelectorAll('[role="menuitem"]')).toHaveLength(2);
+    await act(async () => { root.unmount(); });
+    container.remove();
+  });
+});

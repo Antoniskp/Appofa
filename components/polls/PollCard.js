@@ -388,7 +388,7 @@ export default function PollCard({ poll, onVoted }) {
         <Badge variant="primary">{poll.category}</Badge>
       )}
       {Array.isArray(poll.tags) && poll.tags.length > 0 && (
-        <Badge variant="purple">{poll.tags.join(', ')}</Badge>
+        <Badge variant="tag">{poll.tags.map((t) => `#${t}`).join(' ')}</Badge>
       )}
       {poll.voteRestriction === 'locals_only' && poll.location && (
         <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">

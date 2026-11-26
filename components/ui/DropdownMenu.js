@@ -10,7 +10,7 @@ import { ChevronDownIcon } from '@heroicons/react/24/outline';
  * Features:
  * - Automatic click-outside-to-close
  * - Full keyboard navigation (Arrow keys, Enter, Escape, Home, End)
- * - Support for icons, dividers, and disabled items
+ * - Support for icons, dividers, group headings ({ heading: 'Label' }) and disabled items
  * - Customizable alignment (left, right, center)
  * - Full accessibility (ARIA attributes, focus management)
  * - Smooth animations
@@ -66,7 +66,7 @@ export default function DropdownMenu({
 
   // Filter out dividers and disabled items for keyboard navigation
   const focusableItems = useMemo(
-    () => items.filter(item => !item.divider && !item.disabled),
+    () => items.filter(item => !item.divider && !item.heading && !item.disabled),
     [items]
   );
 
@@ -246,6 +246,19 @@ export default function DropdownMenu({
                   className="my-1 border-t border-gray-200"
                   role="separator"
                 />
+              );
+            }
+
+            // Render non-interactive group heading
+            if (item.heading) {
+              return (
+                <p
+                  key={item.id || `heading-${index}`}
+                  role="presentation"
+                  className="break-after-avoid px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-gray-500 first:pt-1"
+                >
+                  {item.heading}
+                </p>
               );
             }
 
