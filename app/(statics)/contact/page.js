@@ -16,7 +16,7 @@ export default function ContactPage() {
 
       <ContactPeople />
 
-      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+      <div id="contact-form" className="scroll-mt-24 bg-white border border-gray-200 rounded-lg p-6 mb-6">
         <ContactForm type="contact" />
       </div>
 

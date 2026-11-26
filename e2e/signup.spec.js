@@ -110,12 +110,27 @@ test('founding initiative signup returns to the signing interest form', async ({
 
   const join = page.getByRole('link', { name: founding.joinAction, exact: true });
   await expect(join).toHaveAccessibleDescription(founding.joinNote);
-  await page.getByRole('link', { name: founding.proclamation.heroAction, exact: true }).click();
+  const documents = founding.documents;
+  await page.getByRole('link', { name: documents.heroAction, exact: true }).click();
   await expect(page).toHaveURL(/\/founding-initiative#proclamation$/);
-  const draft = page.getByRole('link', { name: founding.digitalSigning.readDraft, exact: true });
-  const pdf = await page.request.get(await draft.getAttribute('href'));
-  expect(pdf.ok()).toBe(true);
-  expect(pdf.headers()['content-type']).toContain('application/pdf');
+  const review = page.getByRole('region', { name: documents.title, exact: true });
+  await expect(review.getByText(documents.version.replace('{number}', '1'), { exact: false })).toHaveCount(3);
+  for (const key of ['proclamation', 'statement', 'statute']) {
+    const name = documents.pdfLabel.replace('{title}', documents[key].title);
+    const draft = review.getByRole('link', { name, exact: true });
+    const href = await draft.getAttribute('href');
+    expect(href).toMatch(/^\/documents\/founding-initiative\/[a-z-]+-v1\.el\.pdf$/);
+    const pdf = await page.request.get(href);
+    expect(pdf.ok()).toBe(true);
+    expect(pdf.headers()['content-type']).toContain('application/pdf');
+    expect((await pdf.body()).subarray(0, 5).toString()).toBe('%PDF-');
+  }
+  await review.getByText(documents.history, { exact: true }).click();
+  await expect(review.getByRole('link', { name: documents.olderDraft, exact: true })).toHaveAttribute('href', '/documents/founding-proclamation-review.el.pdf');
+  await review.getByRole('link', { name: documents.feedbackAction, exact: true }).click();
+  await expect(page).toHaveURL(/\/contact#contact-form$/);
+  await expect(page.locator('#contact-form [name="subject"]')).toBeVisible();
+  await page.goto('/founding-initiative');
 
   await join.click();
   await expect(page).toHaveURL(/\/founding-initiative#get-involved$/);
