@@ -103,7 +103,7 @@ export default async function PollDetailPage({ params }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       )}
-      <PollDetailClient />
+      <PollDetailClient initialPoll={poll} />
     </>
   );
 }

@@ -1,3 +1,4 @@
+import { metaDescription } from '@/lib/utils/editorialPreview';
 import ArticleDetailClient from '@/app/articles/[id]/ArticleDetailClient';
 import { getTranslations } from 'next-intl/server';
 import { SITE_URL, DEFAULT_OG_IMAGE, serializeJsonLd } from '@/lib/seo';
@@ -40,7 +41,7 @@ export async function generateMetadata({ params }) {
   const slug = idSlug(article.id, article.title);
   const canonicalUrl = `${SITE_URL}/videos/${slug}`;
   const image = absoluteImageUrl(article.sourceMeta?.thumbnailUrl || article.bannerImageUrl);
-  const description = article.summary || article.content?.substring(0, 160) || '';
+  const description = metaDescription(article);
 
   return {
     title: article.title,
@@ -73,7 +74,7 @@ export default async function VideoDetailPage({ params }) {
         '@context': 'https://schema.org',
         '@type': 'VideoObject',
         name: article.title,
-        description: article.summary || article.content?.substring(0, 160) || '',
+        description: metaDescription(article),
         thumbnailUrl: absoluteImageUrl(article.sourceMeta?.thumbnailUrl || article.bannerImageUrl),
         uploadDate: article.publishedAt || article.createdAt,
         url: `${SITE_URL}/videos/${idSlug(article.id, article.title)}`,

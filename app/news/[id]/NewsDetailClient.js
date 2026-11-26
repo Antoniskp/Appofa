@@ -22,14 +22,19 @@ import ReportButton from '@/components/ReportButton';
 import ShareModal from '@/components/ui/ShareModal';
 import ArticleTaxonomyPills from '@/components/articles/ArticleTaxonomyPills';
 import RelatedArticles from '@/components/articles/RelatedArticles';
+import { useTranslations, useLocale } from 'next-intl';
+import { formatDate } from '@/lib/utils/formatDate';
 
-export default function NewsDetailPage() {
+export default function NewsDetailPage({ initialArticle = null }) {
+  const tArticles = useTranslations('articles');
+  const tCommon = useTranslations('common');
+  const locale = useLocale();
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
   const { addToast } = useToast();
   const { error: toastError } = useToast();
-  const { article, loading, error } = useFetchArticle(params.id);
+  const { article, loading, error } = useFetchArticle(params.id, initialArticle);
   const { canEditArticle } = usePermissions();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
@@ -125,7 +130,7 @@ export default function NewsDetailPage() {
     }
   }, [article, params.id, router]);
 
-  if (loading) {
+  if (loading && !article) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <SkeletonLoader type="article" count={1} />
@@ -133,14 +138,14 @@ export default function NewsDetailPage() {
     );
   }
 
-  if (error || !article) {
+  if (!article) {
     if (error) {
-      toastError(error || 'News article not found');
+      toastError(error || tArticles('not_found'));
     }
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <p className="text-red-600 mb-4">Error loading news article: {error || 'News article not found'}</p>
-        <nav aria-label="Breadcrumb" className="mt-4">
+        <p className="text-red-600 mb-4">{tArticles('error_loading_single')}: {error || tArticles('not_found')}</p>
+        <nav aria-label={tArticles('breadcrumb')} className="mt-4">
           <ol className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
             <li>
               <Link href="/news" className="text-blue-600 hover:text-blue-800">
@@ -148,14 +153,14 @@ export default function NewsDetailPage() {
               </Link>
             </li>
             <li className="text-gray-400">/</li>
-            <li className="text-gray-700">News</li>
+            <li className="text-gray-700">{tArticles('news')}</li>
           </ol>
         </nav>
       </div>
     );
   }
 
-  const authorLabel = article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown');
+  const authorLabel = article.hideAuthor ? tCommon('anonymous') : (article.author?.username || tCommon('unknown'));
 
   // For video articles the embed becomes the hero element at the top of the
   // card; the static banner image is hidden so the user lands directly on the
@@ -168,7 +173,7 @@ export default function NewsDetailPage() {
     <>
     <div className="bg-gray-50 min-h-screen py-8">
       <article className="max-w-4xl xl:has-[[data-article-contents]]:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <nav aria-label="Breadcrumb" className="mb-6">
+        <nav aria-label={tArticles('breadcrumb')} className="mb-6">
           <ol className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
             <li>
               <Link href="/news" className="text-blue-600 hover:text-blue-800">
@@ -208,17 +213,17 @@ export default function NewsDetailPage() {
 
               <div className="flex flex-wrap items-center gap-4 text-gray-600 text-sm border-b border-gray-200 pb-4">
                 <div className="flex items-center">
-                  <span className="font-medium">By {authorLabel}</span>
+                  <span className="font-medium">{tArticles('by')} {authorLabel}</span>
                 </div>
                 <span>•</span>
                 <div>
-                  <span>Published: {new Date(article.createdAt).toLocaleDateString('el-GR')}</span>
+                  <span>{tArticles('published_on')}: {formatDate(article.createdAt, locale)}</span>
                 </div>
                 {article.updatedAt !== article.createdAt && (
                   <>
                     <span>•</span>
                     <div>
-                      <span>Updated: {new Date(article.updatedAt).toLocaleDateString('el-GR')}</span>
+                      <span>{tArticles('updated_on')}: {formatDate(article.updatedAt, locale)}</span>
                     </div>
                   </>
                 )}

@@ -16,12 +16,12 @@ describe('CookieBanner consent parsing', () => {
     expect(getGdprConsent()).toBeNull();
   });
 
-  test('normalizes partial legacy payloads with default-on analytics', () => {
+  test('normalizes partial legacy payloads with analytics off unless explicitly granted', () => {
     localStorage.setItem('gdpr_consent', JSON.stringify({ necessary: true }));
     expect(getGdprConsent()).toEqual(
       expect.objectContaining({
         necessary: true,
-        analytics: true,
+        analytics: false,
         functional: false,
       })
     );

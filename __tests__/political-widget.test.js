@@ -105,3 +105,20 @@ test.each(['el', 'en', 'ro'])('new widget and commitment labels exist in %s', lo
     for (const match of source.matchAll(/\bt\('([^']+)'/g)) expect(messages[match[1]]).toEqual(expect.any(String));
   }
 });
+
+test('does not download MPs, candidates or boundaries until they are needed', async () => {
+  await render();
+  expect(loadParliamentarians).not.toHaveBeenCalled();
+  expect(loadPoliticalCandidates).not.toHaveBeenCalled();
+  expect(global.fetch).not.toHaveBeenCalled();
+  await choose('district-athens-a');
+  expect(loadParliamentarians).toHaveBeenCalledTimes(1);
+  expect(loadPoliticalCandidates).toHaveBeenCalledTimes(1);
+  expect(global.fetch).not.toHaveBeenCalled();
+  await act(async () => button(text.showMap).click());
+  await act(async () => button(text.hideMap).click());
+  await act(async () => button(text.showMap).click());
+  expect(global.fetch).toHaveBeenCalledTimes(1);
+  await choose('district-state');
+  expect(loadParliamentarians).toHaveBeenCalledTimes(1);
+});

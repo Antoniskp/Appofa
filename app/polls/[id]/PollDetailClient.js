@@ -1,5 +1,6 @@
 'use client';
 
+import { formatDate, formatDateTime } from '@/lib/utils/formatDate';
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -35,7 +36,7 @@ import { buildTaxonomyHref } from '@/lib/utils/taxonomyLinks';
 import ReportButton from '@/components/ReportButton';
 import ShareModal from '@/components/ui/ShareModal';
 
-export default function PollDetailPage() {
+export default function PollDetailPage({ initialPoll = null }) {
   const t = useTranslations('democracy');
   const params = useParams();
   const router = useRouter();
@@ -43,9 +44,10 @@ export default function PollDetailPage() {
   const { isAdmin } = usePermissions();
   const { addToast } = useToast();
   
-  const [poll, setPoll] = useState(null);
+  // Server-rendered poll shows immediately; the client refetch adds viewer-specific state (e.g. own vote)
+  const [poll, setPoll] = useState(initialPoll);
   const [ballotOpen, setBallotOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialPoll);
   const [error, setError] = useState('');
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
@@ -191,7 +193,7 @@ export default function PollDetailPage() {
     };
   }, [poll?.id]);
 
-  if (loading) {
+  if (loading && !poll) {
     return (
       <div className="bg-gray-50 min-h-screen py-8">
         <div className="app-container max-w-4xl">
@@ -204,7 +206,7 @@ export default function PollDetailPage() {
     );
   }
 
-  if (error || !poll) {
+  if (!poll) {
     return (
       <div className="bg-gray-50 min-h-screen py-8">
         <div className="app-container max-w-4xl">
@@ -274,14 +276,14 @@ export default function PollDetailPage() {
               <span>•</span>
               <div className="flex items-center gap-2">
                 <CalendarIcon className="h-4 w-4" />
-                <span>Δημιουργήθηκε: {new Date(poll.createdAt).toLocaleDateString('el-GR')}</span>
+                <span>Δημιουργήθηκε: {formatDate(poll.createdAt)}</span>
               </div>
               {poll.deadline && (
                 <>
                   <span>•</span>
                   <div className="flex items-center gap-2">
                     <ClockIcon className="h-4 w-4" />
-                    <span>Λήγει: {new Date(poll.deadline).toLocaleDateString('el-GR')} {new Date(poll.deadline).toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span>Λήγει: {formatDateTime(poll.deadline)}</span>
                   </div>
                 </>
               )}

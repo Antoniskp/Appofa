@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
  * @param {Array} dependencies - Array of dependencies that trigger refetch (like useEffect deps)
  * @param {Object} options - Optional configuration object
  * @param {*} options.initialData - Initial value for data state (default: null)
+ * @param {boolean} options.initialLoading - Initial loading state (default: true); pass false when initialData was server-rendered
  * @param {Function} options.transform - Function to transform response before setting state
  * @param {Function} options.onSuccess - Callback when fetch succeeds
  * @param {Function} options.onError - Callback when fetch fails
@@ -38,13 +39,14 @@ export function useAsyncData(
 ) {
   const {
     initialData = null,
+    initialLoading = true,
     transform = (data) => data,
     onSuccess,
     onError
   } = options;
 
   const [data, setData] = useState(initialData);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(initialLoading);
   const [error, setError] = useState(null);
   const isMountedRef = useRef(true);
   const fetchGenRef = useRef(0);

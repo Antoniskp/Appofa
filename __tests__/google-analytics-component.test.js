@@ -29,6 +29,7 @@ jest.mock('next/script', () => {
 
 jest.mock('@/lib/analytics/google-analytics', () => ({
   initGA: (...args) => mockInitGA(...args),
+  revokeGA: () => {},
   trackPageView: (...args) => mockTrackPageView(...args),
   getGAMeasurementId: () => mockMeasurementId,
 }));
@@ -62,7 +63,18 @@ describe('GoogleAnalytics component', () => {
     document.body.innerHTML = '';
   });
 
-  test('initializes and tracks page views by default on first visit', async () => {
+  test('does not load or track on first visit before consent', async () => {
+    await act(async () => {
+      root.render(React.createElement(GoogleAnalytics));
+    });
+
+    expect(mockInitGA).not.toHaveBeenCalled();
+    expect(mockTrackPageView).not.toHaveBeenCalled();
+    expect(container.querySelector('script[src*="googletagmanager.com/gtag/js"]')).toBeNull();
+  });
+
+  test('initializes and tracks page views after opt-in', async () => {
+    mockConsent = { analytics: true };
     mockPathname = '/news';
     mockSearch = 'page=2';
 

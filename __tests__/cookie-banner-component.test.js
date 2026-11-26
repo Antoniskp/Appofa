@@ -40,7 +40,7 @@ describe('CookieBanner component', () => {
     document.body.innerHTML = '';
   });
 
-  test('first visit shows banner and preferences default to analytics enabled', async () => {
+  test('first visit shows banner and analytics is off until the visitor opts in', async () => {
     await act(async () => {
       root.render(React.createElement(CookieBanner));
     });
@@ -49,7 +49,7 @@ describe('CookieBanner component', () => {
     await click(getButton(container, 'manage_preferences'));
 
     const switches = container.querySelectorAll('[role="switch"]');
-    expect(switches[1].getAttribute('aria-checked')).toBe('true');
+    expect(switches[1].getAttribute('aria-checked')).toBe('false');
   });
 
   test('reopening cookie settings can opt back in and out', async () => {

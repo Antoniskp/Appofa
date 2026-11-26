@@ -1,3 +1,4 @@
+import { metaDescription } from '@/lib/utils/editorialPreview';
 import { SITE_URL, DEFAULT_OG_IMAGE, serializeJsonLd } from '@/lib/seo';
 import NewsDetailClient from './NewsDetailClient';
 import { idSlug } from '@/lib/utils/slugify';
@@ -38,7 +39,7 @@ export async function generateMetadata({ params }) {
   const slug = idSlug(article.id, article.title);
   const canonicalUrl = `${SITE_URL}/news/${slug}`;
   const image = absoluteImageUrl(article.bannerImageUrl);
-  const description = article.summary || article.content?.substring(0, 160) || '';
+  const description = metaDescription(article);
 
   return {
     title: article.title,
@@ -71,7 +72,7 @@ export default async function NewsDetailPage({ params }) {
         '@context': 'https://schema.org',
         '@type': 'NewsArticle',
         headline: article.title,
-        description: article.summary || article.content?.substring(0, 160) || '',
+        description: metaDescription(article),
         image: absoluteImageUrl(article.bannerImageUrl),
         datePublished: article.publishedAt || article.createdAt,
         dateModified: article.updatedAt || article.createdAt,
@@ -94,7 +95,7 @@ export default async function NewsDetailPage({ params }) {
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
       )}
-      <NewsDetailClient />
+      <NewsDetailClient initialArticle={article} />
     </>
   );
 }

@@ -8,13 +8,14 @@ import { useAsyncData } from '@/hooks/useAsyncData';
  * Leverages useAsyncData for consistent data fetching patterns
  * 
  * @param {string|number} articleId - The ID of the article to fetch
+ * @param {Object|null} initialArticle - Server-fetched article, rendered immediately and refreshed on the client
  * @returns {Object} - Article data, loading state, and error
  * @returns {Object|null} article - The article data
  * @returns {boolean} loading - Loading state
  * @returns {string|null} error - Error message if any
  * @returns {Function} refetch - Function to manually refetch the article
  */
-export function useFetchArticle(articleId) {
+export function useFetchArticle(articleId, initialArticle = null) {
   const { data: article, loading, error, refetch } = useAsyncData(
     async () => {
       if (!articleId) {
@@ -37,7 +38,8 @@ export function useFetchArticle(articleId) {
     },
     [articleId], // Refetch when articleId changes
     {
-      initialData: null,
+      initialData: initialArticle,
+      initialLoading: !initialArticle,
       onError: (err) => {
         console.error('Failed to fetch article:', err);
       }

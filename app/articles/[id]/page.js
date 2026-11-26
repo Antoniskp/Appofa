@@ -1,3 +1,4 @@
+import { metaDescription } from '@/lib/utils/editorialPreview';
 import { articleBannerImage } from '@/lib/utils/articleImage';
 import { SITE_URL, DEFAULT_OG_IMAGE, serializeJsonLd } from '@/lib/seo';
 import ArticleDetailClient from './ArticleDetailClient';
@@ -41,7 +42,7 @@ export async function generateMetadata({ params }) {
   const slug = idSlug(article.id, article.title);
   const canonicalUrl = `${SITE_URL}/articles/${slug}`;
   const image = absoluteImageUrl(article.coverImage?.variants?.articleCover?.url || articleBannerImage(article));
-  const description = article.summary || article.content?.substring(0, 160) || '';
+  const description = metaDescription(article);
 
   return {
     title: article.title,
@@ -74,7 +75,7 @@ export default async function ArticleDetailPage({ params }) {
         '@context': 'https://schema.org',
         '@type': 'Article',
         headline: article.title,
-        description: article.summary || article.content?.substring(0, 160) || '',
+        description: metaDescription(article),
         image: absoluteImageUrl(article.coverImage?.variants?.articleCover?.url || articleBannerImage(article)),
         datePublished: article.publishedAt || article.createdAt,
         dateModified: article.updatedAt || article.createdAt,
@@ -97,7 +98,7 @@ export default async function ArticleDetailPage({ params }) {
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
       )}
-      <ArticleDetailClient />
+      <ArticleDetailClient initialArticle={article} />
     </>
   );
 }

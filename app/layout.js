@@ -11,8 +11,8 @@ import localFont from 'next/font/local';
 
 const notoSans = localFont({
   src: [
-    { path: '../public/fonts/NotoSans-Regular.ttf', weight: '400', style: 'normal' },
-    { path: '../public/fonts/NotoSans-SemiBold.ttf', weight: '600', style: 'normal' },
+    { path: '../public/fonts/NotoSans-Regular.woff2', weight: '400', style: 'normal' },
+    { path: '../public/fonts/NotoSans-SemiBold.woff2', weight: '600', style: 'normal' },
   ],
   variable: '--font-noto-sans',
   display: 'swap',

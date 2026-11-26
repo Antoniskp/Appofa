@@ -21,20 +21,22 @@ import { idSlug } from '@/lib/utils/slugify';
 import VideoEmbed from '@/components/articles/VideoEmbed';
 import ReportButton from '@/components/ReportButton';
 import ShareModal from '@/components/ui/ShareModal';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import { formatDate } from '@/lib/utils/formatDate';
 import ArticleTaxonomyPills from '@/components/articles/ArticleTaxonomyPills';
 import RelatedArticles from '@/components/articles/RelatedArticles';
 
-export default function ArticleDetailPage() {
+export default function ArticleDetailPage({ initialArticle = null }) {
   const tArticles = useTranslations('articles');
   const tCommon = useTranslations('common');
+  const locale = useLocale();
   const params = useParams();
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
   const { addToast } = useToast();
   const { error: toastError } = useToast();
-  const { article, loading, error } = useFetchArticle(params.id);
+  const { article, loading, error } = useFetchArticle(params.id, initialArticle);
   const { canEditArticle } = usePermissions();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
@@ -153,7 +155,7 @@ export default function ArticleDetailPage() {
     }
   }, [article, params.id, router, pathname]);
 
-  if (loading) {
+  if (loading && !article) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <SkeletonLoader type="article" count={1} />
@@ -161,7 +163,7 @@ export default function ArticleDetailPage() {
     );
   }
 
-  if (error || !article) {
+  if (!article) {
     if (error) {
       toastError(error || tArticles('not_found'));
     }
@@ -233,13 +235,13 @@ export default function ArticleDetailPage() {
                 </div>
                 <span>•</span>
                 <div>
-                  <span>{tArticles('published_on')}: {new Date(article.createdAt).toLocaleDateString()}</span>
+                  <span>{tArticles('published_on')}: {formatDate(article.createdAt, locale)}</span>
                 </div>
                 {article.updatedAt !== article.createdAt && (
                   <>
                     <span>•</span>
                     <div>
-                      <span>{tArticles('updated_on')}: {new Date(article.updatedAt).toLocaleDateString()}</span>
+                      <span>{tArticles('updated_on')}: {formatDate(article.updatedAt, locale)}</span>
                     </div>
                   </>
                 )}

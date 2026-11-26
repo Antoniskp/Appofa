@@ -72,14 +72,32 @@ export default function PoliticalMapWidget({ homeLocationId, homeLocation }) {
     return () => media.removeEventListener('change', update);
   }, []);
 
+  // People are only shown once a district is chosen, so fetch them on first selection
+  // instead of on page load (the full MP roster is several hundred KB).
+  const peopleNeeded = Boolean(districtId);
+  const [peopleRequested, setPeopleRequested] = useState(false);
+  useEffect(() => { if (peopleNeeded) setPeopleRequested(true); }, [peopleNeeded]);
   useEffect(() => {
+    if (!peopleRequested) return undefined;
     let cancelled = false;
     const controller = new AbortController();
-    setRepresentatives(initialFeed); setCandidates(initialFeed); setBoundaryError(false);
+    setRepresentatives(initialFeed); setCandidates(initialFeed);
     loadParliamentarians().then(items => { if (!cancelled) setRepresentatives({ loading: false, error: false, items }); })
       .catch(() => { if (!cancelled) setRepresentatives({ loading: false, error: true, items: [] }); });
     loadPoliticalCandidates(controller.signal).then(items => { if (!cancelled) setCandidates({ loading: false, error: false, items }); })
       .catch(() => { if (!cancelled) setCandidates({ loading: false, error: true, items: [] }); });
+    return () => { cancelled = true; controller.abort(); };
+  }, [peopleRequested, retry]);
+
+  // District boundaries are only drawn when the map is visible (desktop, or opened on mobile).
+  const mapVisible = desktop || mapOpen;
+  const [mapRequested, setMapRequested] = useState(false);
+  useEffect(() => { if (mapVisible) setMapRequested(true); }, [mapVisible]);
+  useEffect(() => {
+    if (!mapRequested) return undefined;
+    let cancelled = false;
+    const controller = new AbortController();
+    setBoundaryError(false);
     fetch('/api/electoral-districts', { signal: controller.signal }).then(async response => {
       if (!response.ok) throw new Error('Boundaries unavailable');
       const body = await response.json();
@@ -87,7 +105,7 @@ export default function PoliticalMapWidget({ homeLocationId, homeLocation }) {
       if (!cancelled) setGeojson(body);
     }).catch(() => { if (!cancelled) setBoundaryError(true); });
     return () => { cancelled = true; controller.abort(); };
-  }, [retry]);
+  }, [mapRequested, retry]);
 
   const chooseDistrict = useCallback(value => {
     manualSelection.current = true; resolutionRequest.current += 1;

@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
-import { trackPageView, initGA, getGAMeasurementId } from '@/lib/analytics/google-analytics';
+import { trackPageView, initGA, revokeGA, getGAMeasurementId } from '@/lib/analytics/google-analytics';
 import { getGdprConsent } from '@/components/layout/CookieBanner';
 
 /**
@@ -16,18 +16,21 @@ function GoogleAnalyticsInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const measurementId = getGAMeasurementId();
-  const [analyticsConsent, setAnalyticsConsent] = useState(() => getGdprConsent()?.analytics ?? true);
+  const [analyticsConsent, setAnalyticsConsent] = useState(() => getGdprConsent()?.analytics ?? false);
 
   useEffect(() => {
-    const handler = (e) => setAnalyticsConsent(e.detail?.analytics ?? true);
+    const handler = (e) => setAnalyticsConsent(e.detail?.analytics ?? false);
     window.addEventListener('gdpr-consent-updated', handler);
     return () => window.removeEventListener('gdpr-consent-updated', handler);
   }, []);
 
-  // Initialize GA on mount
+  // Initialize GA only after opt-in; on withdrawal, deny storage and clear GA cookies
   useEffect(() => {
-    if (measurementId && analyticsConsent) {
+    if (!measurementId) return;
+    if (analyticsConsent) {
       initGA(measurementId);
+    } else {
+      revokeGA(measurementId);
     }
   }, [measurementId, analyticsConsent]);
 

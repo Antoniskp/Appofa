@@ -16,7 +16,7 @@ export function getGdprConsent() {
 
     return {
       necessary: true,
-      analytics: typeof parsed.analytics === 'boolean' ? parsed.analytics : true,
+      analytics: typeof parsed.analytics === 'boolean' ? parsed.analytics : false,
       functional: typeof parsed.functional === 'boolean' ? parsed.functional : false,
       timestamp: typeof parsed.timestamp === 'string' ? parsed.timestamp : new Date().toISOString(),
     };
@@ -41,13 +41,13 @@ export default function CookieBanner() {
   const t = useTranslations('gdpr');
   const [visible, setVisible] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
-  const [analytics, setAnalytics] = useState(true);
+  const [analytics, setAnalytics] = useState(false);
   const [functional, setFunctional] = useState(false);
 
   useEffect(() => {
     const existing = getGdprConsent();
     if (!existing) {
-      setAnalytics(true);
+      setAnalytics(false);
       setFunctional(false);
       setVisible(true);
     } else {
@@ -61,7 +61,7 @@ export default function CookieBanner() {
         setAnalytics(current.analytics);
         setFunctional(current.functional);
       } else {
-        setAnalytics(true);
+        setAnalytics(false);
         setFunctional(false);
       }
       setVisible(true);
