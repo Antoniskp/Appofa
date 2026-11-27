@@ -352,6 +352,13 @@ export default function PublicOfficialsSalariesPage() {
             </a>
           ))}
         </div>
+        <p className="text-sm text-gray-600 mt-4">
+          Θέλετε να ψάξετε αποφάσεις και αναθέσεις πιο εύκολα; Δείτε τα{' '}
+          <Link href="/citizen-help/civic-tools" className="text-blue-600 hover:underline">
+            Εργαλεία Πολιτών
+          </Link>{' '}
+          (MizAI, OpenCouncil κ.ά.).
+        </p>
       </section>
 
       <section>

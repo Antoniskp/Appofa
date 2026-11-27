@@ -15,6 +15,7 @@ import {
   ChartBarIcon,
   ComputerDesktopIcon,
   CurrencyEuroIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 import { StaticPageLayout } from '@/components/layout';
 
@@ -29,6 +30,13 @@ const categories = [
     pages: [
       { href: '/citizen-help/benefits', label: 'Επιδόματα', description: 'Δικαιούχοι, ποσά, αιτήσεις και προθεσμίες ανά παροχή', Icon: CurrencyEuroIcon },
       { href: '/calendar?category=benefits', label: 'Ημερολόγιο επιδομάτων', description: 'Επιβεβαιωμένες προθεσμίες αιτήσεων και ημερομηνίες παροχών', Icon: CalculatorIcon },
+    ],
+  },
+  {
+    title: '🔍 Διαφάνεια & Λογοδοσία',
+    pages: [
+      { href: '/citizen-help/civic-tools', label: 'Εργαλεία Πολιτών', description: 'MizAI, OpenCouncil, Vouliwatch, Διαύγεια — δείτε πώς αποφασίζει και ξοδεύει το Δημόσιο', Icon: MagnifyingGlassIcon },
+      { href: '/citizen-help/public-officials-salaries', label: 'Αμοιβές Αξιωματούχων', description: 'Μισθοί και αντιμισθίες αιρετών και αξιωματούχων', Icon: CurrencyEuroIcon },
     ],
   },
   {
