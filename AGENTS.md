@@ -7,3 +7,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## Local-only Git workflow
+
+Make and verify changes locally. Leave them unstaged for the user to review, commit, and push through the GitHub app.
+
+Only stage changes, create commits, push branches, open or merge pull requests, or deploy if the user explicitly requests that action for the current task.
