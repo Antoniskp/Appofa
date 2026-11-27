@@ -114,18 +114,27 @@ test('founding initiative signup returns to the signing interest form', async ({
   await page.getByRole('link', { name: documents.heroAction, exact: true }).click();
   await expect(page).toHaveURL(/\/founding-initiative#proclamation$/);
   const review = page.getByRole('region', { name: documents.title, exact: true });
-  await expect(review.getByText(documents.version.replace('{number}', '1'), { exact: false })).toHaveCount(3);
-  for (const key of ['proclamation', 'statement', 'statute']) {
+  const currentDocuments = [
+    ['proclamation', 'founding-proclamation', 2],
+    ['statement', 'founding-statement', 2],
+    ['statute', 'party-statute', 3],
+  ];
+  for (const [key, slug, version] of currentDocuments) {
     const name = documents.pdfLabel.replace('{title}', documents[key].title);
-    const draft = review.getByRole('link', { name, exact: true });
-    const href = await draft.getAttribute('href');
-    expect(href).toMatch(/^\/documents\/founding-initiative\/[a-z-]+-v1\.el\.pdf$/);
+    const heading = page.getByRole('heading', { name: documents[key].title, exact: true });
+    const card = review.getByRole('listitem').filter({ has: heading });
+    await expect(card.getByText(documents.version.replace('{number}', String(version)))).toBeVisible();
+    const href = `/documents/founding-initiative/${slug}-v${version}.el.pdf`;
+    await expect(card.getByRole('link', { name, exact: true })).toHaveAttribute('href', href);
     const pdf = await page.request.get(href);
     expect(pdf.ok()).toBe(true);
     expect(pdf.headers()['content-type']).toContain('application/pdf');
     expect((await pdf.body()).subarray(0, 5).toString()).toBe('%PDF-');
+    await card.getByText(documents.history, { exact: true }).click();
+    const previousVersion = version - 1;
+    const previousPdf = documents.versionPdf.replace('{number}', String(previousVersion));
+    await expect(card.getByRole('link', { name: previousPdf, exact: true })).toHaveAttribute('href', `/documents/founding-initiative/${slug}-v${previousVersion}.el.pdf`);
   }
-  await review.getByText(documents.history, { exact: true }).click();
   await expect(review.getByRole('link', { name: documents.olderDraft, exact: true })).toHaveAttribute('href', '/documents/founding-proclamation-review.el.pdf');
   await review.getByRole('link', { name: documents.feedbackAction, exact: true }).click();
   await expect(page).toHaveURL(/\/contact#contact-form$/);
