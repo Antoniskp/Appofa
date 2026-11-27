@@ -39,3 +39,6 @@ src/data/hero-settings.json
 .next-participation-webpack/
 .next-positions-build/
 .next-positions-webpack/
+
+# Versioned VPS releases and deployment lock
+/.deploy/

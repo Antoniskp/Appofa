@@ -14,6 +14,8 @@ jobs:
     name: Quality checks
     if: github.ref == 'refs/heads/main'
     uses: ./.github/workflows/quality.yml
+    with:
+      package_release: true
 
   deploy:
     name: Deploy to VPS
@@ -24,6 +26,12 @@ jobs:
       contents: read
 
     steps:
+      - name: Download tested release
+        uses: actions/download-artifact@v4
+        with:
+          name: appofa-release
+          path: ${{ runner.temp }}
+
       - name: Prepare SSH
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -88,5 +96,11 @@ jobs:
             -p "$VPS_PORT" \
             -o BatchMode=yes \
             -o ConnectTimeout=20 \
-            "$VPS_USER@$VPS_HOST" \
-            'cd /var/www/Appofa && git pull --ff-only origin main && SKIP_GIT_PULL=1 FAST_STARTUP=1 ./scripts/deploy.sh'
+            "$VPS_USER@$VPS_HOST" '
+              set -eu
+              incoming=$(mktemp -d)
+              trap '\''rm -rf -- "$incoming"'\'' EXIT
+              cat > "$incoming/release.tar.gz"
+              tar -xOzf "$incoming/release.tar.gz" ./scripts/deploy.sh > "$incoming/deploy.sh"
+              bash "$incoming/deploy.sh" "$incoming/release.tar.gz"
+            ' < "$RUNNER_TEMP/appofa-release.tar.gz"

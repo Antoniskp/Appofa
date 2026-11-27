@@ -562,83 +562,28 @@ See: https://expressjs.com/en/guide/behind-proxies.html
 
 ## Updating the Application
 
-### Standard Update Workflow
+Pushes to `main` run the Deploy workflow. It packages the Next.js build that passed browser tests together with the matching Git revision. The VPS unpacks the artifact and installs production dependencies in `/var/www/Appofa/.deploy/releases` while the current site serves traffic.
 
-For regular updates after pulling changes from GitHub:
+Before the first CI-built release, mirror any non-default frontend build configuration from the VPS in GitHub Actions repository variables. The supported names are `API_URL`, `SITE_URL`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_GA_MEASUREMENT_ID`, and `NEXT_PUBLIC_VAPID_PUBLIC_KEY`. Keep database credentials, signing keys, and other runtime secrets in the VPS environment. The deploy script checks configured build values before switching services.
 
-```bash
-cd /var/www/Appofa
+The short maintenance window starts when the script stops the two PM2 processes. Database migrations run in that window so the previous application version does not serve traffic against an incompatible schema. The script starts the new processes, checks both HTTP endpoints, and records the healthy release in `/var/www/Appofa/.deploy/current`. The VPS environment files and uploads are shared across releases.
 
-# Fetch and pull latest changes
-git fetch --all
-git checkout main
-git pull origin main
+If cutover fails, the script attempts to restart the previous release and reports whether its health checks pass. Database migrations are forward-only during deployment. If a schema change prevents the previous version from starting, recovery requires a compatible application fix or database restoration.
 
-# Install/update production dependencies only
-npm ci --omit=dev
+### Deploy a release artifact manually
 
-# Run database migrations (always run — safe to run multiple times)
-npm run migrate
-
-# Update environment variables if needed
-nano .env
-
-# Rebuild the frontend (required after any code or dependency changes)
-rm -rf .next
-NODE_ENV=production npm run frontend:build
-
-# Restart services
-pm2 restart newsapp-backend newsapp-frontend
-pm2 save
-```
-
-> **⚠️ Why migrations and a rebuild are always required:**
->
-> - **Migrations** create or alter database tables introduced by new pull requests. Skipping them leaves the backend without tables it expects, causing database errors or crashes.
-> - **Frontend rebuild** (`rm -rf .next` then `npm run frontend:build`) is required whenever code, components, or dependencies change — especially when the Next.js version is bumped. Serving a stale `.next` build after a version upgrade causes the frontend process to fail, which makes nginx return 502 for every page.
->
-> Use `scripts/deploy.sh` (which covers all these steps automatically) for a reliable one-command update.
-
-### Using deploy.sh
-
-**Always use `scripts/deploy.sh`** after pulling new code. Do not restart PM2 manually without rebuilding, as this can leave stale Next.js build artifacts causing "Failed to find Server Action" errors.
+Use the artifact from a successful Deploy workflow run. After downloading and unzipping the workflow artifact, transfer `appofa-release.tar.gz` to the VPS. Run the script shipped in that archive as the usual PM2 user.
 
 ```bash
-bash scripts/deploy.sh
+tar -xOzf appofa-release.tar.gz ./scripts/deploy.sh > appofa-deploy.sh
+bash appofa-deploy.sh appofa-release.tar.gz
 ```
 
-The script:
-1. Stops PM2 processes
-2. Pulls the latest code from Git (`main` branch)
-3. Installs/updates Node.js dependencies
-4. Runs database migrations
-5. **Cleans the `.next` build directory** (`rm -rf .next`) — prevents stale Server Action manifest errors
-6. Builds the Next.js frontend (`npm run frontend:build`)
-7. Restarts PM2 processes (`newsapp-backend`, `newsapp-frontend`)
+`APP_DIR` defaults to `/var/www/Appofa`. The backend and frontend ports default to `3000` and `3001`. Set `BACKEND_PORT` or `FRONTEND_PORT` when deploying with different ports. The existing optional seed scripts run when `RUN_SEEDS=1`.
 
-Available environment variables for the script:
+### Legacy in-place clean update
 
-```bash
-APP_DIR=/var/www/Appofa   # Application directory (default)
-BRANCH=main               # Git branch to deploy
-SKIP_GIT_PULL=0           # Set to 1 to skip git pull
-RUN_SEEDS=0               # Set to 1 to run database seeds
-FAST_STARTUP=0            # Set to 1 to skip npm ci when package-lock is unchanged
-```
-
-#### Why `.next` must be cleaned before rebuilding
-
-Next.js Server Actions are identified by a hash computed at build time. When the application is redeployed without cleaning the old `.next` directory, the running server may serve pages referencing Server Action hashes from the **previous** build. Any browser tab open before the redeploy will send requests for those old hashes, causing:
-
-```
-Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
-```
-
-This also causes the PM2 `newsapp-frontend` process to restart repeatedly (potentially hundreds of times). Removing `.next` before every build ensures a clean, consistent manifest.
-
-### Clean Update Workflow
-
-For major updates, dependency changes, or when troubleshooting issues:
+Use this procedure for legacy installations that still run from `/var/www/Appofa`. For CI-built releases, deploy a release artifact using the procedure above.
 
 **Step 1: Stop running services**
 ```bash
@@ -734,8 +679,6 @@ Use the clean update workflow when:
 - You're experiencing issues with stale build artifacts
 - You want to ensure a completely fresh deployment
 - Troubleshooting deployment issues
-
-For simple code changes without dependency or configuration updates, the standard update workflow is sufficient.
 
 ### Upgrading from Old Single-Process Deployment
 
@@ -892,7 +835,7 @@ pm2 save
 
 ### Fix 5 — Full clean redeploy
 
-When in doubt, run the complete clean update sequence (mirrors what `scripts/deploy.sh` does):
+For legacy in-place installations, use the clean update sequence below. For CI-built releases, rerun the Deploy workflow or deploy a saved release artifact.
 
 ```bash
 cd /var/www/Appofa

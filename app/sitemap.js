@@ -2,7 +2,8 @@ import { idSlug } from '@/lib/utils/slugify';
 
 import { SITE_URL } from '@/lib/seo';
 
-export const revalidate = 3600;
+// The CI build has no production API. Render on demand and cache the individual fetches.
+export const revalidate = 0;
 const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 const STATIC_ROUTES = [

@@ -2,6 +2,11 @@ name: Quality
 
 on:
   workflow_call:
+    inputs:
+      package_release:
+        description: Package the tested frontend and matching source for production
+        type: boolean
+        default: false
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -39,7 +44,35 @@ jobs:
           restore-keys: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
 
       - name: Build frontend
-        run: npm run frontend:build
+        env:
+          PACKAGE_RELEASE: ${{ inputs.package_release }}
+          API_URL: ${{ inputs.package_release && vars.API_URL || '' }}
+          SITE_URL: ${{ inputs.package_release && vars.SITE_URL || '' }}
+          NEXT_PUBLIC_API_URL: ${{ inputs.package_release && vars.NEXT_PUBLIC_API_URL || '' }}
+          NEXT_PUBLIC_APP_URL: ${{ inputs.package_release && vars.NEXT_PUBLIC_APP_URL || '' }}
+          NEXT_PUBLIC_SITE_URL: ${{ inputs.package_release && vars.NEXT_PUBLIC_SITE_URL || '' }}
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ inputs.package_release && vars.NEXT_PUBLIC_GA_MEASUREMENT_ID || '' }}
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ inputs.package_release && vars.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '' }}
+        run: |
+          npm run frontend:build
+          if [[ "$PACKAGE_RELEASE" == true ]]; then
+            node > .next/appofa-release.json <<'NODE'
+          const buildEnv = Object.fromEntries(Object.entries(process.env).filter(([name]) =>
+            name.startsWith('NEXT_PUBLIC_') || name === 'API_URL' || name === 'SITE_URL'
+          ));
+          console.log(JSON.stringify({ nextVersion: require('next/package.json').version, buildEnv }));
+          NODE
+          fi
+
+      - name: Package tested release
+        if: inputs.package_release
+        shell: bash
+        run: |
+          release_dir=$(mktemp -d)
+          trap 'rm -rf -- "$release_dir"' EXIT
+          git archive HEAD | tar -x -C "$release_dir"
+          tar --exclude=.next/cache -czf "$RUNNER_TEMP/appofa-release.tar.gz" \
+            -C "$release_dir" . -C "$GITHUB_WORKSPACE" .next
 
       - name: Cache Playwright browsers
         id: playwright-cache
@@ -58,6 +91,16 @@ jobs:
 
       - name: Browser journeys (desktop and mobile)
         run: npm run test:e2e
+
+      - name: Upload tested release
+        if: inputs.package_release
+        uses: actions/upload-artifact@v4
+        with:
+          name: appofa-release
+          path: ${{ runner.temp }}/appofa-release.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
 
       - name: Browser failure artifacts
         if: failure()

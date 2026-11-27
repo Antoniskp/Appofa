@@ -1,30 +1,154 @@
 #!/bin/bash
+set -euo pipefail
 
-# Deployment script for Appofa News Application
-# This script updates the application to the latest version from Git
-
-set -e  # Exit on any error
-
-echo "🚀 Starting deployment..."
-
-# Configuration
-APP_DIR="${APP_DIR:-/var/www/Appofa}"
-BRANCH="${BRANCH:-main}"
-SKIP_GIT_PULL="${SKIP_GIT_PULL:-0}"
-RUN_SEEDS="${RUN_SEEDS:-0}"
-FAST_STARTUP="${FAST_STARTUP:-0}"
-LOCK_HASH_FILE=".last-package-lock.sha256"
-
-# Fallback for development/container environments
-if [ ! -d "$APP_DIR" ]; then
-	APP_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [[ $# -ne 1 || ! -f "$1" ]]; then
+  echo 'Usage: bash scripts/deploy.sh <appofa-release.tar.gz>' >&2
+  exit 2
 fi
 
-# Navigate to application directory
-cd "$APP_DIR"
+ARCHIVE=$(realpath -- "$1")
+APP_DIR=$(cd "${APP_DIR:-/var/www/Appofa}" && pwd -P)
+DEPLOY_DIR="$APP_DIR/.deploy"
+RELEASES_DIR="$DEPLOY_DIR/releases"
+CURRENT="$DEPLOY_DIR/current"
+BACKEND_PORT=${BACKEND_PORT:-3000}
+FRONTEND_PORT=${FRONTEND_PORT:-3001}
+export NODE_ENV=production
 
-# Keep the article type compatible before starting the new application code.
-# Use the application's database owner; no migration or article seed file is needed.
+command -v pm2 >/dev/null
+mkdir -p "$RELEASES_DIR" "$APP_DIR/uploads"
+exec 9>"$DEPLOY_DIR/deploy.lock"
+flock 9
+
+previous=''
+if [[ -L "$CURRENT" ]]; then
+  previous=$(realpath -e -- "$CURRENT")
+  if [[ "$previous" != "$RELEASES_DIR"/release.* || ! -s "$previous/.next/BUILD_ID" ]]; then
+    echo "Invalid active release: $previous" >&2
+    exit 1
+  fi
+elif [[ -s "$APP_DIR/.next/BUILD_ID" && -f "$APP_DIR/node_modules/next/package.json" ]]; then
+  # First release deployment can roll back to the existing in-place install.
+  previous=$APP_DIR
+elif pm2 describe newsapp-backend >/dev/null 2>&1 || pm2 describe newsapp-frontend >/dev/null 2>&1; then
+  echo 'Existing PM2 services have no usable release to restore.' >&2
+  exit 1
+fi
+
+release=$(mktemp -d "$RELEASES_DIR/release.XXXXXXXX")
+next_link="$DEPLOY_DIR/.current-${release##*/}"
+cutover_started=0
+
+remove_services() {
+  local service
+  for service in newsapp-frontend newsapp-backend; do
+    if pm2 describe "$service" >/dev/null 2>&1; then
+      pm2 delete "$service" || return 1
+    fi
+  done
+}
+
+start_services() (
+  cd "$1" || return 1
+  PORT="$BACKEND_PORT" pm2 start src/index.js --name newsapp-backend || return 1
+  if [[ "$1" == "$APP_DIR" ]]; then
+    PORT="$FRONTEND_PORT" pm2 start npm --name newsapp-frontend -- run frontend:start
+  else
+    NEXT_DIST_DIR=.next pm2 start node_modules/next/dist/bin/next \
+      --name newsapp-frontend -- start -p "$FRONTEND_PORT"
+  fi
+)
+
+wait_for_services() {
+  local deadline=$((SECONDS + 30))
+  until curl --fail --silent --max-time 2 --output /dev/null "http://127.0.0.1:$BACKEND_PORT/api/health" \
+    && curl --fail --silent --max-time 2 --output /dev/null "http://127.0.0.1:$FRONTEND_PORT/"; do
+    if (( SECONDS >= deadline )); then
+      echo 'Deployment health checks timed out.' >&2
+      return 1
+    fi
+    sleep 1
+  done
+}
+
+cleanup() {
+  local status=$?
+  rm -f -- "$next_link"
+  if (( status == 0 )) || [[ $(readlink -- "$CURRENT") == "$release" ]]; then
+    return
+  fi
+  cd "$APP_DIR" || return
+  if (( cutover_started )); then
+    if [[ -n "$previous" ]]; then
+      echo "Cutover failed. Restoring $previous." >&2
+      if ! (remove_services && start_services "$previous" && wait_for_services && pm2 save); then
+        echo 'Automatic recovery failed. Check PM2 logs and database migration status.' >&2
+        return
+      fi
+      echo "Restored healthy release: $previous" >&2
+    elif ! (remove_services && pm2 save --force); then
+      echo 'Could not clear the failed release from PM2.' >&2
+      return
+    fi
+  fi
+  rm -rf -- "$release"
+}
+
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+echo "Preparing $release while the active release serves traffic."
+tar -xzf "$ARCHIVE" -C "$release" --no-same-owner
+cd "$release"
+if [[ ! -s .next/BUILD_ID || ! -s .next/routes-manifest.json || ! -d .next/static || ! -s .next/appofa-release.json ]]; then
+  echo 'The release is missing the prebuilt Next.js application.' >&2
+  exit 1
+fi
+
+for env_file in .env .env.local .env.production .env.production.local; do
+  if [[ -f "$APP_DIR/$env_file" ]]; then
+    ln -s "$APP_DIR/$env_file" "$env_file"
+  fi
+done
+ln -s "$APP_DIR/uploads" uploads
+# Keep optimized images across releases and during a first-deploy rollback.
+mkdir -p .next/cache "$APP_DIR/.next/cache/images"
+ln -s "$APP_DIR/.next/cache/images" .next/cache/images
+
+npm ci --omit=dev
+node <<'NODE'
+const { loadEnvConfig } = require('@next/env');
+const { validateProductionConfig } = require('./src/config/validateProductionConfig');
+const { nextVersion, buildEnv } = require('./.next/appofa-release.json');
+if (nextVersion !== require('next/package.json').version) {
+  throw new Error('The installed Next.js version differs from the CI build.');
+}
+
+const { parsed } = require('dotenv').config({ processEnv: {}, quiet: true });
+validateProductionConfig({ ...parsed, ...process.env });
+loadEnvConfig(process.cwd());
+const defaults = {
+  API_URL: buildEnv.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+  NEXT_PUBLIC_API_URL: 'http://localhost:3000',
+  SITE_URL: 'https://appofasi.gr',
+  NEXT_PUBLIC_APP_URL: 'https://appofasi.gr',
+  NEXT_PUBLIC_SITE_URL: 'https://appofasi.gr',
+};
+const names = [...Object.keys(defaults), 'NEXT_PUBLIC_GA_MEASUREMENT_ID', 'NEXT_PUBLIC_VAPID_PUBLIC_KEY'];
+const mismatched = names.filter(name =>
+  process.env[name] && process.env[name] !== (buildEnv[name] || defaults[name])
+);
+if (mismatched.length) {
+  throw new Error(`Match these GitHub Actions build variables to the VPS: ${mismatched.join(', ')}`);
+}
+NODE
+
+# Migrations may be incompatible with the previous application version.
+ln -s "$release" "$next_link"
+cutover_started=1
+remove_services
+npm run migrate
 node <<'NODE'
 const db = require('./src/config/database');
 db.query(`ALTER TYPE "enum_Articles_type" ADD VALUE IF NOT EXISTS 'analysis'`)
@@ -33,95 +157,21 @@ db.query(`ALTER TYPE "enum_Articles_type" ADD VALUE IF NOT EXISTS 'analysis'`)
   .finally(() => db.close());
 NODE
 
-echo "📦 Stopping running services..."
-if command -v pm2 >/dev/null 2>&1; then
-	pm2 stop newsapp-backend newsapp-frontend || true
-else
-	echo "ℹ️  PM2 not installed; skipping stop"
+if [[ ${RUN_SEEDS:-0} == 1 ]]; then
+  npm run seed:locations
+  npm run seed
 fi
 
-if [ "$SKIP_GIT_PULL" != "1" ]; then
-	echo "📥 Fetching latest changes from Git..."
-	git fetch --all
-	git checkout "$BRANCH"
-	git pull origin "$BRANCH"
-else
-	echo "⏭️  Skipping Git fetch/pull (SKIP_GIT_PULL=1)"
-fi
+start_services "$release"
+wait_for_services
+pm2 save
+mv -Tf -- "$next_link" "$CURRENT"
+cutover_started=0
 
-NEEDS_NPM_CI=1
-if [ "$FAST_STARTUP" = "1" ] && [ -d node_modules ] && [ -f package-lock.json ]; then
-	CURRENT_LOCK_HASH="$(sha256sum package-lock.json | awk '{print $1}')"
-	SAVED_LOCK_HASH=""
-
-	if [ -f "$LOCK_HASH_FILE" ]; then
-		SAVED_LOCK_HASH="$(cat "$LOCK_HASH_FILE")"
-	fi
-
-	if [ "$CURRENT_LOCK_HASH" = "$SAVED_LOCK_HASH" ]; then
-		NEEDS_NPM_CI=0
-		echo "⏭️  Skipping npm ci (FAST_STARTUP=1 and package-lock.json unchanged)"
-	else
-		echo "🔄 package-lock.json changed (or hash missing); running npm ci"
-	fi
-fi
-
-if [ "$NEEDS_NPM_CI" = "1" ]; then
-	echo "📦 Installing production dependencies..."
-	npm ci --omit=dev
-fi
-
-if [ -f package-lock.json ]; then
-	sha256sum package-lock.json | awk '{print $1}' > "$LOCK_HASH_FILE"
-fi
-
-echo "🔄 Running database migrations..."
-npm run migrate
-
-if [ "$RUN_SEEDS" = "1" ]; then
-	echo "🌱 Running database seeds..."
-	npm run seed:locations
-	npm run seed
-fi
-
-echo "🧹 Cleaning build artifacts..."
-# Keep Next's image/compilation caches across deploys. Deleting optimized photos
-# forces the frontend to encode every size again as visitors request them.
-if [ -d .next ]; then
-	find .next -mindepth 1 -maxdepth 1 ! -name cache -exec rm -rf -- {} +
-fi
-
-echo "🏗️  Building frontend..."
-NODE_ENV=production npm run frontend:build
-
-echo "♻️  Restarting services with PM2..."
-if command -v pm2 >/dev/null 2>&1; then
-	if pm2 describe newsapp-backend >/dev/null 2>&1; then
-		pm2 restart newsapp-backend
-	else
-		pm2 start src/index.js --name newsapp-backend
-	fi
-
-	if pm2 describe newsapp-frontend >/dev/null 2>&1; then
-		pm2 restart newsapp-frontend
-	else
-		pm2 start npm --name newsapp-frontend -- run frontend:start
-	fi
-
-	pm2 save
-else
-	echo "⚠️  PM2 not installed; backend/frontend were not started"
-fi
-
-echo "✅ Deployment completed successfully!"
-echo ""
-echo "Application status:"
-if command -v pm2 >/dev/null 2>&1; then
-	pm2 status
-else
-	echo "PM2 not installed"
-fi
-
-# Uncomment if nginx config changed
-# echo "🔄 Reloading nginx..."
-# sudo nginx -t && sudo systemctl reload nginx
+# Retain the active and immediately previous releases for rollback.
+for old_release in "$RELEASES_DIR"/release.*; do
+  if [[ -d "$old_release" && ! -L "$old_release" && "$old_release" != "$release" && "$old_release" != "$previous" ]]; then
+    rm -rf -- "$old_release" || echo "Could not prune $old_release." >&2
+  fi
+done
+echo "Deployment is healthy: $release"
