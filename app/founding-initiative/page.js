@@ -12,13 +12,16 @@ const ministerialAppointmentsUrl = 'https://www.hellenicparliament.gr/Vouli-ton-
 const founderName = 'Αντώνιος Παναγιωτόπουλος';
 const foundingDocuments = [
   { key: 'proclamation', versions: [
+    { number: 2, date: '2026-11-27', url: '/documents/founding-initiative/founding-proclamation-v2.el.pdf' },
     { number: 1, date: '2026-11-27', url: '/documents/founding-initiative/founding-proclamation-v1.el.pdf' },
     { url: '/documents/founding-proclamation-review.el.pdf' },
   ] },
   { key: 'statement', versions: [
+    { number: 2, date: '2026-11-27', url: '/documents/founding-initiative/founding-statement-v2.el.pdf' },
     { number: 1, date: '2026-11-27', url: '/documents/founding-initiative/founding-statement-v1.el.pdf' },
   ] },
   { key: 'statute', versions: [
+    { number: 3, date: '2026-11-27', url: '/documents/founding-initiative/party-statute-v3.el.pdf' },
     { number: 2, date: '2026-11-27', url: '/documents/founding-initiative/party-statute-v2.el.pdf' },
     { number: 1, date: '2026-11-27', url: '/documents/founding-initiative/party-statute-v1.el.pdf' },
   ] },

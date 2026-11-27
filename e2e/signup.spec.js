@@ -115,28 +115,27 @@ test('founding initiative signup returns to the signing interest form', async ({
   await expect(page).toHaveURL(/\/founding-initiative#proclamation$/);
   const review = page.getByRole('region', { name: documents.title, exact: true });
   const currentDocuments = [
-    ['proclamation', 1, 'founding-proclamation-v1.el.pdf'],
-    ['statement', 1, 'founding-statement-v1.el.pdf'],
-    ['statute', 2, 'party-statute-v2.el.pdf'],
+    ['proclamation', 'founding-proclamation', 2],
+    ['statement', 'founding-statement', 2],
+    ['statute', 'party-statute', 3],
   ];
-  for (const [key, version, filename] of currentDocuments) {
+  for (const [key, slug, version] of currentDocuments) {
     const name = documents.pdfLabel.replace('{title}', documents[key].title);
     const heading = page.getByRole('heading', { name: documents[key].title, exact: true });
     const card = review.getByRole('listitem').filter({ has: heading });
     await expect(card.getByText(documents.version.replace('{number}', String(version)))).toBeVisible();
-    const href = `/documents/founding-initiative/${filename}`;
+    const href = `/documents/founding-initiative/${slug}-v${version}.el.pdf`;
     await expect(card.getByRole('link', { name, exact: true })).toHaveAttribute('href', href);
     const pdf = await page.request.get(href);
     expect(pdf.ok()).toBe(true);
     expect(pdf.headers()['content-type']).toContain('application/pdf');
     expect((await pdf.body()).subarray(0, 5).toString()).toBe('%PDF-');
+    await card.getByText(documents.history, { exact: true }).click();
+    const previousVersion = version - 1;
+    const previousPdf = documents.versionPdf.replace('{number}', String(previousVersion));
+    await expect(card.getByRole('link', { name: previousPdf, exact: true })).toHaveAttribute('href', `/documents/founding-initiative/${slug}-v${previousVersion}.el.pdf`);
   }
-  const proclamationCard = review.getByRole('listitem').filter({ has: page.getByRole('heading', { name: documents.proclamation.title, exact: true }) });
-  await proclamationCard.getByText(documents.history, { exact: true }).click();
   await expect(review.getByRole('link', { name: documents.olderDraft, exact: true })).toHaveAttribute('href', '/documents/founding-proclamation-review.el.pdf');
-  const statuteCard = review.getByRole('listitem').filter({ has: page.getByRole('heading', { name: documents.statute.title, exact: true }) });
-  await statuteCard.getByText(documents.history, { exact: true }).click();
-  await expect(statuteCard.getByRole('link', { name: documents.versionPdf.replace('{number}', '1'), exact: true })).toHaveAttribute('href', '/documents/founding-initiative/party-statute-v1.el.pdf');
   await review.getByRole('link', { name: documents.feedbackAction, exact: true }).click();
   await expect(page).toHaveURL(/\/contact#contact-form$/);
   await expect(page.locator('#contact-form [name="subject"]')).toBeVisible();
