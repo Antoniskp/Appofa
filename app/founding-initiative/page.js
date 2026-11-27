@@ -19,6 +19,7 @@ const foundingDocuments = [
     { number: 1, date: '2026-11-27', url: '/documents/founding-initiative/founding-statement-v1.el.pdf' },
   ] },
   { key: 'statute', versions: [
+    { number: 2, date: '2026-11-27', url: '/documents/founding-initiative/party-statute-v2.el.pdf' },
     { number: 1, date: '2026-11-27', url: '/documents/founding-initiative/party-statute-v1.el.pdf' },
   ] },
 ];
