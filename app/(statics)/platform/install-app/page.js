@@ -4,6 +4,7 @@ import {
   DevicePhoneMobileIcon,
   BoltIcon,
   CloudArrowDownIcon,
+  BellAlertIcon,
 } from '@heroicons/react/24/outline';
 import { StaticPageLayout } from '@/components/layout';
 
@@ -56,6 +57,14 @@ const benefits = [
     description:
       'Δεν καταλαμβάνει χώρο από το κατάστημα εφαρμογών. Πάντα ενημερωμένο αυτόματα.',
   },
+  {
+    Icon: BellAlertIcon,
+    iconBg: 'bg-red-100',
+    iconColor: 'text-red-600',
+    title: 'Ειδοποιήσεις push',
+    description:
+      'Μαθαίνεις αμέσως για νέες ψηφοφορίες, απαντήσεις και ό,τι σε αφορά — ακόμα κι όταν η εφαρμογή είναι κλειστή.',
+  },
 ];
 
 const faqs = [
@@ -67,7 +76,7 @@ const faqs = [
   {
     question: 'Θα λαμβάνω ειδοποιήσεις;',
     answer:
-      'Αυτή τη στιγμή δεν στέλνουμε push ειδοποιήσεις. Αυτό μπορεί να αλλάξει μελλοντικά.',
+      'Ναι, αν το επιθυμείς. Ενεργοποίησε τις ειδοποιήσεις push από τη σελίδα Ειδοποιήσεων ή από τις Ρυθμίσεις του προφίλ σου. Στο iPhone/iPad οι ειδοποιήσεις push λειτουργούν μόνο αφού προσθέσεις το Appofasi στην αρχική οθόνη (iOS 16.4 ή νεότερο).',
   },
   {
     question: 'Πώς το αφαιρώ;',
@@ -109,7 +118,7 @@ export default function InstallAppPage() {
       {/* Benefits */}
       <section>
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Γιατί να το κάνεις αυτό;</h2>
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 gap-4">
           {benefits.map(({ Icon, iconBg, iconColor, title, description }) => (
             <div
               key={title}
