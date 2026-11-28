@@ -456,7 +456,9 @@ describe('Frontend smoke tests', () => {
     const { container, root } = await renderPage(LoginPage);
 
     expect(container.textContent).toContain('Σύνδεση στον λογαριασμό σας');
-    expect(container.textContent).toContain('Ή συνεχίστε με');
+    // Email-code sign-in comes first; the password form stays available below it.
+    expect(container.querySelector('input[name="code"], input[name="email"]')).toBeTruthy();
+    expect(container.querySelector('form[data-auth-form="password"] input[name="password"]')).toBeTruthy();
 
     await act(async () => {
       root.unmount();
@@ -502,9 +504,11 @@ describe('Frontend smoke tests', () => {
     const RegisterPage = require('../app/register/page').default;
     const { container, root } = await renderPage(RegisterPage);
 
-    const emailInput = container.querySelector('input[name="email"]');
-    const passwordInput = container.querySelector('input[name="password"]');
-    const gdprConsent = container.querySelector('input[name="gdpr_consent"]');
+    // The email-code form comes first and has its own email field, so target the password form.
+    const passwordForm = container.querySelector('form[data-auth-form="password"]');
+    const emailInput = passwordForm.querySelector('input[name="email"]');
+    const passwordInput = passwordForm.querySelector('input[name="password"]');
+    const gdprConsent = passwordForm.querySelector('input[name="gdpr_consent"]');
 
     await act(async () => {
       setInputValue(emailInput, 'shortpass@test.com');
@@ -515,14 +519,14 @@ describe('Frontend smoke tests', () => {
     });
 
     await act(async () => {
-      const submitButton = Array.from(container.querySelectorAll('button')).find(
+      const submitButton = Array.from(passwordForm.querySelectorAll('button')).find(
         (button) => button.textContent.includes('Δημιουργία λογαριασμού')
       );
       submitButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       await flushPromises();
     });
 
-    expect(container.querySelector('[role="alert"]').textContent).toContain('τουλάχιστον');
+    expect(passwordForm.querySelector('[role="alert"]').textContent).toContain('τουλάχιστον');
     expect(document.activeElement).toBe(passwordInput);
     expect(registerMock).not.toHaveBeenCalled();
 
@@ -542,14 +546,15 @@ describe('Frontend smoke tests', () => {
     useAuth.mockReturnValue(buildAuthState({ register: registerMock }));
     const RegisterPage = require('../app/register/page').default;
     const { container, root } = await renderPage(RegisterPage);
+    const passwordForm = container.querySelector('form[data-auth-form="password"]');
     await act(async () => {
-      setInputValue(container.querySelector('input[name="email"]'), 'member@example.com');
-      setInputValue(container.querySelector('input[name="password"]'), 'secret123');
-      setCheckboxValue(container.querySelector('input[name="gdpr_consent"]'), true);
+      setInputValue(passwordForm.querySelector('input[name="email"]'), 'member@example.com');
+      setInputValue(passwordForm.querySelector('input[name="password"]'), 'secret123');
+      setCheckboxValue(passwordForm.querySelector('input[name="gdpr_consent"]'), true);
       await flushPromises();
     });
     await act(async () => {
-      container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      passwordForm.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
       await flushPromises();
     });
     expect(registerMock).toHaveBeenCalledTimes(1);
