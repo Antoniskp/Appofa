@@ -1,7 +1,7 @@
 /* global document, window */
 const { test, expect } = require('@playwright/test');
 const t = require('../messages/en.json').positions;
-const auth = require('../messages/en.json').auth;
+const { submitPasswordLogin } = require('./helpers/password-auth');
 
 const voteButton = (card, label, count) => card.getByRole('button', {
   name: `${label} ${count}`,
@@ -15,9 +15,7 @@ test.beforeEach(async ({ context }) => {
 
 async function login(page, email) {
   await page.goto('/login');
-  await page.locator('[name="email"]:visible').fill(email);
-  await page.locator('[name="password"]:visible').fill('TestPassword123!');
-  await page.getByRole('button', { name: auth.submit_login, exact: true }).click();
+  await submitPasswordLogin(page, email);
   await expect(page).not.toHaveURL(/\/login/);
 }
 async function dismissCookies(page) {

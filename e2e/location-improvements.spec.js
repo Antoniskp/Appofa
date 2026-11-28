@@ -1,19 +1,12 @@
 /* global document, window */
 const { test, expect } = require('@playwright/test');
 const t = require('../messages/en.json').locationImprovements;
-const auth = require('../messages/en.json').auth;
+const { submitPasswordLogin } = require('./helpers/password-auth');
 
 test.beforeEach(async ({ context }) => {
   await context.addCookies([{ name: 'NEXT_LOCALE', value: 'en', domain: '127.0.0.1', path: '/' }]);
   await context.addInitScript(() => localStorage.setItem('appofa_country_entry_decision_v1', 'stay'));
 });
-
-async function login(page, email) {
-  const loginForm = page.getByRole('main');
-  await loginForm.locator('[name="email"]').fill(email);
-  await loginForm.locator('[name="password"]').fill('TestPassword123!');
-  await loginForm.getByRole('button', { name: auth.submit_login, exact: true }).click();
-}
 
 test('guest draft survives sign-in, is reviewed, and appears on the location page', async ({ page, browser }, testInfo) => {
   await page.goto('/locations/test-municipality');
@@ -26,7 +19,7 @@ test('guest draft survives sign-in, is reviewed, and appears on the location pag
   await page.screenshot({ path: testInfo.outputPath('contribution-form.png'), fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByRole('link', { name: t.signIn }).click();
-  await login(page, 'contributor@example.test');
+  await submitPasswordLogin(page, 'contributor@example.test');
   await expect(page).toHaveURL(/\/locations\/test-municipality\/improve$/);
   await expect(page.getByLabel(t.proposed, { exact: true })).toHaveValue(description);
   await page.getByRole('button', { name: t.submit, exact: true }).click();
@@ -40,7 +33,7 @@ test('guest draft survives sign-in, is reviewed, and appears on the location pag
     await adminContext.addInitScript(() => localStorage.setItem('appofa_country_entry_decision_v1', 'stay'));
     const adminPage = await adminContext.newPage();
     await adminPage.goto('http://127.0.0.1:3101/login');
-    await login(adminPage, 'author@example.test');
+    await submitPasswordLogin(adminPage, 'author@example.test');
     await expect(adminPage).not.toHaveURL(/\/login/);
     await adminPage.goto('http://127.0.0.1:3101/locations/test-municipality/improve');
     await adminPage.getByRole('button', { name: t.review, exact: true }).click();

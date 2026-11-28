@@ -2,6 +2,7 @@
 const { test, expect } = require('@playwright/test');
 const en = require('../messages/en.json');
 const el = require('../messages/el.json');
+const { openPasswordForm } = require('./helpers/password-auth');
 
 test.beforeEach(async ({ context }) => {
   await context.addCookies([{ name: 'NEXT_LOCALE', value: 'en', domain: '127.0.0.1', path: '/' }]);
@@ -12,10 +13,11 @@ test.beforeEach(async ({ context }) => {
 });
 
 async function createAccount(page, suffix, messages = en) {
-  await page.locator('[name="email"]').fill(`signup-${suffix}-${Date.now()}@example.test`);
-  await page.locator('[name="password"]').fill('Password123!');
-  await page.locator('[name="gdpr_consent"]').check();
-  await page.getByRole('button', { name: messages.auth.submit_register, exact: true }).click();
+  const form = await openPasswordForm(page, messages.auth.register_with_password);
+  await form.locator('[name="email"]').fill(`signup-${suffix}-${Date.now()}@example.test`);
+  await form.locator('[name="password"]').fill('Password123!');
+  await form.locator('[name="gdpr_consent"]').check();
+  await form.getByRole('button', { name: messages.auth.submit_register, exact: true }).click();
 }
 
 // The location page swaps the numeric id for its slug as soon as it loads,
@@ -28,15 +30,19 @@ test('signup validates fields, confirms account creation and skips to the homepa
   await page.goto('/register');
   await expect(page.locator('[name="username"], [name="confirmPassword"], [name="gdpr_marketing"]')).toHaveCount(0);
   await expect(page.getByRole('navigation')).toHaveCount(0);
-  await page.getByRole('button', { name: en.auth.submit_register, exact: true }).click();
-  await expect(page.locator('[name="email"]')).toBeFocused();
-  await expect(page.getByText(en.auth.email_invalid, { exact: true })).toBeVisible();
-  await page.locator('[name="email"]').fill(`signup-${Date.now()}@example.test`);
-  await page.locator('[name="password"]').fill('short');
-  await page.getByRole('button', { name: en.auth.submit_register, exact: true }).click();
-  await expect(page.locator('[name="password"]')).toBeFocused();
-  await page.getByRole('button', { name: en.auth.show_password, exact: true }).click();
-  await expect(page.locator('[name="password"]')).toHaveAttribute('type', 'text');
+  const form = await openPasswordForm(page, en.auth.register_with_password);
+  const submit = form.getByRole('button', { name: en.auth.submit_register, exact: true });
+  const email = form.locator('[name="email"]');
+  const password = form.locator('[name="password"]');
+  await submit.click();
+  await expect(email).toBeFocused();
+  await expect(form.getByText(en.auth.email_invalid, { exact: true })).toBeVisible();
+  await email.fill(`signup-${Date.now()}@example.test`);
+  await password.fill('short');
+  await submit.click();
+  await expect(password).toBeFocused();
+  await form.getByRole('button', { name: en.auth.show_password, exact: true }).click();
+  await expect(password).toHaveAttribute('type', 'text');
   await page.screenshot({ path: testInfo.outputPath('signup-form.png'), fullPage: true });
   await createAccount(page, 'skip');
   await expect(page).toHaveURL(/\/onboarding$/);
@@ -57,6 +63,20 @@ test('signup validates fields, confirms account creation and skips to the homepa
   expect(onboarding.data.onboarding.onboardingCompletedAt).toBeTruthy();
   expect(browserErrors).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test('password sign-in keeps the form open while correcting credentials', async ({ page }) => {
+  await page.goto('/login');
+  const form = await openPasswordForm(page, en.auth.use_password_instead);
+  const password = form.locator('[name="password"]');
+  const submit = form.getByRole('button', { name: en.auth.submit_login, exact: true });
+  await form.locator('[name="email"]').fill('author@example.test');
+  await password.fill('WrongPassword123!');
+  await submit.click();
+  await expect(page.getByRole('main').getByRole('alert')).toContainText(/email or password/i);
+  await password.fill('TestPassword123!');
+  await submit.click();
+  await expect(page).toHaveURL('/');
 });
 
 test('signup can correct an email and save a location in Greek', async ({ page, context }, testInfo) => {

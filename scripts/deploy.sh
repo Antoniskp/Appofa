@@ -112,12 +112,9 @@ for env_file in .env .env.local .env.production .env.production.local; do
   fi
 done
 ln -s "$APP_DIR/uploads" uploads
-# Keep optimized images across releases and during a first-deploy rollback.
-mkdir -p .next/cache "$APP_DIR/.next/cache/images"
-ln -s "$APP_DIR/.next/cache/images" .next/cache/images
 
 npm ci --omit=dev
-node <<'NODE'
+mismatched_build_vars=$(node <<'NODE'
 const { loadEnvConfig } = require('@next/env');
 const { validateProductionConfig } = require('./src/config/validateProductionConfig');
 const { nextVersion, buildEnv } = require('./.next/appofa-release.json');
@@ -128,21 +125,27 @@ if (nextVersion !== require('next/package.json').version) {
 const { parsed } = require('dotenv').config({ processEnv: {}, quiet: true });
 validateProductionConfig({ ...parsed, ...process.env });
 loadEnvConfig(process.cwd());
-const defaults = {
-  API_URL: buildEnv.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
-  NEXT_PUBLIC_API_URL: 'http://localhost:3000',
-  SITE_URL: 'https://appofasi.gr',
-  NEXT_PUBLIC_APP_URL: 'https://appofasi.gr',
-  NEXT_PUBLIC_SITE_URL: 'https://appofasi.gr',
-};
-const names = [...Object.keys(defaults), 'NEXT_PUBLIC_GA_MEASUREMENT_ID', 'NEXT_PUBLIC_VAPID_PUBLIC_KEY'];
+const names = [
+  'API_URL', 'SITE_URL', 'NEXT_PUBLIC_API_URL', 'NEXT_PUBLIC_APP_URL',
+  'NEXT_PUBLIC_SITE_URL', 'NEXT_PUBLIC_GA_MEASUREMENT_ID', 'NEXT_PUBLIC_VAPID_PUBLIC_KEY',
+];
 const mismatched = names.filter(name =>
-  process.env[name] && process.env[name] !== (buildEnv[name] || defaults[name])
+  (process.env[name] || '') !== (buildEnv[name] || '')
 );
-if (mismatched.length) {
-  throw new Error(`Match these GitHub Actions build variables to the VPS: ${mismatched.join(', ')}`);
-}
+process.stdout.write(mismatched.join(', '));
 NODE
+)
+
+if [[ -n "$mismatched_build_vars" ]]; then
+  echo "Rebuilding the frontend with VPS settings for: $mismatched_build_vars"
+  rm -rf -- .next
+  NEXT_DIST_DIR=.next npm run frontend:build
+fi
+
+# Keep optimized images across releases and during a first-deploy rollback.
+mkdir -p .next/cache "$APP_DIR/.next/cache/images"
+rm -rf -- .next/cache/images
+ln -sT "$APP_DIR/.next/cache/images" .next/cache/images
 
 # Migrations may be incompatible with the previous application version.
 ln -s "$release" "$next_link"

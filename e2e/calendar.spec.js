@@ -1,6 +1,6 @@
 /* global document, window */
 const { test, expect } = require('@playwright/test');
-const auth = require('../messages/en.json').auth;
+const { submitPasswordLogin } = require('./helpers/password-auth');
 const t = require('../messages/calendar/en.json');
 
 async function prepareCalendarContext(context) {
@@ -17,9 +17,7 @@ test.beforeEach(async ({ context }) => {
 
 test('create a location event, display in both calendar views, export and cancel', async ({ page }, testInfo) => {
   await page.goto('/login');
-  await page.locator('[name="email"]').fill('author@example.test');
-  await page.locator('[name="password"]').fill('TestPassword123!');
-  await page.getByRole('button', { name: auth.submit_login, exact: true }).click();
+  await submitPasswordLogin(page, 'author@example.test');
   await expect(page).not.toHaveURL(/\/login/);
   await page.goto('/events/new?locationId=3');
   const title = `Community cleanup ${testInfo.project.name}`;
@@ -68,9 +66,7 @@ test('create a location event, display in both calendar views, export and cancel
 test('personal calendar opens empty and shows events from enabled subscriptions', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/login');
-  await page.locator('[name="email"]').fill('contributor@example.test');
-  await page.locator('[name="password"]').fill('TestPassword123!');
-  await page.getByRole('main').getByRole('button', { name: auth.submit_login, exact: true }).click();
+  await submitPasswordLogin(page, 'contributor@example.test');
   await expect(page).not.toHaveURL(/\/login/);
   await page.goto('/calendar?mode=list&period=month&month=2024-06');
   await expect(page.getByRole('button', { name: t.myCalendar })).toHaveAttribute('aria-pressed', 'true');
@@ -127,10 +123,7 @@ test('calendar follows the selected language', async ({ page, context }) => {
 test('moderator rejection supplies private feedback and notifies the author', async ({ page, browser }, testInfo) => {
   async function login(target, email) {
     await target.goto('/login');
-    const loginForm = target.getByRole('main');
-    await loginForm.locator('[name="email"]').fill(email);
-    await loginForm.locator('[name="password"]').fill('TestPassword123!');
-    await loginForm.getByRole('button', { name: auth.submit_login, exact: true }).click();
+    await submitPasswordLogin(target, email);
     await expect(target).not.toHaveURL(/\/login/);
   }
   await login(page, 'contributor@example.test');

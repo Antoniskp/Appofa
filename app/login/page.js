@@ -163,7 +163,7 @@ function LoginForm() {
         </div>
 
         {/* Password sign-in stays available for accounts that use one */}
-        <details className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm" open={Boolean(inlineError)}>
+        <details className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm">
           <summary className="cursor-pointer py-2 font-medium text-gray-700">{tAuth('use_password_instead')}</summary>
           <div className="space-y-4 pt-4">
             <form data-auth-form="password" className="space-y-6" onSubmit={handleSubmit}>

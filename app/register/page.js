@@ -87,6 +87,7 @@ function RegisterForm() {
       router.push(destination);
     } catch (err) {
       registrationOwnsRedirect.current = false;
+      formRef.current?.closest('details')?.setAttribute('open', '');
       if (err.status === 400 && /already exists|already in use/i.test(err.message || '')) {
         setErrors({ email: t('email_already_registered') });
         focusField.current = 'email';
@@ -134,7 +135,7 @@ function RegisterForm() {
             onPendingChange={(pending) => { registrationOwnsRedirect.current = pending; }}
             returnTo={nextDestination || '/onboarding'}
           />
-          <details className="mt-6 border-t border-gray-200 pt-4 text-sm" open={Boolean(submitError || Object.values(errors).some(Boolean))}>
+          <details className="mt-6 border-t border-gray-200 pt-4 text-sm">
           <summary className="cursor-pointer py-2 font-medium text-gray-700">{t('register_with_password')}</summary>
           <form ref={formRef} data-auth-form="password" className="space-y-5 pt-4" onSubmit={handleSubmit} noValidate aria-busy={loading}>
             <FormInput name="email" type="email" label={t('email')} value={formData.email} onChange={handleChange} required autoComplete="email" inputMode="email" autoCapitalize="none" disabled={loading} error={errors.email} placeholder="name@example.com" />
