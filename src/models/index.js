@@ -622,6 +622,7 @@ module.exports = {
   PositionVote,
   IssueFollow: require('./IssueFollow'),
   ProposalDigestPreference: require('./ProposalDigestPreference'),
+  EmailLoginCode: require('./EmailLoginCode'),
   sequelize,
   User,
   Article,

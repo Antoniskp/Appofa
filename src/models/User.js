@@ -467,14 +467,19 @@ const User = sequelize.define('User', {
     beforeUpdate: async (user) => {
       if (user.changed('password')) {
         user.sessionVersion = randomUUID();
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
+        // A password can be removed (null) when an unproven signup is taken over by its email owner.
+        if (user.password) {
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(user.password, salt);
+        }
       }
     }
   }
 });
 
 User.prototype.comparePassword = async function(candidatePassword) {
+  // Accounts created with Google, GitHub or an email code may have no password.
+  if (!this.password || typeof candidatePassword !== 'string') return false;
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

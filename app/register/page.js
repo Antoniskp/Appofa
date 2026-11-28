@@ -7,11 +7,11 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
 import FormInput from '@/components/ui/FormInput';
 import OAuthButtons from '@/components/ui/OAuthButtons';
-import AuthDivider from '@/components/ui/AuthDivider';
 import AlertMessage from '@/components/ui/AlertMessage';
 import { authAPI, geoAPI } from '@/lib/api';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import Button from '@/components/ui/Button';
+import QuickSignIn from '@/components/auth/QuickSignIn';
 import { buildAuthPath, getPendingAuthDestination, resolveAuthDestination, saveReturnTo } from '@/lib/auth-redirect';
 
 const PASSWORD_MIN_LENGTH = 8;
@@ -98,6 +98,13 @@ function RegisterForm() {
     }
   };
 
+  const handleCodeSignIn = ({ isNewUser }) => {
+    const fallback = isNewUser ? '/onboarding' : '/';
+    const destination = nextDestination && nextDestination !== '/' ? nextDestination : fallback;
+    if (nextDestination) resolveAuthDestination(searchParams);
+    router.push(destination);
+  };
+
   const handleOAuth = async (provider) => {
     if (loading) return;
     setLoading(true);
@@ -121,11 +128,15 @@ function RegisterForm() {
           <p className="mt-3 text-base leading-6 text-gray-600">{t('register_subtitle_simple')}</p>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
-          <form ref={formRef} className="space-y-5" onSubmit={handleSubmit} noValidate aria-busy={loading}>
-            {oauthConfig.google && <div className="space-y-4">
-              <OAuthButtons config={{ google: true }} onGoogleLogin={() => handleOAuth('google')} disabled={loading} />
-              <AuthDivider text={t('or_register_with_email')} />
-            </div>}
+          <p className="mb-5 text-sm leading-6 text-gray-600">{t('quick_subtitle')}</p>
+          <QuickSignIn
+            onSuccess={handleCodeSignIn}
+            onPendingChange={(pending) => { registrationOwnsRedirect.current = pending; }}
+            returnTo={nextDestination || '/onboarding'}
+          />
+          <details className="mt-6 border-t border-gray-200 pt-4 text-sm" open={Boolean(submitError || Object.values(errors).some(Boolean))}>
+          <summary className="cursor-pointer py-2 font-medium text-gray-700">{t('register_with_password')}</summary>
+          <form ref={formRef} data-auth-form="password" className="space-y-5 pt-4" onSubmit={handleSubmit} noValidate aria-busy={loading}>
             <FormInput name="email" type="email" label={t('email')} value={formData.email} onChange={handleChange} required autoComplete="email" inputMode="email" autoCapitalize="none" disabled={loading} error={errors.email} placeholder="name@example.com" />
             <div>
               <FormInput name="password" type={passwordVisible ? 'text' : 'password'} label={t('password')} value={formData.password} onChange={handleChange} required autoComplete="new-password" disabled={loading} error={errors.password} helpText={t('password_min_length_register', { min: PASSWORD_MIN_LENGTH })} />
@@ -146,6 +157,7 @@ function RegisterForm() {
               <OAuthButtons config={{ github: true }} onGithubLogin={() => handleOAuth('github')} disabled={loading} />
             </details>}
           </form>
+          </details>
           <p className="mt-6 text-center text-sm text-gray-600">{t('already_have_account')}{' '}<Link href={loginHref} className="font-semibold text-blue-700 underline">{t('submit_login')}</Link></p>
         </div>
       </div>

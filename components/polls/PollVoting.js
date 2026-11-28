@@ -3,7 +3,8 @@
 import PollOptionLogo from './PollOptionLogo';
 import PartyBallot from './PartyBallot';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import ExpandablePhoto from '@/components/ui/ExpandablePhoto';
 import { CheckCircleIcon, LinkIcon, PhotoIcon } from '@heroicons/react/24/outline';
@@ -14,6 +15,8 @@ import RateLimitBanner from '@/components/ui/RateLimitBanner';
 import ParticipationNotice from '@/components/ParticipationNotice';
 import VoteIdentitySelector from '@/components/VoteIdentitySelector';
 import VotingIntentionNotice from './VotingIntentionNotice';
+import AuthModal from '@/components/auth/AuthModal';
+import { savePendingVote, takePendingVote, clearPendingVote } from '@/lib/pending-vote';
 
 /**
  * Poll voting interface component
@@ -22,6 +25,7 @@ import VotingIntentionNotice from './VotingIntentionNotice';
  */
 export default function PollVoting({ poll, onVoteSuccess }) {
   const { user } = useAuth();
+  const tAuth = useTranslations('auth');
   const [selectedOptionId, setSelectedOptionId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -30,6 +34,9 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   const [identityVisibility, setIdentityVisibility] = useState('anonymous');
   const [showRegisterCta, setShowRegisterCta] = useState(false);
   const [rateLimit, setRateLimit] = useState(null); // { retryAfter, resetTime }
+  // 'vote': guest chose an option on a members-only poll; 'keep': guest voted and may link the vote
+  const [authPrompt, setAuthPrompt] = useState(null);
+  const pendingVoteHandled = useRef(false);
   
   // State for adding new options
   const [showAddOption, setShowAddOption] = useState(false);
@@ -52,7 +59,10 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   const isPollActive = poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date());
   const isRateLimited = !!rateLimit && (rateLimit.resetTime ? rateLimit.resetTime > Date.now() : false);
   const isVotingIntention = poll.purpose === 'voting_intention';
-  const canVote = isPollActive && !isRateLimited && (user || poll.voteRestriction === 'anyone') && (!isVotingIntention || poll.votingIntentionEligible);
+  // Guests may pick an option on members-only polls; signing in then records it.
+  // Organization polls need membership, and voting intention has its own entry flow.
+  const guestMustSignInToVote = !user && poll.voteRestriction !== 'anyone' && !isVotingIntention && !poll.organizationId;
+  const canVote = isPollActive && !isRateLimited && (user || poll.voteRestriction === 'anyone' || guestMustSignInToVote) && (!isVotingIntention || poll.votingIntentionEligible);
   
   const resetAddOptionForm = () => {
     setNewOptionText('');
@@ -101,25 +111,32 @@ export default function PollVoting({ poll, onVoteSuccess }) {
     }
   };
 
-  const handleSubmitVote = async () => {
-    if (!selectedOptionId) {
+  const submitVote = async (optionId, visibility = user ? identityVisibility : 'anonymous') => {
+    if (!optionId) {
       setError('Παρακαλώ επιλέξτε μια επιλογή');
       return;
     }
-    
+
+    if (guestMustSignInToVote) {
+      // Keep the choice and ask for a quick sign-in; the vote is sent right after.
+      savePendingVote({ pollId: poll.id, optionId });
+      setAuthPrompt('vote');
+      return;
+    }
+
     setIsSubmitting(true);
     setError('');
     setSuccess('');
-    
+
     try {
-      const response = await pollAPI.vote(poll.id, selectedOptionId, user ? identityVisibility : 'anonymous');
+      const response = await pollAPI.vote(poll.id, optionId, visibility);
       if (response.success) {
         setSuccess(hasVoted ? 'Η ψήφος σας ενημερώθηκε επιτυχώς!' : 'Η ψήφος σας καταχωρήθηκε επιτυχώς!');
         setHasVoted(true);
         if (!user) {
           setShowRegisterCta(true);
         }
-        
+
         // Call success callback to refresh poll data
         if (onVoteSuccess) {
           setTimeout(() => onVoteSuccess(), 1000);
@@ -135,7 +152,48 @@ export default function PollVoting({ poll, onVoteSuccess }) {
       setIsSubmitting(false);
     }
   };
-  
+
+  const handleSubmitVote = () => submitVote(selectedOptionId);
+
+  // After signing in (in the pop-up, or on return from Google), send the vote the person had chosen.
+  useEffect(() => {
+    if (!user || pendingVoteHandled.current) return;
+    const pending = takePendingVote(poll.id);
+    if (!pending) return;
+    pendingVoteHandled.current = true;
+    setSelectedOptionId(pending.optionId);
+    setSuccess(tAuth('pending_vote_submitting'));
+    submitVote(pending.optionId, 'anonymous');
+    // submitVote reads the latest props; run once per sign-in.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, poll.id]);
+
+  const handleAuthSuccess = () => {
+    const prompt = authPrompt;
+    setAuthPrompt(null);
+    if (prompt === 'keep') {
+      // The server moved this browser's guest vote to the account at sign-in.
+      setShowRegisterCta(false);
+      if (onVoteSuccess) onVoteSuccess();
+    }
+    // For 'vote', the pending-vote effect submits once the user state arrives.
+  };
+
+  const closeAuthPrompt = () => {
+    if (authPrompt === 'vote') clearPendingVote();
+    setAuthPrompt(null);
+  };
+
+  const authModal = (
+    <AuthModal
+      isOpen={Boolean(authPrompt)}
+      onClose={closeAuthPrompt}
+      onSuccess={handleAuthSuccess}
+      title={tAuth(authPrompt === 'keep' ? 'modal_keep_vote_title' : 'modal_vote_title')}
+      description={tAuth(authPrompt === 'keep' ? 'modal_keep_vote_body' : 'modal_vote_body')}
+    />
+  );
+
   if (!canVote) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
@@ -154,8 +212,12 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   
   return (
     <div className="space-y-4">
+      {authModal}
       <VotingIntentionNotice poll={poll} user={user} />
       {!isVotingIntention && <ParticipationNotice restriction={poll.voteRestriction} />}
+      {guestMustSignInToVote && (
+        <p className="text-sm text-gray-700">{tAuth('vote_guest_hint')}</p>
+      )}
       {error && <AlertMessage message={error} />}
       {success && <AlertMessage message={success} tone="success" />}
       {rateLimit && (
@@ -167,24 +229,24 @@ export default function PollVoting({ poll, onVoteSuccess }) {
       )}
       {showRegisterCta && !user && (
         <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 flex items-start gap-3">
-          <span className="text-2xl">🎉</span>
+          <span className="text-2xl" aria-hidden="true">🎉</span>
           <div>
-            <p className="text-sm font-semibold text-indigo-900">Η ψήφος σας καταχωρήθηκε!</p>
-            <p className="text-sm text-indigo-700 mt-0.5">
-              Εγγραφείτε για να παρακολουθείτε τα αποτελέσματα και να συμμετέχετε σε περισσότερες ψηφοφορίες.
-            </p>
+            <p className="text-sm font-semibold text-indigo-900">{tAuth('vote_saved_cta_title')}</p>
+            <p className="text-sm text-indigo-700 mt-0.5">{tAuth('vote_saved_cta_body')}</p>
             <div className="flex gap-2 mt-2">
-              <a
-                href="/register"
-                className="inline-block bg-indigo-600 text-white text-xs font-semibold px-3 py-1.5 rounded-md hover:bg-indigo-700 transition"
-              >
-                Εγγραφή
-              </a>
               <button
-                onClick={() => setShowRegisterCta(false)}
-                className="text-xs text-indigo-500 hover:text-indigo-700 px-2"
+                type="button"
+                onClick={() => setAuthPrompt('keep')}
+                className="inline-block bg-indigo-600 text-white text-sm font-semibold px-3 py-2 rounded-md hover:bg-indigo-700 transition"
               >
-                Κλείσιμο
+                {tAuth('vote_saved_cta_button')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowRegisterCta(false)}
+                className="text-sm text-indigo-600 hover:text-indigo-800 px-2"
+              >
+                {tAuth('close')}
               </button>
             </div>
           </div>
@@ -218,30 +280,9 @@ export default function PollVoting({ poll, onVoteSuccess }) {
               selectedOptionId={selectedOptionId}
               isSubmitting={isSubmitting}
               useCustomColors={poll.useCustomColors}
-              onSelect={async (optionId) => {
+              onSelect={(optionId) => {
                 setSelectedOptionId(optionId);
-                setIsSubmitting(true);
-                setError('');
-                setSuccess('');
-                try {
-                  const response = await pollAPI.vote(poll.id, optionId, user ? identityVisibility : 'anonymous');
-                  if (response.success) {
-                    setSuccess(hasVoted ? 'Η ψήφος σας ενημερώθηκε επιτυχώς!' : 'Η ψήφος σας καταχωρήθηκε επιτυχώς!');
-                    setHasVoted(true);
-                    if (!user) setShowRegisterCta(true);
-                    if (onVoteSuccess) {
-                      setTimeout(() => onVoteSuccess(), 1000);
-                    }
-                  }
-                } catch (err) {
-                  if (err.status === 429) {
-                    setRateLimit({ retryAfter: err.retryAfter ?? null, resetTime: err.resetTime ?? null });
-                  } else {
-                    setError(err.message || 'Σφάλμα κατά την υποβολή της ψήφου');
-                  }
-                } finally {
-                  setIsSubmitting(false);
-                }
+                submitVote(optionId);
               }}
             />
           ) : isVotingIntention ? (

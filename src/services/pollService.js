@@ -1628,9 +1628,10 @@ const deletePoll = async (pollId, userId, userRole) => {
  * @param {string} clientIp
  * @param {string} userAgent
  * @param {string} identityVisibility
+ * @param {string|null} guestVoterId - per-browser id for anonymous votes, used to move them to an account at sign-in
  * @returns {Promise<{success: boolean, status?: number, message?: string, data?: object, error?: string}>}
  */
-const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent, identityVisibility = 'anonymous') => {
+const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent, identityVisibility = 'anonymous', guestVoterId = null) => {
   let transaction = null;
   try {
     // Validate optionId
@@ -1822,8 +1823,13 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent,
       });
 
       if (existingVote) {
-        // Update existing vote from this device
-        await existingVote.update({ optionId: optionIdResult.value, identityVisibility: 'anonymous' }, { transaction });
+        // Update existing vote from this device. Tag older untagged votes with this
+        // browser's guest id, but never take over a vote another browser tagged.
+        await existingVote.update({
+          optionId: optionIdResult.value,
+          identityVisibility: 'anonymous',
+          ...(guestVoterId && !existingVote.sessionId ? { sessionId: guestVoterId } : {})
+        }, { transaction });
         vote = existingVote;
       } else {
         // Create new vote
@@ -1833,7 +1839,7 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent,
             optionId: optionIdResult.value,
             userId: null,
             isAuthenticated: false,
-            sessionId: null,
+            sessionId: guestVoterId || null,
             ipAddress: clientIp,
             userAgent,
             identityVisibility: 'anonymous'

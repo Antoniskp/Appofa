@@ -164,6 +164,35 @@ const passwordResetAttemptLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Email sign-in codes: each request sends an email, so keep the per-IP budget small.
+// The service also limits codes per address (one a minute, five an hour).
+const emailCodeRequestLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  skip: skipForWhitelist,
+  handler: makeRateLimitHandler(
+    'Too many sign-in codes requested from this IP, please try again later.',
+    'EMAIL_CODE_RATE_LIMITED'
+  ),
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Code checks: each code allows only a few wrong guesses; this stops one IP
+// cycling through many addresses.
+const emailCodeVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  skip: skipForWhitelist,
+  handler: makeRateLimitHandler(
+    'Too many sign-in attempts from this IP, please try again later.',
+    'EMAIL_CODE_RATE_LIMITED'
+  ),
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+});
+
 // Create operation rate limiter - 20 requests per 15 minutes.
 // Verified users, admins, moderators, and editors are exempt.
 // Auth middleware must run before this limiter for the exemption to take effect.
@@ -245,6 +274,8 @@ module.exports = {
   registerLimiter,
   passwordResetRequestLimiter,
   passwordResetAttemptLimiter,
+  emailCodeRequestLimiter,
+  emailCodeVerifyLimiter,
   createLimiter,
   uploadLimiter,
   anonVoteLimiter,

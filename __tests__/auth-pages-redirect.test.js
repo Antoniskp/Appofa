@@ -140,7 +140,7 @@ describe('Auth pages redirect behavior', () => {
     const LoginPage = require('../app/login/page').default;
     const { container, root } = await renderPage(LoginPage);
     await act(async () => {
-      container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      container.querySelector('form[data-auth-form="password"]').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
       await flushMicrotaskQueue();
     });
     useAuth.mockReturnValue(buildAuthState({ login, user: { id: 1 } }));

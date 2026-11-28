@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -15,6 +15,8 @@ import { idSlug } from '@/lib/utils/slugify';
 import { pollAPI } from '@/lib/api';
 import UserAvatar from '@/components/user/UserAvatar';
 import OrgAvatar from '@/components/organization/OrgAvatar';
+import AuthModal from '@/components/auth/AuthModal';
+import { savePendingVote, takePendingVote, clearPendingVote } from '@/lib/pending-vote';
 
 /**
  * Reusable poll card component
@@ -23,7 +25,10 @@ import OrgAvatar from '@/components/organization/OrgAvatar';
  */
 export default function PollCard({ poll, onVoted }) {
   const tPolls = useTranslations('polls');
+  const tAuth = useTranslations('auth');
   const { user } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
+  const pendingVoteHandled = useRef(false);
   const { isAdmin } = usePermissions();
   
   const defaultPollImage = '/images/branding/news default.png';
@@ -73,16 +78,24 @@ export default function PollCard({ poll, onVoted }) {
 
   // Which poll types can be voted on inline (binary OR simple with ≤3 options)
   const options = poll.options || [];
+  // Guests can tap an option on members-only polls; a quick sign-in then records it.
+  const guestMustSignInToVote = !user && poll.voteRestriction !== 'anyone' && poll.purpose !== 'voting_intention' && !poll.organizationId;
   const isInlineVotable =
     isPollActive &&
-    (user || poll.voteRestriction === 'anyone') &&
+    (user || poll.voteRestriction === 'anyone' || guestMustSignInToVote) &&
     (poll.type === 'binary' ||
       (poll.type === 'simple' && options.length >= 2 && options.length <= 3));
 
   const handleInlineVote = async (e, optionId) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
     if (isInlineSubmitting) return;
+
+    if (guestMustSignInToVote) {
+      savePendingVote({ pollId: poll.id, optionId });
+      setAuthOpen(true);
+      return;
+    }
 
     const prevVotedId = inlineVotedId;
     setIsInlineSubmitting(true);
@@ -108,6 +121,17 @@ export default function PollCard({ poll, onVoted }) {
     }
   };
   
+  // After signing in (pop-up or return from Google), cast the vote chosen as a guest.
+  useEffect(() => {
+    if (!user || pendingVoteHandled.current) return;
+    const pending = takePendingVote(poll.id);
+    if (!pending) return;
+    pendingVoteHandled.current = true;
+    handleInlineVote(null, pending.optionId);
+    // handleInlineVote reads the latest state; run once per sign-in.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, poll.id]);
+
   // Whether the user has voted (from server data or from an inline vote this session)
   const hasVoted = inlineVotedId !== null;
 
@@ -627,6 +651,15 @@ export default function PollCard({ poll, onVoted }) {
           </Link>
           {pollInfoContent}
         </div>
+        {guestMustSignInToVote && (
+          <AuthModal
+            isOpen={authOpen}
+            onClose={() => { clearPendingVote(); setAuthOpen(false); }}
+            onSuccess={() => setAuthOpen(false)}
+            title={tAuth('modal_vote_title')}
+            description={tAuth('modal_vote_body')}
+          />
+        )}
       </Card>
     );
   }

@@ -1,5 +1,7 @@
 const authService = require('../services/authService');
 const oauthService = require('../services/oauthService');
+const emailCodeAuthService = require('../services/emailCodeAuthService');
+const { claimGuestVotesForRequest } = require('../services/guestVoteService');
 const userService = require('../services/userService');
 const badgeService = require('../services/badgeService');
 const { User, Article, Poll, Suggestion, CandidateRegistration, Follow } = require('../models');
@@ -55,6 +57,7 @@ const authController = {
     try {
       const { user, token } = await authService.registerUser(req.body);
       setAuthCookies(res, token, user.id);
+      await claimGuestVotesForRequest(req, res, user.id);
       res.status(201).json({
         success: true,
         message: 'User registered successfully.',
@@ -87,6 +90,7 @@ const authController = {
       const { email, password } = req.body;
       const { user, token } = await authService.loginUser(email, password);
       setAuthCookies(res, token, user.id);
+      await claimGuestVotesForRequest(req, res, user.id);
       res.status(200).json({
         success: true,
         message: 'Login successful.',
@@ -117,6 +121,69 @@ const authController = {
       }
       console.error('Login error:', error);
       res.status(500).json({ success: false, message: 'Error logging in.' });
+    }
+  },
+
+  // Send a 6-digit sign-in code. Same response whether or not the account exists.
+  requestEmailCode: async (req, res) => {
+    try {
+      const { email, locale } = req.body || {};
+      const { cooldownSeconds } = await emailCodeAuthService.requestEmailCode({ email, locale });
+      return res.status(200).json({
+        success: true,
+        message: 'If the address is valid, a sign-in code has been sent.',
+        data: { cooldownSeconds },
+      });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({
+          success: false,
+          message: error.message,
+          ...(error.code ? { code: error.code } : {}),
+          ...(error.retryAfter ? { retryAfter: error.retryAfter } : {}),
+        });
+      }
+      console.error('Request email code error:', error);
+      return res.status(500).json({ success: false, message: 'Error sending sign-in code.' });
+    }
+  },
+
+  // Check a sign-in code; signs in, or creates the account for a new address.
+  verifyEmailCode: async (req, res) => {
+    try {
+      const { email, code, locale, newsletterOptIn } = req.body || {};
+      const { user, token, isNewUser } = await emailCodeAuthService.verifyEmailCode({ email, code, locale, newsletterOptIn });
+      setAuthCookies(res, token, user.id);
+      const guestVotes = await claimGuestVotesForRequest(req, res, user.id);
+      return res.status(isNewUser ? 201 : 200).json({
+        success: true,
+        message: isNewUser ? 'Account created.' : 'Login successful.',
+        data: {
+          isNewUser,
+          claimedVotes: guestVotes.claimed,
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            emailVerified: user.emailVerified,
+            firstNameNative: user.firstNameNative,
+            lastNameNative: user.lastNameNative,
+            avatar: user.avatar,
+            avatarColor: user.avatarColor
+          }
+        }
+      });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({
+          success: false,
+          message: error.message,
+          ...(error.code ? { code: error.code } : {}),
+        });
+      }
+      console.error('Verify email code error:', error);
+      return res.status(500).json({ success: false, message: 'Error signing in.' });
     }
   },
 
@@ -349,6 +416,7 @@ const authController = {
       const result = await oauthService.handleGithubCallback(code, state);
       if (result.token) {
         setAuthCookies(res, result.token, result.user.id);
+        await claimGuestVotesForRequest(req, res, result.user.id);
       }
       return res.redirect(result.redirectUrl);
     } catch (error) {
@@ -397,6 +465,7 @@ const authController = {
       const result = await oauthService.handleGoogleCallback(code, state);
       if (result.token) {
         setAuthCookies(res, result.token, result.user.id);
+        await claimGuestVotesForRequest(req, res, result.user.id);
       }
       return res.redirect(result.redirectUrl);
     } catch (error) {

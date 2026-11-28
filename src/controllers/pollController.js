@@ -2,6 +2,7 @@
 
 const pollService = require('../services/pollService');
 const badgeService = require('../services/badgeService');
+const { ensureGuestVoterId } = require('../utils/guestVoter');
 
 // ---------------------------------------------------------------------------
 // Request helpers (stay in the controller — they read from req)
@@ -128,7 +129,8 @@ const pollController = {
       userRole,
       getClientIp(req),
       getUserAgent(req),
-      req.body.identityVisibility
+      req.body.identityVisibility,
+      userId ? null : ensureGuestVoterId(req, res)
     );
     if (!result.success) {
       return res.status(result.status).json({

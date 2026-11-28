@@ -12,6 +12,8 @@ const {
   uploadLimiter,
   passwordResetRequestLimiter,
   passwordResetAttemptLimiter,
+  emailCodeRequestLimiter,
+  emailCodeVerifyLimiter,
 } = require('../middleware/rateLimiter');
 const { avatarUpload } = require('../middleware/upload');
 const { MAX_IMAGE_BYTES } = require('../services/mediaService');
@@ -25,6 +27,9 @@ router.post('/login', loginLimiter, authController.login);
 router.post('/forgot-password', passwordResetRequestLimiter, authController.forgotPassword);
 router.post('/reset-password', passwordResetAttemptLimiter, authController.resetPassword);
 router.get('/verify-email', apiLimiter, authController.verifyEmail);
+// Passwordless sign-in / sign-up with a 6-digit email code (also verifies the address)
+router.post('/email-code/request', emailCodeRequestLimiter, authController.requestEmailCode);
+router.post('/email-code/verify', emailCodeVerifyLimiter, authController.verifyEmailCode);
 router.post('/resend-verification', apiLimiter, authMiddleware, csrfProtection, authController.resendVerification);
 
 // OAuth routes

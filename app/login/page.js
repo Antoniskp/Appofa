@@ -8,12 +8,12 @@ import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import FormInput from '@/components/ui/FormInput';
 import OAuthButtons from '@/components/ui/OAuthButtons';
-import AuthDivider from '@/components/ui/AuthDivider';
 import { authAPI } from '@/lib/api';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import Button from '@/components/ui/Button';
 import { buildAuthPath, getAuthDestinationFromSearchParams, getPendingAuthDestination, resolveAuthDestination, saveReturnTo } from '@/lib/auth-redirect';
 import AlertMessage from '@/components/ui/AlertMessage';
+import QuickSignIn from '@/components/auth/QuickSignIn';
 
 function LoginForm() {
   const tAuth = useTranslations('auth');
@@ -32,6 +32,8 @@ function LoginForm() {
   const nextDestination = getPendingAuthDestination(searchParams);
   const registerHref = buildAuthPath('/register', nextDestination);
   const redirectStarted = useRef(false);
+  // Email-code sign-in picks its own destination (onboarding for new accounts).
+  const codeSignInOwnsRedirect = useRef(false);
   const redirectAfterLogin = useCallback((destination) => {
     // Both the login promise and the auth-state effect may finish together.
     // Consume the saved destination only once, or the second redirect goes home.
@@ -79,7 +81,7 @@ function LoginForm() {
   }, [searchParams, redirectAfterLogin, success, error, tAuth]);
 
   useEffect(() => {
-    if (!authLoading && user && !searchParams.get('oauth')) {
+    if (!authLoading && user && !searchParams.get('oauth') && !codeSignInOwnsRedirect.current) {
       redirectAfterLogin();
     }
   }, [user, authLoading, searchParams, redirectAfterLogin]);
@@ -109,6 +111,12 @@ function LoginForm() {
     }
   };
 
+  const handleCodeSignIn = ({ isNewUser }) => {
+    success(tAuth('welcome_redirect'));
+    const explicitNext = getAuthDestinationFromSearchParams(searchParams);
+    redirectAfterLogin(isNewUser && !explicitNext ? '/onboarding' : undefined);
+  };
+
   const handleGithubLogin = async () => {
     try {
       setLoading(true);
@@ -119,20 +127,6 @@ function LoginForm() {
       }
     } catch (err) {
       error(err.message || tAuth('github_login_fail'));
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      setLoading(true);
-      saveReturnTo(nextDestination);
-      const response = await authAPI.initiateGoogleOAuth('login');
-      if (response.success && response.data.authUrl) {
-        window.location.href = response.data.authUrl;
-      }
-    } catch (err) {
-      error(err.message || tAuth('google_login_fail'));
       setLoading(false);
     }
   };
@@ -159,51 +153,63 @@ function LoginForm() {
           <AlertMessage tone="error" message={inlineError} />
         )}
 
-        {/* OAuth Buttons */}
-        <OAuthButtons
-          config={oauthConfig}
-          onGithubLogin={handleGithubLogin}
-          onGoogleLogin={handleGoogleLogin}
-          disabled={loading}
-        />
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+          <p className="mb-5 text-sm leading-6 text-gray-600">{tAuth('quick_subtitle')}</p>
+          <QuickSignIn
+            onSuccess={handleCodeSignIn}
+            onPendingChange={(pending) => { codeSignInOwnsRedirect.current = pending; }}
+            returnTo={nextDestination}
+          />
+        </div>
 
-        <AuthDivider />
+        {/* Password sign-in stays available for accounts that use one */}
+        <details className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm" open={Boolean(inlineError)}>
+          <summary className="cursor-pointer py-2 font-medium text-gray-700">{tAuth('use_password_instead')}</summary>
+          <div className="space-y-4 pt-4">
+            <form data-auth-form="password" className="space-y-6" onSubmit={handleSubmit}>
+              <div className="space-y-4">
+                <FormInput
+                  name="email"
+                  type="email"
+                  label={tAuth('email')}
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  autoComplete="email"
+                  placeholder={tAuth('email')}
+                />
+                <FormInput
+                  name="password"
+                  type="password"
+                  label={tAuth('password')}
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  autoComplete="current-password"
+                  placeholder={tAuth('password')}
+                />
+                <div className="text-right">
+                  <Link href="/forgot-password" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+                    {tAuth('forgot_password_link')}
+                  </Link>
+                </div>
+              </div>
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <FormInput
-              name="email"
-              type="email"
-              label={tAuth('email')}
-              value={formData.email}
-              onChange={handleChange}
-              required
-              autoComplete="email"
-              placeholder={tAuth('email')}
-            />
-            <FormInput
-              name="password"
-              type="password"
-              label={tAuth('password')}
-              value={formData.password}
-              onChange={handleChange}
-              required
-              autoComplete="current-password"
-              placeholder={tAuth('password')}
-            />
-            <div className="text-right">
-              <Link href="/forgot-password" className="text-sm font-medium text-blue-600 hover:text-blue-500">
-                {tAuth('forgot_password_link')}
-              </Link>
-            </div>
+              <div>
+                <Button type="submit" loading={loading} size="md" className="w-full">
+                  {tAuth('submit_login')}
+                </Button>
+              </div>
+            </form>
+            {oauthConfig.github && (
+              <OAuthButtons
+                config={{ github: true }}
+                onGithubLogin={handleGithubLogin}
+                disabled={loading}
+              />
+            )}
           </div>
-
-          <div>
-            <Button type="submit" loading={loading} size="md" className="w-full">
-              {tAuth('submit_login')}
-            </Button>
-          </div>
-        </form>
+        </details>
       </div>
     </div>
   );
