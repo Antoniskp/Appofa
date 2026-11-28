@@ -253,6 +253,14 @@ const authVoteLimiter = rateLimit({
 const ipBlockMiddleware = async (req, res, next) => {
   try {
     if (process.env.NODE_ENV === 'test') return next();
+
+    // The deployment probe connects directly to the backend over loopback.
+    const localHealthProbe = req.method === 'GET' && req.path === '/api/health' &&
+      ['127.0.0.1', '::1'].includes(normalizeIp(req.socket?.remoteAddress)) &&
+      req.headers['x-forwarded-for'] === undefined &&
+      req.headers['x-real-ip'] === undefined && req.headers.forwarded === undefined;
+    if (localHealthProbe) return next();
+
     const rules = await ipAccessService.getIpRulesCache();
     const clientIp = normalizeIp(req.ip) || req.ip;
     // Whitelist takes precedence over blacklist so trusted admin/test IPs

@@ -63,6 +63,44 @@ describe('ipBlockMiddleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
+  test.each(['127.0.0.1', '::ffff:127.0.0.1', '::1'])('allows a direct health probe from %s', async (address) => {
+    process.env.NODE_ENV = 'production';
+    ipAccessService.getIpRulesCache.mockResolvedValue({
+      whitelist: new Set(),
+      blacklist: new Set(['127.0.0.1', '::1']),
+    });
+    const next = jest.fn();
+    const res = createRes();
+
+    await ipBlockMiddleware({
+      method: 'GET', path: '/api/health', headers: {}, ip: address,
+      socket: { remoteAddress: address },
+    }, res, next);
+
+    expect(next).toHaveBeenCalledWith();
+    expect(ipAccessService.getIpRulesCache).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ['proxied health request', 'GET', '/api/health', '127.0.0.1', { 'x-forwarded-for': '127.0.0.1' }],
+    ['remote health request', 'GET', '/api/health', '5.6.7.8', {}],
+    ['other local route', 'GET', '/api/health/details', '127.0.0.1', {}],
+    ['other local method', 'POST', '/api/health', '127.0.0.1', {}],
+  ])('keeps IP filtering for %s', async (_label, method, path, remoteAddress, headers) => {
+    process.env.NODE_ENV = 'production';
+    ipAccessService.getIpRulesCache.mockResolvedValue({
+      whitelist: new Set(),
+      blacklist: new Set([remoteAddress]),
+    });
+    const next = jest.fn();
+    const res = createRes();
+
+    await ipBlockMiddleware({ method, path, headers, ip: remoteAddress, socket: { remoteAddress } }, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(next).not.toHaveBeenCalled();
+  });
+
   test('passes through an IP that is in neither list', async () => {
     process.env.NODE_ENV = 'production';
     ipAccessService.getIpRulesCache.mockResolvedValue({
