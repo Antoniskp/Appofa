@@ -42,9 +42,12 @@ const isValidCountryCode = (code) => {
   return ISO2_RE.test(upper) && !INVALID_FLAG_CODES.has(upper);
 };
 
+const UnknownFlag = () => <span title="Άγνωστη χώρα" aria-label="Άγνωστη χώρα">🌍</span>;
+
 function CountryFlag({ code }) {
-  if (!isValidCountryCode(code)) {
-    return <span title="Άγνωστη χώρα" aria-label="Άγνωστη χώρα">🌍</span>;
+  const [failed, setFailed] = useState(false);
+  if (!isValidCountryCode(code) || failed) {
+    return <UnknownFlag />;
   }
   const upper = String(code).toUpperCase();
   return (
@@ -57,27 +60,38 @@ function CountryFlag({ code }) {
       title={upper}
       aria-label={`Σημαία ${upper}`}
       style={{ display: 'inline', verticalAlign: 'middle' }}
-      onError={(e) => {
-        e.currentTarget.outerHTML = '<span title="Άγνωστη χώρα" aria-label="Άγνωστη χώρα">🌍</span>';
-      }}
+      onError={() => setFailed(true)}
     />
   );
 }
 
 const euro = (value) => Number(value || 0).toLocaleString('el-GR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const ACCESS_ACTION_OPTIONS = ['allow', 'block', 'redirect'];
+const ACCESS_ACTION_OPTIONS = [
+  { value: 'allow', label: 'Επιτρέπεται' },
+  { value: 'block', label: 'Αποκλεισμός' },
+  { value: 'redirect', label: 'Ανακατεύθυνση' },
+];
+// Countries that must never be blocked from this page (the platform's core audience).
+const PROTECTED_COUNTRY_CODES = new Set(['GR']);
+
+let regionNames = null;
+try {
+  regionNames = new Intl.DisplayNames(['el'], { type: 'region' });
+} catch {
+  regionNames = null;
+}
 
 const getCountryName = (code) => {
-  if (!isValidCountryCode(code)) return null;
+  if (!isValidCountryCode(code) || !regionNames) return null;
   try {
-    return new Intl.DisplayNames(['en'], { type: 'region' }).of(String(code).toUpperCase()) || null;
+    return regionNames.of(String(code).toUpperCase()) || null;
   } catch {
     return null;
   }
 };
 
 const resolveCountryLabel = (code, name) =>
-  name || (code ? getCountryName(String(code).toUpperCase()) : null) || code || 'Άγνωστη χώρα';
+  (code ? getCountryName(String(code).toUpperCase()) : null) || name || code || 'Άγνωστη χώρα';
 
 function GeoAdminContent() {
   const router = useRouter();
@@ -105,7 +119,9 @@ function GeoAdminContent() {
     noIpAction: 'allow',
     noIpRedirectPath: '/unknown-country',
   });
-  const [clearOlderThanDays, setClearOlderThanDays] = useState(String(LOG_RETENTION_OPTIONS[0]));
+  const [countryFilter, setCountryFilter] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [clearOlderThanDays, setClearOlderThanDays] = useState('90');
   const [isClearingLogs, setIsClearingLogs] = useState(false);
   const [isClearingAllLogs, setIsClearingAllLogs] = useState(false);
   const [fundingForm, setFundingForm] = useState({
@@ -126,13 +142,15 @@ function GeoAdminContent() {
   const { data: visits, loading: visitsLoading, refetch: refetchVisits } = useAsyncData(
     async () => {
       const res = await geoAdminAPI.getVisits({ period, hideMine, trafficType: trafficFilter,
+        ...(countryFilter ? { countryCode: countryFilter } : {}),
         ...(groupVisits && expanded ? { expanded, detailPage } : {}) });
       if (!res?.success) throw new Error(res?.message || 'Αποτυχία φόρτωσης επισκεψιμότητας.');
       return res.data || {
         totalVisits: 0, byCountry: [], topPaths: [], recentVisits: [], trafficSummary: {}, crawlerGroups: [], ipGroups: [],
       };
     },
-    [period, hideMine, trafficFilter, groupVisits, expanded, detailPage],
+    // In ungrouped mode the row details are already loaded, so expanding must not refetch.
+    [period, hideMine, trafficFilter, groupVisits, groupVisits ? expanded : null, groupVisits ? detailPage : 0, countryFilter],
     {
       initialData: {
         totalVisits: 0, byCountry: [], topPaths: [], recentVisits: [], trafficSummary: {}, crawlerGroups: [], ipGroups: [],
@@ -219,6 +237,13 @@ function GeoAdminContent() {
     if (trafficFilter === 'all') return rows;
     return rows.filter((row) => (row.trafficType || 'human') === trafficFilter);
   }, [trafficFilter, visits]);
+
+  // Keep showing the previous data while refetching (filters, expand, pagination);
+  // only show skeletons before the first successful load.
+  const visitsReady = Boolean(visits?.period);
+  const showVisitsSkeleton = visitsLoading && !visitsReady;
+
+  const askConfirm = (action) => setConfirmAction(action);
 
   function changeActivityFilter(setter, value) {
     setExpanded(null);
@@ -379,12 +404,32 @@ function GeoAdminContent() {
     }
   };
 
+  const requestBlockIp = (ipAddress) => askConfirm({
+    title: 'Αποκλεισμός IP',
+    message: `Η IP ${ipAddress} θα μπει στη blacklist και δεν θα έχει πρόσβαση στον ιστότοπο. Μπορείτε να την αφαιρέσετε από τους Κανόνες IP. Συνέχεια;`,
+    confirmText: 'Αποκλεισμός',
+    onConfirm: () => handleBlockIp(ipAddress),
+  });
+
+  const requestClearOldLogs = () => {
+    const days = Number(clearOlderThanDays);
+    askConfirm({
+      title: 'Καθαρισμός παλιών logs',
+      message: `Θα διαγραφούν οριστικά όλες οι εγγραφές επισκεψιμότητας παλαιότερες από ${days} ${days === 1 ? 'ημέρα' : 'ημέρες'}. Η ενέργεια δεν αναιρείται.`,
+      confirmText: 'Διαγραφή',
+      onConfirm: handleClearOldLogs,
+    });
+  };
+
+  const requestClearAllLogs = () => askConfirm({
+    title: 'Διαγραφή όλων των logs',
+    message: 'Θα διαγραφούν οριστικά ΟΛΕΣ οι εγγραφές επισκεψιμότητας. Η ενέργεια δεν αναιρείται.',
+    confirmText: 'Διαγραφή όλων',
+    onConfirm: handleClearAllLogs,
+  });
+
   const handleClearOldLogs = async () => {
     const days = Number(clearOlderThanDays);
-
-    if (!window.confirm(`Να διαγραφούν logs παλαιότερα από ${days} ημέρες;`)) {
-      return;
-    }
 
     setIsClearingLogs(true);
     try {
@@ -399,10 +444,6 @@ function GeoAdminContent() {
   };
 
   const handleClearAllLogs = async () => {
-    if (!window.confirm('Να διαγραφούν ΟΛΕΣ οι εγγραφές επισκεψιμότητας;')) {
-      return;
-    }
-
     setIsClearingAllLogs(true);
     try {
       const res = await geoAdminAPI.clearVisitsOlderThan(0);
@@ -415,7 +456,7 @@ function GeoAdminContent() {
     }
   };
 
-  const handleAddCountryAccessRule = async () => {
+  const requestAddCountryAccessRule = () => {
     const countryCode = String(countryRuleForm.countryCode || '').trim().toUpperCase();
     if (!/^[A-Z]{2}$/.test(countryCode)) {
       addToast('Ο κωδικός χώρας πρέπει να έχει 2 κεφαλαία γράμματα.', { type: 'error' });
@@ -425,6 +466,10 @@ function GeoAdminContent() {
       addToast('Μη έγκυρος κωδικός χώρας (XX/T1 δεν επιτρέπονται).', { type: 'error' });
       return;
     }
+    if (PROTECTED_COUNTRY_CODES.has(countryCode)) {
+      addToast(`Η χώρα ${resolveCountryLabel(countryCode)} δεν μπορεί να αποκλειστεί από εδώ.`, { type: 'error' });
+      return;
+    }
 
     const redirectPath = String(countryRuleForm.redirectPath || '').trim();
     if (redirectPath && !redirectPath.startsWith('/')) {
@@ -432,6 +477,26 @@ function GeoAdminContent() {
       return;
     }
 
+    const label = resolveCountryLabel(countryCode);
+    askConfirm({
+      title: 'Αποκλεισμός χώρας',
+      message: redirectPath
+        ? `Όλοι οι επισκέπτες από ${label} (${countryCode}) θα ανακατευθύνονται στο ${redirectPath}. Συνέχεια;`
+        : `Όλοι οι επισκέπτες από ${label} (${countryCode}) θα αποκλείονται από τον ιστότοπο. Συνέχεια;`,
+      confirmText: 'Αποκλεισμός',
+      onConfirm: () => handleAddCountryAccessRule(countryCode, redirectPath),
+    });
+  };
+
+  const requestRemoveCountryAccessRule = (code) => askConfirm({
+    title: 'Άρση αποκλεισμού',
+    message: `Να αφαιρεθεί ο αποκλεισμός για ${resolveCountryLabel(code)} (${code}); Οι επισκέπτες από αυτή τη χώρα θα έχουν ξανά πρόσβαση.`,
+    confirmText: 'Άρση αποκλεισμού',
+    variant: 'warning',
+    onConfirm: () => handleRemoveCountryAccessRule(code),
+  });
+
+  const handleAddCountryAccessRule = async (countryCode, redirectPath) => {
     setIsAddingCountryRule(true);
     try {
       await addCountryRule(countryCode, countryRuleForm.reason || null, redirectPath || null);
@@ -457,6 +522,24 @@ function GeoAdminContent() {
     } finally {
       setIsRemovingCountryRule(null);
     }
+  };
+
+  const requestSaveAccessSettings = () => {
+    const blocking = [
+      accessSettingsForm.unknownCountryAction === 'block' && 'επισκέπτες από άγνωστη χώρα',
+      accessSettingsForm.noIpAction === 'block' && 'επισκέπτες χωρίς IP',
+    ].filter(Boolean);
+    if (blocking.length === 0) {
+      handleSaveAccessSettings();
+      return;
+    }
+    askConfirm({
+      title: 'Επιβεβαίωση αποκλεισμού',
+      message: `Θα αποκλείονται ${blocking.join(' και ')}. Αυτό μπορεί να κόψει πραγματικούς χρήστες (π.χ. μέσω VPN ή ορισμένων παρόχων κινητής). Συνέχεια;`,
+      confirmText: 'Αποθήκευση',
+      variant: 'warning',
+      onConfirm: handleSaveAccessSettings,
+    });
   };
 
   const handleSaveAccessSettings = async () => {
@@ -558,6 +641,20 @@ function GeoAdminContent() {
                 <input type="checkbox" checked={hideMine} onChange={(event) => changeActivityFilter(setHideMine, event.target.checked)} />
                 Απόκρυψη της συνδεδεμένης δραστηριότητάς μου
               </label>
+              {countryFilter && (
+                <span className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800">
+                  <CountryFlag code={countryFilter} /> Χώρα: {resolveCountryLabel(countryFilter)}
+                  <button
+                    type="button"
+                    onClick={() => changeActivityFilter(setCountryFilter, null)}
+                    className="font-bold hover:text-blue-950"
+                    aria-label="Αφαίρεση φίλτρου χώρας"
+                    title="Αφαίρεση φίλτρου χώρας"
+                  >
+                    ✕
+                  </button>
+                </span>
+              )}
             </div>
 
             <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 space-y-2">
@@ -576,17 +673,17 @@ function GeoAdminContent() {
               ].map((card) => (
                 <div key={card.label} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                   <p className="text-sm text-gray-500">{card.label}</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{visitsLoading ? '…' : card.value.toLocaleString('el-GR')}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{showVisitsSkeleton ? '…' : card.value.toLocaleString('el-GR')}</p>
                 </div>
               ))}
             </div>
 
-            {visitsLoading ? (
+            {showVisitsSkeleton ? (
               <div className="bg-white border border-gray-200 rounded-xl p-6">
                 <SkeletonLoader count={3} />
               </div>
             ) : (
-              <>
+              <div className={`space-y-6 transition-opacity ${visitsLoading ? 'opacity-60' : ''}`} aria-busy={visitsLoading}>
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -679,6 +776,9 @@ function GeoAdminContent() {
                           </tr>
                           {expanded === (row.key ?? index) && (
                             <tr><td colSpan={groupVisits ? 8 : 7} className="bg-gray-50 p-4">
+                              {groupVisits && !row.details && visitsLoading && (
+                                <p className="text-sm text-gray-500">Φόρτωση λεπτομερειών...</p>
+                              )}
                               <ul className="space-y-2">
                                 {(groupVisits ? (row.details || []) : [row]).map((visit, visitIndex) => (
                                   <li key={visitIndex} className="flex flex-wrap items-center gap-3 text-sm">
@@ -686,17 +786,23 @@ function GeoAdminContent() {
                                     <span className="break-all">{visit.path || '—'}</span>
                                     <span className="font-mono">{visit.ipAddress || '—'}</span>
                                     <button type="button" className="text-red-700" disabled={!visit.ipAddress || isBlockingIp === visit.ipAddress || blockedIps.has(visit.ipAddress)}
-                                      onClick={() => handleBlockIp(visit.ipAddress)}>
-                                      {blockedIps.has(visit.ipAddress) ? 'Αποκλεισμένο' : 'Αποκλεισμός IP'}
+                                      onClick={() => requestBlockIp(visit.ipAddress)}>
+                                      {blockedIps.has(visit.ipAddress) ? 'Αποκλεισμένο' : isBlockingIp === visit.ipAddress ? 'Αποκλεισμός...' : 'Αποκλεισμός IP'}
                                     </button>
                                   </li>
                                 ))}
                               </ul>
                               {groupVisits && row.viewCount > 50 && (
-                                <div className="mt-3 flex gap-3">
-                                  <button disabled={!detailPage} onClick={() => setDetailPage(detailPage - 1)}>Προηγούμενες</button>
-                                  <span>{detailPage + 1} / {Math.ceil(row.viewCount / 50)}</span>
-                                  <button disabled={(detailPage + 1) * 50 >= row.viewCount} onClick={() => setDetailPage(detailPage + 1)}>Επόμενες</button>
+                                <div className="mt-3 flex items-center gap-3 text-sm">
+                                  <button type="button" disabled={!detailPage || visitsLoading} onClick={() => setDetailPage(detailPage - 1)}
+                                    className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 disabled:opacity-50">
+                                    ← Προηγούμενες
+                                  </button>
+                                  <span className="tabular-nums text-gray-600">{detailPage + 1} / {Math.ceil(row.viewCount / 50)}</span>
+                                  <button type="button" disabled={(detailPage + 1) * 50 >= row.viewCount || visitsLoading} onClick={() => setDetailPage(detailPage + 1)}
+                                    className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white hover:bg-gray-100 disabled:opacity-50">
+                                    Επόμενες →
+                                  </button>
                                 </div>
                               )}
                             </td></tr>
@@ -714,7 +820,10 @@ function GeoAdminContent() {
                 </div>
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                   <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 border-b border-gray-100 font-semibold">Χώρες</div>
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <div className="font-semibold">Χώρες</div>
+                    <p className="text-xs text-gray-500 mt-1">Πατήστε μια χώρα για να φιλτράρετε όλη την καρτέλα.</p>
+                  </div>
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
@@ -731,7 +840,20 @@ function GeoAdminContent() {
                           return (
                             <tr key={row.countryCode || row.countryName} className="hover:bg-gray-50">
                               <td className="px-4 py-3 text-sm text-gray-900">
-                                <CountryFlag code={row.countryCode} /> {resolveCountryLabel(row.countryCode, row.countryName)}
+                                {row.countryCode && row.countryCode !== countryFilter ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => changeActivityFilter(setCountryFilter, row.countryCode)}
+                                    className="text-left hover:text-blue-700 hover:underline"
+                                    title="Φιλτράρισμα σε αυτή τη χώρα"
+                                  >
+                                    <CountryFlag code={row.countryCode} /> {resolveCountryLabel(row.countryCode, row.countryName)}
+                                  </button>
+                                ) : (
+                                  <>
+                                    <CountryFlag code={row.countryCode} /> {resolveCountryLabel(row.countryCode, row.countryName)}
+                                  </>
+                                )}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-700">{row.visits || 0}</td>
                               <td className="px-4 py-3 text-sm text-gray-700">{row.authenticated || 0}</td>
@@ -854,7 +976,7 @@ function GeoAdminContent() {
                     </div>
                   </details>
                 </div>
-              </>
+              </div>
             )}
             <details className="rounded-xl border bg-white p-4">
               <summary className="cursor-pointer font-semibold">Συντήρηση αρχείων καταγραφής</summary>
@@ -873,14 +995,14 @@ function GeoAdminContent() {
                   ))}
                 </select>
                 <button
-                  onClick={handleClearOldLogs}
+                  onClick={requestClearOldLogs}
                   disabled={isClearingLogs}
                   className="px-3 py-2 rounded-lg text-sm font-medium border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
                 >
                   {isClearingLogs ? 'Διαγραφή...' : 'Καθαρισμός παλιών logs'}
                 </button>
                 <button
-                  onClick={handleClearAllLogs}
+                  onClick={requestClearAllLogs}
                   disabled={isClearingAllLogs}
                   className="px-3 py-2 rounded-lg text-sm font-medium border border-red-500 text-red-700 bg-red-50 hover:bg-red-100 disabled:opacity-50"
                 >
@@ -895,7 +1017,7 @@ function GeoAdminContent() {
               <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-semibold">Αποκλεισμένες Χώρες</h2>
                 <button
-                  onClick={handleAddCountryAccessRule}
+                  onClick={requestAddCountryAccessRule}
                   disabled={isAddingCountryRule}
                   className="px-3 py-1.5 text-xs font-medium rounded-lg border border-blue-300 text-blue-700 hover:bg-blue-50 disabled:opacity-50"
                 >
@@ -908,6 +1030,8 @@ function GeoAdminContent() {
                   maxLength={2}
                   value={countryRuleForm.countryCode}
                   onChange={(e) => setCountryRuleForm((prev) => ({ ...prev, countryCode: e.target.value.toUpperCase() }))}
+                  onKeyDown={(e) => { if (e.key === 'Enter') requestAddCountryAccessRule(); }}
+                  aria-label="Κωδικός χώρας"
                   placeholder="Κωδικός χώρας (π.χ. RU)"
                   className="border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase"
                 />
@@ -961,7 +1085,7 @@ function GeoAdminContent() {
                           </td>
                           <td className="px-4 py-3 text-right">
                             <button
-                              onClick={() => handleRemoveCountryAccessRule(row.countryCode)}
+                              onClick={() => requestRemoveCountryAccessRule(row.countryCode)}
                               disabled={isRemovingCountryRule === row.countryCode}
                               className="px-2.5 py-1.5 rounded-lg border border-red-300 text-red-700 hover:bg-red-50 text-xs disabled:opacity-50"
                               title="Άρση αποκλεισμού"
@@ -986,7 +1110,7 @@ function GeoAdminContent() {
               <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-semibold">Ρυθμίσεις Άγνωστης Χώρας</h2>
                 <button
-                  onClick={handleSaveAccessSettings}
+                  onClick={requestSaveAccessSettings}
                   disabled={isSavingAccessSettings || accessSettingsLoading}
                   className="px-3 py-1.5 text-xs font-medium rounded-lg border border-blue-300 text-blue-700 hover:bg-blue-50 disabled:opacity-50"
                 >
@@ -1007,7 +1131,7 @@ function GeoAdminContent() {
                       className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
                     >
                       {ACCESS_ACTION_OPTIONS.map((action) => (
-                        <option key={action} value={action}>{action}</option>
+                        <option key={action.value} value={action.value}>{action.label}</option>
                       ))}
                     </select>
                     {accessSettingsForm.unknownCountryAction === 'redirect' ? (
@@ -1029,7 +1153,7 @@ function GeoAdminContent() {
                       className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
                     >
                       {ACCESS_ACTION_OPTIONS.map((action) => (
-                        <option key={action} value={action}>{action}</option>
+                        <option key={action.value} value={action.value}>{action.label}</option>
                       ))}
                     </select>
                     {accessSettingsForm.noIpAction === 'redirect' ? (
@@ -1042,6 +1166,13 @@ function GeoAdminContent() {
                       />
                     ) : null}
                   </div>
+
+                  {(accessSettingsForm.unknownCountryAction === 'block' || accessSettingsForm.noIpAction === 'block') && (
+                    <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                      ⚠️ Ο αποκλεισμός άγνωστης χώρας ή επισκεπτών χωρίς IP μπορεί να κόψει πραγματικούς χρήστες
+                      (π.χ. μέσω VPN, Tor ή ορισμένων παρόχων κινητής). Προτιμήστε την ανακατεύθυνση αν δεν είστε σίγουροι.
+                    </p>
+                  )}
                 </div>
               )}
             </section>
@@ -1249,7 +1380,7 @@ function GeoAdminContent() {
                 <option value="">Επιλέξτε χώρα</option>
                 {availableCreateCountries.map((row) => (
                   <option key={row.locationId} value={row.locationId}>
-                    {row.countryName} ({row.countryCode})
+                    {resolveCountryLabel(row.countryCode, row.countryName)} ({row.countryCode})
                   </option>
                 ))}
               </select>
@@ -1312,6 +1443,17 @@ function GeoAdminContent() {
         confirmText={isDeleting ? 'Διαγραφή...' : 'Διαγραφή'}
         cancelText="Ακύρωση"
         variant="danger"
+      />
+
+      <ConfirmDialog
+        isOpen={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={() => confirmAction?.onConfirm?.()}
+        title={confirmAction?.title}
+        message={confirmAction?.message}
+        confirmText={confirmAction?.confirmText || 'Επιβεβαίωση'}
+        cancelText="Ακύρωση"
+        variant={confirmAction?.variant || 'danger'}
       />
     </div>
   );

@@ -39,7 +39,11 @@ jest.mock('@/components/ui/Modal', () => {
   return {
     __esModule: true,
     default: ({ children }) => React.createElement('div', null, children),
-    ConfirmDialog: ({ children }) => React.createElement('div', null, children),
+    ConfirmDialog: ({ isOpen, message, confirmText, onConfirm, onClose }) => (isOpen
+      ? React.createElement('div', { 'data-testid': 'confirm-dialog' },
+        React.createElement('p', null, message),
+        React.createElement('button', { type: 'button', onClick: () => { onConfirm(); onClose(); } }, `confirm:${confirmText}`))
+      : null),
   };
 });
 
@@ -78,6 +82,27 @@ jest.mock('@/lib/api/geoAccess', () => ({
 }));
 
 const AdminGeoPage = require('../app/admin/geo/page').default;
+const geoAccessApi = require('@/lib/api/geoAccess');
+const libApi = require('@/lib/api');
+
+const findButton = (container, text) =>
+  Array.from(container.querySelectorAll('button')).find((button) => button.textContent.trim() === text);
+
+const click = async (element) => {
+  await act(async () => {
+    element.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await flushPromises();
+  });
+};
+
+const typeInto = async (input, value) => {
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+  await act(async () => {
+    setter.call(input, value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await flushPromises();
+  });
+};
 
 const flushPromises = async () => {
   await Promise.resolve();
@@ -259,5 +284,99 @@ describe('Admin geo page traffic tables', () => {
     expect(redirectPathNode.className).toContain('whitespace-nowrap');
     expect(accessDateCell).toBeTruthy();
     expect(accessDateCell.className).toContain('whitespace-nowrap');
+  });
+
+  test('shows Greek country names and filters the traffic tab by clicking a country', async () => {
+    await act(async () => {
+      root.render(React.createElement(AdminGeoPage));
+      await flushPromises();
+    });
+
+    expect(container.textContent).toContain('Ελλάδα');
+    const greeceButton = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.title === 'Φιλτράρισμα σε αυτή τη χώρα'
+    );
+    expect(greeceButton).toBeTruthy();
+
+    await click(greeceButton);
+
+    const visitsCalls = useAsyncDataMock.mock.calls.filter((_, index) => index % mockResponseByHookOrder.length === 0);
+    const lastDeps = visitsCalls[visitsCalls.length - 1][1];
+    expect(lastDeps[lastDeps.length - 1]).toBe('GR');
+    expect(container.textContent).toContain('Χώρα: Ελλάδα');
+
+    await click(container.querySelector('[aria-label="Αφαίρεση φίλτρου χώρας"]'));
+    expect(container.textContent).not.toContain('Χώρα: Ελλάδα');
+  });
+
+  test('asks for confirmation before blocking an IP', async () => {
+    libApi.addIpRule.mockResolvedValue({ success: true });
+    await act(async () => {
+      root.render(React.createElement(AdminGeoPage));
+      await flushPromises();
+    });
+
+    const groupToggle = Array.from(container.querySelectorAll('label'))
+      .find((label) => label.textContent.includes('Ομαδοποίηση')).querySelector('input');
+    await click(groupToggle);
+    const visitsCallsBefore = useAsyncDataMock.mock.calls.length;
+    await click(findButton(container, 'Λεπτομέρειες'));
+    // Ungrouped rows are already loaded: expanding must not change the visits query deps.
+    const visitsCalls = useAsyncDataMock.mock.calls.slice(visitsCallsBefore - mockResponseByHookOrder.length)
+      .filter((_, index) => index % mockResponseByHookOrder.length === 0).map((call) => call[1]);
+    expect(visitsCalls[visitsCalls.length - 1]).toEqual(visitsCalls[0]);
+    await click(findButton(container, 'Αποκλεισμός IP'));
+
+    expect(libApi.addIpRule).not.toHaveBeenCalled();
+    expect(container.querySelector('[data-testid="confirm-dialog"]').textContent).toContain('203.0.113.45');
+
+    await click(findButton(container, 'confirm:Αποκλεισμός'));
+    expect(libApi.addIpRule).toHaveBeenCalledWith('203.0.113.45', 'blacklist', 'Blocked from geo admin');
+  });
+
+  test('refuses to block Greece and confirms before blocking another country', async () => {
+    geoAccessApi.addCountryRule.mockResolvedValue({ success: true });
+    await act(async () => {
+      root.render(React.createElement(AdminGeoPage));
+      await flushPromises();
+    });
+
+    await click(findButton(container, 'Κανόνες Πρόσβασης'));
+    const codeInput = container.querySelector('[aria-label="Κωδικός χώρας"]');
+
+    await typeInto(codeInput, 'GR');
+    await click(findButton(container, '➕ Προσθήκη'));
+    expect(mockAddToast).toHaveBeenCalledWith(expect.stringContaining('δεν μπορεί να αποκλειστεί'), { type: 'error' });
+    expect(container.querySelector('[data-testid="confirm-dialog"]')).toBeNull();
+
+    await typeInto(codeInput, 'FR');
+    await click(findButton(container, '➕ Προσθήκη'));
+    expect(geoAccessApi.addCountryRule).not.toHaveBeenCalled();
+    expect(container.querySelector('[data-testid="confirm-dialog"]').textContent).toContain('Γαλλία');
+
+    await click(findButton(container, 'confirm:Αποκλεισμός'));
+    expect(geoAccessApi.addCountryRule).toHaveBeenCalledWith('FR', null, null);
+  });
+
+  test('shows Greek access actions and warns when blocking unknown countries', async () => {
+    await act(async () => {
+      root.render(React.createElement(AdminGeoPage));
+      await flushPromises();
+    });
+
+    await click(findButton(container, 'Κανόνες Πρόσβασης'));
+    const select = container.querySelector('select');
+    expect(Array.from(select.options).map((option) => option.textContent)).toEqual(['Επιτρέπεται', 'Αποκλεισμός', 'Ανακατεύθυνση']);
+
+    await act(async () => {
+      select.value = 'block';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      await flushPromises();
+    });
+    expect(container.textContent).toContain('μπορεί να κόψει πραγματικούς χρήστες');
+
+    await click(findButton(container, 'Αποθήκευση'));
+    expect(geoAccessApi.updateSetting).not.toHaveBeenCalled();
+    expect(container.querySelector('[data-testid="confirm-dialog"]')).toBeTruthy();
   });
 });
