@@ -60,11 +60,20 @@ start_services() (
 )
 
 wait_for_services() {
-  local deadline=$((SECONDS + 30))
-  until curl --fail --silent --max-time 2 --output /dev/null "http://127.0.0.1:$BACKEND_PORT/api/health" \
-    && curl --fail --silent --max-time 2 --output /dev/null "http://127.0.0.1:$FRONTEND_PORT/"; do
+  local deadline=$((SECONDS + 60))
+  local backend_error frontend_error
+  local -a curl_args=(--disable --noproxy '*' --fail --silent --show-error
+    --connect-timeout 2 --max-time 10 --output /dev/null)
+
+  while true; do
+    backend_error=$(curl "${curl_args[@]}" "http://127.0.0.1:$BACKEND_PORT/api/health" 2>&1) || backend_error=${backend_error:-"curl exited with status $?"}
+    frontend_error=$(curl "${curl_args[@]}" "http://127.0.0.1:$FRONTEND_PORT/" 2>&1) || frontend_error=${frontend_error:-"curl exited with status $?"}
+    if [[ -z "$backend_error" && -z "$frontend_error" ]]; then
+      return 0
+    fi
     if (( SECONDS >= deadline )); then
-      echo 'Deployment health checks timed out.' >&2
+      printf 'Backend health check on port %s: %s\n' "$BACKEND_PORT" "${backend_error:-OK}" >&2
+      printf 'Frontend health check on port %s: %s\n' "$FRONTEND_PORT" "${frontend_error:-OK}" >&2
       return 1
     fi
     sleep 1
