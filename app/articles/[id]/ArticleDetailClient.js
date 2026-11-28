@@ -25,6 +25,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { formatDate } from '@/lib/utils/formatDate';
 import ArticleTaxonomyPills from '@/components/articles/ArticleTaxonomyPills';
 import RelatedArticles from '@/components/articles/RelatedArticles';
+import RelatedPolls from '@/components/polls/RelatedPolls';
 
 export default function ArticleDetailPage({ initialArticle = null }) {
   const tArticles = useTranslations('articles');
@@ -299,14 +300,16 @@ export default function ArticleDetailPage({ initialArticle = null }) {
               <RichArticleContent content={article.content} />
             </div>
 
-            <RelatedArticles article={article} />
-
             <CommentsThread
               entityType="article"
               entityId={article.id}
               commentsEnabled={commentSettings.commentsEnabled}
               commentsLocked={commentSettings.commentsLocked}
             />
+
+            {/* Related content: newest first, then same-tag items, then newest as filler */}
+            <RelatedArticles source={article} />
+            <RelatedPolls source={article} limit={2} excludeSelf={false} />
           </div>
         </div>
       </article>

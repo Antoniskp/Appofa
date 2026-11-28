@@ -6,19 +6,24 @@ import { articleAPI } from '@/lib/api/articles';
 import { fetchRelatedArticles } from '@/lib/utils/relatedArticles';
 import ArticleCard from './ArticleCard';
 
-export default function RelatedArticles({ article }) {
+/**
+ * Related articles block. `source` may be an article or a poll; set
+ * `excludeSelf` to false when the source is not an article.
+ */
+export default function RelatedArticles({ source, limit = 4, excludeSelf = true }) {
   const t = useTranslations('articles');
   const [result, setResult] = useState(null);
 
   useEffect(() => {
     let active = true;
-    fetchRelatedArticles(article, articleAPI.getAll).then((articles) => {
-      if (active) setResult({ sourceId: article.id, articles });
-    });
+    fetchRelatedArticles(source, articleAPI.getAll, { limit, excludeId: excludeSelf ? source.id : null })
+      .then((articles) => {
+        if (active) setResult({ source, articles });
+      });
     return () => { active = false; };
-  }, [article]);
+  }, [source, limit, excludeSelf]);
 
-  const articles = result?.sourceId === article.id ? result.articles : [];
+  const articles = result?.source === source ? result.articles : [];
   if (!articles.length) return null;
 
   return (

@@ -5,7 +5,7 @@ const story = (id, extra = {}) => ({ id, status: 'published', type: 'articles', 
 describe('related stories', () => {
   const current = story(1, { category: 'Politics', tags: ['Athens'] });
 
-  it('prioritizes shared tags and categories over recency, then fills with recent stories', () => {
+  it('shows the single newest story first, then shared tags and categories, then recent stories', () => {
     const candidates = [
       story(2, { createdAt: '2026-10-20' }),
       story(3, { category: 'Politics' }),
@@ -13,7 +13,7 @@ describe('related stories', () => {
       story(5, { category: 'Politics', tags: ['athens'] }),
       story(6, { createdAt: '2026-10-19' }),
     ];
-    expect(selectRelatedArticles(current, candidates).map((item) => item.id)).toEqual([5, 4, 3, 2]);
+    expect(selectRelatedArticles(current, candidates).map((item) => item.id)).toEqual([2, 5, 4, 3]);
   });
 
   it('excludes the current story, duplicates, drafts, archived and unapproved news', () => {
@@ -60,8 +60,36 @@ describe('related polls', () => {
       poll(2, { createdAt: '2026-10-30' }), poll(3, { tags: ['schools'] }),
       poll(4, { category: 'Education' }),
     ] } }));
-    expect((await fetchRelatedPolls(current, getAll)).map((item) => item.id)).toEqual([3, 4, 2]);
+    expect((await fetchRelatedPolls(current, getAll)).map((item) => item.id)).toEqual([2, 3, 4]);
     expect(getAll).toHaveBeenCalledTimes(3);
     expect(getAll).toHaveBeenCalledWith(expect.objectContaining({ status: 'active', visibility: 'public', limit: 12 }));
+  });
+});
+
+describe('cross-type related content', () => {
+  const article = { id: 7, category: 'Politics', tags: ['Τέμπη'] };
+  const poll = (id, extra = {}) => ({ id, status: 'active', visibility: 'public', createdAt: '2026-10-01', ...extra });
+  const story = (id, extra = {}) => ({ id, status: 'published', type: 'articles', createdAt: '2026-10-01', ...extra });
+
+  it('does not hide a poll that shares the source article id when excludeId is null', () => {
+    const candidates = [poll(7, { tags: ['τέμπη'] }), poll(8, { createdAt: '2026-10-20' }), poll(9)];
+    expect(selectRelatedPolls(article, candidates, 2, Date.parse('2026-10-31'), { excludeId: null })
+      .map((item) => item.id)).toEqual([8, 7]);
+  });
+
+  it('still excludes the source by default', () => {
+    expect(selectRelatedArticles(article, [story(7), story(8)]).map((item) => item.id)).toEqual([8]);
+  });
+
+  it('respects the limit and handles a limit of one', () => {
+    const candidates = [story(1, { createdAt: '2026-10-20' }), story(2, { tags: ['τέμπη'] }), story(3)];
+    expect(selectRelatedArticles(article, candidates, 1, { excludeId: null }).map((item) => item.id)).toEqual([1]);
+    expect(selectRelatedArticles(article, candidates, 2, { excludeId: null }).map((item) => item.id)).toEqual([1, 2]);
+  });
+
+  it('fetches related articles for a poll without excluding by id', async () => {
+    const getAll = jest.fn(async () => ({ data: { articles: [story(5, { tags: ['τέμπη'] }), story(6, { createdAt: '2026-10-25' })] } }));
+    expect((await fetchRelatedArticles(poll(5, { tags: ['Τέμπη'] }), getAll, { limit: 2, excludeId: null }))
+      .map((item) => item.id)).toEqual([6, 5]);
   });
 });

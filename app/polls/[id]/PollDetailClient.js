@@ -24,6 +24,7 @@ import IssueFollowButton from '@/components/IssueFollowButton';
 import PollVoting from '@/components/polls/PollVoting';
 import PollResults from '@/components/polls/PollResults';
 import RelatedPolls from '@/components/polls/RelatedPolls';
+import RelatedArticles from '@/components/articles/RelatedArticles';
 import PollAttachments from '@/components/polls/PollAttachments';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
@@ -363,8 +364,6 @@ export default function PollDetailPage({ initialPoll = null }) {
           </div>
         )}
 
-        <RelatedPolls poll={poll} />
-
         {/* Comments */}
         <div className="bg-white border border-gray-200 rounded-lg p-6 mt-6">
           <CommentsThread
@@ -374,6 +373,10 @@ export default function PollDetailPage({ initialPoll = null }) {
             commentsLocked={poll.commentsLocked === true}
           />
         </div>
+
+        {/* Related content: newest first, then same-tag items, then newest as filler */}
+        <RelatedPolls source={poll} />
+        <RelatedArticles source={poll} limit={2} excludeSelf={false} />
 
         {/* Back Link */}
         <div className="mt-6">

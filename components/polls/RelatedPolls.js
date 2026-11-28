@@ -6,19 +6,24 @@ import { pollAPI } from '@/lib/api/polls';
 import { fetchRelatedPolls } from '@/lib/utils/relatedArticles';
 import PollCard from './PollCard';
 
-export default function RelatedPolls({ poll }) {
+/**
+ * Related polls block. `source` may be a poll or an article; set
+ * `excludeSelf` to false when the source is not a poll.
+ */
+export default function RelatedPolls({ source, limit = 4, excludeSelf = true }) {
   const t = useTranslations('polls');
   const [result, setResult] = useState(null);
 
   useEffect(() => {
     let active = true;
-    fetchRelatedPolls(poll, pollAPI.getAll).then((polls) => {
-      if (active) setResult({ sourceId: poll.id, polls });
-    });
+    fetchRelatedPolls(source, pollAPI.getAll, { limit, excludeId: excludeSelf ? source.id : null })
+      .then((polls) => {
+        if (active) setResult({ source, polls });
+      });
     return () => { active = false; };
-  }, [poll]);
+  }, [source, limit, excludeSelf]);
 
-  const polls = result?.sourceId === poll.id ? result.polls : [];
+  const polls = result?.source === source ? result.polls : [];
   if (!polls.length) return null;
 
   return (

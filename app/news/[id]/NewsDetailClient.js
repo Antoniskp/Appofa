@@ -22,6 +22,7 @@ import ReportButton from '@/components/ReportButton';
 import ShareModal from '@/components/ui/ShareModal';
 import ArticleTaxonomyPills from '@/components/articles/ArticleTaxonomyPills';
 import RelatedArticles from '@/components/articles/RelatedArticles';
+import RelatedPolls from '@/components/polls/RelatedPolls';
 import { useTranslations, useLocale } from 'next-intl';
 import { formatDate } from '@/lib/utils/formatDate';
 
@@ -287,14 +288,16 @@ export default function NewsDetailPage({ initialArticle = null }) {
       </article>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <RelatedArticles article={article} />
-
         <CommentsThread
           entityType="article"
           entityId={article.id}
           commentsEnabled={article.commentsEnabled !== false}
           commentsLocked={article.commentsLocked === true}
         />
+
+        {/* Related content: newest first, then same-tag items, then newest as filler */}
+        <RelatedArticles source={article} />
+        <RelatedPolls source={article} limit={2} excludeSelf={false} />
       </div>
 
     </div>
