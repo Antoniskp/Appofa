@@ -37,7 +37,7 @@ fi
 
 release=$(mktemp -d "$RELEASES_DIR/release.XXXXXXXX")
 next_link="$DEPLOY_DIR/.current-${release##*/}"
-cutover_started=0
+maintenance_started=0
 
 remove_services() {
   local service
@@ -87,9 +87,9 @@ cleanup() {
     return
   fi
   cd "$APP_DIR" || return
-  if (( cutover_started )); then
+  if (( maintenance_started )); then
     if [[ -n "$previous" ]]; then
-      echo "Cutover failed. Restoring $previous." >&2
+      echo "Deployment failed. Restoring $previous." >&2
       if ! (remove_services && start_services "$previous" && wait_for_services && pm2 save); then
         echo 'Automatic recovery failed. Check PM2 logs and database migration status.' >&2
         return
@@ -107,7 +107,7 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-echo "Preparing $release while the active release serves traffic."
+echo "Unpacking $release before stopping services."
 tar -xzf "$ARCHIVE" -C "$release" --no-same-owner
 cd "$release"
 if [[ ! -s .next/BUILD_ID || ! -s .next/routes-manifest.json || ! -d .next/static || ! -s .next/appofa-release.json ]]; then
@@ -121,6 +121,10 @@ for env_file in .env .env.local .env.production .env.production.local; do
   fi
 done
 ln -s "$APP_DIR/uploads" uploads
+
+echo 'Stopping services before installing dependencies and building the release.'
+maintenance_started=1
+remove_services
 
 npm ci --omit=dev
 mismatched_build_vars=$(node <<'NODE'
@@ -156,10 +160,8 @@ mkdir -p .next/cache "$APP_DIR/.next/cache/images"
 rm -rf -- .next/cache/images
 ln -sT "$APP_DIR/.next/cache/images" .next/cache/images
 
-# Migrations may be incompatible with the previous application version.
 ln -s "$release" "$next_link"
-cutover_started=1
-remove_services
+# Migrations may be incompatible with the previous application version.
 npm run migrate
 node <<'NODE'
 const db = require('./src/config/database');
@@ -178,7 +180,7 @@ start_services "$release"
 wait_for_services
 pm2 save
 mv -Tf -- "$next_link" "$CURRENT"
-cutover_started=0
+maintenance_started=0
 
 # Retain the active and immediately previous releases for rollback.
 for old_release in "$RELEASES_DIR"/release.*; do

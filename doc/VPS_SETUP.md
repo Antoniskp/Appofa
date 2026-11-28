@@ -562,13 +562,13 @@ See: https://expressjs.com/en/guide/behind-proxies.html
 
 ## Updating the Application
 
-Pushes to `main` run the Deploy workflow. It packages the Next.js build that passed browser tests together with the matching Git revision. The VPS unpacks the artifact and installs production dependencies in `/var/www/Appofa/.deploy/releases` while the current site serves traffic.
+Pushes to `main` run the Deploy workflow. It packages the Next.js build that passed browser tests together with the matching Git revision. The VPS unpacks and checks the artifact in `/var/www/Appofa/.deploy/releases` before stopping the current services.
 
-The VPS uses the CI build when its frontend build settings match. If they differ, it rebuilds the same Git revision using the VPS settings while the current release serves traffic. To reuse the CI build, mirror the VPS values in GitHub Actions repository variables. The supported names are `API_URL`, `SITE_URL`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_GA_MEASUREMENT_ID`, and `NEXT_PUBLIC_VAPID_PUBLIC_KEY`. Keep database credentials, signing keys, and other runtime secrets in the VPS environment.
+The VPS uses the CI build when the frontend build settings match. If they differ, it rebuilds the same Git revision using the VPS settings. To reuse the CI build, mirror the VPS values in GitHub Actions repository variables. The supported names are `API_URL`, `SITE_URL`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_GA_MEASUREMENT_ID`, and `NEXT_PUBLIC_VAPID_PUBLIC_KEY`. Keep database credentials, signing keys, and other runtime secrets in the VPS environment.
 
-The short maintenance window starts when the script stops the two PM2 processes. Database migrations run in that window so the previous application version does not serve traffic against an incompatible schema. The script starts the new processes, checks both HTTP endpoints, and records the healthy release in `/var/www/Appofa/.deploy/current`. The VPS environment files and uploads are shared across releases.
+The maintenance window covers dependency installation, any frontend rebuild, and database migrations. Nginx returns 502 while the application processes are down. The script then starts the new processes, checks both HTTP endpoints, and records the healthy release in `/var/www/Appofa/.deploy/current`. The VPS environment files and uploads are shared across releases.
 
-If cutover fails, the script attempts to restart the previous release and reports whether its health checks pass. Database migrations are forward-only during deployment. If a schema change prevents the previous version from starting, recovery requires a compatible application fix or database restoration.
+If deployment fails after the services start shutting down, the script attempts to restart the previous release and reports whether its health checks pass. Database migrations are forward-only during deployment. If a schema change prevents the previous version from starting, recovery requires a compatible application fix or database restoration.
 
 ### Deploy a release artifact manually
 
